@@ -1,0 +1,807 @@
+<style>
+  #imposter-wireframes-v2 {
+    --wf-page: light-dark(#f4f4f2, #191919);
+    --wf-phone: light-dark(#ffffff, #242424);
+    --wf-ink: light-dark(#202020, #f1f1ef);
+    --wf-muted: light-dark(#666662, #aaa9a4);
+    --wf-line: light-dark(#c9c9c4, #555550);
+    --wf-fill: light-dark(#ececea, #343432);
+    --wf-strong: light-dark(#2e2e2c, #e8e8e5);
+    --wf-strong-ink: light-dark(#ffffff, #202020);
+    --wf-danger: light-dark(#9f2f2f, #ffaaaa);
+    direction: rtl;
+    width: 100%;
+    color: var(--wf-ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  }
+
+  #imposter-wireframes-v2 * { box-sizing: border-box; }
+
+  #imposter-wireframes-v2 .wf-toolbar {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  #imposter-wireframes-v2 .wf-selector-label {
+    display: grid;
+    gap: 4px;
+    min-width: min(100%, 280px);
+  }
+
+  #imposter-wireframes-v2 .wf-stage {
+    display: grid;
+    place-items: center;
+    width: 100%;
+  }
+
+  #imposter-wireframes-v2 .wf-meta {
+    width: min(100%, 375px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+    color: var(--wf-muted);
+  }
+
+  #imposter-wireframes-v2 .wf-phone {
+    width: min(100%, 375px);
+    min-height: 650px;
+    padding: 16px;
+    border: 2px solid var(--wf-line);
+    border-radius: 28px;
+    background: var(--wf-phone);
+    color: var(--wf-ink);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  #imposter-wireframes-v2 .wf-header {
+    min-height: 44px;
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #imposter-wireframes-v2 .wf-header-title {
+    text-align: center;
+    font-weight: 500;
+  }
+
+  #imposter-wireframes-v2 .wf-icon {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--wf-line);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--wf-ink);
+    display: grid;
+    place-items: center;
+  }
+
+  #imposter-wireframes-v2 .wf-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
+  }
+
+  #imposter-wireframes-v2 .wf-center {
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #imposter-wireframes-v2 .wf-title {
+    margin: 0;
+    font-size: 27px;
+    line-height: 1.2;
+    font-weight: 500;
+  }
+
+  #imposter-wireframes-v2 .wf-subtitle,
+  #imposter-wireframes-v2 .wf-note {
+    margin: 0;
+    color: var(--wf-muted);
+  }
+
+  #imposter-wireframes-v2 .wf-placeholder {
+    width: 92px;
+    height: 92px;
+    border: 2px dashed var(--wf-line);
+    border-radius: 24px;
+    display: grid;
+    place-items: center;
+    color: var(--wf-muted);
+  }
+
+  #imposter-wireframes-v2 .wf-button {
+    width: 100%;
+    min-height: 50px;
+    padding: 10px 14px;
+    border: 1px solid var(--wf-line);
+    border-radius: 13px;
+    background: var(--wf-fill);
+    color: var(--wf-ink);
+    font: inherit;
+    font-weight: 500;
+    cursor: default;
+  }
+
+  #imposter-wireframes-v2 .wf-button-primary {
+    border-color: var(--wf-strong);
+    background: var(--wf-strong);
+    color: var(--wf-strong-ink);
+  }
+
+  #imposter-wireframes-v2 .wf-button-ghost { background: transparent; }
+
+  #imposter-wireframes-v2 .wf-actions {
+    display: grid;
+    gap: 10px;
+    margin-top: auto;
+  }
+
+  #imposter-wireframes-v2 .wf-input {
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 1px solid var(--wf-line);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--wf-ink);
+    font: inherit;
+  }
+
+  #imposter-wireframes-v2 .wf-field {
+    display: grid;
+    gap: 6px;
+    text-align: right;
+  }
+
+  #imposter-wireframes-v2 .wf-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  #imposter-wireframes-v2 .wf-chip {
+    min-height: 46px;
+    padding: 8px;
+    border: 1px solid var(--wf-line);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--wf-ink);
+    font: inherit;
+  }
+
+  #imposter-wireframes-v2 .wf-chip-selected {
+    border: 2px solid var(--wf-strong);
+    background: var(--wf-fill);
+    font-weight: 500;
+  }
+
+  #imposter-wireframes-v2 .wf-row {
+    min-height: 48px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--wf-line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  #imposter-wireframes-v2 .wf-player {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  #imposter-wireframes-v2 .wf-avatar {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    border: 1px solid var(--wf-line);
+    border-radius: 50%;
+    background: var(--wf-fill);
+    display: grid;
+    place-items: center;
+  }
+
+  #imposter-wireframes-v2 .wf-avatar-large {
+    width: 66px;
+    height: 66px;
+  }
+
+  #imposter-wireframes-v2 .wf-panel {
+    padding: 14px;
+    border: 1px solid var(--wf-line);
+    border-radius: 12px;
+    background: transparent;
+  }
+
+  #imposter-wireframes-v2 .wf-panel-strong {
+    border: 2px solid var(--wf-strong);
+  }
+
+  #imposter-wireframes-v2 .wf-timer {
+    min-width: 52px;
+    font-size: 24px;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  #imposter-wireframes-v2 .wf-timer-circle {
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--wf-strong);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-weight: 500;
+  }
+
+  #imposter-wireframes-v2 .wf-code {
+    padding: 12px;
+    border: 2px dashed var(--wf-line);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 25px;
+    letter-spacing: 5px;
+    direction: ltr;
+  }
+
+  #imposter-wireframes-v2 .wf-reactions {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+
+  #imposter-wireframes-v2 .wf-reaction {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px 11px;
+    border: 1px solid var(--wf-line);
+    border-radius: 22px;
+    background: transparent;
+    color: var(--wf-ink);
+    font: inherit;
+  }
+
+  #imposter-wireframes-v2 .wf-vote {
+    width: 100%;
+    text-align: right;
+    border: 1px solid var(--wf-line);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--wf-ink);
+    padding: 10px;
+    font: inherit;
+  }
+
+  #imposter-wireframes-v2 .wf-vote-selected {
+    border: 2px solid var(--wf-strong);
+    background: var(--wf-fill);
+  }
+
+  #imposter-wireframes-v2 .wf-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  #imposter-wireframes-v2 .wf-stat {
+    padding: 14px;
+    border: 1px solid var(--wf-line);
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  #imposter-wireframes-v2 .wf-stat strong {
+    display: block;
+    font-size: 26px;
+    font-weight: 500;
+  }
+
+  #imposter-wireframes-v2 .wf-switch {
+    width: 44px;
+    height: 24px;
+    border: 1px solid var(--wf-line);
+    border-radius: 12px;
+    background: var(--wf-fill);
+    position: relative;
+  }
+
+  #imposter-wireframes-v2 .wf-switch::after {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    top: 2px;
+    right: 3px;
+    border-radius: 50%;
+    background: var(--wf-strong);
+  }
+
+  #imposter-wireframes-v2 .wf-overlay {
+    margin: auto 0;
+    padding: 20px;
+    border: 2px solid var(--wf-strong);
+    border-radius: 14px;
+    background: var(--wf-phone);
+    text-align: center;
+    display: grid;
+    gap: 12px;
+  }
+
+  #imposter-wireframes-v2 .wf-danger { color: var(--wf-danger); }
+  #imposter-wireframes-v2 .wf-auto-center { margin-inline: auto; }
+
+  #imposter-wireframes-v2 .wf-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  #imposter-wireframes-v2 .wf-dot {
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--wf-line);
+    border-radius: 50%;
+    background: var(--wf-fill);
+  }
+
+  #imposter-wireframes-v2 .wf-dot-active { background: var(--wf-strong); }
+
+  #imposter-wireframes-v2 .wf-inline-action {
+    min-height: 36px;
+    padding: 6px 10px;
+    border: 1px solid var(--wf-line);
+    border-radius: 9px;
+    background: transparent;
+    color: var(--wf-ink);
+    font: inherit;
+  }
+
+  #imposter-wireframes-v2 .wf-error-box {
+    padding: 10px 12px;
+    border: 1px solid var(--wf-danger);
+    border-radius: 10px;
+    color: var(--wf-danger);
+  }
+
+  @media (max-width: 390px) {
+    #imposter-wireframes-v2 .wf-phone { border-radius: 20px; padding: 13px; }
+    #imposter-wireframes-v2 .wf-toolbar { align-items: stretch; }
+    #imposter-wireframes-v2 .wf-selector-label { min-width: 100%; }
+  }
+</style>
+
+<div id="imposter-wireframes-v2">
+  <div class="wf-toolbar" aria-label="בחירת מסך להצגה">
+    <button class="btn" id="wf-prev" type="button">הקודם</button>
+    <label class="wf-selector-label form-label">
+      מסך
+      <select class="form-select" id="wf-screen-select"></select>
+    </label>
+    <button class="btn btn-primary" id="wf-next" type="button">הבא</button>
+  </div>
+
+  <div class="wf-stage">
+    <div class="wf-meta">
+      <span id="wf-counter" class="tabular-nums"></span>
+      <span id="wf-route"></span>
+    </div>
+    <section class="wf-phone" id="wf-phone" aria-live="polite" aria-label="Wireframe למסך נבחר"></section>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const screens = [
+      {
+        name: 'כניסה ראשונה', route: '/onboarding',
+        html: `<div class="wf-body wf-center">
+          <div class="wf-placeholder">אווטאר</div>
+          <h1 class="wf-title">איך נקרא לך?</h1>
+          <p class="wf-subtitle">הכינוי יוצג לשחקנים האחרים</p>
+          <label class="wf-field">כינוי<input class="wf-input" value="דור" aria-label="כינוי"></label>
+          <div class="wf-grid" aria-label="בחירת אווטאר">
+            <button class="wf-chip wf-chip-selected">אווטאר 1</button><button class="wf-chip">אווטאר 2</button>
+            <button class="wf-chip">אווטאר 3</button><button class="wf-chip">אווטאר 4</button>
+          </div>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">ממשיכים</button></div>
+        </div>`
+      },
+      {
+        name: 'כניסה — כינוי חסום', route: '/onboarding/invalid-nickname',
+        html: `<div class="wf-body wf-center">
+          <div class="wf-placeholder">אווטאר</div>
+          <h1 class="wf-title">איך נקרא לך?</h1>
+          <label class="wf-field">כינוי<input class="wf-input" value="כינוי לא ראוי" aria-invalid="true" aria-describedby="nickname-error"></label>
+          <div class="wf-error-box" id="nickname-error" role="alert">הכינוי הזה אינו מתאים. בחרו כינוי אחר.</div>
+          <div class="wf-grid" aria-label="בחירת אווטאר">
+            <button class="wf-chip wf-chip-selected">אווטאר 1</button><button class="wf-chip">אווטאר 2</button>
+            <button class="wf-chip">אווטאר 3</button><button class="wf-chip">אווטאר 4</button>
+          </div>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">ממשיכים</button></div>
+        </div>`
+      },
+      {
+        name: 'מסך הבית', route: '/home',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="פרופיל"><i data-lucide="user-round"></i></button><span></span><button class="wf-icon" aria-label="הגדרות"><i data-lucide="settings"></i></button></header>
+        <div class="wf-body wf-center">
+          <div class="wf-placeholder">לוגו</div>
+          <h1 class="wf-title">מי המתחזה?</h1>
+          <p class="wf-subtitle">כולם יודעים את המילה. חוץ מאחד.</p>
+          <div class="wf-actions">
+            <button class="wf-button wf-button-primary">משחק ברשת</button>
+            <button class="wf-button">משחק עם חברים</button>
+            <button class="wf-button wf-button-ghost">איך משחקים?</button>
+          </div>
+        </div>`
+      },
+      {
+        name: 'בחירת קטגוריות — רשת', route: '/online/categories',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="חזרה"><i data-lucide="arrow-right"></i></button><div class="wf-header-title">בחירת קטגוריות</div><span></span></header>
+        <div class="wf-body">
+          <p class="wf-subtitle">אפשר לבחור כמה קטגוריות.</p>
+          <div class="wf-grid">
+            <button class="wf-chip wf-chip-selected">הכול</button><button class="wf-chip">אוכל</button>
+            <button class="wf-chip">חיות</button><button class="wf-chip">ספורט</button>
+            <button class="wf-chip">ישראל</button><button class="wf-chip">מקומות</button>
+            <button class="wf-chip">בידור</button><button class="wf-chip">דברים בבית</button>
+          </div>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">חפש משחק</button></div>
+        </div>`
+      },
+      {
+        name: 'חיפוש שחקנים', route: '/online/matchmaking',
+        html: `<header class="wf-header"><span></span><div class="wf-header-title">מחפשים שחקנים</div><span></span></header>
+        <div class="wf-body">
+          <h1 class="wf-title">6 מתוך 8</h1>
+          <p class="wf-subtitle">נמצא הרכב מלא. מחכים לעד שני שחקנים נוספים.</p>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar">ד</span><span>דור</span></span><span>מוכן</span></div>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar">נ</span><span>נועה</span></span><span>מוכן</span></div>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar">י</span><span>יואב</span></span><span>מוכן</span></div>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar">מ</span><span>מאיה</span></span><span>מוכן</span></div>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar">א</span><span>אורי</span></span><span>מוכן</span></div>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar">ש</span><span>שירה</span></span><span>מוכן</span></div>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar"><i data-lucide="search"></i></span><span>מחפשים שחקן...</span></span></div>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar"><i data-lucide="search"></i></span><span>מחפשים שחקן...</span></span></div>
+          <div class="wf-panel">המשחק יתחיל בעוד <strong>30</strong> שניות, או מיד כשנגיע ל־8.</div>
+          <div class="wf-actions"><button class="wf-button wf-button-ghost">ביטול</button></div>
+        </div>`
+      },
+      {
+        name: 'לא נמצא משחק בקטגוריה', route: '/online/no-match',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="חזרה"><i data-lucide="arrow-right"></i></button><div class="wf-header-title">חיפוש משחק</div><span></span></header>
+        <div class="wf-body wf-center">
+          <div class="wf-placeholder"><i data-lucide="search-x"></i></div>
+          <h1 class="wf-title">לא נמצא משחק מתאים</h1>
+          <p class="wf-subtitle">לא מצאנו מספיק שחקנים בקטגוריות שבחרת.</p>
+          <div class="wf-panel">הבחירה שלך נשארה: אוכל, ספורט</div>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">בחירת קטגוריות אחרות</button><button class="wf-button wf-button-ghost">ניסיון נוסף</button></div>
+        </div>`
+      },
+      {
+        name: 'חשיפת תפקיד — אזרח', route: '/game/role/citizen',
+        html: `<div class="wf-body wf-center">
+          <p class="wf-subtitle">קטגוריה: אוכל</p>
+          <div class="wf-placeholder"><i data-lucide="eye"></i></div>
+          <h1 class="wf-title">המילה שלך</h1>
+          <div class="wf-panel wf-panel-strong"><strong>פיצה</strong></div>
+          <p class="wf-note">תנו רמז שיראה שאתם יודעים את המילה, בלי לחשוף אותה.</p>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">הבנתי</button></div>
+        </div>`
+      },
+      {
+        name: 'חשיפת תפקיד — מתחזה', route: '/game/role/impostor',
+        html: `<div class="wf-body wf-center">
+          <p class="wf-subtitle">קטגוריה: אוכל</p>
+          <div class="wf-placeholder"><i data-lucide="venetian-mask"></i></div>
+          <h1 class="wf-title">אתה המתחזה</h1>
+          <div class="wf-panel wf-panel-strong">לא קיבלת את המילה</div>
+          <p class="wf-note">הקשב לרמזים, נסה להשתלב ולגלות מה המילה.</p>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">הבנתי</button></div>
+        </div>`
+      },
+      {
+        name: 'משחק — ממתינים לתור', route: '/game/clues/waiting',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="יציאה"><i data-lucide="log-out"></i></button><div class="wf-header-title">קטגוריה: אוכל</div><span class="wf-timer-circle">11</span></header>
+        <div class="wf-body">
+          <button class="wf-button wf-button-ghost"><i data-lucide="eye"></i> הצגת המילה שלי</button>
+          <div class="wf-panel wf-panel-strong"><div class="wf-player"><span class="wf-avatar">נ</span><div><strong>התור של נועה</strong><br><span class="wf-note">כותבת רמז...</span></div></div></div>
+          <div class="wf-row"><span>יואב</span><strong>איטליה</strong></div>
+          <div class="wf-row"><span>מאיה</span><strong>משולש</strong></div>
+          <div class="wf-reactions" aria-label="תגובות לרמז האחרון"><button class="wf-reaction">😂</button><button class="wf-reaction">🤨</button><button class="wf-reaction">🤔</button><button class="wf-reaction">👀</button><button class="wf-reaction">חשוד מאוד</button><button class="wf-reaction">מה הקשר?</button><button class="wf-reaction">רמז טוב</button></div>
+          <p class="wf-note">אפשר להגיב כמה פעמים. התגובות אינן עוצרות את התור הבא.</p>
+        </div>`
+      },
+      {
+        name: 'משחק — התור שלי', route: '/game/clues/my-turn',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="יציאה"><i data-lucide="log-out"></i></button><div class="wf-header-title">קטגוריה: אוכל</div><span class="wf-timer-circle">15</span></header>
+        <div class="wf-body">
+          <button class="wf-button wf-button-ghost"><i data-lucide="eye"></i> הצגת המילה שלי</button>
+          <div class="wf-panel wf-panel-strong"><strong>התור שלך</strong></div>
+          <label class="wf-field">רמז של מילה אחת<input class="wf-input" placeholder="כתבו רמז..." maxlength="25"></label>
+          <p class="wf-note">0 מתוך 25 תווים</p>
+          <button class="wf-button wf-button-primary">שליחת רמז</button>
+          <hr>
+          <div class="wf-row"><span>יואב</span><strong>איטליה</strong></div>
+          <div class="wf-row"><span>מאיה</span><strong>משולש</strong></div>
+        </div>`
+      },
+      {
+        name: 'משחק — רמז חסום', route: '/game/clues/invalid',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="יציאה"><i data-lucide="log-out"></i></button><div class="wf-header-title">קטגוריה: אוכל</div><span class="wf-timer-circle">09</span></header>
+        <div class="wf-body">
+          <button class="wf-button wf-button-ghost"><i data-lucide="eye"></i> הצגת המילה שלי</button>
+          <div class="wf-panel wf-panel-strong"><strong>התור שלך</strong></div>
+          <label class="wf-field">רמז של מילה אחת<input class="wf-input" value="פיצה" maxlength="25" aria-invalid="true" aria-describedby="clue-error"></label>
+          <div class="wf-error-box" id="clue-error" role="alert">הרמז מכיל את המילה הסודית. צריך לבחור מילה אחרת.</div>
+          <p class="wf-note">אפשר להציג כאן גם: רמז שכבר נשלח · יותר ממילה אחת · תוכן לא ראוי.</p>
+          <button class="wf-button wf-button-primary">שליחת רמז אחר</button>
+          <hr>
+          <div class="wf-row"><span>יואב</span><strong>איטליה</strong></div>
+          <div class="wf-row"><span>מאיה</span><strong>משולש</strong></div>
+        </div>`
+      },
+      {
+        name: 'הצבעה', route: '/game/vote',
+        html: `<header class="wf-header"><span></span><div class="wf-header-title">מי המתחזה?</div><span class="wf-timer-circle">20</span></header>
+        <div class="wf-body">
+          <p class="wf-subtitle">בחרו שחקן אחד. אפשר לשנות עד שהזמן נגמר.</p>
+          <button class="wf-vote"><span class="wf-player"><span class="wf-avatar">י</span><span>יואב — איטליה</span></span></button>
+          <button class="wf-vote wf-vote-selected"><span class="wf-player"><span class="wf-avatar">מ</span><span>מאיה — משולש</span></span></button>
+          <button class="wf-vote"><span class="wf-player"><span class="wf-avatar">נ</span><span>נועה — עגול</span></span></button>
+          <button class="wf-vote" disabled><span class="wf-player"><span class="wf-avatar">ד</span><span>דור — אני</span></span></button>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">אישור הצבעה</button></div>
+        </div>`
+      },
+      {
+        name: 'הצבעה חוזרת', route: '/game/vote/runoff',
+        html: `<header class="wf-header"><span></span><div class="wf-header-title">יש תיקו</div><span class="wf-timer-circle">15</span></header>
+        <div class="wf-body wf-center">
+          <p class="wf-subtitle">הצביעו שוב בין שני החשודים</p>
+          <button class="wf-vote"><span class="wf-player"><span class="wf-avatar wf-avatar-large">י</span><span><strong>יואב</strong><br>הרמז: איטליה</span></span></button>
+          <button class="wf-vote"><span class="wf-player"><span class="wf-avatar wf-avatar-large">מ</span><span><strong>מאיה</strong><br>הרמז: משולש</span></span></button>
+          <p class="wf-note">תיקו נוסף = המתחזה מנצח</p>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">אישור</button></div>
+        </div>`
+      },
+      {
+        name: 'ניחוש המתחזה', route: '/game/impostor-guess',
+        html: `<header class="wf-header"><span></span><div class="wf-header-title">המתחזה נתפס</div><span class="wf-timer-circle">15</span></header>
+        <div class="wf-body wf-center">
+          <div class="wf-placeholder"><i data-lucide="venetian-mask"></i></div>
+          <h1 class="wf-title">אפשר עדיין לנצח</h1>
+          <p class="wf-subtitle">נחשו את המילה הסודית</p>
+          <label class="wf-field">הניחוש שלך<input class="wf-input" placeholder="כתבו את המילה..."></label>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">שליחת ניחוש</button></div>
+        </div>`
+      },
+      {
+        name: 'תוצאה — האזרחים ניצחו', route: '/game/result/citizens',
+        html: `<div class="wf-body wf-center">
+          <div class="wf-placeholder"><i data-lucide="trophy"></i></div>
+          <h1 class="wf-title">האזרחים ניצחו</h1>
+          <p class="wf-subtitle">המתחזה נתפס ולא ניחש את המילה</p>
+          <p class="wf-note">כל האזרחים שנשארו במשחק מקבלים ניצחון.</p>
+          <div class="wf-panel"><strong>המתחזה: מאיה</strong><br>המילה: פיצה</div>
+          <div class="wf-row"><span>3 הצבעות</span><span>מאיה</span></div>
+          <div class="wf-row"><span>1 הצבעה</span><span>יואב</span></div>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">משחק נוסף</button><button class="wf-button wf-button-ghost">יציאה</button></div>
+        </div>`
+      },
+      {
+        name: 'תוצאה — המתחזה ניצח', route: '/game/result/impostor',
+        html: `<div class="wf-body wf-center">
+          <div class="wf-placeholder"><i data-lucide="venetian-mask"></i></div>
+          <h1 class="wf-title">המתחזה ניצח</h1>
+          <p class="wf-subtitle">המתחזה לא נבחר בהצבעה</p>
+          <div class="wf-panel"><strong>המתחזה: מאיה</strong><br>המילה הייתה: פיצה</div>
+          <div class="wf-row"><span>3 הצבעות</span><span>יואב</span></div>
+          <div class="wf-row"><span>1 הצבעה</span><span>מאיה</span></div>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">משחק נוסף</button><button class="wf-button wf-button-ghost">יציאה</button></div>
+        </div>`
+      },
+      {
+        name: 'תוצאה — המשחק הופסק', route: '/game/result/not-enough-players',
+        html: `<div class="wf-body wf-center">
+          <div class="wf-placeholder"><i data-lucide="users-round"></i></div>
+          <h1 class="wf-title">לא נשארו מספיק שחקנים</h1>
+          <p class="wf-subtitle">המשחק הסתיים לאחר ששחקנים עזבו.</p>
+          <div class="wf-panel"><strong>נשארתם במשחק עד הסוף</strong><br>נרשם לכם ניצחון.</div>
+          <p class="wf-note">לכל שחקן שעזב נרשם הפסד.</p>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">משחק נוסף</button><button class="wf-button wf-button-ghost">חזרה למסך הבית</button></div>
+        </div>`
+      },
+      {
+        name: 'משחק עם חברים', route: '/friends',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="חזרה"><i data-lucide="arrow-right"></i></button><div class="wf-header-title">משחק עם חברים</div><span></span></header>
+        <div class="wf-body wf-center">
+          <div class="wf-placeholder"><i data-lucide="users"></i></div>
+          <h1 class="wf-title">משחק פרטי</h1>
+          <p class="wf-subtitle">צרו חדר חדש או הצטרפו עם קוד</p>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">יצירת חדר</button><button class="wf-button">הצטרפות לחדר</button></div>
+        </div>`
+      },
+      {
+        name: 'יצירת חדר', route: '/friends/create',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="חזרה"><i data-lucide="arrow-right"></i></button><div class="wf-header-title">יצירת חדר</div><span></span></header>
+        <div class="wf-body">
+          <label class="wf-field">מספר שחקנים מרבי<select class="wf-input"><option>8</option><option>7</option><option>6</option><option>5</option><option>4</option></select></label>
+          <label class="wf-field">זמן לרמז<select class="wf-input"><option>15 שניות</option><option>10 שניות</option><option>20 שניות</option></select></label>
+          <div class="wf-field"><span>קטגוריות</span><div class="wf-grid"><button class="wf-chip wf-chip-selected">הכול</button><button class="wf-chip">אוכל</button><button class="wf-chip">ספורט</button><button class="wf-chip">מקומות</button></div></div>
+          <p class="wf-note">לאחר ששחקן נוסף יצטרף, אי אפשר יהיה לשנות את ההגדרות.</p>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">יצירת חדר</button></div>
+        </div>`
+      },
+      {
+        name: 'הצטרפות לחדר', route: '/friends/join',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="חזרה"><i data-lucide="arrow-right"></i></button><div class="wf-header-title">הצטרפות לחדר</div><span></span></header>
+        <div class="wf-body wf-center">
+          <div class="wf-placeholder"><i data-lucide="key-round"></i></div>
+          <h1 class="wf-title">מה קוד החדר?</h1>
+          <label class="wf-field">קוד בן 6 ספרות<input class="wf-input" inputmode="numeric" value="482 913" dir="ltr"></label>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">הצטרפות</button></div>
+        </div>`
+      },
+      {
+        name: 'לובי פרטי', route: '/friends/lobby',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="יציאה"><i data-lucide="log-out"></i></button><div class="wf-header-title">החדר של דור</div><button class="wf-icon" aria-label="שיתוף"><i data-lucide="share-2"></i></button></header>
+        <div class="wf-body">
+          <div class="wf-code">482913</div>
+          <p class="wf-subtitle">4 מתוך 8 שחקנים · אפשר להתחיל</p>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar">ד</span><span>דור</span></span><strong>מנהל</strong></div>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar">נ</span><span>נועה</span></span><button class="wf-inline-action">הסרה</button></div>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar">י</span><span>יואב</span></span><button class="wf-inline-action">הסרה</button></div>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar">מ</span><span>מאיה</span></span><button class="wf-inline-action">הסרה</button></div>
+          <div class="wf-panel">קטגוריות: הכול · רמז: 15 שניות<br><span class="wf-note">ההגדרות נעולות</span></div>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">התחלת משחק</button></div>
+        </div>`
+      },
+      {
+        name: 'לובי — העברת ניהול', route: '/friends/lobby/host-transfer',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="יציאה"><i data-lucide="log-out"></i></button><div class="wf-header-title">החדר של דור</div><button class="wf-icon" aria-label="שיתוף"><i data-lucide="share-2"></i></button></header>
+        <div class="wf-body">
+          <div class="wf-code">482913</div>
+          <div class="wf-panel wf-panel-strong"><strong>המנהל לא חזר בזמן</strong><br>הניהול הועבר אוטומטית.</div>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar">ד</span><span>דור</span></span><span class="wf-danger">מנותק</span></div>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar">נ</span><span>נועה</span></span><strong>מנהלת חדשה</strong></div>
+          <div class="wf-row"><span class="wf-player"><span class="wf-avatar">י</span><span>יואב</span></span><span>מוכן</span></div>
+          <div class="wf-panel">נועה קיבלה ניהול כי היא השחקנית המחוברת הוותיקה ביותר. אם דור יחזור, הניהול יישאר אצל נועה.</div>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">המשך</button></div>
+        </div>`
+      },
+      {
+        name: 'פרופיל', route: '/profile',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="חזרה"><i data-lucide="arrow-right"></i></button><div class="wf-header-title">פרופיל</div><button class="wf-icon" aria-label="עריכה"><i data-lucide="pencil"></i></button></header>
+        <div class="wf-body wf-center">
+          <span class="wf-avatar wf-avatar-large">ד</span>
+          <h1 class="wf-title">דור</h1>
+          <div class="wf-stat-grid"><div class="wf-stat"><strong>12</strong><span>ניצחונות</span></div><div class="wf-stat"><strong>8</strong><span>הפסדים</span></div></div>
+          <p class="wf-note">ב־MVP נשמרים ניצחונות והפסדים בלבד</p>
+        </div>`
+      },
+      {
+        name: 'הגדרות', route: '/settings',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="חזרה"><i data-lucide="arrow-right"></i></button><div class="wf-header-title">הגדרות</div><span></span></header>
+        <div class="wf-body">
+          <div class="wf-row"><span>צלילים</span><span class="wf-switch" aria-label="צלילים פעילים"></span></div>
+          <div class="wf-row"><span>רטט</span><span class="wf-switch" aria-label="רטט פעיל"></span></div>
+          <div class="wf-row"><span>הצגת תגובות</span><span class="wf-switch" aria-label="תגובות פעילות"></span></div>
+          <div class="wf-row"><span>שפה</span><strong>עברית</strong></div>
+          <button class="wf-button wf-button-ghost">תנאי שימוש</button>
+          <button class="wf-button wf-button-ghost">מדיניות פרטיות</button>
+        </div>`
+      },
+      {
+        name: 'איך משחקים?', route: '/how-to-play',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="חזרה"><i data-lucide="arrow-right"></i></button><div class="wf-header-title">איך משחקים?</div><span></span></header>
+        <div class="wf-body">
+          <div class="wf-row"><strong>1</strong><span>כולם מקבלים אותה מילה, מלבד המתחזה.</span></div>
+          <div class="wf-row"><strong>2</strong><span>כל שחקן כותב בתורו רמז אחד.</span></div>
+          <div class="wf-row"><strong>3</strong><span>אפשר להגיב בלי הגבלה עם אימוג׳ים והודעות מוכנות.</span></div>
+          <div class="wf-row"><strong>4</strong><span>מצביעים מי לדעתכם המתחזה.</span></div>
+          <div class="wf-row"><strong>5</strong><span>אם נתפס, המתחזה יכול לנחש את המילה ולנצח.</span></div>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">הבנתי</button></div>
+        </div>`
+      },
+      {
+        name: 'ניתוק בזמן תור', route: '/game/reconnecting',
+        html: `<header class="wf-header"><span></span><div class="wf-header-title">המשחק ממשיך</div><span class="wf-timer-circle">30</span></header>
+        <div class="wf-body">
+          <div class="wf-row"><span>יואב</span><strong>איטליה</strong></div>
+          <div class="wf-overlay">
+            <div class="wf-placeholder wf-auto-center"><i data-lucide="wifi-off"></i></div>
+            <h1 class="wf-title">החיבור נותק</h1>
+            <p class="wf-subtitle">מנסים להתחבר מחדש</p>
+            <p class="wf-note">ניתוק 1 מתוך 3</p>
+          </div>
+        </div>`
+      },
+      {
+        name: 'הוצאה לאחר ניתוקים', route: '/game/removed',
+        html: `<div class="wf-body wf-center">
+          <div class="wf-placeholder wf-danger"><i data-lucide="unplug"></i></div>
+          <h1 class="wf-title">המשחק הסתיים עבורך</h1>
+          <p class="wf-subtitle">הוצאת מהמשחק לאחר הניתוק השלישי</p>
+          <div class="wf-panel">נרשם הפסד למשחק הזה</div>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">חזרה למסך הבית</button></div>
+        </div>`
+      },
+      {
+        name: 'שגיאת הצטרפות', route: '/friends/join/error',
+        html: `<header class="wf-header"><button class="wf-icon" aria-label="חזרה"><i data-lucide="arrow-right"></i></button><div class="wf-header-title">הצטרפות לחדר</div><span></span></header>
+        <div class="wf-body wf-center">
+          <div class="wf-placeholder wf-danger"><i data-lucide="circle-alert"></i></div>
+          <h1 class="wf-title">החדר לא נמצא</h1>
+          <p class="wf-subtitle">בדקו את הקוד ונסו שוב</p>
+          <label class="wf-field">קוד חדר<input class="wf-input" value="482 913" dir="ltr"></label>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">ניסיון נוסף</button><button class="wf-button wf-button-ghost">חזרה</button></div>
+        </div>`
+      },
+      {
+        name: 'תקלה בשרת', route: '/error/server',
+        html: `<div class="wf-body wf-center">
+          <div class="wf-placeholder wf-danger"><i data-lucide="server-crash"></i></div>
+          <h1 class="wf-title">אי אפשר להמשיך את המשחק</h1>
+          <p class="wf-subtitle">אירעה תקלה בחיבור לשרת. אפשר לנסות להתחבר שוב.</p>
+          <div class="wf-panel"><strong>לא נרשם הפסד</strong><br>התוצאה של המשחק הזה לא נשמרה.</div>
+          <div class="wf-actions"><button class="wf-button wf-button-primary">ניסיון נוסף</button><button class="wf-button wf-button-ghost">חזרה למסך הבית</button></div>
+        </div>`
+      }
+    ];
+
+    const root = document.getElementById('imposter-wireframes-v2');
+    const phone = root.querySelector('#wf-phone');
+    const select = root.querySelector('#wf-screen-select');
+    const counter = root.querySelector('#wf-counter');
+    const route = root.querySelector('#wf-route');
+    const previous = root.querySelector('#wf-prev');
+    const next = root.querySelector('#wf-next');
+    let active = 0;
+
+    screens.forEach((screen, index) => {
+      const option = document.createElement('option');
+      option.value = String(index);
+      option.textContent = `${index + 1}. ${screen.name}`;
+      select.appendChild(option);
+    });
+
+    function render() {
+      const screen = screens[active];
+      phone.innerHTML = screen.html;
+      select.value = String(active);
+      counter.textContent = `${active + 1} מתוך ${screens.length}`;
+      route.textContent = screen.route;
+      previous.disabled = active === 0;
+      next.disabled = active === screens.length - 1;
+      if (window.lucide) window.lucide.createIcons({ attrs: { width: 18, height: 18 } });
+    }
+
+    previous.addEventListener('click', () => {
+      if (active > 0) active -= 1;
+      render();
+    });
+    next.addEventListener('click', () => {
+      if (active < screens.length - 1) active += 1;
+      render();
+    });
+    select.addEventListener('change', () => {
+      active = Number(select.value);
+      render();
+    });
+
+    render();
+  })();
+</script>

@@ -15,12 +15,13 @@
 - [החלטות מאושרות](docs/decisions.md)
 - [שאלות פתוחות](docs/open-decisions.md)
 - [כיוון עיצובי](docs/design-direction.md)
+- [Wireframes וכל מצבי המסכים](docs/wireframes.md)
 - [הנחיות עיצוב לקלוד](CLAUDE.md)
 
 ## סטטוס
 
 - מצב מילה: באפיון
-- Wireframe: טיוטה מאושרת כבסיס
+- Wireframe: גרסה מעודכנת עם 29 מסכים ומצבי מערכת
 - מצב שאלה: מחוץ ל־MVP ויתוכנן בהמשך
 - כיוון עיצובי: נקבע; ביצוע עיצוב מלא טרם נעשה
 - Flutter ו־Backend: טרם נוצרו
