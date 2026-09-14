@@ -374,7 +374,7 @@ func TestTieGoesToRunoffAmongTiedOnly(t *testing.T) {
 		t.Fatalf("runoff candidates = %v, want %v", g.candidates, want)
 	}
 	now = now.Add(20 * time.Second)
-	if want := now.Add(20 * time.Second); !g.Deadline().Equal(want) {
+	if want := now.Add(15 * time.Second); !g.Deadline().Equal(want) {
 		t.Fatalf("runoff deadline = %v, want %v", g.Deadline(), want)
 	}
 	if v, _ := g.View(c[0]); v.MyVote != "" {
@@ -385,7 +385,7 @@ func TestTieGoesToRunoffAmongTiedOnly(t *testing.T) {
 	t.Run("second tie impostor wins", func(t *testing.T) {
 		must(t, g.Vote(c[0], c[1], now))
 		must(t, g.Vote(c[2], g.impostor, now))
-		g.Tick(now.Add(20 * time.Second))
+		g.Tick(now.Add(15 * time.Second))
 		wantResult(t, g, TeamImpostor, ReasonSecondTie)
 		if len(g.result.VoteRounds) != 2 {
 			t.Fatalf("vote rounds = %d, want 2", len(g.result.VoteRounds))
@@ -402,7 +402,7 @@ func TestRunoffCatchesImpostor(t *testing.T) {
 	now = now.Add(20 * time.Second)
 	g.Tick(now)
 	must(t, g.Vote(c[0], g.impostor, now))
-	g.Tick(now.Add(20 * time.Second))
+	g.Tick(now.Add(15 * time.Second))
 	wantPhase(t, g, PhaseImpostorGuess)
 }
 
@@ -466,6 +466,67 @@ func TestThirdDisconnectRemovesWithLoss(t *testing.T) {
 	if v, _ := g.View(p); v.Players[0].Status != StatusRemoved {
 		t.Fatal("removed player must still receive a view")
 	}
+}
+
+func TestEveryDisconnectInTheGameCounts(t *testing.T) {
+	g := newGame(t, 5)
+	p := citizens(g)[0]
+	must(t, g.Disconnect(p, t0)) // role reveal
+	must(t, g.Reconnect(p, t0))
+	now := toVoting(t, g)
+	must(t, g.Disconnect(p, now)) // voting
+	if g.players[p].disconnects != 2 {
+		t.Fatalf("disconnects = %d, want 2", g.players[p].disconnects)
+	}
+	g.Tick(now.Add(time.Minute))
+	if g.players[p].status != StatusActive {
+		t.Fatal("a second disconnect outside the turn must not remove the player")
+	}
+	must(t, g.Reconnect(p, now.Add(time.Minute)))
+	must(t, g.Disconnect(p, now.Add(time.Minute))) // ended: not counted
+	if g.players[p].disconnects != 2 {
+		t.Fatal("disconnects after the game ended must not count")
+	}
+}
+
+func TestThirdDisconnectOutsideTurnRemovesAfterThirtySeconds(t *testing.T) {
+	setup := func(t *testing.T) (*Game, string, time.Time) {
+		g := newGame(t, 5)
+		p := citizens(g)[0]
+		for range 2 {
+			must(t, g.Disconnect(p, t0))
+			must(t, g.Reconnect(p, t0))
+		}
+		now := toVoting(t, g)
+		voteAllFor(t, g, g.impostor, now) // voting ends at +20s, guess runs until +35s
+		must(t, g.Disconnect(p, now))
+		g.Tick(now.Add(20 * time.Second))
+		if want := now.Add(30 * time.Second); !g.Deadline().Equal(want) {
+			t.Fatalf("next deadline = %v, want removal at %v", g.Deadline(), want)
+		}
+		return g, p, now
+	}
+
+	t.Run("not back in time", func(t *testing.T) {
+		g, p, now := setup(t)
+		g.Tick(now.Add(30 * time.Second))
+		if g.players[p].status != StatusRemoved {
+			t.Fatalf("status = %s, want removed", g.players[p].status)
+		}
+		wantPhase(t, g, PhaseImpostorGuess)
+		g.Tick(now.Add(35 * time.Second))
+		if g.result.Outcomes[p] != OutcomeLoss {
+			t.Fatal("a removed citizen loses even when citizens win")
+		}
+	})
+	t.Run("back in time", func(t *testing.T) {
+		g, p, now := setup(t)
+		must(t, g.Reconnect(p, now.Add(29*time.Second)))
+		g.Tick(now.Add(time.Hour))
+		if g.players[p].status != StatusActive {
+			t.Fatal("a player who returned in time stays in the game")
+		}
+	})
 }
 
 func TestDisconnectedVoterAddsNoVote(t *testing.T) {

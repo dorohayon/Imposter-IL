@@ -22,7 +22,8 @@ const (
 	MinPlayersToStart    = 4
 	MinPlayersToContinue = 3
 	MaxHintRunes         = 25
-	// MaxDisconnects is the disconnect count at which an unreturned player is removed.
+	// MaxDisconnects is the disconnect count at which a player who does not
+	// return within ReconnectDuration is removed.
 	MaxDisconnects = 3
 )
 
@@ -99,10 +100,11 @@ var (
 )
 
 type Config struct {
-	HintDuration      time.Duration
-	VoteDuration      time.Duration
-	GuessDuration     time.Duration
-	ReconnectDuration time.Duration
+	HintDuration       time.Duration
+	VoteDuration       time.Duration
+	RunoffVoteDuration time.Duration
+	GuessDuration      time.Duration
+	ReconnectDuration  time.Duration
 	// RoleRevealTimeout is an open product question; zero waits until every
 	// connected player has confirmed their role.
 	RoleRevealTimeout time.Duration
@@ -111,10 +113,11 @@ type Config struct {
 // DefaultConfig returns the approved durations. Private rooms override HintDuration.
 func DefaultConfig() Config {
 	return Config{
-		HintDuration:      15 * time.Second,
-		VoteDuration:      20 * time.Second,
-		GuessDuration:     15 * time.Second,
-		ReconnectDuration: 30 * time.Second,
+		HintDuration:       15 * time.Second,
+		VoteDuration:       20 * time.Second,
+		RunoffVoteDuration: 15 * time.Second,
+		GuessDuration:      15 * time.Second,
+		ReconnectDuration:  30 * time.Second,
 	}
 }
 
@@ -176,6 +179,7 @@ type player struct {
 	connected   bool
 	disconnects int
 	confirmed   bool
+	removeAt    time.Time // set on the third disconnect until the player returns
 }
 
 type Game struct {
@@ -212,7 +216,7 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 		return nil, fmt.Errorf("%w: category and secret word are required", ErrInvalidSetup)
 	case rng == nil || policy.CheckHint == nil || policy.GuessMatches == nil || policy.ValidReaction == nil:
 		return nil, fmt.Errorf("%w: rng and every policy function are required", ErrInvalidSetup)
-	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout < 0:
+	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout < 0:
 		return nil, fmt.Errorf("%w: invalid durations", ErrInvalidSetup)
 	}
 	g := &Game{
@@ -236,16 +240,47 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 	return g, nil
 }
 
-// Deadline is when the current phase expires; zero means no timer.
-func (g *Game) Deadline() time.Time { return g.deadline }
+// Deadline is the next moment Tick has work to do: the phase timer or a
+// pending removal after a third disconnect. Zero means nothing is scheduled.
+func (g *Game) Deadline() time.Time {
+	next, _ := g.nextDeadline()
+	return next
+}
 
-// Tick applies every deadline that has passed. Commands call it first, so a
-// late or stale command can never act on an expired phase.
+// Tick applies every deadline that has passed, in order. Commands call it
+// first, so a late or stale command can never act on an expired phase.
 func (g *Game) Tick(now time.Time) {
-	for !g.deadline.IsZero() && !now.Before(g.deadline) {
-		g.expire(g.deadline)
+	for {
+		at, removeID := g.nextDeadline()
+		if at.IsZero() || now.Before(at) {
+			return
+		}
+		if removeID != "" {
+			g.remove(removeID, StatusRemoved, at)
+		} else {
+			g.expire(at)
+		}
 		g.version++
 	}
+}
+
+// nextDeadline returns the earliest deadline and, when it is a removal, the
+// player to remove. Removals win ties so a removed player's turn is not skipped first.
+func (g *Game) nextDeadline() (time.Time, string) {
+	next, removeID := g.deadline, ""
+	if g.phase == PhaseEnded {
+		return next, ""
+	}
+	for _, id := range g.order {
+		p := g.players[id]
+		if p.status != StatusActive || p.removeAt.IsZero() {
+			continue
+		}
+		if next.IsZero() || p.removeAt.Before(next) || (removeID == "" && p.removeAt.Equal(next)) {
+			next, removeID = p.removeAt, id
+		}
+	}
+	return next, removeID
 }
 
 func (g *Game) ConfirmRole(playerID string, now time.Time) error {
@@ -372,9 +407,15 @@ func (g *Game) Disconnect(playerID string, now time.Time) error {
 		return err
 	}
 	p.connected = false
+	if g.phase != PhaseEnded {
+		p.disconnects++
+		if p.disconnects >= MaxDisconnects {
+			p.removeAt = now.Add(g.cfg.ReconnectDuration)
+		}
+	}
 	switch {
 	case g.phase == PhaseHints && g.order[g.turn] == playerID:
-		g.awaitReconnect(p, now)
+		g.awaitReconnect(now)
 	case g.phase == PhaseRoleReveal:
 		g.maybeFinishRoleReveal(now)
 	}
@@ -391,6 +432,7 @@ func (g *Game) Reconnect(playerID string, now time.Time) error {
 		return err
 	}
 	p.connected = true
+	p.removeAt = time.Time{}
 	if g.phase == PhaseHints && g.order[g.turn] == playerID {
 		g.reconnecting = false
 		g.setPhase(PhaseHints, now, g.cfg.HintDuration)
@@ -474,12 +516,7 @@ func (g *Game) expire(at time.Time) {
 	case PhaseRoleReveal:
 		g.startTurn(0, at)
 	case PhaseHints:
-		id := g.order[g.turn]
-		if g.reconnecting && g.players[id].disconnects >= MaxDisconnects {
-			g.remove(id, StatusRemoved, at)
-			return
-		}
-		g.hints = append(g.hints, Hint{PlayerID: id, Missing: true})
+		g.hints = append(g.hints, Hint{PlayerID: g.order[g.turn], Missing: true})
 		g.startTurn(g.turn+1, at)
 	case PhaseVoting, PhaseRunoffVoting:
 		g.tally(at)
@@ -504,31 +541,30 @@ func (g *Game) startTurn(i int, at time.Time) {
 		i++
 	}
 	if i == len(g.order) {
-		g.startVoting(PhaseVoting, g.activeIDs(), at)
+		g.startVoting(PhaseVoting, g.activeIDs(), at, g.cfg.VoteDuration)
 		return
 	}
 	g.turn = i
 	g.reconnecting = false
-	if p := g.players[g.order[i]]; !p.connected {
-		g.awaitReconnect(p, at)
+	if !g.players[g.order[i]].connected {
+		g.awaitReconnect(at)
 		return
 	}
 	g.setPhase(PhaseHints, at, g.cfg.HintDuration)
 }
 
-// awaitReconnect counts a disconnect on the player's own turn and holds the
-// turn for the reconnect window.
-func (g *Game) awaitReconnect(p *player, at time.Time) {
-	p.disconnects++
+// awaitReconnect holds the current turn for the reconnect window; if the
+// player does not return, the turn is skipped.
+func (g *Game) awaitReconnect(at time.Time) {
 	g.reconnecting = true
 	g.setPhase(PhaseHints, at, g.cfg.ReconnectDuration)
 }
 
-func (g *Game) startVoting(phase Phase, candidates []string, at time.Time) {
+func (g *Game) startVoting(phase Phase, candidates []string, at time.Time, d time.Duration) {
 	g.reconnecting = false
 	g.candidates = candidates
 	g.votes = map[string]string{}
-	g.setPhase(phase, at, g.cfg.VoteDuration)
+	g.setPhase(phase, at, d)
 }
 
 func (g *Game) tally(at time.Time) {
@@ -556,7 +592,7 @@ func (g *Game) tally(at time.Time) {
 	case len(top) == 1 && top[0] == g.impostor:
 		g.setPhase(PhaseImpostorGuess, at, g.cfg.GuessDuration)
 	case len(top) > 1 && g.phase == PhaseVoting:
-		g.startVoting(PhaseRunoffVoting, top, at)
+		g.startVoting(PhaseRunoffVoting, top, at, g.cfg.RunoffVoteDuration)
 	case len(top) > 1:
 		g.end(TeamImpostor, ReasonSecondTie)
 	default: // a citizen was selected, or nobody received a vote
