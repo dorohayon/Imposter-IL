@@ -18,6 +18,7 @@
 - [Wireframes וכל מצבי המסכים](docs/wireframes.md)
 - [הנחיות עיצוב לקלוד](CLAUDE.md)
 - [נכסי איור — 12 אווטארים ו־11 אילוסטרציות](assets/README.md)
+- [מעקב משימות וסטטוס](TASKS.md)
 
 ## סטטוס
 
