@@ -176,17 +176,19 @@ func TestRoleRevealWaitsForConnectedPlayers(t *testing.T) {
 	wantErr(t, g.ConfirmRole(g.order[0], t0), ErrWrongPhase)
 }
 
-func TestRoleRevealTimeoutIsOptional(t *testing.T) {
+func TestRoleRevealTimesOutAfterTenSeconds(t *testing.T) {
 	g := newGame(t, 4)
-	if !g.Deadline().IsZero() {
-		t.Fatal("no role reveal timer by default")
+	if want := t0.Add(10 * time.Second); !g.Deadline().Equal(want) {
+		t.Fatalf("role reveal deadline = %v, want %v", g.Deadline(), want)
 	}
-	cfg := DefaultConfig()
-	cfg.RoleRevealTimeout = 10 * time.Second
-	g, err := New(cfg, testPolicy(), ids(4), "c", "w", rand.New(rand.NewPCG(1, 2)), t0)
-	must(t, err)
+	must(t, g.ConfirmRole(g.order[0], t0))
+	g.Tick(t0.Add(9 * time.Second))
+	wantPhase(t, g, PhaseRoleReveal)
 	g.Tick(t0.Add(10 * time.Second))
 	wantPhase(t, g, PhaseHints)
+	if want := t0.Add(25 * time.Second); !g.Deadline().Equal(want) {
+		t.Fatalf("first turn deadline = %v, want %v", g.Deadline(), want)
+	}
 }
 
 func TestHintTurnsFollowOrderWithFifteenSeconds(t *testing.T) {

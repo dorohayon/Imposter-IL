@@ -105,14 +105,15 @@ type Config struct {
 	RunoffVoteDuration time.Duration
 	GuessDuration      time.Duration
 	ReconnectDuration  time.Duration
-	// RoleRevealTimeout is an open product question; zero waits until every
-	// connected player has confirmed their role.
+	// RoleRevealTimeout moves the game to hints even if some players have not
+	// confirmed; it ends earlier once every connected player confirmed.
 	RoleRevealTimeout time.Duration
 }
 
 // DefaultConfig returns the approved durations. Private rooms override HintDuration.
 func DefaultConfig() Config {
 	return Config{
+		RoleRevealTimeout:  10 * time.Second,
 		HintDuration:       15 * time.Second,
 		VoteDuration:       20 * time.Second,
 		RunoffVoteDuration: 15 * time.Second,
@@ -216,7 +217,7 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 		return nil, fmt.Errorf("%w: category and secret word are required", ErrInvalidSetup)
 	case rng == nil || policy.CheckHint == nil || policy.GuessMatches == nil || policy.ValidReaction == nil:
 		return nil, fmt.Errorf("%w: rng and every policy function are required", ErrInvalidSetup)
-	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout < 0:
+	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0:
 		return nil, fmt.Errorf("%w: invalid durations", ErrInvalidSetup)
 	}
 	g := &Game{
