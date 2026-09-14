@@ -15,6 +15,8 @@ void main() {
       400,
       scrollable: find.byType(Scrollable).first,
     );
+    await tester.drag(find.byType(ListView), const Offset(0, -120));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('ממשיכים'));
     await tester.pumpAndSettle();
 
