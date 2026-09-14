@@ -10,6 +10,11 @@ void main() {
     expect(find.byType(TextField), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'דור');
+    await tester.scrollUntilVisible(
+      find.text('ממשיכים'),
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('ממשיכים'));
     await tester.pumpAndSettle();
 
