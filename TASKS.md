@@ -48,6 +48,9 @@
 - [x] נקבעו Flutter לאפליקציה, Go לשרת ו־monorepo.
 - [x] נכתב מסמך ארכיטקטורה: `docs/architecture.md`.
 - [x] הוגדרו חוזי REST ו־WebSocket: `docs/protocol.md`.
+- [x] נוצר שלד שרת Go עם `GET /healthz` תחת `server/`.
+- [x] מומש מנוע משחק ראשון ב־`server/internal/game`, ללא תלות ב־HTTP או במסד נתונים: חשיפת תפקיד, תורות אקראיים, טיימרים, רמזים, תגובות, הצבעה, הצבעה חוזרת, ניחוש, ניתוקים, יציאה ותוצאות.
+- [x] נוספו Unit Tests למעברי המשחק ולחוקים המאושרים.
 - [x] שאלות שעלו בתכנון המנוע נוספו ל־`docs/open-decisions.md`.
 
 ## P0 — השלמת Design V1
@@ -106,7 +109,7 @@
 - [x] לבחור סופית טכנולוגיית Client ל־Android ול־iPhone. — Flutter.
 - [ ] לבחור טכנולוגיית Backend וספק Hosting. — Go נבחר; ספק Hosting פתוח.
 - [x] להחליט אם הקוד ינוהל כ־monorepo או במספר מאגרים. — monorepo.
-- [ ] ליצור מבנה פרויקט ראשוני ל־Client ול־Backend. — פרויקט Flutter ושרת טרם נוצרו.
+- [ ] ליצור מבנה פרויקט ראשוני ל־Client ול־Backend. — שלד השרת נוצר; פרויקט Flutter טרם נוצר.
 - [x] לכתוב מסמך ארכיטקטורה קצר עם גבולות השירותים והאחריות שלהם.
 - [x] להגדיר State Machine שרתית לכל שלבי המשחק והמעברים ביניהם.
 - [x] להגדיר API ופרוטוקול Realtime בין האפליקציה לשרת.
@@ -196,7 +199,7 @@
 
 ## P1 — בדיקות ואיכות
 
-- [ ] לכתוב Unit Tests לחוקי המשחק ול־State Machine.
+- [x] לכתוב Unit Tests לחוקי המשחק ול־State Machine.
 - [ ] לכתוב Integration Tests ל־API, Realtime ומסד הנתונים.
 - [ ] לכתוב End-to-End Tests לזרימת משחק ברשת.
 - [ ] לכתוב End-to-End Tests לזרימת חדר פרטי.
