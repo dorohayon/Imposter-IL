@@ -164,6 +164,22 @@ func TestOnlyCitizensSeeTheSecretWord(t *testing.T) {
 	}
 }
 
+func TestViewReturnsResultSnapshot(t *testing.T) {
+	g := newGame(t, 4)
+	now := toVoting(t, g)
+	g.Tick(now.Add(20 * time.Second))
+
+	v, _ := g.View(g.impostor)
+	v.Result.Winner = TeamCitizens
+	v.Result.Outcomes[g.impostor] = OutcomeLoss
+	v.Result.VoteRounds[0][g.order[0]] = g.order[1]
+
+	next, _ := g.View(g.impostor)
+	if next.Result.Winner != TeamImpostor || next.Result.Outcomes[g.impostor] != OutcomeWin || len(next.Result.VoteRounds[0]) != 0 {
+		t.Fatalf("mutating result view changed game result: %+v", next.Result)
+	}
+}
+
 func TestRoleRevealWaitsForConnectedPlayers(t *testing.T) {
 	g := newGame(t, 4)
 	must(t, g.Disconnect(g.order[3], t0))
@@ -467,6 +483,29 @@ func TestThirdDisconnectRemovesWithLoss(t *testing.T) {
 	}
 	if v, _ := g.View(p); v.Players[0].Status != StatusRemoved {
 		t.Fatal("removed player must still receive a view")
+	}
+}
+
+func TestSimultaneousRemovalDeadlinesAreAppliedBeforeGameEnds(t *testing.T) {
+	g := newGame(t, 5)
+	g.order = append([]string{g.impostor}, citizens(g)...)
+	confirmAll(t, g)
+	removedCitizen := g.order[1]
+	removeAt := t0.Add(time.Second)
+	for _, id := range []string{g.impostor, removedCitizen} {
+		p := g.players[id]
+		p.connected = false
+		p.disconnects = MaxDisconnects
+		p.removeAt = removeAt
+	}
+
+	g.Tick(removeAt)
+
+	wantResult(t, g, TeamCitizens, ReasonImpostorGone)
+	for _, id := range []string{g.impostor, removedCitizen} {
+		if g.players[id].status != StatusRemoved || g.result.Outcomes[id] != OutcomeLoss {
+			t.Fatalf("%s = %s/%s, want removed/loss", id, g.players[id].status, g.result.Outcomes[id])
+		}
 	}
 }
 

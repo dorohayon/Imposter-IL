@@ -257,11 +257,19 @@ func (g *Game) Tick(now time.Time) {
 			return
 		}
 		if removeID != "" {
-			g.remove(removeID, StatusRemoved, at)
+			var removeIDs []string
+			for _, id := range g.order {
+				p := g.players[id]
+				if p.status == StatusActive && p.removeAt.Equal(at) {
+					removeIDs = append(removeIDs, id)
+				}
+			}
+			g.removeAll(removeIDs, StatusRemoved, at)
+			g.version += uint64(len(removeIDs))
 		} else {
 			g.expire(at)
+			g.version++
 		}
-		g.version++
 	}
 }
 
@@ -471,7 +479,7 @@ func (g *Game) View(playerID string) (View, error) {
 		Reconnecting: g.reconnecting,
 		Candidates:   slices.Clone(g.candidates),
 		MyVote:       g.votes[playerID],
-		Result:       g.result,
+		Result:       cloneResult(g.result),
 	}
 	if playerID == g.impostor {
 		v.Role = RoleImpostor
@@ -602,24 +610,47 @@ func (g *Game) tally(at time.Time) {
 }
 
 func (g *Game) remove(id string, status PlayerStatus, at time.Time) {
-	g.players[id].status = status
-	for voter, target := range g.votes {
-		if voter == id || target == id {
-			delete(g.votes, voter)
+	g.removeAll([]string{id}, status, at)
+}
+
+func (g *Game) removeAll(ids []string, status PlayerStatus, at time.Time) {
+	removedImpostor := false
+	removedCurrentTurn := false
+	for _, id := range ids {
+		g.players[id].status = status
+		removedImpostor = removedImpostor || id == g.impostor
+		removedCurrentTurn = removedCurrentTurn || g.phase == PhaseHints && g.order[g.turn] == id
+		for voter, target := range g.votes {
+			if voter == id || target == id {
+				delete(g.votes, voter)
+			}
 		}
+		g.candidates = slices.DeleteFunc(g.candidates, func(c string) bool { return c == id })
 	}
-	g.candidates = slices.DeleteFunc(g.candidates, func(c string) bool { return c == id })
 
 	switch {
-	case id == g.impostor:
+	case removedImpostor:
 		g.end(TeamCitizens, ReasonImpostorGone)
 	case len(g.activeIDs()) < MinPlayersToContinue:
 		g.end(TeamNone, ReasonNotEnoughPlayers)
 	case g.phase == PhaseRoleReveal:
 		g.maybeFinishRoleReveal(at)
-	case g.phase == PhaseHints && g.order[g.turn] == id:
+	case removedCurrentTurn:
 		g.startTurn(g.turn+1, at)
 	}
+}
+
+func cloneResult(result *Result) *Result {
+	if result == nil {
+		return nil
+	}
+	clone := *result
+	clone.Outcomes = maps.Clone(result.Outcomes)
+	clone.VoteRounds = slices.Clone(result.VoteRounds)
+	for i := range clone.VoteRounds {
+		clone.VoteRounds[i] = maps.Clone(clone.VoteRounds[i])
+	}
+	return &clone
 }
 
 func (g *Game) end(winner Team, reason EndReason) {
