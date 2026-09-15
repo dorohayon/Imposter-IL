@@ -1,6 +1,6 @@
 # חוזי REST ו־WebSocket
 
-גרסה: `v1` (טיוטה). ממומשים כרגע `GET /healthz`, `POST /v1/sessions`, `PATCH /v1/sessions/me`, `POST /v1/rooms` ו־`POST /v1/rooms/join` (`server/internal/api`). שאר החוזה מגדיר את מה שהשרת והאפליקציה יממשו בהמשך. רקע ועקרונות: [`architecture.md`](architecture.md).
+גרסה: `v1` (טיוטה). ממומשים כרגע (`server/internal/api`): `GET /healthz`, `POST /v1/sessions`, `PATCH /v1/sessions/me`, `POST /v1/rooms`, `POST /v1/rooms/join`, ו־`GET /v1/ws` עבור לובי פרטי: המעטפת, idempotency, ping, `session.state`, `room.state`, `room.kicked`, `room.updateSettings`, `room.kick` ו־`room.leave`. הודעות אחרות מקבלות כרגע `invalid_message`. שאר החוזה מגדיר את מה שהשרת והאפליקציה יממשו בהמשך. רקע ועקרונות: [`architecture.md`](architecture.md).
 
 ## מוסכמות
 
@@ -127,6 +127,16 @@
 - השרת שולח ping כל 10 שניות. שני pong חסרים או סגירת socket נחשבים ניתוק (`Disconnect` במנוע). ערכים טכניים הניתנים לכוונון.
 - מסך `חיבור מחדש` (26) מוצג באפליקציה ברגע שהחיבור נפל, לפי ה־Snapshot האחרון.
 
+### פרטי מימוש של החיבור
+
+- חיבור חדש לאותו session מחליף את הקודם. הקודם נסגר (`1008`), וההחלפה אינה נספרת כניתוק.
+- פתיחת חיבור של חבר חדר נחשבת חיבור מחדש (`Reconnect` בחדר), וסגירתו נחשבת ניתוק. חבר שהצטרף ב־REST מופיע כמחובר עד שחיבור ה־WebSocket שלו נסגר.
+- ping נשלח כל 10 שניות. אם ה־pong לא הגיע תוך שני מרווחים, החיבור נסגר ונחשב ניתוק.
+- הודעה שאינה JSON, או בלי `id` או `type`, מקבלת `reply` עם `invalid_message` (עם `replyTo` ריק כשאין `id`). תשובות כאלה אינן נשמרות במטמון.
+- שינויים ב־REST שולחים גם הם `session.state` ו־`room.state` לחיבורים הפתוחים: יצירת חדר, הצטרפות, מעבר בין חדרים ועדכון כינוי או אווטאר.
+- `room.kick` שולח לשחקן שהוסר `room.kicked` ואחריו `session.state` עם `activity: "none"`.
+- לקוח שאינו קורא מספיק מהר ומצטבר אצלו תור של יותר מ־64 הודעות מנותק.
+
 ## הודעות מהאפליקציה
 
 | `type` | `payload` | שגיאות אפשריות |
@@ -134,7 +144,7 @@
 | `matchmaking.join` | `{ categoryIds }` | `already_in_activity` |
 | `matchmaking.cancel` | `{}` | — |
 | `room.updateSettings` | `{ roomId, maxPlayers, hintSeconds, categoryIds }` | `not_room_host`, `room_settings_locked`, `invalid_room_settings`, `room_in_game` |
-| `room.kick` | `{ roomId, playerId }` | `not_room_host`, `cannot_kick_self`, `room_in_game` |
+| `room.kick` | `{ roomId, playerId }` | `not_room_host`, `cannot_kick_self`, `room_in_game`, `unknown_player` |
 | `room.start` | `{ roomId }` | `not_room_host`, `not_enough_players`, `room_in_game` |
 | `room.leave` | `{ roomId }` | — |
 | `game.confirmRole` | `{ gameId }` | `wrong_phase` |

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -15,9 +16,11 @@ import (
 var t0 = time.Date(2026, 9, 15, 12, 0, 0, 0, time.UTC)
 
 type client struct {
-	t   *testing.T
-	mux *http.ServeMux
-	srv *Server
+	t     *testing.T
+	mux   *http.ServeMux
+	srv   *Server
+	ts    *httptest.Server
+	clock atomic.Int64 // server time in unix nanoseconds
 }
 
 func newClient(t *testing.T) *client {
@@ -25,11 +28,16 @@ func newClient(t *testing.T) *client {
 		HintInappropriate: func(string) bool { return false },
 		ValidReaction:     func(string) bool { return true },
 	}
-	srv := NewServer(func() time.Time { return t0 }, policy)
-	mux := http.NewServeMux()
-	srv.Routes(mux)
-	return &client{t: t, mux: mux, srv: srv}
+	c := &client{t: t, mux: http.NewServeMux()}
+	c.clock.Store(t0.UnixNano())
+	c.srv = NewServer(func() time.Time { return time.Unix(0, c.clock.Load()).UTC() }, policy)
+	c.srv.Routes(c.mux)
+	c.ts = httptest.NewServer(c.mux)
+	t.Cleanup(c.ts.Close)
+	return c
 }
+
+func (c *client) advance(d time.Duration) { c.clock.Add(int64(d)) }
 
 // do sends body as JSON (raw when it is a string) and decodes the response.
 func (c *client) do(method, path, token string, body any) (int, map[string]any) {
