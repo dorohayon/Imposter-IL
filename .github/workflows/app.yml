@@ -4,16 +4,14 @@ on:
   pull_request:
     paths:
       - "app/**"
-      # The end-to-end job plays against the server, and the Dart word rules
-      # share server/internal/game/testdata/word_rules.json.
+      # The end-to-end job plays against the server.
       - "server/**"
       - ".github/workflows/app.yml"
   push:
     branches: [main]
     paths:
       - "app/**"
-      # The end-to-end job plays against the server, and the Dart word rules
-      # share server/internal/game/testdata/word_rules.json.
+      # The end-to-end job plays against the server.
       - "server/**"
       - ".github/workflows/app.yml"
 

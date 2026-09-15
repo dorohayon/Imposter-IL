@@ -18,6 +18,7 @@ import (
 
 	"github.com/dorohayon/Imposter-IL/server/internal/content"
 	"github.com/dorohayon/Imposter-IL/server/internal/game"
+	"github.com/dorohayon/Imposter-IL/server/internal/matchmaking"
 	"github.com/dorohayon/Imposter-IL/server/internal/room"
 )
 
@@ -39,7 +40,11 @@ type session struct {
 	playerID string
 	nickname string
 	avatarID string
-	roomID   string // current private room, if any
+	roomID   string // current room: a private room or a forming online match
+
+	// The categories and start time of the player's latest online search.
+	searchCategories []string
+	searchStarted    time.Time
 
 	conn    *conn // current WebSocket, if connected
 	replies replyCache
@@ -59,6 +64,12 @@ type roomEntry struct {
 	timer  *time.Timer // fires at room.Deadline()
 	gameID string      // id of room.Game(), if one was started
 
+	// Online matches (public rooms, see matchmaking.go).
+	public       bool
+	timers       matchmaking.Timers
+	lobbyVersion uint64     // rises when the searchers or timers change
+	settled      *game.Game // the finished game whose players were released
+
 	// stateVersion numbers the snapshots sent for this room: room.state and
 	// game.state each take the next value, so it rises on any published change,
 	// including profile edits and a new game, and never repeats across types.
@@ -70,9 +81,10 @@ type roomEntry struct {
 }
 
 type snapshotMark struct {
-	roomVersion uint64
-	game        *game.Game
-	gameVersion uint64
+	roomVersion  uint64
+	lobbyVersion uint64
+	game         *game.Game
+	gameVersion  uint64
 }
 
 // Server holds sessions, rooms and connections.
@@ -85,12 +97,13 @@ type Server struct {
 	newCode      func() string
 	pingInterval time.Duration
 
-	mu        sync.Mutex
-	rng       *rand.Rand
-	sessions  map[string]*session // token -> session
-	players   map[string]*session // player id -> session
-	roomsByID map[string]*roomEntry
-	roomsCode map[string]*roomEntry
+	mu          sync.Mutex
+	rng         *rand.Rand
+	sessions    map[string]*session // token -> session
+	players     map[string]*session // player id -> session
+	roomsByID   map[string]*roomEntry
+	roomsCode   map[string]*roomEntry
+	publicRooms []*roomEntry // online matches, oldest first
 }
 
 // NewServer uses policy and pickWord for games started in rooms. The content
@@ -386,8 +399,12 @@ func (s *Server) leave(entry *roomEntry, sess *session, now time.Time) {
 		return
 	}
 	// roomToLeave checked membership and the lobby status under the same lock.
-	_ = entry.room.Leave(sess.playerID, now)
-	sess.roomID = ""
+	if entry.public {
+		s.leaveSearch(sess, entry, now)
+	} else {
+		_ = entry.room.Leave(sess.playerID, now)
+		sess.roomID = ""
+	}
 	s.publish(entry)
 	// ponytail: empty rooms are kept; how long to keep them is an open decision.
 }

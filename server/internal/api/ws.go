@@ -14,8 +14,8 @@ import (
 	"github.com/dorohayon/Imposter-IL/server/internal/room"
 )
 
-// WebSocket part of docs/protocol.md for private rooms and their games.
-// Matchmaking messages are not implemented yet and get invalid_message.
+// WebSocket part of docs/protocol.md: private rooms, online matchmaking and
+// the games played in both.
 
 const (
 	protocolVersion = 1
@@ -183,7 +183,11 @@ func (s *Server) detach(sess *session, c *conn) {
 	}
 	sess.conn = nil
 	if entry := s.currentRoom(sess); entry != nil {
-		_ = entry.room.Disconnect(sess.playerID, s.now())
+		if s.searching(entry) {
+			s.leaveSearch(sess, entry, s.now()) // closing the app cancels a search
+		} else {
+			_ = entry.room.Disconnect(sess.playerID, s.now())
+		}
 		s.publish(entry)
 	}
 }
@@ -209,6 +213,9 @@ func (s *Server) sendSessionState(sess *session) {
 		payload["activity"], payload["roomId"], payload["gameId"] = "game", sess.gameRoom.id, sess.gameID
 	case sess.roomID != "":
 		payload["activity"], payload["roomId"] = "room", sess.roomID
+		if entry := s.roomsByID[sess.roomID]; entry != nil && entry.public {
+			payload["activity"] = "matchmaking"
+		}
 	}
 	s.queue(sess.conn, message("session.state", s.now(), payload))
 }
@@ -218,13 +225,19 @@ func (s *Server) sendSessionState(sess *session) {
 // after anything that may change the room or its game.
 func (s *Server) publish(entry *roomEntry) {
 	now := s.now()
+	s.settleFinishedMatch(entry, now)
 	v := entry.room.View()
 	entry.stateVersion++
 	entry.published = mark(entry)
-	msg := message("room.state", now, map[string]any{"stateVersion": entry.stateVersion, "room": s.roomJSON(entry)})
-	for _, m := range v.Members {
-		if sess := s.players[m.ID]; sess != nil {
-			s.queue(sess.conn, msg)
+	switch {
+	case s.searching(entry):
+		s.publishSearch(entry, now)
+	case !entry.public:
+		msg := message("room.state", now, map[string]any{"stateVersion": entry.stateVersion, "room": s.roomJSON(entry)})
+		for _, m := range v.Members {
+			if sess := s.players[m.ID]; sess != nil {
+				s.queue(sess.conn, msg)
+			}
 		}
 	}
 	s.publishGame(entry, now)
@@ -237,6 +250,9 @@ func (s *Server) schedule(entry *roomEntry) {
 		entry.timer = nil
 	}
 	deadline := entry.room.Deadline()
+	if search := s.searchDeadline(entry); !search.IsZero() && (deadline.IsZero() || search.Before(deadline)) {
+		deadline = search
+	}
 	if deadline.IsZero() {
 		return
 	}
@@ -250,12 +266,14 @@ func (s *Server) schedule(entry *roomEntry) {
 // tickRoom applies the room's and its game's deadlines. A timer that was
 // stopped too late to cancel simply finds nothing due.
 func (s *Server) tickRoom(entry *roomEntry) {
-	entry.room.Tick(s.now())
+	now := s.now()
+	entry.room.Tick(now)
+	s.tickSearch(entry, now)
 	s.sync(entry)
 }
 
 func mark(entry *roomEntry) snapshotMark {
-	m := snapshotMark{roomVersion: entry.room.View().Version, game: entry.room.Game()}
+	m := snapshotMark{roomVersion: entry.room.View().Version, lobbyVersion: entry.lobbyVersion, game: entry.room.Game()}
 	if m.game != nil {
 		m.gameVersion = m.game.Version()
 	}
@@ -267,6 +285,7 @@ func mark(entry *roomEntry) snapshotMark {
 // expired deadlines before running, so any call can advance the state even
 // when the call itself fails.
 func (s *Server) sync(entry *roomEntry) {
+	s.settleFinishedMatch(entry, s.now())
 	if mark(entry) != entry.published {
 		s.publish(entry)
 		return
@@ -295,6 +314,8 @@ func (s *Server) dispatch(sess *session, env envelope, now time.Time) string {
 		return s.roomCommand(sess, env.Type, p, now)
 	case strings.HasPrefix(env.Type, "game."):
 		return s.gameCommand(sess, env.Type, p, now)
+	case strings.HasPrefix(env.Type, "matchmaking."):
+		return s.matchmakingCommand(sess, env.Type, p, now)
 	}
 	return "invalid_message"
 }
@@ -318,8 +339,8 @@ func (s *Server) roomCommand(sess *session, typ string, p commandPayload, now ti
 		return "invalid_message"
 	}
 	entry := s.currentRoom(sess)
-	if entry == nil || entry.id != p.RoomID {
-		return "room_not_found"
+	if entry == nil || entry.id != p.RoomID || entry.public {
+		return "room_not_found" // online matches have no room commands
 	}
 
 	var err error

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../demo/demo_countdown.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
-import 'online_flow.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen(
@@ -181,135 +179,6 @@ class HowToPlayScreen extends StatelessWidget {
               ),
             );
           }),
-        ],
-      ),
-    );
-  }
-}
-
-typedef _Action = ({String label, VoidCallback onPressed});
-
-/// System states that only the server can trigger. Until the client is
-/// connected they are opened from the debug-only prototype states list.
-/// The join error is shown inline on [JoinRoomScreen] (screen 23).
-enum SystemStateType {
-  noCategoryMatch,
-  reconnecting,
-  removed,
-  stopped,
-  serverError
-}
-
-class SystemStateScreen extends StatelessWidget {
-  const SystemStateScreen({required this.type, super.key});
-
-  final SystemStateType type;
-
-  @override
-  Widget build(BuildContext context) {
-    final navigator = Navigator.of(context);
-    void home() => navigator.popUntil((route) => route.isFirst);
-    void replace(Widget screen) => navigator.pushReplacement(
-          MaterialPageRoute<void>(builder: (_) => screen),
-        );
-
-    final ({
-      String title,
-      String body,
-      String image,
-      _Action? primary,
-      _Action? secondary,
-    }) data = switch (type) {
-      SystemStateType.noCategoryMatch => (
-          title: 'לא נמצא משחק מתאים',
-          body: 'אפשר לבחור קטגוריות אחרות או לנסות שוב.',
-          image: 'assets/illustrations/no-category-match.webp',
-          primary: (
-            label: 'בחירת קטגוריות מחדש',
-            onPressed: () => replace(const CategorySelectionScreen()),
-          ),
-          secondary: (
-            label: 'ניסיון נוסף',
-            onPressed: () => replace(const MatchmakingScreen()),
-          ),
-        ),
-      SystemStateType.reconnecting => (
-          title: 'מתחברים מחדש',
-          body: 'מנסים להחזיר אותך למשחק. ניתוק 2 מתוך 3.',
-          image: 'assets/illustrations/connection-error.webp',
-          primary: null,
-          secondary: null,
-        ),
-      SystemStateType.removed => (
-          title: 'הוצאת מהמשחק',
-          body: 'זה היה הניתוק השלישי ונרשם הפסד.',
-          image: 'assets/illustrations/connection-error.webp',
-          primary: (label: 'חזרה למסך הבית', onPressed: home),
-          secondary: null,
-        ),
-      SystemStateType.stopped => (
-          title: 'המשחק הופסק',
-          body: 'לא נשארו מספיק שחקנים כדי להמשיך.',
-          image: 'assets/illustrations/connection-error.webp',
-          primary: (label: 'חזרה למסך הבית', onPressed: home),
-          secondary: null,
-        ),
-      SystemStateType.serverError => (
-          title: 'משהו השתבש',
-          body: 'המשחק הופסק עקב תקלה בחיבור לשרת. לא נרשם הפסד.',
-          image: 'assets/illustrations/connection-error.webp',
-          // Demo: retrying just closes the error.
-          primary: (label: 'ניסיון נוסף', onPressed: () => navigator.pop()),
-          secondary: (label: 'חזרה למסך הבית', onPressed: home),
-        ),
-    };
-    final primary = data.primary;
-    final secondary = data.secondary;
-
-    return GameScaffold(
-      title: data.title,
-      timer: type == SystemStateType.reconnecting
-          // Demo: the reconnect succeeds when the countdown ends.
-          ? DemoCountdown(seconds: 30, onDone: () => navigator.pop())
-          : null,
-      onExit: type == SystemStateType.reconnecting ? home : null,
-      showBack: false,
-      bottom: primary == null
-          ? null
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                PrimaryButton(
-                  label: primary.label,
-                  onPressed: primary.onPressed,
-                ),
-                if (secondary != null) ...[
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: secondary.onPressed,
-                    child: Text(secondary.label),
-                  ),
-                ],
-              ],
-            ),
-      child: Column(
-        children: [
-          Illustration(data.image, height: 260),
-          Text(
-            data.title,
-            style: Theme.of(context).textTheme.headlineLarge,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            data.body,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 17,
-              height: 1.45,
-            ),
-          ),
         ],
       ),
     );

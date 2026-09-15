@@ -1,4 +1,5 @@
-// End-to-end: four app sessions play a private game against a real server.
+// End-to-end: app sessions play against a real server, in a private room and
+// through online matchmaking.
 //
 //   cd server && IMPOSTER_DEV_POLICY=1 PORT=18080 go run ./cmd/server
 //   cd app && IMPOSTER_E2E_SERVER=http://localhost:18080 flutter test test/e2e
@@ -126,6 +127,45 @@ void main() {
       await ok(host.send('game.playAgain', {'gameId': host.game!.id}));
       await until(
           host, () => host.activity == 'room' && host.room?.status == 'lobby');
+    },
+    skip: _server == null
+        ? 'set IMPOSTER_E2E_SERVER to run against a server'
+        : false,
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'four players find each other online and start a game after 30 seconds',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final api = ApiClient(Uri.parse(_server!));
+      final players = <GameSession>[];
+      addTearDown(() {
+        for (final p in players) {
+          p.dispose();
+        }
+      });
+      for (final name in ['אחד', 'שתיים', 'שלוש', 'ארבע']) {
+        final session = GameSession(api);
+        players.add(session);
+        await session.signIn(name, 'avatar-f02-camera');
+        await until(session, () => session.connected);
+        await ok(session.startSearch(['food', 'objects']));
+      }
+      final first = players.first;
+      await until(first, () => first.search?.players.length == 4);
+      expect(first.search!.status, 'waiting_for_more');
+
+      // The 30-second wait runs on the server, then the game starts.
+      for (final p in players) {
+        await until(p, () => p.game?.phase == 'role_reveal',
+            timeout: const Duration(seconds: 40));
+      }
+      expect(players.map((p) => p.game!.id).toSet(), hasLength(1));
+      expect(['אוכל', 'חפצים'], contains(first.game!.category));
+      for (final p in players) {
+        await ok(p.leaveGame());
+      }
     },
     skip: _server == null
         ? 'set IMPOSTER_E2E_SERVER to run against a server'

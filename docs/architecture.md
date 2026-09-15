@@ -13,11 +13,12 @@
 
 ```text
 Imposter-IL/
-├── app/                  # Flutter: חדרים פרטיים מחוברים לשרת; משחק ברשת על נתוני דמה
+├── app/                  # Flutter: משחק ברשת וחדרים פרטיים, מחוברים לשרת
 ├── server/               # Go module: github.com/dorohayon/Imposter-IL/server
 │   ├── cmd/server/       # נקודת הכניסה: HTTP, /healthz, graceful shutdown
 │   ├── internal/game/    # מנוע המשחק — ללא HTTP, WebSocket או מסד נתונים
 │   ├── internal/room/    # חדר פרטי — עוטף משחקים, גם הוא ללא תקשורת
+│   ├── internal/matchmaking/ # כללי ההתחלה של משחק ברשת: טיימרים וקטגוריות משותפות
 │   ├── internal/content/ # הקטגוריות, המילים והתגובות שאושרו
 │   ├── internal/devpolicy/ # ללא מילון תוכן לא ראוי, לפיתוח בלבד (IMPOSTER_DEV_POLICY=1)
 │   └── internal/api/     # REST ו־WebSocket: sessions אורח, חדרים ו־Snapshots, בזיכרון
@@ -27,7 +28,7 @@ Imposter-IL/
 └── .github/workflows/    # CI
 ```
 
-חבילות שיתווספו בשרת כשיגיע תורן, ולא לפני כן: `internal/matchmaking` ו־`internal/store`. ה־WebSocket נמצא ב־`internal/api` לצד ה־REST, כי שניהם עובדים על אותם sessions וחדרים. תלות חיצונית יחידה: `github.com/coder/websocket`.
+חבילות שיתווספו בשרת כשיגיע תורן, ולא לפני כן: `internal/store`. ה־WebSocket נמצא ב־`internal/api` לצד ה־REST, כי שניהם עובדים על אותם sessions וחדרים. תלות חיצונית יחידה: `github.com/coder/websocket`.
 
 ## עקרונות
 
@@ -50,16 +51,15 @@ Imposter-IL/
 | `internal/content` | הקטגוריות, המילים והתגובות שאושרו, בחירת מילה ובדיקת מזהים. |
 | `internal/devpolicy` | מדיניות פיתוח בלבד במקום מילון התוכן הלא ראוי שעדיין פתוח. |
 | `internal/api` | REST ו־WebSocket: sessions אורח (כינוי ואווטאר), קטגוריות ותגובות, יצירת חדר עם קוד ייחודי והצטרפות לפי קוד, חיבור אחד לכל session, idempotency, ping, פקודות חדר ומשחק, טיימרים ושליחת `session.state`, `room.state`, `game.state` ו־`game.reaction`. מחזיק הכול בזיכרון מאחורי מנעול אחד. |
-| `internal/matchmaking` (עתידי) | תור חיפוש לפי קטגוריות, יעד 6, המתנה לעד 8 וספירה לאחור. |
+| `internal/matchmaking` | כללי ההתחלה של משחק ברשת (30 שניות מ־4, 5 שניות מ־6, 2 דקות ל־`לא נמצא משחק מתאים`) וחיתוך קטגוריות. `internal/api` מחזיק את קבוצות החיפוש. |
 
 ### ארכיטקטורת Flutter
 
 - `lib/data/server.dart` — לקוח REST ו־WebSocket על `dart:io`, בלי ספריות רשת. כתובת השרת מ־`--dart-define=IMPOSTER_SERVER`.
 - `lib/data/models.dart` — מודלים מוקלדים ל־`Room`, `GameView`, קטגוריות ותגובות.
 - `lib/state/game_session.dart` — `GameSession` (`ChangeNotifier`) שמוזרק דרך `SessionScope` (`InheritedNotifier`), בלי ספריית ניהול State. מחזיק את זהות האורח (נשמרת ב־`shared_preferences`), לולאת חיבור מחדש, תשובות לפקודות, ה־Snapshot האחרון של החדר והמשחק, התעלמות מ־`stateVersion` ישן, והיסט השעון מול `serverTime`.
-- `lib/screens/live_room.dart` — מסך אחד לחדר פרטי שמחליף בין לובי לשלבי המשחק לפי ה־Snapshot, כולל מסכי הוצאה, תקלה בשרת והודעת חיבור מחדש.
-- `lib/demo/` — נתוני דמה לזרימת משחק ברשת, עד שיהיה Matchmaking.
-- ניווט ב־`Navigator` הרגיל. בדיקות Widget משתמשות בשרת מדומה (`test/support/fake_server.dart`), ובדיקת ה־End-to-End (`test/e2e`) מריצה את שכבת ה־session מול השרת האמיתי.
+- `lib/screens/live_room.dart` — מסך אחד שמחליף לפי ה־Snapshot בין חיפוש משחק ברשת (כולל `לא נמצא משחק מתאים`), לובי של חדר פרטי ושלבי המשחק, כולל מסכי הוצאה, תקלה בשרת והודעת חיבור מחדש.
+- ניווט ב־`Navigator` הרגיל. בדיקות Widget משתמשות בשרת מדומה (`test/support/fake_server.dart`), ובדיקות ה־End-to-End (`test/e2e`) מריצות את שכבת ה־session מול השרת האמיתי, בחדר פרטי ובמשחק ברשת.
 
 ## State Machines
 
@@ -135,23 +135,29 @@ stateDiagram-v2
 - כשהזמן של מנהל מנותק נגמר ואין אף חבר אחר מחובר, לחדר אין מנהל עד שחבר אחר מתחבר מחדש או מצטרף, והניהול עובר אליו (`host_timeout`). המנהל המקורי אינו מקבל את הניהול בחזרה גם אם חזר ראשון. מנהל שיצא או הוצא מוחלף תמיד כל עוד נשארו חברים; אם המנהל החדש מנותק, מתחילות 30 השניות שלו.
 - חדר ריק מדווח `Empty()`. משך שמירת חדר ריק פתוח, ולכן סגירתו באחריות הקורא. עד שייסגר הקוד שלו ממשיך לעבוד, והשחקן הראשון שמצטרף אליו הופך למנהל.
 
-### חיפוש משחק (`internal/matchmaking`) — מתוכנן
+### חיפוש משחק (`internal/matchmaking`) — ממומש
 
 ```mermaid
 stateDiagram-v2
     [*] --> searching: חפש משחק
-    searching --> countdown: עברו 20 שניות ויש לפחות 4 — 5 שניות
-    searching --> waiting_for_more: נמצאו 6 — עד 30 שניות
-    searching --> starting: נמצאו 8
-    waiting_for_more --> starting: הגיעו ל־8 / 30 שניות עברו
-    countdown --> starting: הספירה הסתיימה
-    searching --> no_match: פג זמן ההמתנה (הערך פתוח)
-    searching --> [*]: ביטול
-    waiting_for_more --> [*]: ביטול
-    countdown --> [*]: ביטול
+    searching --> waiting_for_more: נמצא הרביעי — עד 30 שניות
+    waiting_for_more --> countdown: נמצא השישי — 5 שניות
+    waiting_for_more --> game: 30 השניות נגמרו
+    countdown --> game: הספירה נגמרה (או 30 השניות, אם קודם)
+    waiting_for_more --> searching: פחות מ־4
+    countdown --> searching: פחות מ־4
+    searching --> no_match: חיפוש של 2 דקות עם פחות מ־4
+    searching --> [*]: ביטול או ניתוק
 ```
 
-אין מעבר אוטומטי לקטגוריה אחרת. היחס בין הספירה של 5 השניות לבין ההמתנה של 30 השניות (למשל שחקן שישי שמצטרף בזמן הספירה, או שחקן שמבטל ומוריד את התור מתחת ל־4) יוגדר לפני מימוש ה־Matchmaking. הקטגוריות לחיפוש הן המזהים שב־`GET /v1/categories`.
+אין מעבר אוטומטי לקטגוריה אחרת. ביטול בזמן הספירה אינו עוצר אותה כל עוד נשארו 4, וירידה מתחת ל־4 מאפסת את הטיימרים.
+
+פרטי מימוש:
+
+- כל קבוצת חיפוש היא חדר ציבורי ב־`internal/api`: `room.Room` בלי קוד ובלי פקודות מנהל. בלובי החברים הם בדיוק השחקנים שמחפשים, והמשחק מתחיל ב־`Room.StartByServer`. כך משחק ברשת משתמש באותו מחזור חיים, ניתוקים, הוצאות ו־Snapshots כמו חדר פרטי.
+- שחקן מצטרף לקבוצה הגדולה ביותר שעדיין בלובי, שיש בה פחות מ־8 ושחולקת איתו לפחות קטגוריה אחת. הקטגוריות של הקבוצה הן החיתוך של כל המחפשים, והמילה נבחרת מהן.
+- כשמשחק ברשת מסתיים כל השחקנים משתחררים מהחדר ורואים את התוצאה דרך ה־session. מי שבוחר `משחק נוסף` מחפש שוב עם אותן קטגוריות, ולכן מגיע לאותה קבוצה.
+- ניתוק בזמן חיפוש מבטל אותו. ניתוק במהלך משחק ברשת מטופל כמו בחדר פרטי.
 
 ## מה נשאר מחוץ לקוד כרגע
 

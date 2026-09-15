@@ -1,6 +1,6 @@
 # חוזי REST ו־WebSocket
 
-גרסה: `v1` (טיוטה). ממומשים כרגע (`server/internal/api`): כל ה־REST, ו־`GET /v1/ws` לחדרים פרטיים ולמשחקים שבהם: כל הודעות `room.*` ו־`game.*`, `session.state`, `room.state`, `room.kicked`, `game.state` ו־`game.reaction`. לא ממומשים עדיין: `matchmaking.*` (מקבלות `invalid_message`) ו־`game.aborted`. שאר החוזה מגדיר את מה שהשרת והאפליקציה יממשו בהמשך. רקע ועקרונות: [`architecture.md`](architecture.md).
+גרסה: `v1` (טיוטה). ממומשים כרגע (`server/internal/api`): כל ה־REST, ו־`GET /v1/ws` לחדרים פרטיים, למשחק ברשת ולמשחקים בשניהם: כל הודעות `matchmaking.*`, `room.*` ו־`game.*`, `session.state`, `matchmaking.state`, `matchmaking.noMatch`, `room.state`, `room.kicked`, `game.state` ו־`game.reaction`. לא ממומש עדיין: `game.aborted`. שאר החוזה מגדיר את מה שהשרת והאפליקציה יממשו בהמשך. רקע ועקרונות: [`architecture.md`](architecture.md).
 
 ## מוסכמות
 
@@ -168,11 +168,20 @@
 - `game.react` שולח `game.reaction` לכל שחקני המשחק, בנוסף לספירה ב־`game.state`.
 - `gameId` שאינו המשחק שהשחקן מציג מקבל `game_not_found`.
 
+### פרטי מימוש של משחק ברשת
+
+- `matchmaking.join` שולח `session.state` עם `activity: "matchmaking"` ו־`roomId` של קבוצת החיפוש, ואחריו `matchmaking.state` לכל המחפשים בקבוצה. כללי ההתחלה ב־`docs/matchmaking.md`.
+- כשהמשחק מתחיל, כל שחקניו מקבלים `session.state` עם `activity: "game"` ו־`game.state`, כמו בחדר פרטי. אין סטטוס `starting`.
+- `matchmaking.cancel`, או ניתוק בזמן החיפוש, מוציאים מהקבוצה ושולחים `session.state` עם `activity: "none"`.
+- אחרי 2 דקות עם פחות מ־4 שחקנים השרת שולח `matchmaking.noMatch` ואחריו `session.state` עם `activity: "none"`.
+- `game.playAgain` במשחק ברשת מחזיר את השחקן לחיפוש עם אותן קטגוריות, כך ששחקנים שממשיכים מגיעים לאותה קבוצה.
+- פקודות `room.*` על קבוצת חיפוש מקבלות `room_not_found`.
+
 ## הודעות מהאפליקציה
 
 | `type` | `payload` | שגיאות אפשריות |
 | --- | --- | --- |
-| `matchmaking.join` | `{ categoryIds }` | `already_in_activity` |
+| `matchmaking.join` | `{ categoryIds }` | `already_in_activity`, `invalid_categories`, `content_unavailable` |
 | `matchmaking.cancel` | `{}` | — |
 | `room.updateSettings` | `{ roomId, maxPlayers, hintSeconds, categoryIds }` | `not_room_host`, `room_settings_locked`, `invalid_room_settings`, `room_in_game` |
 | `room.kick` | `{ roomId, playerId }` | `not_room_host`, `cannot_kick_self`, `room_in_game`, `unknown_player` |
@@ -193,7 +202,7 @@
 | `type` | `payload` |
 | --- | --- |
 | `session.state` | `{ playerId, activity: "none" \| "matchmaking" \| "room" \| "game", roomId?, gameId? }` |
-| `matchmaking.state` | `{ stateVersion, status: "searching" \| "countdown" \| "waiting_for_more" \| "starting", categoryIds, players: PlayerSummary[], targetPlayers: 6, maxPlayers: 8, deadline? }` |
+| `matchmaking.state` | `{ stateVersion, status: "searching" \| "waiting_for_more" \| "countdown", categoryIds, players: PlayerSummary[], targetPlayers: 6, maxPlayers: 8, deadline }` — `categoryIds` הן הקטגוריות המשותפות לכל המחפשים; `deadline` הוא מתי יוצג `לא נמצא משחק מתאים` לשחקן הזה ב־`searching`, ומתי יתחיל המשחק ב־`waiting_for_more` וב־`countdown` |
 | `matchmaking.noMatch` | `{ categoryIds }` — מסך 6 |
 | `room.state` | `{ stateVersion, room: Room }` |
 | `room.kicked` | `{ roomId }` |

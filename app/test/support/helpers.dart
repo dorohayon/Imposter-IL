@@ -73,3 +73,18 @@ bool isEnabled(WidgetTester tester, String label) {
   );
   return tester.widget<ButtonStyleButton>(button.first).onPressed != null;
 }
+
+/// Live screens never settle (their countdowns tick), so pump a fixed time.
+Future<void> settle(WidgetTester tester) async {
+  for (var i = 0; i < 5; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
+Future<void> tapLive(WidgetTester tester, String text) async {
+  final finder = find.text(text).last;
+  await tester.ensureVisible(finder);
+  await settle(tester);
+  await tester.tap(finder);
+  await settle(tester);
+}

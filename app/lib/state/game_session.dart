@@ -35,11 +35,16 @@ class GameSession extends ChangeNotifier {
   /// restarted). No loss is recorded; screen 29 is shown until dismissed.
   bool sessionLost = false;
 
-  String activity = 'none'; // none | room | game
+  String activity = 'none'; // none | matchmaking | room | game
   String? roomId;
   String? gameId;
   RoomView? room;
   GameView? game;
+  MatchmakingView? search;
+
+  /// The categories of an online search that found no match, until the
+  /// player retries or picks other categories.
+  List<String>? noMatchCategories;
 
   /// Set when the host removed this player, until the screen consumes it.
   bool kicked = false;
@@ -206,12 +211,19 @@ class GameSession extends ChangeNotifier {
         gameId = payload['gameId'] as String?;
         if (activity == 'none') room = null;
         if (activity != 'game') game = null;
+        if (activity != 'matchmaking') search = null;
       case 'room.state':
         if (!_isNewer(payload)) return;
         room = RoomView.fromJson(payload['room'] as Map<String, dynamic>);
       case 'game.state':
         if (!_isNewer(payload)) return;
         game = GameView.fromJson(payload['game'] as Map<String, dynamic>);
+      case 'matchmaking.state':
+        if (!_isNewer(payload)) return;
+        search = MatchmakingView.fromJson(payload);
+      case 'matchmaking.noMatch':
+        noMatchCategories =
+            (payload['categoryIds'] as List? ?? const []).cast<String>();
       case 'room.kicked':
         kicked = true;
       default:
@@ -307,6 +319,33 @@ class GameSession extends ChangeNotifier {
     return id == null ? null : send('game.leave', {'gameId': id});
   }
 
+  /// Starts an online search. Returns an error code, or null on success.
+  Future<String?> startSearch(List<String> categoryIds) async {
+    final retryOf = noMatchCategories;
+    noMatchCategories = null;
+    activity = 'matchmaking'; // until session.state confirms it
+    search = null;
+    _notify();
+    final code = await send('matchmaking.join', {'categoryIds': categoryIds});
+    if (code != null) {
+      activity = 'none';
+      noMatchCategories = retryOf; // keep the no-match screen to try again
+      _notify();
+    }
+    return code;
+  }
+
+  Future<String?> cancelSearch() {
+    _clearActivity();
+    _notify();
+    return send('matchmaking.cancel', {});
+  }
+
+  void dismissNoMatch() {
+    noMatchCategories = null;
+    _notify();
+  }
+
   void consumeKicked() {
     kicked = false;
     _clearActivity();
@@ -324,6 +363,7 @@ class GameSession extends ChangeNotifier {
     gameId = null;
     room = null;
     game = null;
+    search = null;
   }
 
   void _notify() {

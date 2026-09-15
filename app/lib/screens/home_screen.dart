@@ -1,7 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../demo/prototype_states_screen.dart';
 import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
@@ -80,11 +78,6 @@ class HomeScreen extends StatelessWidget {
               label: const Text('איך משחקים?',
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
             ),
-            if (kDebugMode)
-              TextButton(
-                onPressed: () => _open(context, const PrototypeStatesScreen()),
-                child: const Text('מצבי Prototype (debug)'),
-              ),
           ],
         ),
       ),

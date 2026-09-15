@@ -112,6 +112,19 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     unawaited(session.leaveGame());
   }
 
+  /// Back to the category picker, which opened the search.
+  void _backToCategories() {
+    if (_leaving || !mounted) return;
+    _leaving = true;
+    Navigator.of(context).pop();
+  }
+
+  void _cancelSearch() {
+    final session = SessionScope.read(context);
+    _backToCategories();
+    unawaited(session.cancelSearch());
+  }
+
   void _afterFrame(VoidCallback action) =>
       WidgetsBinding.instance.addPostFrameCallback((_) => action());
 
@@ -124,6 +137,24 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
         onHome: () {
           session.dismissSessionLost();
           _goHome();
+        },
+      );
+    }
+    final noMatch = session.noMatchCategories;
+    if (noMatch != null) {
+      return _NoMatch(
+        onCategories: () {
+          session.dismissNoMatch();
+          _backToCategories();
+        },
+        onRetry: () async {
+          final messenger = ScaffoldMessenger.of(context);
+          final code = await session.startSearch(noMatch);
+          if (code != null) {
+            messenger.showSnackBar(
+              SnackBar(content: Text(commandMessage(code))),
+            );
+          }
         },
       );
     }
@@ -141,18 +172,30 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
 
     final game = session.game;
     final room = session.room;
+    final search = session.search;
     final inGame = session.activity == 'game' && game != null;
+    final searching = session.activity == 'matchmaking';
     final Widget body = inGame
         ? _LiveGame(game: game, onLeave: _leaveGame)
-        : room != null
-            ? _Lobby(room: room, onLeave: _leaveRoom)
-            : const Scaffold(body: Center(child: CircularProgressIndicator()));
+        : searching && search != null
+            ? _Search(search: search, onCancel: _cancelSearch)
+            : !searching && room != null
+                ? _Lobby(room: room, onLeave: _leaveRoom)
+                : const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        inGame ? _leaveGame() : _leaveRoom();
+        if (inGame) {
+          _leaveGame();
+        } else if (searching) {
+          _cancelSearch();
+        } else {
+          _leaveRoom();
+        }
       },
       child: Stack(
         children: [
@@ -201,6 +244,120 @@ class _ReconnectingBanner extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _Search extends StatelessWidget {
+  const _Search({required this.search, required this.onCancel});
+
+  final MatchmakingView search;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final count = search.players.length;
+    final status = switch (search.status) {
+      'waiting_for_more' => 'נמצאו $count! מחכים עד 30 שניות לשחקנים נוספים',
+      'countdown' => 'המשחק מתחיל בעוד רגע!',
+      _ => 'צריך לפחות 4 שחקנים כדי להתחיל',
+    };
+    return GameScaffold(
+      title: 'מחפשים שחקנים',
+      timer: search.deadline == null
+          ? null
+          : LiveCountdown(deadline: search.deadline!),
+      onExit: onCancel,
+      bottom:
+          PrimaryButton(label: 'ביטול', secondary: true, onPressed: onCancel),
+      child: Column(
+        children: [
+          const Illustration(
+            'assets/illustrations/matchmaking-team.webp',
+            height: 180,
+          ),
+          Text(
+            '$count מתוך ${search.maxPlayers}',
+            style: Theme.of(context).textTheme.headlineLarge,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            status,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.muted, fontSize: 16),
+          ),
+          const SizedBox(height: 20),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: search.maxPlayers,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              mainAxisExtent: 112,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 8,
+            ),
+            itemBuilder: (context, index) {
+              if (index >= count) {
+                return Column(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF5C586E),
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.search_rounded,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    const Text(
+                      'מחפשים...',
+                      style: TextStyle(color: AppColors.muted, fontSize: 12),
+                    ),
+                  ],
+                );
+              }
+              final player = search.players[index];
+              return Column(
+                children: [
+                  AvatarView(asset: player.avatarAsset, size: 60),
+                  const SizedBox(height: 7),
+                  Text(
+                    player.nickname,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NoMatch extends StatelessWidget {
+  const _NoMatch({required this.onCategories, required this.onRetry});
+
+  final VoidCallback onCategories;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return _StateMessage(
+      title: 'לא נמצא משחק מתאים',
+      body: 'אפשר לבחור קטגוריות אחרות או לנסות שוב.',
+      image: 'assets/illustrations/no-category-match.webp',
+      primary: ('בחירת קטגוריות מחדש', onCategories),
+      secondary: ('ניסיון נוסף', onRetry),
     );
   }
 }
@@ -1005,7 +1162,7 @@ class _Removed extends StatelessWidget {
     return _StateMessage(
       title: 'הוצאת מהמשחק',
       body: 'זה היה הניתוק השלישי ונרשם הפסד.',
-      onHome: onHome,
+      primary: ('חזרה למסך הבית', onHome),
     );
   }
 }
@@ -1020,7 +1177,7 @@ class _ServerError extends StatelessWidget {
     return _StateMessage(
       title: 'משהו השתבש',
       body: 'המשחק הופסק עקב תקלה בחיבור לשרת. לא נרשם הפסד.',
-      onHome: onHome,
+      primary: ('חזרה למסך הבית', onHome),
     );
   }
 }
@@ -1029,25 +1186,36 @@ class _StateMessage extends StatelessWidget {
   const _StateMessage({
     required this.title,
     required this.body,
-    required this.onHome,
+    required this.primary,
+    this.secondary,
+    this.image = 'assets/illustrations/connection-error.webp',
   });
 
   final String title;
   final String body;
-  final VoidCallback onHome;
+  final String image;
+  final (String, VoidCallback) primary;
+  final (String, VoidCallback)? secondary;
 
   @override
   Widget build(BuildContext context) {
+    final secondary = this.secondary;
     return GameScaffold(
       title: title,
       showBack: false,
-      bottom: PrimaryButton(label: 'חזרה למסך הבית', onPressed: onHome),
+      bottom: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PrimaryButton(label: primary.$1, onPressed: primary.$2),
+          if (secondary != null) ...[
+            const SizedBox(height: 8),
+            TextButton(onPressed: secondary.$2, child: Text(secondary.$1)),
+          ],
+        ],
+      ),
       child: Column(
         children: [
-          const Illustration(
-            'assets/illustrations/connection-error.webp',
-            height: 260,
-          ),
+          Illustration(image, height: 260),
           Text(
             title,
             style: Theme.of(context).textTheme.headlineLarge,

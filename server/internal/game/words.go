@@ -5,8 +5,8 @@ import (
 	"unicode"
 )
 
-// Hebrew word rules from docs/decisions.md. app/lib/models/word_rules.dart
-// mirrors them; both are tested against testdata/word_rules.json.
+// Hebrew word rules from docs/decisions.md, tested against
+// testdata/word_rules.json.
 
 const (
 	// Letters that can be attached in front of a Hebrew word (אותיות שימוש).

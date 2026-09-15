@@ -239,3 +239,33 @@ class GameView {
     return null;
   }
 }
+
+class MatchmakingView {
+  const MatchmakingView({
+    required this.status,
+    required this.categoryIds,
+    required this.players,
+    required this.targetPlayers,
+    required this.maxPlayers,
+    required this.deadline,
+  });
+
+  factory MatchmakingView.fromJson(Map<String, dynamic> json) =>
+      MatchmakingView(
+        status: json['status'] as String,
+        categoryIds: (json['categoryIds'] as List? ?? const []).cast<String>(),
+        players: _list(json['players']).map(PlayerInfo.fromJson).toList(),
+        targetPlayers: json['targetPlayers'] as int? ?? 6,
+        maxPlayers: json['maxPlayers'] as int? ?? 8,
+        deadline: _time(json['deadline']),
+      );
+
+  final String status; // searching | waiting_for_more | countdown
+  final List<String> categoryIds;
+  final List<PlayerInfo> players;
+  final int targetPlayers;
+  final int maxPlayers;
+
+  /// When "no match" shows while searching, otherwise when the game starts.
+  final DateTime? deadline;
+}

@@ -9,62 +9,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'support/fake_server.dart';
 import 'support/helpers.dart';
 
-final _deadline =
-    DateTime.now().add(const Duration(seconds: 15)).toUtc().toIso8601String();
-
-Map<String, dynamic> gameJson({
-  required String phase,
-  String role = 'citizen',
-  String? turn,
-  List<Map<String, dynamic>> hints = const [],
-  List<String> candidates = const [],
-  String? myVote,
-  Map<String, dynamic>? result,
-  List<Map<String, dynamic>>? players,
-}) =>
-    {
-      'gameId': 'g_1',
-      'phase': phase,
-      'deadline': phase == 'ended' ? null : _deadline,
-      'category': 'חיות',
-      if (role == 'citizen' || phase == 'ended') 'secretWord': 'פיל',
-      'myRole': role,
-      'players': players ??
-          [
-            player('p_me', 'דור'),
-            player('p_2', 'נועה'),
-            player('p_3', 'יובל'),
-            player('p_4', 'מאיה'),
-          ],
-      'currentTurnPlayerId': turn,
-      'awaitingReconnect': false,
-      'hints': hints,
-      'voteCandidates': candidates,
-      'myVote': myVote,
-      'result': result,
-    };
-
 Future<void> openCreatedRoom(WidgetTester tester, FakeApi api) async {
   api.responses['POST /v1/rooms'] = {'room': roomJson()};
   await tapText(tester, 'משחק עם חברים');
   await tapText(tester, 'יצירת חדר');
   await tapLive(tester, 'יצירת חדר');
   expect(find.byType(LiveRoomScreen), findsOneWidget);
-}
-
-/// Live screens never settle (their countdowns tick), so pump a fixed time.
-Future<void> settle(WidgetTester tester) async {
-  for (var i = 0; i < 5; i++) {
-    await tester.pump(const Duration(milliseconds: 100));
-  }
-}
-
-Future<void> tapLive(WidgetTester tester, String text) async {
-  final finder = find.text(text).last;
-  await tester.ensureVisible(finder);
-  await settle(tester);
-  await tester.tap(finder);
-  await settle(tester);
 }
 
 void main() {

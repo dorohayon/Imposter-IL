@@ -1,11 +1,29 @@
 import 'package:flutter/material.dart';
 
-import '../demo/demo_countdown.dart';
-import '../demo/demo_data.dart';
+import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
-import 'game_flow.dart';
+import 'live_room.dart';
+import 'private_flow.dart';
 
+const _categoryIcons = {
+  'food': Icons.restaurant_rounded,
+  'animals': Icons.pets_rounded,
+  'sports': Icons.sports_soccer_rounded,
+  'professions': Icons.work_rounded,
+  'places': Icons.public_rounded,
+  'objects': Icons.umbrella_rounded,
+};
+
+const _allId = '';
+
+String searchErrorMessage(String code) => switch (code) {
+      'already_in_activity' => 'אתם עדיין במשחק או בחדר אחר',
+      'content_unavailable' => 'השרת עדיין לא מוכן להתחלת משחקים',
+      _ => connectionMessage(code),
+    };
+
+/// Online play: choose categories, then search on the server.
 class CategorySelectionScreen extends StatefulWidget {
   const CategorySelectionScreen({super.key});
 
@@ -15,21 +33,53 @@ class CategorySelectionScreen extends StatefulWidget {
 }
 
 class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
-  static const icons = [
-    Icons.auto_awesome_rounded,
-    Icons.restaurant_rounded,
-    Icons.pets_rounded,
-    Icons.sports_soccer_rounded,
-    Icons.work_rounded,
-    Icons.public_rounded,
-    Icons.umbrella_rounded,
-  ];
-  final selected = <String>{demoCategories.first};
+  Set<String>? _selected; // null: every category
+  bool _busy = false;
 
-  void _toggle(String name) => setState(() => toggleCategory(selected, name));
+  Future<void> _search(List<String> ids) async {
+    final session = SessionScope.read(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    final code = await session.startSearch(ids);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (code != null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(searchErrorMessage(code))),
+      );
+      return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const LiveRoomScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final categories = SessionScope.of(context).categories;
+    final allIds = [for (final c in categories) c.id];
+    final selected = _selected ?? allIds.toSet();
+
+    void toggle(String id) => setState(() {
+          if (id == _allId) {
+            _selected = null;
+            return;
+          }
+          final next = {...selected};
+          if (!next.remove(id)) next.add(id);
+          if (next.isNotEmpty) _selected = next; // keep at least one
+        });
+
+    final tiles = [
+      (id: _allId, name: 'הכול', icon: Icons.auto_awesome_rounded),
+      for (final c in categories)
+        (
+          id: c.id,
+          name: c.name,
+          icon: _categoryIcons[c.id] ?? Icons.category_rounded,
+        ),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -38,171 +88,101 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(20, 8, 20, 16),
         child: PrimaryButton(
-          label: 'חפש משחק',
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const MatchmakingScreen()),
-          ),
+          label: _busy ? 'מתחילים חיפוש...' : 'חפש משחק',
+          onPressed: categories.isEmpty || _busy
+              ? null
+              : () => _search([
+                    for (final id in allIds)
+                      if (selected.contains(id)) id,
+                  ]),
         ),
       ),
       body: SafeArea(
-        child: GridView.builder(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          itemCount: demoCategories.length + 1,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisExtent: 178,
-            mainAxisSpacing: 14,
-            crossAxisSpacing: 14,
-          ),
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              return const Align(
-                alignment: Alignment.centerRight,
+        child: categories.isEmpty
+            ? const Center(
                 child: Text(
-                  'אפשר לבחור כמה קטגוריות',
-                  style: TextStyle(color: AppColors.muted, fontSize: 17),
+                  'טוענים קטגוריות...',
+                  style: TextStyle(color: AppColors.muted),
                 ),
-              );
-            }
-            final name = demoCategories[index - 1];
-            final isSelected = selected.contains(name);
-            return Semantics(
-              selected: isSelected,
-              button: true,
-              child: InkWell(
-                onTap: () => _toggle(name),
-                borderRadius: BorderRadius.circular(26),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.yellow : AppColors.nightSoft,
-                    borderRadius: BorderRadius.circular(26),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.yellow
-                          : const Color(0xFF4A4860),
-                      width: 2,
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      Align(
-                        alignment: Alignment.topLeft,
-                        child: Icon(
-                          isSelected
-                              ? Icons.check_circle_rounded
-                              : icons[index - 1],
-                          color: isSelected
-                              ? AppColors.night
-                              : AppColors.turquoise,
-                          size: 36,
-                        ),
+              )
+            : GridView.builder(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                itemCount: tiles.length + 1,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisExtent: 178,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
+                ),
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return const Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        'אפשר לבחור כמה קטגוריות',
+                        style: TextStyle(color: AppColors.muted, fontSize: 17),
                       ),
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: Text(
-                          name,
-                          style: TextStyle(
-                            color:
-                                isSelected ? AppColors.night : AppColors.cream,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
+                    );
+                  }
+                  final tile = tiles[index - 1];
+                  final isSelected = tile.id == _allId
+                      ? selected.length == allIds.length
+                      : selected.contains(tile.id);
+                  return Semantics(
+                    selected: isSelected,
+                    button: true,
+                    child: InkWell(
+                      onTap: () => toggle(tile.id),
+                      borderRadius: BorderRadius.circular(26),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.yellow
+                              : AppColors.nightSoft,
+                          borderRadius: BorderRadius.circular(26),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.yellow
+                                : const Color(0xFF4A4860),
+                            width: 2,
                           ),
                         ),
+                        child: Stack(
+                          children: [
+                            Align(
+                              alignment: AlignmentDirectional.topEnd,
+                              child: Icon(
+                                isSelected
+                                    ? Icons.check_circle_rounded
+                                    : tile.icon,
+                                color: isSelected
+                                    ? AppColors.night
+                                    : AppColors.turquoise,
+                                size: 36,
+                              ),
+                            ),
+                            Align(
+                              alignment: AlignmentDirectional.bottomStart,
+                              child: Text(
+                                tile.name,
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? AppColors.night
+                                      : AppColors.cream,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class MatchmakingScreen extends StatelessWidget {
-  const MatchmakingScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return GameScaffold(
-      title: 'מחפשים שחקנים',
-      // The server starts the game. The demo stands in for "no one else
-      // joined within 30 seconds"; players cannot start it themselves.
-      timer: DemoCountdown(
-        seconds: 30,
-        onDone: () => Navigator.of(context).pushReplacement(
-          MaterialPageRoute<void>(
-            builder: (_) => const RoleRevealScreen(
-              game: DemoGame(me: demoOnlineMe),
-            ),
-          ),
-        ),
-      ),
-      onExit: () => Navigator.of(context).pop(),
-      bottom: PrimaryButton(
-        label: 'ביטול',
-        secondary: true,
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      child: Column(
-        children: [
-          const Illustration('assets/illustrations/matchmaking-team.webp',
-              height: 180),
-          Text('6 מתוך 8', style: Theme.of(context).textTheme.headlineLarge),
-          const SizedBox(height: 6),
-          const Text(
-            'מצאנו שישה! מחכים עד 30 שניות לעוד שני שחקנים',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, fontSize: 16),
-          ),
-          const SizedBox(height: 20),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 8,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              mainAxisExtent: 112,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 8,
-            ),
-            itemBuilder: (context, index) {
-              if (index >= demoPlayers.length) {
-                return Column(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: const Color(0xFF5C586E), width: 2),
-                      ),
-                      child: const Icon(Icons.search_rounded,
-                          color: AppColors.muted),
                     ),
-                    const SizedBox(height: 7),
-                    const Text('מחפשים...',
-                        style: TextStyle(color: AppColors.muted, fontSize: 12)),
-                  ],
-                );
-              }
-              final player = demoPlayers[index];
-              return Column(
-                children: [
-                  AvatarView(asset: player.avatar, size: 60),
-                  const SizedBox(height: 7),
-                  Text(player.nickname,
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                ],
-              );
-            },
-          ),
-        ],
+                  );
+                },
+              ),
       ),
     );
   }

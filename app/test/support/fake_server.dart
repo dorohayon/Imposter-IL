@@ -146,3 +146,38 @@ Map<String, dynamic> roomJson({
       'hostTransfer': null,
       'hostReconnectDeadline': null,
     };
+
+final _deadline =
+    DateTime.now().add(const Duration(seconds: 15)).toUtc().toIso8601String();
+
+Map<String, dynamic> gameJson({
+  required String phase,
+  String role = 'citizen',
+  String? turn,
+  List<Map<String, dynamic>> hints = const [],
+  List<String> candidates = const [],
+  String? myVote,
+  Map<String, dynamic>? result,
+  List<Map<String, dynamic>>? players,
+}) =>
+    {
+      'gameId': 'g_1',
+      'phase': phase,
+      'deadline': phase == 'ended' ? null : _deadline,
+      'category': 'חיות',
+      if (role == 'citizen' || phase == 'ended') 'secretWord': 'פיל',
+      'myRole': role,
+      'players': players ??
+          [
+            player('p_me', 'דור'),
+            player('p_2', 'נועה'),
+            player('p_3', 'יובל'),
+            player('p_4', 'מאיה'),
+          ],
+      'currentTurnPlayerId': turn,
+      'awaitingReconnect': false,
+      'hints': hints,
+      'voteCandidates': candidates,
+      'myVote': myVote,
+      'result': result,
+    };
