@@ -249,6 +249,20 @@ func TestMovingToAnotherRoomLeavesTheLobby(t *testing.T) {
 	}
 }
 
+func TestJoiningARoomEveryoneLeftMakesTheJoinerHost(t *testing.T) {
+	c := newClient(t)
+	host, _ := c.session("מנהל")
+	old := c.createRoom(host, 8)
+	c.createRoom(host, 8) // the only member moves away
+
+	late, lateID := c.session("מאחר")
+	status, body := c.join(late, old["code"].(string))
+	room, _ := body["room"].(map[string]any)
+	if status != 200 || room["hostPlayerId"] != lateID || len(players(room)) != 1 {
+		t.Fatalf("join empty room: %d %v", status, body)
+	}
+}
+
 func TestCannotMoveRoomsDuringAGame(t *testing.T) {
 	c := newClient(t)
 	host, hostID := c.session("מנהל")
