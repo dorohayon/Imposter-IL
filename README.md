@@ -39,7 +39,7 @@ go test -race ./...
 go run ./cmd/server
 ```
 
-רשימת התגובות ומילון התוכן הלא ראוי עדיין פתוחים, ולכן התחלת משחק זמינה רק עם מדיניות הפיתוח: `IMPOSTER_DEV_POLICY=1 go run ./cmd/server`.
+מילון התוכן הלא ראוי עדיין פתוח, ולכן התחלת משחק זמינה רק עם מדיניות הפיתוח: `IMPOSTER_DEV_POLICY=1 go run ./cmd/server`.
 
 
 ## אפליקציית Flutter

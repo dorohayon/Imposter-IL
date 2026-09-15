@@ -26,6 +26,7 @@
 | `POST` | `/v1/sessions` | יצירת שחקן אורח |
 | `PATCH` | `/v1/sessions/me` | עריכת כינוי או אווטאר |
 | `GET` | `/v1/categories` | רשימת קטגוריות |
+| `GET` | `/v1/reactions` | רשימת התגובות |
 | `POST` | `/v1/rooms` | יצירת חדר פרטי |
 | `POST` | `/v1/rooms/join` | הצטרפות לחדר לפי קוד |
 
@@ -64,6 +65,27 @@
 ```
 
 מחזיר את המנה הראשונה שאושרה (`docs/decisions.md`): `food`, `animals`, `sports`, `professions`, `places`, `objects`. `categoryIds` בחדר חייבים להיות מהרשימה הזו.
+
+### `GET /v1/reactions`
+
+```json
+{ "reactions": [ { "id": "laugh", "text": "😂" } ] }
+```
+
+הרשימה שאושרה. `reactionId` ב־`game.react` הוא אחד מהמזהים, והאפליקציה מציגה את `text`:
+
+| `id` | `text` |
+| --- | --- |
+| `laugh` | 😂 |
+| `thinking` | 🤔 |
+| `eyes` | 👀 |
+| `surprised` | 😮 |
+| `applause` | 👏 |
+| `eye_roll` | 🙄 |
+| `good_hint` | רמז טוב! |
+| `suspicious` | זה מחשיד |
+| `not_convinced` | לא השתכנעתי |
+| `what_connection` | מה הקשר? |
 
 ### `POST /v1/rooms`
 
@@ -139,7 +161,7 @@
 
 ### פרטי מימוש של משחק
 
-- `room.start` בוחר מילה באקראי מהקטגוריות של החדר. כל עוד רשימת התגובות ומילון התוכן הלא ראוי פתוחים, שרת שלא הופעל עם `IMPOSTER_DEV_POLICY=1` מחזיר `content_unavailable`.
+- `room.start` בוחר מילה באקראי מהקטגוריות של החדר. כל עוד מילון התוכן הלא ראוי פתוח, שרת שלא הופעל עם `IMPOSTER_DEV_POLICY=1` מחזיר `content_unavailable`.
 - כל שחקני המשחק מקבלים `session.state` עם `activity: "game"`, `roomId` ו־`gameId`, ואחריו `game.state` מסונן. ה־`activity` נשאר `game` גם אחרי `ended` (מסך התוצאה), עד `game.playAgain` או `game.leave`.
 - אחרי כל שינוי, כולל טיימרים, כל שחקן שעדיין מציג את המשחק מקבל `game.state` משלו. `stateVersion` הוא גרסת המשחק.
 - שחקן שהוצא בניתוק שלישי ומתחבר מחדש מקבל `session.state` עם `activity: "game"` ו־`game.state` שבו הסטטוס שלו `removed` (מסך 27), עד `game.leave`.

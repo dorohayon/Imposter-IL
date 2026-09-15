@@ -1,13 +1,10 @@
 package devpolicy
 
-import (
-	"strings"
-	"testing"
-)
+import "testing"
 
 func TestPolicy(t *testing.T) {
 	p := Policy()
-	if p.HintInappropriate("anything") || !p.ValidReaction("😂") || p.ValidReaction(" ") || p.ValidReaction(strings.Repeat("a", 65)) {
+	if p.HintInappropriate("anything") || !p.ValidReaction("laugh") || p.ValidReaction("🔥") {
 		t.Fatal("unexpected dev policy")
 	}
 }

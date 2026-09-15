@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dorohayon/Imposter-IL/server/internal/content"
 	"github.com/dorohayon/Imposter-IL/server/internal/game"
 )
 
@@ -27,7 +28,7 @@ type client struct {
 func newClient(t *testing.T) *client {
 	policy := game.Policy{
 		HintInappropriate: func(string) bool { return false },
-		ValidReaction:     func(string) bool { return true },
+		ValidReaction:     content.ValidReaction,
 	}
 	c := &client{t: t, mux: http.NewServeMux()}
 	c.clock.Store(t0.UnixNano())
@@ -196,6 +197,19 @@ func TestListCategories(t *testing.T) {
 	}
 	if first := categories[0].(map[string]any); first["id"] != "food" || first["name"] != "אוכל" {
 		t.Fatalf("first category = %v", first)
+	}
+}
+
+func TestListReactions(t *testing.T) {
+	c := newClient(t)
+	token, _ := c.session("דור")
+	status, body := c.do("GET", "/v1/reactions", token, nil)
+	reactions, _ := body["reactions"].([]any)
+	if status != 200 || len(reactions) != 10 {
+		t.Fatalf("got %d %v", status, body)
+	}
+	if last := reactions[9].(map[string]any); last["id"] != "what_connection" || last["text"] != "מה הקשר?" {
+		t.Fatalf("last reaction = %v", last)
 	}
 }
 

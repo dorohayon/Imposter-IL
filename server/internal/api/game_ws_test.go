@@ -126,13 +126,14 @@ func TestWSGamePlaysToTheEnd(t *testing.T) {
 		if i == 0 {
 			// Reactions work while the next player is writing.
 			reactor := byID[order[2]]
-			wantOK(t, reactor.w.command("react", "game.react", map[string]any{"gameId": gameID, "hintIndex": 0, "reactionId": "😂"}))
-			if ev := host.w.next("game.reaction")["payload"].(map[string]any); ev["playerId"] != reactor.id || ev["reactionId"] != "😂" {
+			wantReplyError(t, reactor.w.command("unapproved", "game.react", map[string]any{"gameId": gameID, "hintIndex": 0, "reactionId": "🔥"}), "invalid_reaction")
+			wantOK(t, reactor.w.command("react", "game.react", map[string]any{"gameId": gameID, "hintIndex": 0, "reactionId": "laugh"}))
+			if ev := host.w.next("game.reaction")["payload"].(map[string]any); ev["playerId"] != reactor.id || ev["reactionId"] != "laugh" {
 				t.Fatalf("game.reaction = %v", ev)
 			}
 			host.w.gameState(func(g map[string]any) bool {
 				hints := g["hints"].([]any)
-				return len(hints) == 1 && hints[0].(map[string]any)["reactions"].(map[string]any)["😂"] == float64(1)
+				return len(hints) == 1 && hints[0].(map[string]any)["reactions"].(map[string]any)["laugh"] == float64(1)
 			})
 		}
 	}

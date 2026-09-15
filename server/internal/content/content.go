@@ -58,3 +58,28 @@ func Pick(ids []string, rng *rand.Rand) (categoryName, word string, ok bool) {
 	}
 	return "", "", false
 }
+
+type Reaction struct {
+	ID   string // stable id sent as reactionId
+	Text string // emoji or structured message shown in the app
+}
+
+// Reactions is the approved list (docs/decisions.md): six emoji and four
+// structured messages.
+var Reactions = []Reaction{
+	{"laugh", "😂"},
+	{"thinking", "🤔"},
+	{"eyes", "👀"},
+	{"surprised", "😮"},
+	{"applause", "👏"},
+	{"eye_roll", "🙄"},
+	{"good_hint", "רמז טוב!"},
+	{"suspicious", "זה מחשיד"},
+	{"not_convinced", "לא השתכנעתי"},
+	{"what_connection", "מה הקשר?"},
+}
+
+// ValidReaction reports whether id is an approved reaction id.
+func ValidReaction(id string) bool {
+	return slices.ContainsFunc(Reactions, func(r Reaction) bool { return r.ID == id })
+}

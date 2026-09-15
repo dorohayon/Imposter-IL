@@ -62,3 +62,19 @@ func TestPickUsesOnlyTheChosenCategories(t *testing.T) {
 		t.Fatal("unknown category picked a word")
 	}
 }
+
+func TestReactions(t *testing.T) {
+	ids, texts := map[string]bool{}, map[string]bool{}
+	for _, r := range Reactions {
+		if r.ID == "" || r.Text == "" || ids[r.ID] || texts[r.Text] {
+			t.Fatalf("bad or duplicate reaction %+v", r)
+		}
+		ids[r.ID], texts[r.Text] = true, true
+	}
+	if len(Reactions) != 10 {
+		t.Fatalf("%d reactions, want 6 emoji and 4 messages", len(Reactions))
+	}
+	if !ValidReaction("good_hint") || ValidReaction("רמז טוב!") || ValidReaction("") {
+		t.Fatal("reactions are accepted by id only")
+	}
+}

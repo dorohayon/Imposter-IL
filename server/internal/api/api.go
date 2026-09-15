@@ -100,6 +100,7 @@ func NewServer(now func() time.Time, policy game.Policy, pickWord PickWord) *Ser
 func (s *Server) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v1/sessions", s.createSession)
 	mux.HandleFunc("GET /v1/categories", s.withSession(listCategories))
+	mux.HandleFunc("GET /v1/reactions", s.withSession(listReactions))
 	mux.HandleFunc("PATCH /v1/sessions/me", s.withSession(s.updateSession))
 	mux.HandleFunc("POST /v1/rooms", s.withSession(s.createRoom))
 	mux.HandleFunc("POST /v1/rooms/join", s.withSession(s.joinRoom))
@@ -249,6 +250,14 @@ func listCategories(w http.ResponseWriter, _ []byte, _ *session) {
 		categories = append(categories, map[string]string{"id": c.ID, "name": c.Name})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"categories": categories})
+}
+
+func listReactions(w http.ResponseWriter, _ []byte, _ *session) {
+	reactions := []map[string]string{}
+	for _, r := range content.Reactions {
+		reactions = append(reactions, map[string]string{"id": r.ID, "text": r.Text})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"reactions": reactions})
 }
 
 type settingsRequest struct {

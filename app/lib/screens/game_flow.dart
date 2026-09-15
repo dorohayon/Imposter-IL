@@ -107,13 +107,19 @@ class HintRoundScreen extends StatefulWidget {
 }
 
 class _HintRoundScreenState extends State<HintRoundScreen> {
+  // The approved reactions (docs/decisions.md); the server lists them with
+  // ids at GET /v1/reactions.
   static const reactionOptions = [
     '😂',
     '🤔',
-    '🔥',
-    'חשוד מאוד',
+    '👀',
+    '😮',
+    '👏',
+    '🙄',
     'רמז טוב!',
-    'לא הבנתי',
+    'זה מחשיד',
+    'לא השתכנעתי',
+    'מה הקשר?',
   ];
 
   final _controller = TextEditingController();

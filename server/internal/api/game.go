@@ -32,7 +32,7 @@ func (s *Server) startGame(sess *session, entry *roomEntry, now time.Time) strin
 	}
 	if err := entry.room.Start(sess.playerID, category, word, now); err != nil {
 		if errors.Is(err, game.ErrInvalidSetup) {
-			return "content_unavailable" // reactions or inappropriate words undecided
+			return "content_unavailable" // no inappropriate-words dictionary yet
 		}
 		return roomErrorCode(err)
 	}

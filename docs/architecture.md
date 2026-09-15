@@ -18,8 +18,8 @@ Imposter-IL/
 │   ├── cmd/server/       # נקודת הכניסה: HTTP, /healthz, graceful shutdown
 │   ├── internal/game/    # מנוע המשחק — ללא HTTP, WebSocket או מסד נתונים
 │   ├── internal/room/    # חדר פרטי — עוטף משחקים, גם הוא ללא תקשורת
-│   ├── internal/content/ # הקטגוריות והמילים שאושרו
-│   ├── internal/devpolicy/ # מדיניות תגובות ותוכן לפיתוח בלבד (IMPOSTER_DEV_POLICY=1)
+│   ├── internal/content/ # הקטגוריות, המילים והתגובות שאושרו
+│   ├── internal/devpolicy/ # ללא מילון תוכן לא ראוי, לפיתוח בלבד (IMPOSTER_DEV_POLICY=1)
 │   └── internal/api/     # REST ו־WebSocket: sessions אורח, חדרים ו־Snapshots, בזיכרון
 ├── assets/               # אווטארים ואילוסטרציות
 ├── docs/                 # אפיון, ארכיטקטורה ופרוטוקול
@@ -148,7 +148,7 @@ stateDiagram-v2
 
 ## מה נשאר מחוץ לקוד כרגע
 
-המנוע אינו בוחר קטגוריה או מילה (`internal/content` עושה זאת ב־`room.start`) ואינו מכיל מילון תוכן לא ראוי או רשימת תגובות. שני אלה עדיין פתוחים ומוזרקים דרך `game.Policy`; בפיתוח `internal/devpolicy` מספק מדיניות זמנית רק כש־`IMPOSTER_DEV_POLICY=1`. המנוע מסרב להיווצר בלי מדיניות מלאה כדי שאף ברירת מחדל זמנית לא תהפוך בשקט להחלטת מוצר. המנוע כן אוכף את החוקים שכבר אושרו: מילה אחת (ללא רווחים), עד 25 תווים (Unicode code points), ללא תוכן ריק, וכללי השוואת המילים שב־`docs/decisions.md` (`internal/game/words.go`): חסימת המילה הסודית לאזרחים בלבד, רמז כפול עם אותיות שימוש וניחוש מנורמל.
+המנוע אינו בוחר קטגוריה או מילה (`internal/content` עושה זאת ב־`room.start`) ואינו מכיל מילון תוכן לא ראוי או רשימת תגובות. שניהם מוזרקים דרך `game.Policy`: התגובות שאושרו מגיעות מ־`internal/content`, ומילון התוכן הלא ראוי עדיין פתוח, ולכן בפיתוח `internal/devpolicy` מספק אותו כריק רק כש־`IMPOSTER_DEV_POLICY=1`. המנוע מסרב להיווצר בלי מדיניות מלאה כדי שאף ברירת מחדל זמנית לא תהפוך בשקט להחלטת מוצר. המנוע כן אוכף את החוקים שכבר אושרו: מילה אחת (ללא רווחים), עד 25 תווים (Unicode code points), ללא תוכן ריק, וכללי השוואת המילים שב־`docs/decisions.md` (`internal/game/words.go`): חסימת המילה הסודית לאזרחים בלבד, רמז כפול עם אותיות שימוש וניחוש מנורמל.
 
 ## מקרי קצה שאושרו בתכנון המנוע
 
@@ -167,6 +167,6 @@ stateDiagram-v2
 cd server
 go test -race ./...
 go run ./cmd/server        # PORT=8080 כברירת מחדל
-IMPOSTER_DEV_POLICY=1 go run ./cmd/server   # מאפשר התחלת משחק עם מדיניות תגובות ותוכן זמנית
+IMPOSTER_DEV_POLICY=1 go run ./cmd/server   # מאפשר התחלת משחק בלי מילון תוכן לא ראוי
 curl localhost:8080/healthz
 ```
