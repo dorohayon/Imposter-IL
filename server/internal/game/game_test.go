@@ -181,6 +181,24 @@ func TestRoleRevealWaitsForConnectedPlayers(t *testing.T) {
 	wantErr(t, g.ConfirmRole(g.order[0], t0), ErrWrongPhase)
 }
 
+func TestMarkOfflineAtStartIsNotACountedDisconnect(t *testing.T) {
+	g := newGame(t, 4)
+	offline := g.order[0]
+	must(t, g.MarkOffline(offline))
+	wantErr(t, g.MarkOffline("nobody"), ErrUnknownPlayer)
+
+	// Role reveal ends once the connected players confirm, and the offline
+	// player's turn waits for a reconnect.
+	for _, id := range g.order[1:] {
+		must(t, g.ConfirmRole(id, t0))
+	}
+	wantPhase(t, g, PhaseHints)
+	if !g.reconnecting || g.players[offline].disconnects != 0 {
+		t.Fatalf("reconnecting = %v, disconnects = %d", g.reconnecting, g.players[offline].disconnects)
+	}
+	wantErr(t, g.MarkOffline(g.order[1]), ErrWrongPhase)
+}
+
 func TestRoleRevealTimesOutAfterTenSeconds(t *testing.T) {
 	g := newGame(t, 4)
 	if want := t0.Add(10 * time.Second); !g.Deadline().Equal(want) {

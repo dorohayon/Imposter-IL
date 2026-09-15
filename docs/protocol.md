@@ -77,7 +77,7 @@
 { "code": "482913" }
 ```
 
-`200` עם `{ "room": Room }`. שגיאות (מסך 28): `422 invalid_room_code` (לא שש ספרות), `404 room_not_found`, `409 room_unavailable`. ניסיון הצטרפות חוזר לאותו חדר מחזיר `200`.
+`200` עם `{ "room": Room }`. שגיאות (מסך 28): `422 invalid_room_code` (לא שש ספרות), `404 room_not_found`, `409 room_unavailable` (החדר מלא או שמשחק בעיצומו). ניסיון הצטרפות חוזר לאותו חדר מחזיר `200`.
 
 ## WebSocket
 
@@ -129,9 +129,9 @@
 | --- | --- | --- |
 | `matchmaking.join` | `{ categoryIds }` | `already_in_activity` |
 | `matchmaking.cancel` | `{}` | — |
-| `room.updateSettings` | `{ roomId, maxPlayers, hintSeconds, categoryIds }` | `not_room_host`, `room_settings_locked`, `invalid_room_settings` |
-| `room.kick` | `{ roomId, playerId }` | `not_room_host`, `cannot_kick_self` |
-| `room.start` | `{ roomId }` | `not_room_host`, `not_enough_players` |
+| `room.updateSettings` | `{ roomId, maxPlayers, hintSeconds, categoryIds }` | `not_room_host`, `room_settings_locked`, `invalid_room_settings`, `room_in_game` |
+| `room.kick` | `{ roomId, playerId }` | `not_room_host`, `cannot_kick_self`, `room_in_game` |
+| `room.start` | `{ roomId }` | `not_room_host`, `not_enough_players`, `room_in_game` |
 | `room.leave` | `{ roomId }` | — |
 | `game.confirmRole` | `{ gameId }` | `wrong_phase` |
 | `game.submitHint` | `{ gameId, text }` | `not_your_turn`, `wrong_phase`, `hint_empty`, `hint_not_one_word`, `hint_too_long`, `hint_inappropriate`, `hint_contains_secret`, `hint_duplicate` |
@@ -184,7 +184,7 @@
 }
 ```
 
-`status`: `lobby` | `in_game`. `hostTransfer.reason`: `host_timeout` | `host_left` | `host_removed` (מסך 22). `hostReconnectDeadline` מלא בזמן 30 השניות שבהן ממתינים למנהל מנותק.
+`status`: `lobby` | `in_game`. `hostTransfer.reason`: `host_timeout` | `host_left` | `host_removed` (מסך 22). `hostReconnectDeadline` מלא בזמן 30 השניות שבהן ממתינים למנהל מנותק. `hostPlayerId` הוא `null` כשהזמן נגמר ואין שחקן אחר מחובר, עד שחבר אחר מתחבר או מצטרף.
 
 ### `GameView`
 
