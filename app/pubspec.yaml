@@ -1,0 +1,25 @@
+name: imposter_il
+description: אפליקציית המשחק מי המתחזה?
+publish_to: none
+version: 0.1.0+1
+
+# Color.withValues and CardThemeData need Flutter 3.27 (Dart 3.6).
+# CI checks this exact minimum in addition to the latest stable release.
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/avatars/
+    - assets/illustrations/

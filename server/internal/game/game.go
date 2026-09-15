@@ -124,13 +124,11 @@ func DefaultConfig() Config {
 
 // Policy holds the checks whose exact rules are still open in
 // docs/open-decisions.md. All fields are required so no placeholder silently
-// becomes product behaviour.
+// becomes product behaviour. The secret-word, duplicate and guess rules are
+// decided and live in words.go.
 type Policy struct {
-	// CheckHint returns ErrHintInappropriate, ErrHintContainsSecret,
-	// ErrHintDuplicate or nil. previousHints holds the hints already shown.
-	CheckHint     func(hint, secretWord string, previousHints []string) error
-	GuessMatches  func(guess, secretWord string) bool
-	ValidReaction func(reactionID string) bool
+	HintInappropriate func(hint string) bool
+	ValidReaction     func(reactionID string) bool
 }
 
 type Hint struct {
@@ -215,7 +213,7 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 		return nil, fmt.Errorf("%w: need %d-%d players, got %d", ErrInvalidSetup, MinPlayersToStart, MaxPlayers, len(playerIDs))
 	case category == "" || secretWord == "":
 		return nil, fmt.Errorf("%w: category and secret word are required", ErrInvalidSetup)
-	case rng == nil || policy.CheckHint == nil || policy.GuessMatches == nil || policy.ValidReaction == nil:
+	case rng == nil || policy.HintInappropriate == nil || policy.ValidReaction == nil:
 		return nil, fmt.Errorf("%w: rng and every policy function are required", ErrInvalidSetup)
 	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0:
 		return nil, fmt.Errorf("%w: invalid durations", ErrInvalidSetup)
@@ -329,14 +327,18 @@ func (g *Game) SubmitHint(playerID, text string, now time.Time) error {
 	case utf8.RuneCountInString(text) > MaxHintRunes:
 		return ErrHintTooLong
 	}
-	var previous []string
-	for _, h := range g.hints {
-		if !h.Missing {
-			previous = append(previous, h.Text)
-		}
+	switch {
+	case g.policy.HintInappropriate(text):
+		return ErrHintInappropriate
+	// The impostor does not know the word, so their hint is never checked
+	// against it.
+	case playerID != g.impostor && hintContainsSecret(text, g.secret):
+		return ErrHintContainsSecret
 	}
-	if err := g.policy.CheckHint(text, g.secret, previous); err != nil {
-		return err
+	for _, h := range g.hints {
+		if !h.Missing && sameHint(text, h.Text) {
+			return ErrHintDuplicate
+		}
 	}
 	g.hints = append(g.hints, Hint{PlayerID: playerID, Text: text})
 	g.startTurn(g.turn+1, now)
@@ -400,7 +402,7 @@ func (g *Game) SubmitGuess(playerID, guess string, now time.Time) error {
 	if playerID != g.impostor {
 		return ErrNotImpostor
 	}
-	if g.policy.GuessMatches(strings.TrimSpace(guess), g.secret) {
+	if guessMatches(guess, g.secret) {
 		g.end(TeamImpostor, ReasonImpostorGuessedWord)
 	} else {
 		g.end(TeamCitizens, ReasonImpostorGuessWrong)
