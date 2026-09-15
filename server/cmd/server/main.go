@@ -11,6 +11,9 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/dorohayon/Imposter-IL/server/internal/api"
+	"github.com/dorohayon/Imposter-IL/server/internal/game"
 )
 
 func main() {
@@ -40,5 +43,8 @@ func newMux() *http.ServeMux {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
+	// The content rules (inappropriate words, reactions) are still open, so
+	// the policy is left empty and starting a game fails until they exist.
+	api.NewServer(time.Now, game.Policy{}).Routes(mux)
 	return mux
 }

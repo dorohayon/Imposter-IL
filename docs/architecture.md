@@ -17,14 +17,15 @@ Imposter-IL/
 ├── server/               # Go module: github.com/dorohayon/Imposter-IL/server
 │   ├── cmd/server/       # נקודת הכניסה: HTTP, /healthz, graceful shutdown
 │   ├── internal/game/    # מנוע המשחק — ללא HTTP, WebSocket או מסד נתונים
-│   └── internal/room/    # חדר פרטי — עוטף משחקים, גם הוא ללא תקשורת
+│   ├── internal/room/    # חדר פרטי — עוטף משחקים, גם הוא ללא תקשורת
+│   └── internal/api/     # REST: sessions אורח, יצירת חדר והצטרפות, בזיכרון
 ├── assets/               # אווטארים ואילוסטרציות
 ├── docs/                 # אפיון, ארכיטקטורה ופרוטוקול
 ├── wireframes/
 └── .github/workflows/    # CI
 ```
 
-חבילות שיתווספו בשרת כשיגיע תורן, ולא לפני כן: `internal/realtime` (WebSocket), `internal/matchmaking`, `internal/api` (REST) ו־`internal/store`.
+חבילות שיתווספו בשרת כשיגיע תורן, ולא לפני כן: `internal/realtime` (WebSocket), `internal/matchmaking` ו־`internal/store`.
 
 ## עקרונות
 
@@ -44,6 +45,7 @@ Imposter-IL/
 | `cmd/server` | הרכבת השרת, הגדרות מסביבה (`PORT`), `/healthz`, כיבוי מסודר. |
 | `internal/game` | State Machine של משחק יחיד: תפקידים, תורות, רמזים, תגובות, הצבעה, ניחוש, ניתוקים, יציאות ותוצאה. מקבל זמן ו־RNG מבחוץ. |
 | `internal/room` | חדר פרטי: קוד, רשימת שחקנים, מנהל, הסרה, נעילת הגדרות, העברת ניהול ומשחק נוסף. |
+| `internal/api` | REST: sessions אורח (כינוי ואווטאר), יצירת חדר עם קוד ייחודי והצטרפות לפי קוד. מחזיק sessions וחדרים בזיכרון מאחורי מנעול אחד, עד שה־realtime יעביר כל חדר ל־Actor. |
 | `internal/matchmaking` (עתידי) | תור חיפוש לפי קטגוריות, יעד 6, המתנה לעד 8 וספירה לאחור. |
 | `internal/realtime` (עתידי) | WebSocket, sessions, idempotency, Actor לכל משחק ושליחת Snapshots. |
 
