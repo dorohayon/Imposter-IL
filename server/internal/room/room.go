@@ -50,7 +50,7 @@ var (
 	ErrNotHost          = errors.New("only the host can do this")
 	ErrSettingsLocked   = errors.New("room settings are locked")
 	ErrCannotKickSelf   = errors.New("the host cannot remove themself")
-	ErrNotEnoughPlayers = errors.New("not enough connected players to start")
+	ErrNotEnoughPlayers = errors.New("not enough players to start")
 	ErrRoomFull         = errors.New("room is full")
 	ErrInGame           = errors.New("a game is in progress")
 	ErrNoGame           = errors.New("no game has been played in this room")
@@ -211,26 +211,32 @@ func (r *Room) Kick(byID, playerID string, now time.Time) error {
 	return nil
 }
 
-// Start begins a game with the connected members. Category and word selection
+// Start begins a game with every member. Members who are offline join the
+// game offline, without a counted disconnect. Category and word selection
 // belong to the caller.
 func (r *Room) Start(byID, category, secretWord string, now time.Time) error {
 	if err := r.hostInLobby(byID, now); err != nil {
 		return err
 	}
-	var ids []string
-	for _, m := range r.members {
-		if m.Connected {
-			ids = append(ids, m.ID)
-		}
-	}
-	if len(ids) < MinPlayers {
+	if len(r.members) < MinPlayers {
 		return ErrNotEnoughPlayers
+	}
+	ids := make([]string, len(r.members))
+	for i, m := range r.members {
+		ids[i] = m.ID
 	}
 	cfg := game.DefaultConfig()
 	cfg.HintDuration = time.Duration(r.settings.HintSeconds) * time.Second
 	g, err := game.New(cfg, r.policy, ids, category, secretWord, r.rng, now)
 	if err != nil {
 		return err
+	}
+	for _, m := range r.members {
+		if !m.Connected {
+			if err := g.MarkOffline(m.ID); err != nil {
+				return err
+			}
+		}
 	}
 	r.game, r.participants, r.status = g, ids, StatusInGame
 	r.version++

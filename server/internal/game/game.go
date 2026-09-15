@@ -290,6 +290,23 @@ func (g *Game) nextDeadline() (time.Time, string) {
 	return next, removeID
 }
 
+// MarkOffline records a player who was already offline when the game was
+// created, for example a private room member. Unlike Disconnect it does not
+// count toward MaxDisconnects, because the disconnect did not happen during
+// the game. It is part of setup, so it only works before any other call
+// changed the game.
+func (g *Game) MarkOffline(playerID string) error {
+	p, ok := g.players[playerID]
+	switch {
+	case !ok:
+		return ErrUnknownPlayer
+	case g.version != 1:
+		return ErrWrongPhase
+	}
+	p.connected = false
+	return nil
+}
+
 func (g *Game) ConfirmRole(playerID string, now time.Time) error {
 	g.Tick(now)
 	p, err := g.activePlayer(playerID)

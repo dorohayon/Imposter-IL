@@ -126,27 +126,39 @@ func TestOnlyHostKicksOtherPlayersFromLobby(t *testing.T) {
 	if len(r.View().Members) != 2 {
 		t.Fatal("kicked player still in the room")
 	}
+	// A removed player may rejoin with the code (docs/decisions.md).
+	must(t, r.Join("p2", t0.Add(time.Second)))
 }
 
-func TestStartNeedsFourConnectedPlayersAndUsesHintSeconds(t *testing.T) {
+func TestStartIncludesOfflineMembersAndUsesHintSeconds(t *testing.T) {
 	s := settings()
 	s.HintSeconds = 10
-	r := newRoom(t, s, "p1", "p2", "p3")
-	must(t, r.Disconnect("p3", t0))
+	r := newRoom(t, s, "p1", "p2")
 	wantErr(t, r.Start("p1", "animals", "פיל", t0), ErrNotHost)
 	wantErr(t, r.Start("host", "animals", "פיל", t0), ErrNotEnoughPlayers)
 
-	must(t, r.Join("p4", t0))
+	must(t, r.Join("p3", t0))
+	must(t, r.Disconnect("p3", t0))
 	must(t, r.Start("host", "animals", "פיל", t0))
 	if r.View().Status != StatusInGame {
 		t.Fatal("room did not enter the game")
 	}
-	if _, err := r.Game().View("p3"); !errors.Is(err, game.ErrUnknownPlayer) {
-		t.Fatal("a disconnected lobby member must not be dealt into the game")
+	wantInGame := func(connected bool) {
+		t.Helper()
+		v, err := r.Game().View("p3")
+		must(t, err)
+		i := slices.IndexFunc(v.Players, func(p game.PlayerView) bool { return p.ID == "p3" })
+		if v.Players[i].Connected != connected || v.Players[i].Disconnects != 0 {
+			t.Fatalf("p3 in game = %+v, want connected=%v with no counted disconnect", v.Players[i], connected)
+		}
 	}
+	wantInGame(false)
 	wantErr(t, r.Join("p5", t0), ErrInGame)
 	wantErr(t, r.Kick("host", "p1", t0), ErrInGame)
 	wantErr(t, r.Start("host", "animals", "פיל", t0), ErrInGame)
+
+	must(t, r.Reconnect("p3", t0))
+	wantInGame(true)
 
 	confirmAll(t, r, t0)
 	if want := t0.Add(10 * time.Second); !r.Deadline().Equal(want) {
