@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../demo/prototype_states_screen.dart';
+import '../state/game_session.dart';
+import 'live_room.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'online_flow.dart';
@@ -9,21 +9,30 @@ import 'private_flow.dart';
 import 'secondary_screens.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({
-    required this.nickname,
-    required this.avatar,
-    super.key,
-  });
-
-  final String nickname;
-  final String avatar;
+  const HomeScreen({super.key});
 
   void _open(BuildContext context, Widget screen) {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
   }
 
+  /// Reopens the live screen when the server says the player is still in a
+  /// room, search or game, for example after the app restarted mid-game.
+  void _returnToActivity(BuildContext context) {
+    bool shouldOpen() =>
+        SessionScope.read(context).activity != 'none' &&
+        (ModalRoute.of(context)?.isCurrent ?? false);
+    if (!shouldOpen()) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted && shouldOpen()) {
+        _open(context, const LiveRoomScreen());
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    SessionScope.of(context); // rebuild when the activity changes
+    _returnToActivity(context);
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -40,10 +49,16 @@ class HomeScreen extends StatelessWidget {
                 const Spacer(),
                 IconButton.filledTonal(
                   tooltip: 'פרופיל',
-                  onPressed: () => _open(
-                    context,
-                    ProfileScreen(nickname: nickname, avatar: avatar),
-                  ),
+                  onPressed: () {
+                    final session = SessionScope.read(context);
+                    _open(
+                      context,
+                      ProfileScreen(
+                        nickname: session.nickname ?? '',
+                        avatar: 'assets/avatars/${session.avatarId}.webp',
+                      ),
+                    );
+                  },
                   icon: const Icon(Icons.person_rounded),
                 ),
               ],
@@ -80,11 +95,6 @@ class HomeScreen extends StatelessWidget {
               label: const Text('איך משחקים?',
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
             ),
-            if (kDebugMode)
-              TextButton(
-                onPressed: () => _open(context, const PrototypeStatesScreen()),
-                child: const Text('מצבי Prototype (debug)'),
-              ),
           ],
         ),
       ),

@@ -186,7 +186,7 @@ func TestWSEnvelopeErrors(t *testing.T) {
 	wantReplyError(t, w.next("reply"), "invalid_message")
 	w.send(map[string]any{"v": 1, "type": "room.leave"}) // no id
 	wantReplyError(t, w.next("reply"), "invalid_message")
-	wantReplyError(t, w.command("m1", "matchmaking.join", map[string]any{}), "invalid_message")
+	wantReplyError(t, w.command("m1", "lobby.dance", map[string]any{}), "invalid_message")
 	wantReplyError(t, w.command("m2", "room.leave", map[string]any{"roomId": "r_x"}), "room_not_found")
 
 	w.send(map[string]any{"v": 2, "id": "m3", "type": "room.leave"})

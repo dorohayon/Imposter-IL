@@ -1,12 +1,18 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../demo/demo_data.dart';
-import '../models/player.dart';
+import '../data/server.dart';
+import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
-import 'game_flow.dart';
+import 'live_room.dart';
+
+// Private rooms run against the real server (docs/protocol.md).
+
+String connectionMessage(String code) => switch (code) {
+      'network_error' => 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
+      _ => 'משהו השתבש. נסו שוב.',
+    };
 
 class FriendsScreen extends StatelessWidget {
   const FriendsScreen({super.key});
@@ -41,11 +47,10 @@ class FriendsScreen extends StatelessWidget {
   }
 }
 
-// The lobby replaces create/join so that back from the lobby leaves the room
-// instead of reopening a form for a room that already exists.
-void _openLobby(BuildContext context, PrivateLobbyScreen lobby) =>
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => lobby),
+// The live room replaces create/join, so back from the room leaves it instead
+// of reopening a form for a room that already exists.
+void _openRoom(BuildContext context) => Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => const LiveRoomScreen()),
     );
 
 class CreateRoomScreen extends StatefulWidget {
@@ -58,26 +63,58 @@ class CreateRoomScreen extends StatefulWidget {
 class _CreateRoomScreenState extends State<CreateRoomScreen> {
   int players = 8;
   int hintSeconds = 15;
-  final categories = <String>{demoCategories.first};
+  Set<String>? _selected; // null until the categories load: all of them
+  bool _busy = false;
+
+  Future<void> _create() async {
+    final session = SessionScope.read(context);
+    setState(() => _busy = true);
+    try {
+      await session.createRoom(
+        maxPlayers: players,
+        hintSeconds: hintSeconds,
+        categoryIds: [
+          for (final c in session.categories)
+            if (_selected?.contains(c.id) ?? true) c.id,
+        ],
+      );
+      if (mounted) _openRoom(context);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(connectionMessage(e.code))));
+    }
+  }
+
+  Future<void> _retryCategories() async {
+    try {
+      await SessionScope.read(context).loadContent();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(connectionMessage(e.code))));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final categories = SessionScope.of(context).categories;
+    final allIds = {for (final c in categories) c.id};
+    final selected = _selected ?? allIds;
+    final loaded = categories.isNotEmpty;
+
+    void toggle(String id) => setState(() {
+          final next = {...selected};
+          if (!next.remove(id)) next.add(id);
+          if (next.isNotEmpty) _selected = next; // keep at least one
+        });
+
     return GameScaffold(
       title: 'יצירת חדר',
       bottom: PrimaryButton(
-        label: 'יצירת חדר',
-        onPressed: () => _openLobby(
-          context,
-          PrivateLobbyScreen(
-            me: demoHostMe,
-            maxPlayers: players,
-            hintSeconds: hintSeconds,
-            categories: [
-              for (final name in demoCategories)
-                if (categories.contains(name)) name,
-            ],
-          ),
-        ),
+        label: _busy ? 'יוצרים חדר...' : 'יצירת חדר',
+        onPressed: loaded && !_busy ? _create : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -120,19 +157,39 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final name in demoCategories)
-                FilterChip(
-                  label: Text(name),
-                  selected: categories.contains(name),
-                  onSelected: (_) =>
-                      setState(() => toggleCategory(categories, name)),
+          if (!loaded)
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'טוענים קטגוריות...',
+                    style: TextStyle(color: AppColors.muted),
+                  ),
                 ),
-            ],
-          ),
+                TextButton(
+                  onPressed: _retryCategories,
+                  child: const Text('ניסיון נוסף'),
+                ),
+              ],
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilterChip(
+                  label: const Text('הכול'),
+                  selected: selected.length == allIds.length,
+                  onSelected: (_) => setState(() => _selected = allIds),
+                ),
+                for (final c in categories)
+                  FilterChip(
+                    label: Text(c.name),
+                    selected: selected.contains(c.id),
+                    onSelected: (_) => toggle(c.id),
+                  ),
+              ],
+            ),
         ],
       ),
     );
@@ -149,6 +206,7 @@ class JoinRoomScreen extends StatefulWidget {
 class _JoinRoomScreenState extends State<JoinRoomScreen> {
   final code = TextEditingController();
   String? _error;
+  bool _busy = false;
 
   @override
   void dispose() {
@@ -156,23 +214,33 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
     super.dispose();
   }
 
-  void _join() {
-    // Demo: only the demo room exists. The server answers room_not_found or
-    // room_unavailable for everything else (docs/protocol.md).
-    if (code.text != demoRoomCode) {
-      setState(() => _error = 'החדר לא נמצא או שאינו זמין כרגע');
-      return;
+  Future<void> _join() async {
+    setState(() => _busy = true);
+    try {
+      await SessionScope.read(context).joinRoom(code.text);
+      if (mounted) _openRoom(context);
+    } on ApiException catch (e) {
+      setState(() {
+        _busy = false;
+        _error = switch (e.code) {
+          'invalid_room_code' => 'קוד החדר צריך להיות בן שש ספרות',
+          'room_not_found' => 'החדר לא נמצא. בדקו את הקוד ונסו שוב.',
+          'room_unavailable' => 'החדר מלא או שמשחק כבר מתנהל בו',
+          'already_in_activity' => 'אתם עדיין במשחק אחר',
+          _ => connectionMessage(e.code),
+        };
+      });
     }
-    _openLobby(context, const PrivateLobbyScreen(me: demoJoinerMe));
   }
 
   @override
   Widget build(BuildContext context) {
+    final ready = code.text.length == 6 && !_busy;
     return GameScaffold(
       title: 'הצטרפות לחדר',
       bottom: PrimaryButton(
         label: _error == null ? 'הצטרפות' : 'ניסיון נוסף',
-        onPressed: code.text.length == 6 ? _join : null,
+        onPressed: ready ? _join : null,
       ),
       child: Column(
         children: [
@@ -199,176 +267,11 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
               fontWeight: FontWeight.w900,
               letterSpacing: 8,
             ),
-            decoration: InputDecoration(
-              hintText: '000000',
-              errorText: _error,
-              helperText: kDebugMode ? 'קוד חדר להדגמה: $demoRoomCode' : null,
-              helperStyle: const TextStyle(color: AppColors.muted),
-            ),
+            decoration: InputDecoration(hintText: '000000', errorText: _error),
             onChanged: (_) => setState(() => _error = null),
             onSubmitted: (_) {
-              if (code.text.length == 6) _join();
+              if (ready) _join();
             },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class PrivateLobbyScreen extends StatefulWidget {
-  const PrivateLobbyScreen({
-    required this.me,
-    this.maxPlayers = 8,
-    this.hintSeconds = 15,
-    this.categories = const ['הכול'],
-    super.key,
-  });
-
-  /// Demo nickname of the current player; the host is fixed by the demo data.
-  final String me;
-  final int maxPlayers;
-  final int hintSeconds;
-  final List<String> categories;
-
-  @override
-  State<PrivateLobbyScreen> createState() => _PrivateLobbyScreenState();
-}
-
-class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
-  late final List<Player> _players =
-      DemoGame(me: widget.me).players.take(widget.maxPlayers).toList();
-
-  Player get _host => _players.firstWhere((player) => player.isHost);
-  bool get _iAmHost => _host.isMe;
-  bool get _canStart => _iAmHost && _players.length >= 4;
-
-  void _start() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => RoleRevealScreen(
-          game: DemoGame(
-            me: widget.me,
-            hintSeconds: widget.hintSeconds,
-            roster: List.of(_players),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _copyCode() async {
-    await Clipboard.setData(const ClipboardData(text: demoRoomCode));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('קוד החדר הועתק')));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GameScaffold(
-      title: 'החדר של ${_host.nickname}',
-      bottom: PrimaryButton(
-        label: _iAmHost ? 'התחלת משחק' : 'רק מנהל החדר יכול להתחיל',
-        onPressed: _canStart ? _start : null,
-      ),
-      child: Column(
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'קוד החדר',
-                          style: TextStyle(color: AppColors.muted),
-                        ),
-                        Text(
-                          demoRoomCode,
-                          style: TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 3,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton.filled(
-                    tooltip: 'העתקת הקוד',
-                    onPressed: _copyCode,
-                    icon: const Icon(Icons.copy_rounded),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: Text(
-              '${_players.length} מתוך ${widget.maxPlayers} שחקנים',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-            ),
-          ),
-          if (_iAmHost && _players.length < 4)
-            const Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                'צריך לפחות 4 שחקנים כדי להתחיל',
-                style: TextStyle(
-                  color: AppColors.coral,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          const SizedBox(height: 8),
-          for (final player in _players)
-            Card(
-              child: ListTile(
-                leading: AvatarView(asset: player.avatar, size: 52),
-                title: Text(
-                  player.nickname,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-                subtitle: player.isHost || player.isMe
-                    ? Text(
-                        [
-                          if (player.isHost) 'מנהל החדר',
-                          if (player.isMe) 'אני',
-                        ].join(' · '),
-                      )
-                    : null,
-                trailing: _iAmHost && !player.isMe
-                    ? IconButton(
-                        tooltip: 'הסרת ${player.nickname}',
-                        onPressed: () =>
-                            setState(() => _players.remove(player)),
-                        icon: const Icon(
-                          Icons.person_remove_rounded,
-                          color: AppColors.coral,
-                        ),
-                      )
-                    : null,
-              ),
-            ),
-          const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                spacing: 12,
-                children: [
-                  Text('קטגוריות: ${widget.categories.join(', ')}'),
-                  Text('${widget.hintSeconds} שניות לרמז'),
-                ],
-              ),
-            ),
           ),
         ],
       ),

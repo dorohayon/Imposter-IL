@@ -1,5 +1,5 @@
 {
-  "_comment": "Shared cases for the Hebrew word rules in docs/decisions.md. Both server/internal/game/words.go and app/lib/models/word_rules.dart must pass every case. Rows marked as known ceilings document accepted false matches from ignoring prefix letters.",
+  "_comment": "Cases for the Hebrew word rules in docs/decisions.md; server/internal/game/words.go must pass every case. Rows marked as known ceilings document accepted false matches from ignoring prefix letters.",
   "normalize": [
     ["בננה", "בננה"],
     ["  בננה  ", "בננה"],

@@ -3,15 +3,18 @@ description: אפליקציית המשחק מי המתחזה?
 publish_to: none
 version: 0.1.0+1
 
-# Color.withValues and CardThemeData need Flutter 3.27 (Dart 3.6).
-# CI checks this exact minimum in addition to the latest stable release.
+# The Android and iOS runners use the Flutter 3.44 templates (UIScene
+# lifecycle, Android Gradle Plugin 9). CI builds both on exactly 3.44.0 and
+# tests on the latest stable release. The Dart language version stays at 3.6
+# so the formatter style does not change.
 environment:
   sdk: ^3.6.0
-  flutter: ">=3.27.0"
+  flutter: ">=3.44.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  shared_preferences: ^2.3.0
 
 dev_dependencies:
   flutter_test:

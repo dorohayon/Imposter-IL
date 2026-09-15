@@ -233,6 +233,20 @@ func (r *Room) Start(byID, category, secretWord string, now time.Time) error {
 	if err := r.hostInLobby(byID, now); err != nil {
 		return err
 	}
+	return r.start(category, secretWord, now)
+}
+
+// StartByServer starts a game without a host command, for online matches
+// whose start the server decides.
+func (r *Room) StartByServer(category, secretWord string, now time.Time) error {
+	r.Tick(now)
+	if r.status == StatusInGame {
+		return ErrInGame
+	}
+	return r.start(category, secretWord, now)
+}
+
+func (r *Room) start(category, secretWord string, now time.Time) error {
 	if len(r.members) < MinPlayers {
 		return ErrNotEnoughPlayers
 	}

@@ -170,6 +170,17 @@ func TestStartIncludesOfflineMembersAndUsesHintSeconds(t *testing.T) {
 	}
 }
 
+func TestStartByServerNeedsNoHost(t *testing.T) {
+	r := newRoom(t, settings(), "p1", "p2")
+	wantErr(t, r.StartByServer("animals", "פיל", t0), ErrNotEnoughPlayers)
+	must(t, r.Join("p3", t0))
+	must(t, r.StartByServer("animals", "פיל", t0))
+	if r.View().Status != StatusInGame {
+		t.Fatal("room did not enter the game")
+	}
+	wantErr(t, r.StartByServer("animals", "פיל", t0), ErrInGame)
+}
+
 func confirmAll(t *testing.T, r *Room, now time.Time) {
 	t.Helper()
 	for _, id := range r.participants {

@@ -1,0 +1,285 @@
+package api
+
+import (
+	"fmt"
+	"testing"
+	"time"
+)
+
+// searcher signs a player in, connects, and starts an online search.
+func (c *client) searcher(name string, categories ...string) *wsPlayer {
+	c.t.Helper()
+	token, id := c.session(name)
+	p := &wsPlayer{id: id, token: token, w: c.dial(token)}
+	p.w.sessionState(func(s map[string]any) bool { return s["activity"] == "none" })
+	wantOK(c.t, p.w.command("search", "matchmaking.join", map[string]any{"categoryIds": categories}))
+	p.w.sessionState(func(s map[string]any) bool { return s["activity"] == "matchmaking" })
+	return p
+}
+
+// searchState waits for a matchmaking.state that satisfies ok.
+func (w *wsClient) searchState(ok func(state map[string]any) bool) map[string]any {
+	w.t.Helper()
+	for {
+		if payload := w.next("matchmaking.state")["payload"].(map[string]any); ok(payload) {
+			return payload
+		}
+	}
+}
+
+func searchPlayers(n int) func(map[string]any) bool {
+	return func(s map[string]any) bool { return len(s["players"].([]any)) == n }
+}
+
+// tickAll applies every room's due deadlines, as the room timers would.
+func (c *client) tickAll() {
+	c.srv.mu.Lock()
+	defer c.srv.mu.Unlock()
+	for _, entry := range c.srv.roomsByID {
+		c.srv.tickRoom(entry)
+	}
+}
+
+func (c *client) searchers(n int, categories ...string) []*wsPlayer {
+	var players []*wsPlayer
+	for i := range n {
+		players = append(players, c.searcher(fmt.Sprintf("מחפש%d", i+1), categories...))
+	}
+	return players
+}
+
+// wantGameStarted checks every player got the same new game and returns each
+// player's first game view.
+func wantGameStarted(t *testing.T, players ...*wsPlayer) []map[string]any {
+	t.Helper()
+	var games []map[string]any
+	for _, p := range players {
+		p.w.sessionState(func(s map[string]any) bool { return s["activity"] == "game" })
+		g := p.w.gameState(phase("role_reveal"))
+		if len(g["players"].([]any)) != len(players) || g["category"] != "חיות" {
+			t.Fatalf("game = %v", g)
+		}
+		games = append(games, g)
+	}
+	return games
+}
+
+func TestMatchmakingFourthPlayerStartsThirtySecondWait(t *testing.T) {
+	c := newClient(t)
+	players := c.searchers(3, "animals")
+	s := players[0].w.searchState(searchPlayers(3))
+	if s["status"] != "searching" || s["deadline"] != "2026-09-15T12:02:00Z" || s["targetPlayers"] != float64(6) || s["maxPlayers"] != float64(8) {
+		t.Fatalf("searching state = %v", s)
+	}
+
+	c.advance(10 * time.Second)
+	players = append(players, c.searcher("רביעי", "animals"))
+	s = players[0].w.searchState(searchPlayers(4))
+	if s["status"] != "waiting_for_more" || s["deadline"] != "2026-09-15T12:00:40Z" {
+		t.Fatalf("waiting state = %v", s)
+	}
+
+	c.advance(29 * time.Second)
+	c.tickAll()
+	c.srv.mu.Lock()
+	started := c.srv.players[players[0].id].gameID != ""
+	c.srv.mu.Unlock()
+	if started {
+		t.Fatal("started before the wait ended")
+	}
+	c.advance(time.Second)
+	c.tickAll()
+	wantGameStarted(t, players...)
+}
+
+// roomID is the room the player's session is in, read from the server.
+func (p *wsPlayer) roomID(c *client) string {
+	c.srv.mu.Lock()
+	defer c.srv.mu.Unlock()
+	return c.srv.players[p.id].roomID
+}
+
+func TestMatchmakingSixthPlayerStartsCountdownThatSurvivesACancel(t *testing.T) {
+	c := newClient(t)
+	players := c.searchers(4, "animals")
+	c.advance(5 * time.Second)
+	players = append(players, c.searcher("חמישי", "animals"), c.searcher("שישי", "animals"))
+	s := players[0].w.searchState(searchPlayers(6))
+	if s["status"] != "countdown" || s["deadline"] != "2026-09-15T12:00:10Z" {
+		t.Fatalf("countdown state = %v", s)
+	}
+
+	wantOK(t, players[5].w.command("cancel", "matchmaking.cancel", map[string]any{}))
+	players[5].w.sessionState(func(s map[string]any) bool { return s["activity"] == "none" })
+	if s := players[0].w.searchState(searchPlayers(5)); s["status"] != "countdown" {
+		t.Fatalf("after a cancel = %v", s)
+	}
+
+	c.advance(5 * time.Second)
+	c.tickAll()
+	wantGameStarted(t, players[:5]...)
+}
+
+func TestMatchmakingDroppingBelowFourStartsAFreshWait(t *testing.T) {
+	c := newClient(t)
+	players := c.searchers(4, "animals")
+	c.advance(10 * time.Second)
+	wantOK(t, players[3].w.command("cancel", "matchmaking.cancel", map[string]any{}))
+	if s := players[0].w.searchState(searchPlayers(3)); s["status"] != "searching" {
+		t.Fatalf("below four = %v", s)
+	}
+	c.advance(10 * time.Second)
+	wantOK(t, players[3].w.command("again", "matchmaking.join", map[string]any{"categoryIds": []string{"animals"}}))
+	// Skip the older 4-player snapshot from before the cancel.
+	players[0].w.searchState(func(s map[string]any) bool {
+		return len(s["players"].([]any)) == 4 && s["deadline"] == "2026-09-15T12:00:50Z" && s["status"] == "waiting_for_more"
+	})
+}
+
+func TestMatchmakingNoMatchAfterTwoMinutes(t *testing.T) {
+	c := newClient(t)
+	players := c.searchers(3, "animals")
+	c.advance(2*time.Minute - time.Second)
+	c.tickAll()
+	if players[0].roomID(c) == "" {
+		t.Fatal("no match before two minutes")
+	}
+	c.advance(time.Second)
+	c.tickAll()
+	for _, p := range players {
+		if payload := p.w.next("matchmaking.noMatch")["payload"].(map[string]any); fmt.Sprint(payload["categoryIds"]) != "[animals]" {
+			t.Fatalf("noMatch = %v", payload)
+		}
+		p.w.sessionState(func(s map[string]any) bool { return s["activity"] == "none" })
+	}
+}
+
+func TestMatchmakingGroupsPlayersWhoShareACategory(t *testing.T) {
+	c := newClient(t)
+	food := c.searcher("אוכל", "food")
+	animals := c.searcher("חיות", "animals")
+	if food.roomID(c) == animals.roomID(c) {
+		t.Fatal("players without a shared category were grouped")
+	}
+	both := c.searcher("שניהם", "food", "animals")
+	if both.roomID(c) != food.roomID(c) {
+		t.Fatal("a player with a shared category did not join the existing group")
+	}
+	if s := food.w.searchState(searchPlayers(2)); fmt.Sprint(s["categoryIds"]) != "[food]" {
+		t.Fatalf("shared categories = %v", s)
+	}
+}
+
+func TestMatchmakingErrors(t *testing.T) {
+	c := newClient(t)
+	token, _ := c.session("דור")
+	w := c.dial(token)
+	wantReplyError(t, w.command("bad", "matchmaking.join", map[string]any{"categoryIds": []string{"cars"}}), "invalid_categories")
+	wantOK(t, w.command("ok", "matchmaking.join", map[string]any{"categoryIds": []string{"food"}}))
+	wantReplyError(t, w.command("twice", "matchmaking.join", map[string]any{"categoryIds": []string{"food"}}), "already_in_activity")
+	roomID := w.sessionState(func(s map[string]any) bool { return s["activity"] == "matchmaking" })["roomId"]
+	wantReplyError(t, w.command("kick", "room.kick", map[string]any{"roomId": roomID, "playerId": "p_x"}), "room_not_found")
+
+	host, _ := c.session("מנהל")
+	c.createRoom(host, 8)
+	hw := c.dial(host)
+	wantReplyError(t, hw.command("busy", "matchmaking.join", map[string]any{"categoryIds": []string{"food"}}), "already_in_activity")
+
+	c.srv.mu.Lock()
+	c.srv.pickWord = nil
+	c.srv.mu.Unlock()
+	other, _ := c.session("אחר")
+	wantReplyError(t, c.dial(other).command("nocontent", "matchmaking.join", map[string]any{"categoryIds": []string{"food"}}), "content_unavailable")
+}
+
+func TestMatchmakingClosingTheAppCancelsTheSearch(t *testing.T) {
+	c := newClient(t)
+	players := c.searchers(2, "animals")
+	players[0].w.searchState(searchPlayers(2))
+	_ = players[1].w.ws.CloseNow()
+	players[0].w.searchState(searchPlayers(1))
+}
+
+func TestMatchmakingPlayAgainSearchesTogetherAndFillsUp(t *testing.T) {
+	c := newClient(t)
+	players := c.searchers(4, "animals")
+	c.advance(30 * time.Second)
+	c.tickAll()
+	games := wantGameStarted(t, players...)
+
+	var gameID, impostor string
+	var rest []*wsPlayer
+	for i, p := range players {
+		s := games[i]
+		gameID = s["gameId"].(string)
+		if s["myRole"] == "impostor" {
+			impostor = p.id
+		} else {
+			rest = append(rest, p)
+		}
+	}
+	// The impostor leaving ends the game.
+	wantOK(t, byID(players, impostor).w.command("bye", "game.leave", map[string]any{"gameId": gameID}))
+	for _, p := range rest {
+		p.w.gameState(phase("ended"))
+	}
+
+	wantOK(t, rest[0].w.command("again", "game.playAgain", map[string]any{"gameId": gameID}))
+	wantOK(t, rest[1].w.command("again", "game.playAgain", map[string]any{"gameId": gameID}))
+	if rest[0].roomID(c) != rest[1].roomID(c) {
+		t.Fatal("players who chose another game were split up")
+	}
+	stranger := c.searcher("חדש", "animals")
+	if stranger.roomID(c) != rest[0].roomID(c) {
+		t.Fatal("a new player did not fill the continuing group")
+	}
+	rest[0].w.searchState(searchPlayers(3))
+
+	// The player who stayed on the result screen still sees it and can leave.
+	wantOK(t, rest[2].w.command("home", "game.leave", map[string]any{"gameId": gameID}))
+	rest[2].w.sessionState(func(s map[string]any) bool { return s["activity"] == "none" })
+}
+
+func TestMatchmakingPlayAgainStaysTogetherEvenWithDifferentCategories(t *testing.T) {
+	c := newClient(t)
+	// Two of the four matched only on animals: one also picked food, one
+	// also picked sports.
+	players := []*wsPlayer{
+		c.searcher("אוכל-וחיות", "food", "animals"),
+		c.searcher("חיות", "animals"),
+		c.searcher("ספורט-וחיות", "sports", "animals"),
+		c.searcher("חיות2", "animals"),
+	}
+	c.advance(30 * time.Second)
+	c.tickAll()
+	games := wantGameStarted(t, players...)
+	var gameID, impostor string
+	for i, g := range games {
+		gameID = g["gameId"].(string)
+		if g["myRole"] == "impostor" {
+			impostor = players[i].id
+		}
+	}
+
+	// Bigger groups wait elsewhere: food lovers and sports fans.
+	c.searchers(3, "food")
+	c.searchers(3, "sports")
+
+	wantOK(t, byID(players, impostor).w.command("bye", "game.leave", map[string]any{"gameId": gameID}))
+	var rest []*wsPlayer
+	for _, p := range players {
+		if p.id != impostor {
+			rest = append(rest, p)
+		}
+	}
+	for _, p := range rest {
+		p.w.gameState(phase("ended"))
+		wantOK(t, p.w.command("again", "game.playAgain", map[string]any{"gameId": gameID}))
+	}
+	room := rest[0].roomID(c)
+	for _, p := range rest[1:] {
+		if p.roomID(c) != room {
+			t.Fatal("players who chose another game were split into different groups")
+		}
+	}
+}

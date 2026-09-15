@@ -4,13 +4,15 @@ on:
   pull_request:
     paths:
       - "app/**"
-      - "server/internal/game/testdata/word_rules.json"
+      # The end-to-end job plays against the server.
+      - "server/**"
       - ".github/workflows/app.yml"
   push:
     branches: [main]
     paths:
       - "app/**"
-      - "server/internal/game/testdata/word_rules.json"
+      # The end-to-end job plays against the server.
+      - "server/**"
       - ".github/workflows/app.yml"
 
 permissions:
@@ -25,8 +27,8 @@ jobs:
       matrix:
         include:
           # Must match the minimum in app/pubspec.yaml.
-          - name: minimum 3.27.0
-            flutter-version: 3.27.0
+          - name: minimum 3.44.0
+            flutter-version: 3.44.0
           - name: latest stable
             flutter-version: ""
             format: true
@@ -47,3 +49,65 @@ jobs:
         run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
       - run: flutter test
+
+  build:
+    name: build ${{ matrix.platform }} (minimum 3.44.0)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: android
+            os: ubuntu-latest
+            command: flutter build apk --debug
+          - platform: ios
+            os: macos-latest
+            command: flutter build ios --simulator --debug
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        if: matrix.platform == 'android'
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          # Must match the minimum in app/pubspec.yaml.
+          flutter-version: 3.44.0
+          cache: true
+      - run: flutter pub get
+      - run: ${{ matrix.command }}
+
+  e2e:
+    name: end-to-end against the server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Start the server with the development content policy
+        working-directory: server
+        run: |
+          go build -o "$RUNNER_TEMP/imposter-server" ./cmd/server
+          PORT=18080 IMPOSTER_DEV_POLICY=1 "$RUNNER_TEMP/imposter-server" > "$RUNNER_TEMP/server.log" 2>&1 &
+          for i in $(seq 1 50); do curl -sf localhost:18080/healthz && exit 0; sleep 0.2; done
+          cat "$RUNNER_TEMP/server.log"
+          exit 1
+      - run: flutter pub get
+        working-directory: app
+      - run: flutter test test/e2e
+        working-directory: app
+        env:
+          IMPOSTER_E2E_SERVER: http://localhost:18080
+      - if: failure()
+        run: cat "$RUNNER_TEMP/server.log"

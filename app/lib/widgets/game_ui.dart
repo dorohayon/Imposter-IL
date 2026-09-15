@@ -96,6 +96,7 @@ class GameScaffold extends StatelessWidget {
     this.onExit,
     this.bottom,
     this.showBack = true,
+    this.onBack,
     super.key,
   });
 
@@ -110,6 +111,9 @@ class GameScaffold extends StatelessWidget {
   final VoidCallback? onExit;
   final Widget? bottom;
   final bool showBack;
+
+  /// Replaces the default pop, for screens that must tell the server first.
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -147,7 +151,7 @@ class GameScaffold extends StatelessWidget {
                             icon: const Icon(Icons.close_rounded),
                           )
                         : showBack && canPop
-                            ? const BackButton()
+                            ? BackButton(onPressed: onBack)
                             : null,
                   ),
                 ],

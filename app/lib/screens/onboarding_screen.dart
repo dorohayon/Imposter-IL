@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../data/server.dart';
 import '../models/player.dart';
+import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'home_screen.dart';
@@ -16,6 +18,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _nickname = TextEditingController();
   int _selectedAvatar = 0;
   String? _error;
+  bool _busy = false;
 
   @override
   void dispose() {
@@ -23,20 +26,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _continue() {
+  Future<void> _continue() async {
     final value = _nickname.text.trim();
-    if (value.length < 2) {
+    if (value.characters.length < 2) {
       setState(() => _error = 'צריך לבחור כינוי של לפחות 2 תווים');
       return;
     }
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
-        builder: (_) => HomeScreen(
-          nickname: value,
-          avatar: avatarAssets[_selectedAvatar],
-        ),
-      ),
-    );
+    setState(() => _busy = true);
+    try {
+      await SessionScope.read(context)
+          .signIn(value, avatarIdOf(avatarAssets[_selectedAvatar]));
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
+      );
+    } on ApiException catch (e) {
+      setState(() {
+        _busy = false;
+        _error = switch (e.code) {
+          'invalid_nickname' => 'צריך לבחור כינוי של לפחות 2 תווים',
+          'nickname_blocked' => 'הכינוי הזה לא מתאים. נסו כינוי אחר.',
+          _ => 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
+        };
+      });
+    }
   }
 
   @override
@@ -98,7 +111,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            PrimaryButton(label: 'ממשיכים', onPressed: _continue),
+            PrimaryButton(
+              label: _busy ? 'מתחברים...' : 'ממשיכים',
+              onPressed: _busy ? null : _continue,
+            ),
           ],
         ),
       ),

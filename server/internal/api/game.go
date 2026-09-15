@@ -1,7 +1,6 @@
 package api
 
 import (
-	crand "crypto/rand"
 	"errors"
 	"math/rand/v2"
 	"time"
@@ -36,14 +35,7 @@ func (s *Server) startGame(sess *session, entry *roomEntry, now time.Time) strin
 		}
 		return roomErrorCode(err)
 	}
-	entry.gameID = "g_" + crand.Text()
-	g := entry.room.Game()
-	for _, id := range g.PlayerIDs() {
-		if player := s.players[id]; player != nil {
-			player.gameID, player.game, player.gameRoom = entry.gameID, g, entry
-			s.sendSessionState(player)
-		}
-	}
+	s.beginGame(entry)
 	s.publish(entry)
 	return ""
 }
@@ -92,6 +84,11 @@ func (s *Server) gameCommand(sess *session, typ string, p commandPayload, now ti
 		v, viewErr := sess.game.View(id)
 		if viewErr != nil || v.Phase != game.PhaseEnded {
 			return "wrong_phase"
+		}
+		if entry.public {
+			// Players who continue search again in the match's room, so they
+			// stay together while new players fill the empty spots.
+			return s.joinSearch(sess, entry, sess.searchCategories, now)
 		}
 		sess.leaveGame()
 		s.sendSessionState(sess)
