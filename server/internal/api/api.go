@@ -45,9 +45,11 @@ type session struct {
 	replies replyCache
 
 	// The game this player is showing, from its start until they leave it or
-	// return to the lobby. It outlives room membership so a player removed on
-	// a third disconnect still sees that game (screen 27).
+	// return to the lobby. It outlives room membership and later games in the
+	// room, so a player removed on a third disconnect still sees that game
+	// (screen 27) and can leave it.
 	gameID   string
+	game     *game.Game
 	gameRoom *roomEntry
 }
 
@@ -56,6 +58,21 @@ type roomEntry struct {
 	room   *room.Room
 	timer  *time.Timer // fires at room.Deadline()
 	gameID string      // id of room.Game(), if one was started
+
+	// stateVersion numbers the snapshots sent for this room: room.state and
+	// game.state each take the next value, so it rises on any published change,
+	// including profile edits and a new game, and never repeats across types.
+	stateVersion uint64
+	// published is what the last snapshot reflected; sync publishes when the
+	// room or its game has moved on since, for example through a deadline
+	// applied by a command that then failed.
+	published snapshotMark
+}
+
+type snapshotMark struct {
+	roomVersion uint64
+	game        *game.Game
+	gameVersion uint64
 }
 
 // Server holds sessions, rooms and connections.
@@ -170,6 +187,7 @@ func (s *Server) withSession(next func(http.ResponseWriter, []byte, *session)) h
 			return
 		}
 		next(w, body, sess)
+		s.syncSession(sess)
 	}
 }
 
@@ -321,6 +339,7 @@ func (s *Server) joinRoom(w http.ResponseWriter, body []byte, sess *session) {
 	}
 	switch err := entry.room.Join(sess.playerID, now); {
 	case errors.Is(err, room.ErrRoomFull), errors.Is(err, room.ErrInGame):
+		s.sync(entry) // Join applied the room's expired deadlines first
 		writeError(w, errRoomUnavailable)
 		return
 	case err != nil:

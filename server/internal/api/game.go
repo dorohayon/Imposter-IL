@@ -16,7 +16,7 @@ import (
 type PickWord func(categoryIDs []string, rng *rand.Rand) (categoryName, word string, ok bool)
 
 // leaveGame forgets the game this session was showing.
-func (sess *session) leaveGame() { sess.gameID, sess.gameRoom = "", nil }
+func (sess *session) leaveGame() { sess.gameID, sess.game, sess.gameRoom = "", nil, nil }
 
 func (s *Server) startGame(sess *session, entry *roomEntry, now time.Time) string {
 	v := entry.room.View()
@@ -37,9 +37,10 @@ func (s *Server) startGame(sess *session, entry *roomEntry, now time.Time) strin
 		return roomErrorCode(err)
 	}
 	entry.gameID = "g_" + crand.Text()
-	for _, id := range entry.room.Game().PlayerIDs() {
+	g := entry.room.Game()
+	for _, id := range g.PlayerIDs() {
 		if player := s.players[id]; player != nil {
-			player.gameID, player.gameRoom = entry.gameID, entry
+			player.gameID, player.game, player.gameRoom = entry.gameID, g, entry
 			s.sendSessionState(player)
 		}
 	}
@@ -49,7 +50,12 @@ func (s *Server) startGame(sess *session, entry *roomEntry, now time.Time) strin
 
 func (s *Server) gameCommand(sess *session, typ string, p commandPayload, now time.Time) string {
 	entry := sess.gameRoom
-	if entry == nil || sess.gameID != p.GameID || entry.gameID != p.GameID {
+	if entry == nil || sess.gameID != p.GameID {
+		return "game_not_found"
+	}
+	// A game replaced by a newer one in the room has ended; it can only be left.
+	current := sess.game == entry.room.Game()
+	if !current && typ != "game.leave" && typ != "game.playAgain" {
 		return "game_not_found"
 	}
 	id := sess.playerID
@@ -76,14 +82,14 @@ func (s *Server) gameCommand(sess *session, typ string, p commandPayload, now ti
 	case "game.leave":
 		// Leaving before the end is a loss; leaving the result screen is not.
 		// Either way the player goes home, so they leave the room too.
-		if s.currentRoom(sess) == entry {
+		if current && s.currentRoom(sess) == entry {
 			err = entry.room.Leave(id, now)
 			sess.roomID = ""
 		}
 		sess.leaveGame()
 		s.sendSessionState(sess)
 	case "game.playAgain":
-		v, viewErr := entry.room.Game().View(id)
+		v, viewErr := sess.game.View(id)
 		if viewErr != nil || v.Phase != game.PhaseEnded {
 			return "wrong_phase"
 		}
@@ -128,30 +134,39 @@ func gameErrorCode(err error) string {
 // sendToGame queues msg for every player still showing the room's current game.
 func (s *Server) sendToGame(entry *roomEntry, msg []byte) {
 	g := entry.room.Game()
-	if g == nil || entry.gameID == "" {
+	if g == nil {
 		return
 	}
 	for _, id := range g.PlayerIDs() {
-		if player := s.players[id]; player != nil && player.gameID == entry.gameID {
+		if player := s.players[id]; player != nil && player.game == g {
 			s.queue(player.conn, msg)
 		}
 	}
 }
 
-// publishGame sends each player still showing the game their own filtered view.
+// publishGame sends each player still showing the room's current game their
+// own filtered view.
 func (s *Server) publishGame(entry *roomEntry, now time.Time) {
 	g := entry.room.Game()
-	if g == nil || entry.gameID == "" {
+	if g == nil {
 		return
 	}
+	entry.stateVersion++ // above the room.state sent just before
 	for _, id := range g.PlayerIDs() {
-		player := s.players[id]
-		if player == nil || player.gameID != entry.gameID || player.conn == nil {
-			continue
+		if player := s.players[id]; player != nil && player.game == g {
+			s.sendGameState(player, entry.stateVersion, now)
 		}
-		if v, err := g.View(id); err == nil {
-			s.queue(player.conn, message("game.state", now, map[string]any{"stateVersion": v.Version, "game": s.gameJSON(entry.gameID, v)}))
-		}
+	}
+}
+
+// sendGameState sends the player the game they are showing, which may be an
+// earlier game of the room.
+func (s *Server) sendGameState(player *session, stateVersion uint64, now time.Time) {
+	if player.conn == nil || player.game == nil {
+		return
+	}
+	if v, err := player.game.View(player.playerID); err == nil {
+		s.queue(player.conn, message("game.state", now, map[string]any{"stateVersion": stateVersion, "game": s.gameJSON(player.gameID, v)}))
 	}
 }
 

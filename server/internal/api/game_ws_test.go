@@ -256,3 +256,111 @@ func TestWSRemovedPlayerStillSeesTheGame(t *testing.T) {
 	wantOK(t, victim.w.command("home", "game.leave", map[string]any{"gameId": gameID}))
 	victim.w.sessionState(func(s map[string]any) bool { return s["activity"] == "none" })
 }
+
+func TestWSCommandAfterADeadlinePublishesTheAdvanceEvenWhenItFails(t *testing.T) {
+	c := newClient(t)
+	roomID, players := c.roomWithPlayers(4)
+	gameID, _ := c.startGame(roomID, players)
+	byID := map[string]*wsPlayer{}
+	for _, p := range players {
+		byID[p.id] = p
+		wantOK(t, p.w.command("confirm", "game.confirmRole", map[string]any{"gameId": gameID}))
+	}
+	var order []string
+	for _, p := range players[0].w.gameState(phase("hints"))["players"].([]any) {
+		order = append(order, p.(map[string]any)["playerId"].(string))
+	}
+
+	// The first turn expires. The timer has not run, and the next command
+	// comes from a player whose turn it still is not.
+	c.advance(15 * time.Second)
+	wantReplyError(t, byID[order[2]].w.command("late", "game.submitHint", map[string]any{"gameId": gameID, "text": "מאוחר"}), "not_your_turn")
+	byID[order[3]].w.gameState(func(g map[string]any) bool { return g["currentTurnPlayerId"] == order[1] })
+}
+
+func TestWSPlayerRemovedFromAnEarlierGameCanStillSeeAndLeaveIt(t *testing.T) {
+	c := newClient(t)
+	roomID, players := c.roomWithPlayers(5)
+	oldGameID, impostor := c.startGame(roomID, players)
+	// The victim and the watcher are citizens; either may be the host.
+	var citizens []*wsPlayer
+	for _, p := range players {
+		if p.id != impostor {
+			citizens = append(citizens, p)
+		}
+	}
+	victim, watcher := citizens[0], citizens[1]
+
+	for i := range 3 {
+		_ = victim.w.ws.CloseNow()
+		watcher.w.gameState(func(g map[string]any) bool { return gamePlayer(g, victim.id)["disconnects"] == float64(i+1) })
+		if i < 2 {
+			victim.w = c.dial(victim.token)
+			watcher.w.gameState(func(g map[string]any) bool { return gamePlayer(g, victim.id)["connected"] == true })
+		}
+	}
+	c.advance(30 * time.Second)
+	c.tick(roomID)
+	watcher.w.gameState(func(g map[string]any) bool { return gamePlayer(g, victim.id)["status"] == "removed" })
+
+	// The impostor leaves, the first game ends, and a second one starts.
+	wantOK(t, byID(players, impostor).w.command("bye", "game.leave", map[string]any{"gameId": oldGameID}))
+	watcher.w.gameState(phase("ended"))
+	newToken, _ := c.session("חדש")
+	c.join(newToken, c.roomCode(roomID))
+	c.dial(newToken)
+	lobby := watcher.w.roomState(func(r map[string]any) bool { return r["status"] == "lobby" && len(r["players"].([]any)) == 4 })
+	host := byID(players, lobby["hostPlayerId"].(string))
+	wantOK(t, host.w.command("start2", "room.start", map[string]any{"roomId": roomID}))
+	watcher.w.sessionState(func(s map[string]any) bool { return s["activity"] == "game" && s["gameId"] != oldGameID })
+
+	victim.w = c.dial(victim.token)
+	if s := victim.w.sessionState(func(map[string]any) bool { return true }); s["gameId"] != oldGameID {
+		t.Fatalf("session.state = %v", s)
+	}
+	victim.w.gameState(func(g map[string]any) bool {
+		return g["gameId"] == oldGameID && g["phase"] == "ended" && gamePlayer(g, victim.id)["status"] == "removed"
+	})
+	wantReplyError(t, victim.w.command("old", "game.confirmRole", map[string]any{"gameId": oldGameID}), "game_not_found")
+	wantOK(t, victim.w.command("home", "game.leave", map[string]any{"gameId": oldGameID}))
+	victim.w.sessionState(func(s map[string]any) bool { return s["activity"] == "none" })
+}
+
+func byID(players []*wsPlayer, id string) *wsPlayer {
+	for _, p := range players {
+		if p.id == id {
+			return p
+		}
+	}
+	return nil
+}
+
+func (c *client) roomCode(roomID string) string {
+	c.srv.mu.Lock()
+	defer c.srv.mu.Unlock()
+	return c.srv.roomsByID[roomID].room.View().Code
+}
+
+func TestWSSnapshotVersionsKeepRisingAcrossTypes(t *testing.T) {
+	c := newClient(t)
+	roomID, players := c.roomWithPlayers(4)
+	gameID, _ := c.startGame(roomID, players)
+	w := players[0].w
+	w.skipped = nil // keep only what arrives from here on
+
+	wantOK(t, w.command("confirm", "game.confirmRole", map[string]any{"gameId": gameID}))
+	last, seen := 0.0, 0
+	for _, msg := range w.skipped {
+		if msg["type"] != "room.state" && msg["type"] != "game.state" {
+			continue
+		}
+		v := msg["payload"].(map[string]any)["stateVersion"].(float64)
+		if v <= last {
+			t.Fatalf("%s stateVersion %v after %v", msg["type"], v, last)
+		}
+		last, seen = v, seen+1
+	}
+	if seen < 2 {
+		t.Fatalf("only %d snapshots seen", seen)
+	}
+}

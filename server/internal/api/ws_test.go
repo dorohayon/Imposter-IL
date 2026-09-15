@@ -332,3 +332,25 @@ func TestWSMissedPongsDisconnect(t *testing.T) {
 
 	host.roomState(func(r map[string]any) bool { return member(r, silentID)["connected"] == false })
 }
+
+func TestWSProfileChangeRaisesTheStateVersion(t *testing.T) {
+	c := newClient(t)
+	token, id := c.session("דור")
+	c.createRoom(token, 8)
+	w := c.dial(token)
+	w.next("session.state")
+	before := w.next("room.state")["payload"].(map[string]any)["stateVersion"].(float64)
+
+	if status, body := c.do("PATCH", "/v1/sessions/me", token, map[string]string{"nickname": "נועה"}); status != 200 {
+		t.Fatalf("patch: %d %v", status, body)
+	}
+	for {
+		payload := w.next("room.state")["payload"].(map[string]any)
+		if member(payload["room"].(map[string]any), id)["nickname"] == "נועה" {
+			if payload["stateVersion"].(float64) <= before {
+				t.Fatalf("stateVersion %v did not rise above %v", payload["stateVersion"], before)
+			}
+			return
+		}
+	}
+}

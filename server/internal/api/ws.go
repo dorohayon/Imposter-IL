@@ -149,6 +149,7 @@ func (s *Server) readLoop(sess *session, c *conn) {
 			sess.replies.put(env.ID, msg, now)
 		}
 		s.queue(c, msg)
+		s.syncSession(sess)
 		s.mu.Unlock()
 	}
 }
@@ -167,8 +168,11 @@ func (s *Server) attach(sess *session, c *conn) {
 		_ = entry.room.Reconnect(sess.playerID, s.now())
 		s.publish(entry)
 	}
-	if sess.gameRoom != nil && sess.gameRoom != entry {
-		s.publishGame(sess.gameRoom, s.now()) // a game the player was removed from
+	if sess.game != nil && (sess.gameRoom != entry || sess.game != entry.room.Game()) {
+		// A game the player was removed from, or an earlier game of the room.
+		entry := sess.gameRoom
+		entry.stateVersion++
+		s.sendGameState(sess, entry.stateVersion, s.now())
 	}
 }
 
@@ -215,7 +219,9 @@ func (s *Server) sendSessionState(sess *session) {
 func (s *Server) publish(entry *roomEntry) {
 	now := s.now()
 	v := entry.room.View()
-	msg := message("room.state", now, map[string]any{"stateVersion": v.Version, "room": s.roomJSON(entry)})
+	entry.stateVersion++
+	entry.published = mark(entry)
+	msg := message("room.state", now, map[string]any{"stateVersion": entry.stateVersion, "room": s.roomJSON(entry)})
 	for _, m := range v.Members {
 		if sess := s.players[m.ID]; sess != nil {
 			s.queue(sess.conn, msg)
@@ -244,13 +250,38 @@ func (s *Server) schedule(entry *roomEntry) {
 // tickRoom applies the room's and its game's deadlines. A timer that was
 // stopped too late to cancel simply finds nothing due.
 func (s *Server) tickRoom(entry *roomEntry) {
-	now := s.now()
-	if deadline := entry.room.Deadline(); deadline.IsZero() || now.Before(deadline) {
-		s.schedule(entry)
+	entry.room.Tick(s.now())
+	s.sync(entry)
+}
+
+func mark(entry *roomEntry) snapshotMark {
+	m := snapshotMark{roomVersion: entry.room.View().Version, game: entry.room.Game()}
+	if m.game != nil {
+		m.gameVersion = m.game.Version()
+	}
+	return m
+}
+
+// sync publishes the room if it or its game changed since the last snapshot,
+// and otherwise only reschedules its timer. Room and game methods apply
+// expired deadlines before running, so any call can advance the state even
+// when the call itself fails.
+func (s *Server) sync(entry *roomEntry) {
+	if mark(entry) != entry.published {
+		s.publish(entry)
 		return
 	}
-	entry.room.Tick(now)
-	s.publish(entry)
+	s.schedule(entry)
+}
+
+// syncSession syncs the rooms a session's last request may have touched.
+func (s *Server) syncSession(sess *session) {
+	if entry := s.roomsByID[sess.roomID]; entry != nil {
+		s.sync(entry)
+	}
+	if sess.gameRoom != nil && sess.gameRoom.id != sess.roomID {
+		s.sync(sess.gameRoom)
+	}
 }
 
 // dispatch runs one client command and returns its error code, or "" on success.

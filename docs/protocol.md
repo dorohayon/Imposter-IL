@@ -143,7 +143,7 @@
 
 ### סדר, שחזור וזמן
 
-- כל Snapshot (`game.state`, `room.state`, `matchmaking.state`) כולל `stateVersion` מונוטוני. האפליקציה מתעלמת מגרסה שאינה גדולה מהאחרונה שקיבלה.
+- כל Snapshot (`game.state`, `room.state`, `matchmaking.state`) כולל `stateVersion` מונוטוני. האפליקציה מתעלמת מגרסה שאינה גדולה מהאחרונה שקיבלה. בחדר פרטי המספור משותף ל־`room.state` ול־`game.state` של החדר: כל Snapshot מקבל מספר גדול מכל הקודמים, גם בין משחקים וגם כשרק כינוי או אווטאר השתנו.
 - מיד אחרי חיבור או חיבור מחדש השרת שולח `session.state` ואחריו את ה־Snapshot הרלוונטי. אין צורך בהודעת resume.
 - כל `deadline` הוא זמן מוחלט של השרת. האפליקציה מחשבת היסט `serverTime − זמן קבלה מקומי` ומציגה ספירה לאחור לפי `deadline`.
 - השרת שולח ping כל 10 שניות. שני pong חסרים או סגירת socket נחשבים ניתוק (`Disconnect` במנוע). ערכים טכניים הניתנים לכוונון.
@@ -163,8 +163,8 @@
 
 - `room.start` בוחר מילה באקראי מהקטגוריות של החדר. כל עוד מילון התוכן הלא ראוי פתוח, שרת שלא הופעל עם `IMPOSTER_DEV_POLICY=1` מחזיר `content_unavailable`.
 - כל שחקני המשחק מקבלים `session.state` עם `activity: "game"`, `roomId` ו־`gameId`, ואחריו `game.state` מסונן. ה־`activity` נשאר `game` גם אחרי `ended` (מסך התוצאה), עד `game.playAgain` או `game.leave`.
-- אחרי כל שינוי, כולל טיימרים, כל שחקן שעדיין מציג את המשחק מקבל `game.state` משלו. `stateVersion` הוא גרסת המשחק.
-- שחקן שהוצא בניתוק שלישי ומתחבר מחדש מקבל `session.state` עם `activity: "game"` ו־`game.state` שבו הסטטוס שלו `removed` (מסך 27), עד `game.leave`.
+- אחרי כל שינוי, כל שחקן שעדיין מציג את המשחק מקבל `game.state` משלו. זה כולל טיימרים, וגם פקודה שנכשלה אחרי שהפעילה זמן שפג (למשל רמז מאוחר שהעביר את התור לפני שנדחה ב־`not_your_turn`).
+- שחקן שהוצא בניתוק שלישי ומתחבר מחדש מקבל `session.state` עם `activity: "game"` ו־`game.state` שבו הסטטוס שלו `removed` (מסך 27), עד `game.leave`. זה נכון גם אם בינתיים התחיל בחדר משחק חדש: הוא מקבל את המצב הסופי של המשחק שלו, ופקודות אחרות מלבד `game.leave` ו־`game.playAgain` מקבלות `game_not_found`.
 - `game.react` שולח `game.reaction` לכל שחקני המשחק, בנוסף לספירה ב־`game.state`.
 - `gameId` שאינו המשחק שהשחקן מציג מקבל `game_not_found`.
 
