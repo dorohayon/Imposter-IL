@@ -165,7 +165,8 @@ func New(code, hostID string, settings Settings, policy game.Policy, rng *rand.R
 }
 
 // Join adds a player. Joining again while already a member changes nothing.
-// The first other player to join locks the settings for good.
+// The first other player to join locks the settings for good. A player who
+// joins a room that everyone left becomes its host.
 func (r *Room) Join(playerID string, now time.Time) error {
 	if playerID == "" {
 		return ErrInvalidPlayerID
@@ -182,8 +183,13 @@ func (r *Room) Join(playerID string, now time.Time) error {
 	}
 	r.members = append(r.members, Member{ID: playerID, Connected: true, JoinedAt: now})
 	r.locked = true
-	if r.hostPendingFrom != "" {
+	switch {
+	case r.hostPendingFrom != "":
 		r.transferHost(ReasonHostTimeout, now)
+	case r.host == "":
+		// Everyone had left, so there is nobody to hand over from: the room
+		// stays joinable by code and the first player back runs it.
+		r.host, r.transfer = playerID, nil
 	}
 	r.version++
 	return nil

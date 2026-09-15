@@ -333,6 +333,15 @@ func TestHostLeavingHandsOverImmediately(t *testing.T) {
 	if !r.Empty() || r.host != "" {
 		t.Fatal("room should be empty without a host")
 	}
+
+	// The code still works, and the first player back runs the room.
+	must(t, r.Join("p9", t0.Add(time.Minute)))
+	wantHost(t, r, "p9")
+	if v := r.View(); v.HostTransfer != nil || !v.HostReconnectDeadline.IsZero() {
+		t.Fatalf("view = %+v", v)
+	}
+	must(t, r.Join("p10", t0.Add(time.Minute)))
+	must(t, r.Kick("p9", "p10", t0.Add(time.Minute)))
 }
 
 func TestHostLeavingDuringGameIsALossAndHandsOver(t *testing.T) {

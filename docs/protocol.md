@@ -1,6 +1,6 @@
 # חוזי REST ו־WebSocket
 
-גרסה: `v1` (טיוטה). רק `GET /healthz` ממומש כרגע. שאר החוזה מגדיר את מה שהשרת והאפליקציה יממשו בהמשך. רקע ועקרונות: [`architecture.md`](architecture.md).
+גרסה: `v1` (טיוטה). ממומשים כרגע `GET /healthz`, `POST /v1/sessions`, `PATCH /v1/sessions/me`, `POST /v1/rooms` ו־`POST /v1/rooms/join` (`server/internal/api`). שאר החוזה מגדיר את מה שהשרת והאפליקציה יממשו בהמשך. רקע ועקרונות: [`architecture.md`](architecture.md).
 
 ## מוסכמות
 
@@ -15,6 +15,8 @@
 ```json
 { "error": { "code": "room_not_found", "message": "room not found" } }
 ```
+
+שגיאות REST כלליות: `400 invalid_message` (גוף שאינו JSON או גדול מ־64KB), `401 session_not_found` (טוקן חסר או לא מוכר), `500 internal_error`.
 
 ## REST
 
@@ -47,13 +49,13 @@
 { "playerId": "p_01J8", "sessionToken": "…" }
 ```
 
-שגיאות: `422 nickname_blocked` (מסך 2), `422 invalid_avatar`.
+שגיאות: `422 invalid_nickname` (אחרי הסרת רווחים בקצוות הכינוי ריק או קצר מ־2 תווים), `422 nickname_blocked` (מסך 2; ממתין למילון), `422 invalid_avatar`. הכינוי נשמר אחרי הסרת הרווחים.
 
 ה־`sessionToken` מזהה את החיבור לצורך חיבור מחדש בלבד. האם ניצחונות והפסדים יגובו בשרת באמצעותו — פתוח. כללי הכינוי (אורך, מילון) — פתוחים. `avatarId` הוא שם קובץ האווטאר בלי הסיומת.
 
 ### `PATCH /v1/sessions/me`
 
-גוף זהה ל־`POST /v1/sessions`, כל השדות אופציונליים. `200` עם `{ "playerId": "…" }`. אותן שגיאות.
+גוף זהה ל־`POST /v1/sessions`, כל השדות אופציונליים. `200` עם `{ "playerId": "…" }`. אותן שגיאות. עדכון שאחד משדותיו אינו תקין אינו משנה דבר.
 
 ### `GET /v1/categories`
 
@@ -69,7 +71,7 @@
 { "maxPlayers": 8, "hintSeconds": 15, "categoryIds": ["…"] }
 ```
 
-`maxPlayers` בין 4 ל־8. `hintSeconds` אחד מ־10, 15, 20. תשובה `201` עם `{ "room": Room }`. שגיאה: `422 invalid_room_settings`.
+`maxPlayers` בין 4 ל־8. `hintSeconds` אחד מ־10, 15, 20. `categoryIds` אינו ריק; בדיקתו מול רשימת הקטגוריות תיתווסף כשהרשימה תיקבע. תשובה `201` עם `{ "room": Room }`, והשחקן הוא המנהל. שגיאות: `422 invalid_room_settings`, `409 already_in_activity`.
 
 ### `POST /v1/rooms/join`
 
@@ -78,6 +80,8 @@
 ```
 
 `200` עם `{ "room": Room }`. שגיאות (מסך 28): `422 invalid_room_code` (לא שש ספרות), `404 room_not_found`, `409 room_unavailable` (החדר מלא או שמשחק בעיצומו). ניסיון הצטרפות חוזר לאותו חדר מחזיר `200`.
+
+שחקן נמצא בחדר אחד לכל היותר. יצירת חדר או הצטרפות לחדר אחר מוציאה אותו מהלובי הקודם, רק אחרי שהחדר החדש קיבל אותו. אם בחדר הקודם מתנהל משחק, הבקשה נדחית ב־`409 already_in_activity`, כי יציאה ממשחק נחשבת הפסד.
 
 ## WebSocket
 
