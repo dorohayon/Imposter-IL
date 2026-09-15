@@ -16,6 +16,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/dorohayon/Imposter-IL/server/internal/content"
 	"github.com/dorohayon/Imposter-IL/server/internal/game"
 	"github.com/dorohayon/Imposter-IL/server/internal/room"
 )
@@ -42,12 +43,19 @@ type session struct {
 
 	conn    *conn // current WebSocket, if connected
 	replies replyCache
+
+	// The game this player is showing, from its start until they leave it or
+	// return to the lobby. It outlives room membership so a player removed on
+	// a third disconnect still sees that game (screen 27).
+	gameID   string
+	gameRoom *roomEntry
 }
 
 type roomEntry struct {
-	id    string
-	room  *room.Room
-	timer *time.Timer // fires at room.Deadline()
+	id     string
+	room   *room.Room
+	timer  *time.Timer // fires at room.Deadline()
+	gameID string      // id of room.Game(), if one was started
 }
 
 // Server holds sessions, rooms and connections.
@@ -56,6 +64,7 @@ type roomEntry struct {
 type Server struct {
 	now          func() time.Time
 	policy       game.Policy
+	pickWord     PickWord
 	newCode      func() string
 	pingInterval time.Duration
 
@@ -67,15 +76,16 @@ type Server struct {
 	roomsCode map[string]*roomEntry
 }
 
-// NewServer uses policy for games started in rooms. The content rules are
-// still open, so an incomplete policy makes game start fail rather than
-// silently apply a placeholder.
-func NewServer(now func() time.Time, policy game.Policy) *Server {
+// NewServer uses policy and pickWord for games started in rooms. The content
+// is still undecided, so without them room.start fails with
+// content_unavailable rather than silently using a placeholder.
+func NewServer(now func() time.Time, policy game.Policy, pickWord PickWord) *Server {
 	var seed [32]byte
 	_, _ = crand.Read(seed[:])
 	s := &Server{
 		now:          now,
 		policy:       policy,
+		pickWord:     pickWord,
 		pingInterval: 10 * time.Second,
 		rng:          rand.New(rand.NewChaCha8(seed)),
 		sessions:     map[string]*session{},
@@ -89,6 +99,7 @@ func NewServer(now func() time.Time, policy game.Policy) *Server {
 
 func (s *Server) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v1/sessions", s.createSession)
+	mux.HandleFunc("GET /v1/categories", s.withSession(listCategories))
 	mux.HandleFunc("PATCH /v1/sessions/me", s.withSession(s.updateSession))
 	mux.HandleFunc("POST /v1/rooms", s.withSession(s.createRoom))
 	mux.HandleFunc("POST /v1/rooms/join", s.withSession(s.joinRoom))
@@ -232,6 +243,14 @@ func (s *Server) updateSession(w http.ResponseWriter, body []byte, sess *session
 	writeJSON(w, http.StatusOK, map[string]string{"playerId": sess.playerID})
 }
 
+func listCategories(w http.ResponseWriter, _ []byte, _ *session) {
+	categories := []map[string]string{}
+	for _, c := range content.Categories {
+		categories = append(categories, map[string]string{"id": c.ID, "name": c.Name})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"categories": categories})
+}
+
 type settingsRequest struct {
 	MaxPlayers  int      `json:"maxPlayers"`
 	HintSeconds int      `json:"hintSeconds"`
@@ -255,7 +274,7 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 	}
 	settings := room.Settings{MaxPlayers: req.MaxPlayers, HintSeconds: req.HintSeconds, CategoryIDs: req.CategoryIDs}
 	rm, err := room.New(code, sess.playerID, settings, s.policy, s.rng, now)
-	if err != nil {
+	if err != nil || !content.ValidIDs(req.CategoryIDs) {
 		writeError(w, errInvalidSettings)
 		return
 	}
@@ -263,6 +282,7 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 	entry := &roomEntry{id: "r_" + crand.Text(), room: rm}
 	s.roomsByID[entry.id], s.roomsCode[code] = entry, entry
 	sess.roomID = entry.id
+	sess.leaveGame()
 	s.sendSessionState(sess)
 	s.publish(entry)
 	writeJSON(w, http.StatusCreated, map[string]any{"room": s.roomJSON(entry)})
@@ -300,6 +320,7 @@ func (s *Server) joinRoom(w http.ResponseWriter, body []byte, sess *session) {
 	}
 	s.leave(previous, sess, now)
 	sess.roomID = entry.id
+	sess.leaveGame()
 	s.sendSessionState(sess)
 	s.publish(entry)
 	writeJSON(w, http.StatusOK, map[string]any{"room": s.roomJSON(entry)})

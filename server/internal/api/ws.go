@@ -10,11 +10,12 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/dorohayon/Imposter-IL/server/internal/content"
 	"github.com/dorohayon/Imposter-IL/server/internal/room"
 )
 
-// WebSocket part of docs/protocol.md for private room lobbies. Game messages
-// arrive in the next step and are rejected as invalid_message until then.
+// WebSocket part of docs/protocol.md for private rooms and their games.
+// Matchmaking messages are not implemented yet and get invalid_message.
 
 const (
 	protocolVersion = 1
@@ -166,6 +167,9 @@ func (s *Server) attach(sess *session, c *conn) {
 		_ = entry.room.Reconnect(sess.playerID, s.now())
 		s.publish(entry)
 	}
+	if sess.gameRoom != nil && sess.gameRoom != entry {
+		s.publishGame(sess.gameRoom, s.now()) // a game the player was removed from
+	}
 }
 
 // detach records a real disconnect, unless c was already replaced.
@@ -196,22 +200,28 @@ func reply(id, code string, now time.Time) []byte {
 
 func (s *Server) sendSessionState(sess *session) {
 	payload := map[string]any{"playerId": sess.playerID, "activity": "none"}
-	if sess.roomID != "" {
+	switch {
+	case sess.gameID != "":
+		payload["activity"], payload["roomId"], payload["gameId"] = "game", sess.gameRoom.id, sess.gameID
+	case sess.roomID != "":
 		payload["activity"], payload["roomId"] = "room", sess.roomID
 	}
 	s.queue(sess.conn, message("session.state", s.now(), payload))
 }
 
-// publish sends room.state to every connected member and reschedules the
-// room's timer. Call it after anything that may change the room.
+// publish sends room.state to every connected member, game.state to every
+// player showing the room's game, and reschedules the room's timer. Call it
+// after anything that may change the room or its game.
 func (s *Server) publish(entry *roomEntry) {
+	now := s.now()
 	v := entry.room.View()
-	msg := message("room.state", s.now(), map[string]any{"stateVersion": v.Version, "room": s.roomJSON(entry)})
+	msg := message("room.state", now, map[string]any{"stateVersion": v.Version, "room": s.roomJSON(entry)})
 	for _, m := range v.Members {
 		if sess := s.players[m.ID]; sess != nil {
 			s.queue(sess.conn, msg)
 		}
 	}
+	s.publishGame(entry, now)
 	s.schedule(entry)
 }
 
@@ -231,30 +241,48 @@ func (s *Server) schedule(entry *roomEntry) {
 	})
 }
 
-// tickRoom applies the room's deadlines. A timer that was stopped too late to
-// cancel simply finds nothing due.
+// tickRoom applies the room's and its game's deadlines. A timer that was
+// stopped too late to cancel simply finds nothing due.
 func (s *Server) tickRoom(entry *roomEntry) {
-	before := entry.room.View().Version
-	entry.room.Tick(s.now())
-	if entry.room.View().Version != before {
-		s.publish(entry)
+	now := s.now()
+	if deadline := entry.room.Deadline(); deadline.IsZero() || now.Before(deadline) {
+		s.schedule(entry)
 		return
 	}
-	s.schedule(entry)
+	entry.room.Tick(now)
+	s.publish(entry)
 }
 
 // dispatch runs one client command and returns its error code, or "" on success.
 func (s *Server) dispatch(sess *session, env envelope, now time.Time) string {
-	var p struct {
-		RoomID   string `json:"roomId"`
-		PlayerID string `json:"playerId"`
-		settingsRequest
-	}
+	var p commandPayload
 	if len(env.Payload) > 0 && json.Unmarshal(env.Payload, &p) != nil {
 		return "invalid_message"
 	}
-	switch env.Type {
-	case "room.updateSettings", "room.kick", "room.leave":
+	switch {
+	case strings.HasPrefix(env.Type, "room."):
+		return s.roomCommand(sess, env.Type, p, now)
+	case strings.HasPrefix(env.Type, "game."):
+		return s.gameCommand(sess, env.Type, p, now)
+	}
+	return "invalid_message"
+}
+
+// commandPayload holds the fields of every room.* and game.* payload.
+type commandPayload struct {
+	RoomID         string `json:"roomId"`
+	GameID         string `json:"gameId"`
+	PlayerID       string `json:"playerId"`
+	TargetPlayerID string `json:"targetPlayerId"`
+	Text           string `json:"text"`
+	HintIndex      *int   `json:"hintIndex"`
+	ReactionID     string `json:"reactionId"`
+	settingsRequest
+}
+
+func (s *Server) roomCommand(sess *session, typ string, p commandPayload, now time.Time) string {
+	switch typ {
+	case "room.updateSettings", "room.kick", "room.start", "room.leave":
 	default:
 		return "invalid_message"
 	}
@@ -264,20 +292,27 @@ func (s *Server) dispatch(sess *session, env envelope, now time.Time) string {
 	}
 
 	var err error
-	switch env.Type {
+	switch typ {
 	case "room.updateSettings":
+		if !content.ValidIDs(p.CategoryIDs) {
+			return "invalid_room_settings"
+		}
 		err = entry.room.UpdateSettings(sess.playerID, room.Settings{MaxPlayers: p.MaxPlayers, HintSeconds: p.HintSeconds, CategoryIDs: p.CategoryIDs}, now)
 	case "room.kick":
 		if err = entry.room.Kick(sess.playerID, p.PlayerID, now); err == nil {
 			if kicked := s.players[p.PlayerID]; kicked != nil {
 				kicked.roomID = ""
+				kicked.leaveGame()
 				s.queue(kicked.conn, message("room.kicked", now, map[string]string{"roomId": entry.id}))
 				s.sendSessionState(kicked)
 			}
 		}
+	case "room.start":
+		return s.startGame(sess, entry, now)
 	case "room.leave":
 		if err = entry.room.Leave(sess.playerID, now); err == nil {
 			sess.roomID = ""
+			sess.leaveGame()
 			s.sendSessionState(sess)
 		}
 	}
@@ -290,12 +325,13 @@ func (s *Server) dispatch(sess *session, env envelope, now time.Time) string {
 
 func roomErrorCode(err error) string {
 	for target, code := range map[error]string{
-		room.ErrNotHost:         "not_room_host",
-		room.ErrSettingsLocked:  "room_settings_locked",
-		room.ErrInvalidSettings: "invalid_room_settings",
-		room.ErrCannotKickSelf:  "cannot_kick_self",
-		room.ErrInGame:          "room_in_game",
-		room.ErrUnknownPlayer:   "unknown_player",
+		room.ErrNotHost:          "not_room_host",
+		room.ErrSettingsLocked:   "room_settings_locked",
+		room.ErrInvalidSettings:  "invalid_room_settings",
+		room.ErrCannotKickSelf:   "cannot_kick_self",
+		room.ErrNotEnoughPlayers: "not_enough_players",
+		room.ErrInGame:           "room_in_game",
+		room.ErrUnknownPlayer:    "unknown_player",
 	} {
 		if errors.Is(err, target) {
 			return code

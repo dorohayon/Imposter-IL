@@ -1,10 +1,18 @@
 import '../models/player.dart';
 
 // Prototype-only content. Players, roles, words, hints, categories and room
-// codes will come from the server (docs/protocol.md). Nothing in this file is
-// product data, and the final categories and words are still open decisions.
+// codes will come from the server (docs/protocol.md). Category names follow the
+// approved first batch in server/internal/content; nothing else is product data.
 
-const demoCategories = ['הכול', 'אוכל', 'חיות', 'ספורט', 'מקומות', 'מקצועות'];
+const demoCategories = [
+  'הכול',
+  'אוכל',
+  'חיות',
+  'ספורט',
+  'מקצועות',
+  'מקומות',
+  'חפצים',
+];
 const demoCategory = 'אוכל';
 const demoWord = 'בננה';
 const demoRoomCode = '482731';

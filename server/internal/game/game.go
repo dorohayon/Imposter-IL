@@ -239,6 +239,10 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 	return g, nil
 }
 
+// PlayerIDs returns every player dealt into the game, in turn order,
+// including those who left or were removed.
+func (g *Game) PlayerIDs() []string { return slices.Clone(g.order) }
+
 // Deadline is the next moment Tick has work to do: the phase timer or a
 // pending removal after a third disconnect. Zero means nothing is scheduled.
 func (g *Game) Deadline() time.Time {

@@ -207,6 +207,10 @@ func TestWSRepeatedMessageIDGetsTheSameReplyWithoutRunningAgain(t *testing.T) {
 		return map[string]any{"roomId": room["roomId"], "maxPlayers": 8, "hintSeconds": hint, "categoryIds": []string{"animals"}}
 	}
 
+	bad := settings(10)
+	bad["categoryIds"] = []string{"cars"}
+	wantReplyError(t, w.command("bad", "room.updateSettings", bad), "invalid_room_settings")
+
 	first := w.command("same", "room.updateSettings", settings(10))
 	wantOK(t, first)
 	second := w.command("same", "room.updateSettings", settings(20))
