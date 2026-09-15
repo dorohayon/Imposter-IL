@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../demo/demo_countdown.dart';
 import '../demo/demo_data.dart';
 import '../models/player.dart';
+import '../models/word_rules.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 
@@ -137,7 +138,10 @@ class _HintRoundScreenState extends State<HintRoundScreen> {
               // ponytail: the demo script can't react to a typed hint, so a
               // scripted hint that repeats it is shown as not sent.
               : _players[i].copyWith(
-                  hint: _players[i].hint == _myHint ? '' : _players[i].hint,
+                  hint:
+                      _myHint.isNotEmpty && sameHint(_players[i].hint!, _myHint)
+                          ? ''
+                          : _players[i].hint,
                 ),
       ];
 
@@ -152,15 +156,17 @@ class _HintRoundScreenState extends State<HintRoundScreen> {
     final hint = _controller.text.trim();
     final words =
         hint.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).toList();
-    // ponytail: exact matching only. Hebrew normalization for the secret word
-    // and duplicate checks is an open decision, and the server has the final say.
     final error = hint.isEmpty
         ? 'צריך לכתוב רמז'
         : words.length != 1
             ? 'הרמז חייב להיות מילה אחת'
-            : hint.contains(demoWord)
+            // The impostor does not know the word, so it is not checked.
+            : !widget.game.isImpostor && hintContainsSecret(hint, demoWord)
                 ? 'אסור לחשוף את המילה הסודית'
-                : _revealed.any((player) => player.hint == hint)
+                : _revealed.any(
+                    (player) =>
+                        player.hint!.isNotEmpty && sameHint(player.hint!, hint),
+                  )
                     ? 'כבר השתמשו ברמז הזה'
                     : null;
     if (error != null) {
@@ -475,9 +481,9 @@ class _ImpostorGuessScreenState extends State<ImpostorGuessScreen> {
       bottom: isImpostor
           ? PrimaryButton(
               label: 'שליחת ניחוש',
-              // ponytail: exact match; guess normalization is an open decision.
-              onPressed: () =>
-                  _finish(citizensWon: _guess.text.trim() != demoWord),
+              onPressed: () => _finish(
+                citizensWon: !guessMatches(_guess.text, demoWord),
+              ),
             )
           : null,
       child: Column(

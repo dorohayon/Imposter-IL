@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - "app/**"
+      - "server/internal/game/testdata/word_rules.json"
       - ".github/workflows/app.yml"
   push:
     branches: [main]
     paths:
       - "app/**"
+      - "server/internal/game/testdata/word_rules.json"
       - ".github/workflows/app.yml"
 
 permissions:

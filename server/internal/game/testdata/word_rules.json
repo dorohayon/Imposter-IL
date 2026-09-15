@@ -1,0 +1,56 @@
+{
+  "_comment": "Shared cases for the Hebrew word rules in docs/decisions.md. Both server/internal/game/words.go and app/lib/models/word_rules.dart must pass every case. Rows marked as known ceilings document accepted false matches from ignoring prefix letters.",
+  "normalize": [
+    ["בננה", "בננה"],
+    ["  בננה  ", "בננה"],
+    ["בָּנָנָה", "בננה"],
+    ["ג׳ירפה", "גירפה"],
+    ["ג'ירפה", "גירפה"],
+    ["צה״ל", "צהל"],
+    ["צה\"ל", "צהל"],
+    ["תל־אביב", "תלאביב"],
+    ["תל-אביב", "תלאביב"],
+    ["שלום!", "שלומ"],
+    ["ך ם ן ף ץ", "כמנפצ"],
+    ["Banana", "banana"],
+    ["ספר2", "ספר2"]
+  ],
+  "containsSecret": [
+    ["בננה", "בננה", true],
+    ["הבננה", "בננה", true],
+    ["ובבננה", "בננה", true],
+    ["בָּנָנָה", "בננה", true],
+    ["בנ-נה", "בננה", true],
+    ["פילים", "פיל", true],
+    ["שלומי", "שלום", true],
+    ["בננות", "בננה", false],
+    ["בנה", "בננה", false],
+    ["קוף", "בננה", false]
+  ],
+  "sameHint": [
+    ["בית", "בית", true],
+    ["בַּיִת", "בית", true],
+    ["הבית", "בית", true],
+    ["בית", "ובבית", true],
+    ["וכשהבית", "בית", false],
+    ["לבית", "הבית", false],
+    ["כלב", "שלב", false],
+    ["בית", "ביתה", false],
+    ["שולחן", "שלחן", false],
+    ["ים", "ם", false],
+    ["כלב", "לב", true, "known ceiling: כ is read as a prefix"],
+    ["מים", "ים", true, "known ceiling: מ is read as a prefix"]
+  ],
+  "guessMatches": [
+    ["בננה", "בננה", true],
+    [" בננה ", "בננה", true],
+    ["בָּנָנָה", "בננה", true],
+    ["הבננה", "בננה", true],
+    ["ובבננה", "בננה", true],
+    ["בננות", "בננה", false],
+    ["בנה", "בננה", false],
+    ["לב", "כלב", false],
+    ["שלחן", "שולחן", false],
+    ["כלב", "לב", true, "known ceiling: כ is read as a prefix"]
+  ]
+}

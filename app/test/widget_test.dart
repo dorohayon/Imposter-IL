@@ -140,7 +140,9 @@ void main() {
     expect(find.text('הרמז: קליפה'), findsNothing);
     for (final (hint, error) in [
       ('מתוק', 'כבר השתמשו ברמז הזה'),
+      ('והַמתוק', 'כבר השתמשו ברמז הזה'),
       ('בננה', 'אסור לחשוף את המילה הסודית'),
+      ('וּבַבננה', 'אסור לחשוף את המילה הסודית'),
       ('שתי מילים', 'הרמז חייב להיות מילה אחת'),
     ]) {
       await tester.enterText(find.byType(TextField), hint);
@@ -184,7 +186,8 @@ void main() {
     expect(find.text('בחירת קטגוריות'), findsOneWidget);
   });
 
-  testWidgets('the impostor can never open the secret word', (tester) async {
+  testWidgets('the impostor never sees the word and is not blocked by it',
+      (tester) async {
     await startAtHome(tester);
 
     await open(
@@ -197,6 +200,12 @@ void main() {
     expect(find.text('הצגת המילה'), findsNothing);
     expect(find.text(demoWord), findsNothing);
     expect(find.byIcon(Icons.visibility_outlined), findsNothing);
+
+    // The impostor does not know the word, so a hint containing it is sent.
+    await tester.enterText(find.byType(TextField), 'הבננה');
+    await tapText(tester, 'שליחת רמז');
+    expect(find.text('אסור לחשוף את המילה הסודית'), findsNothing);
+    expect(find.text('הרמז: הבננה'), findsOneWidget);
   });
 
   testWidgets('a citizen can open the secret word', (tester) async {
@@ -219,7 +228,8 @@ void main() {
         game: DemoGame(me: demoOnlineMe, isImpostor: true),
       ),
     );
-    await tester.enterText(find.byType(TextField), demoWord);
+    // Normalized: niqqud and a prefix letter still count as the word.
+    await tester.enterText(find.byType(TextField), ' הבָּנָנָה ');
     await tapText(tester, 'שליחת ניחוש');
     expect(find.text('המתחזה ניצח!'), findsOneWidget);
   });

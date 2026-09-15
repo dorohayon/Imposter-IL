@@ -13,22 +13,11 @@ var t0 = time.Date(2026, 9, 14, 12, 0, 0, 0, time.UTC)
 
 const secret = "פיל"
 
-// testPolicy stands in for the open hint/guess/reaction rules.
+// testPolicy stands in for the open content and reaction rules.
 func testPolicy() Policy {
 	return Policy{
-		CheckHint: func(hint, secretWord string, previous []string) error {
-			switch {
-			case hint == "blocked":
-				return ErrHintInappropriate
-			case strings.Contains(hint, secretWord):
-				return ErrHintContainsSecret
-			case slices.Contains(previous, hint):
-				return ErrHintDuplicate
-			}
-			return nil
-		},
-		GuessMatches:  func(guess, secretWord string) bool { return guess == secretWord },
-		ValidReaction: func(id string) bool { return id == "suspicious" },
+		HintInappropriate: func(hint string) bool { return hint == "blocked" },
+		ValidReaction:     func(id string) bool { return id == "suspicious" },
 	}
 }
 
@@ -241,6 +230,7 @@ func TestMissedHintIsMarkedAndPlayerStays(t *testing.T) {
 
 func TestHintValidation(t *testing.T) {
 	g := newGame(t, 4)
+	g.order = append([]string{g.impostor}, citizens(g)...)
 	confirmAll(t, g)
 	must(t, g.SubmitHint(g.order[0], "חדק", t0))
 	cur := g.order[1]
@@ -253,7 +243,9 @@ func TestHintValidation(t *testing.T) {
 		{strings.Repeat("א", 26), ErrHintTooLong},
 		{"blocked", ErrHintInappropriate},
 		{"פילים", ErrHintContainsSecret},
+		{"הפִּיל", ErrHintContainsSecret},
 		{"חדק", ErrHintDuplicate},
+		{"והחדק", ErrHintDuplicate},
 	}
 	for _, c := range cases {
 		wantErr(t, g.SubmitHint(cur, c.hint, t0), c.want)
@@ -262,6 +254,15 @@ func TestHintValidation(t *testing.T) {
 		t.Fatal("a blocked hint must not be shown or end the turn")
 	}
 	must(t, g.SubmitHint(cur, " "+strings.Repeat("א", 25)+" ", t0))
+}
+
+func TestImpostorHintIsNotCheckedAgainstTheSecret(t *testing.T) {
+	g := newGame(t, 4)
+	g.order = append([]string{g.impostor}, citizens(g)...)
+	confirmAll(t, g)
+	must(t, g.SubmitHint(g.impostor, "הפיל", t0))
+	// a citizen using the word is still blocked
+	wantErr(t, g.SubmitHint(g.order[1], secret, t0), ErrHintContainsSecret)
 }
 
 func TestReactionsAreUnlimitedDuringNextTurn(t *testing.T) {
@@ -343,6 +344,11 @@ func TestImpostorGuess(t *testing.T) {
 		g, now := caught(t)
 		wantErr(t, g.SubmitGuess(citizens(g)[0], secret, now), ErrNotImpostor)
 		must(t, g.SubmitGuess(g.impostor, " "+secret, now))
+		wantResult(t, g, TeamImpostor, ReasonImpostorGuessedWord)
+	})
+	t.Run("normalized guess with prefix", func(t *testing.T) {
+		g, now := caught(t)
+		must(t, g.SubmitGuess(g.impostor, "הַפִּיל", now))
 		wantResult(t, g, TeamImpostor, ReasonImpostorGuessedWord)
 	})
 	t.Run("wrong guess", func(t *testing.T) {
