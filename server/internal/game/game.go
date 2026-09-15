@@ -239,6 +239,13 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 	return g, nil
 }
 
+// Version increases with every change to the game.
+func (g *Game) Version() uint64 { return g.version }
+
+// PlayerIDs returns every player dealt into the game, in turn order,
+// including those who left or were removed.
+func (g *Game) PlayerIDs() []string { return slices.Clone(g.order) }
+
 // Deadline is the next moment Tick has work to do: the phase timer or a
 // pending removal after a third disconnect. Zero means nothing is scheduled.
 func (g *Game) Deadline() time.Time {

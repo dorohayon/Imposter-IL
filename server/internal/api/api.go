@@ -1,5 +1,6 @@
-// Package api serves the REST part of docs/protocol.md: guest sessions and
-// private rooms. All state lives in memory, as the MVP architecture requires.
+// Package api serves docs/protocol.md over REST and WebSocket: guest sessions
+// and private rooms. All state lives in memory, as the MVP architecture
+// requires.
 package api
 
 import (
@@ -15,6 +16,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/dorohayon/Imposter-IL/server/internal/content"
 	"github.com/dorohayon/Imposter-IL/server/internal/game"
 	"github.com/dorohayon/Imposter-IL/server/internal/room"
 )
@@ -38,20 +40,50 @@ type session struct {
 	nickname string
 	avatarID string
 	roomID   string // current private room, if any
+
+	conn    *conn // current WebSocket, if connected
+	replies replyCache
+
+	// The game this player is showing, from its start until they leave it or
+	// return to the lobby. It outlives room membership and later games in the
+	// room, so a player removed on a third disconnect still sees that game
+	// (screen 27) and can leave it.
+	gameID   string
+	game     *game.Game
+	gameRoom *roomEntry
 }
 
 type roomEntry struct {
-	id   string
-	room *room.Room
+	id     string
+	room   *room.Room
+	timer  *time.Timer // fires at room.Deadline()
+	gameID string      // id of room.Game(), if one was started
+
+	// stateVersion numbers the snapshots sent for this room: room.state and
+	// game.state each take the next value, so it rises on any published change,
+	// including profile edits and a new game, and never repeats across types.
+	stateVersion uint64
+	// published is what the last snapshot reflected; sync publishes when the
+	// room or its game has moved on since, for example through a deadline
+	// applied by a command that then failed.
+	published snapshotMark
 }
 
-// Server holds sessions and rooms.
-// ponytail: one lock for everything; the realtime step moves each room into
-// its own actor goroutine.
+type snapshotMark struct {
+	roomVersion uint64
+	game        *game.Game
+	gameVersion uint64
+}
+
+// Server holds sessions, rooms and connections.
+// ponytail: one lock for everything, including room timers; move each room
+// into its own actor goroutine if lock contention shows up.
 type Server struct {
-	now     func() time.Time
-	policy  game.Policy
-	newCode func() string
+	now          func() time.Time
+	policy       game.Policy
+	pickWord     PickWord
+	newCode      func() string
+	pingInterval time.Duration
 
 	mu        sync.Mutex
 	rng       *rand.Rand
@@ -61,20 +93,22 @@ type Server struct {
 	roomsCode map[string]*roomEntry
 }
 
-// NewServer uses policy for games started in rooms. The content rules are
-// still open, so an incomplete policy makes game start fail rather than
-// silently apply a placeholder.
-func NewServer(now func() time.Time, policy game.Policy) *Server {
+// NewServer uses policy and pickWord for games started in rooms. The content
+// is still undecided, so without them room.start fails with
+// content_unavailable rather than silently using a placeholder.
+func NewServer(now func() time.Time, policy game.Policy, pickWord PickWord) *Server {
 	var seed [32]byte
 	_, _ = crand.Read(seed[:])
 	s := &Server{
-		now:       now,
-		policy:    policy,
-		rng:       rand.New(rand.NewChaCha8(seed)),
-		sessions:  map[string]*session{},
-		players:   map[string]*session{},
-		roomsByID: map[string]*roomEntry{},
-		roomsCode: map[string]*roomEntry{},
+		now:          now,
+		policy:       policy,
+		pickWord:     pickWord,
+		pingInterval: 10 * time.Second,
+		rng:          rand.New(rand.NewChaCha8(seed)),
+		sessions:     map[string]*session{},
+		players:      map[string]*session{},
+		roomsByID:    map[string]*roomEntry{},
+		roomsCode:    map[string]*roomEntry{},
 	}
 	s.newCode = func() string { return room.NewCode(s.rng) }
 	return s
@@ -82,9 +116,12 @@ func NewServer(now func() time.Time, policy game.Policy) *Server {
 
 func (s *Server) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v1/sessions", s.createSession)
+	mux.HandleFunc("GET /v1/categories", s.withSession(listCategories))
+	mux.HandleFunc("GET /v1/reactions", s.withSession(listReactions))
 	mux.HandleFunc("PATCH /v1/sessions/me", s.withSession(s.updateSession))
 	mux.HandleFunc("POST /v1/rooms", s.withSession(s.createRoom))
 	mux.HandleFunc("POST /v1/rooms/join", s.withSession(s.joinRoom))
+	mux.HandleFunc("GET /v1/ws", s.serveWS)
 }
 
 type apiError struct {
@@ -150,6 +187,7 @@ func (s *Server) withSession(next func(http.ResponseWriter, []byte, *session)) h
 			return
 		}
 		next(w, body, sess)
+		s.syncSession(sess)
 	}
 }
 
@@ -218,7 +256,26 @@ func (s *Server) updateSession(w http.ResponseWriter, body []byte, sess *session
 		writeError(w, *err)
 		return
 	}
+	if entry := s.currentRoom(sess); entry != nil {
+		s.publish(entry) // nickname and avatar are part of room.state
+	}
 	writeJSON(w, http.StatusOK, map[string]string{"playerId": sess.playerID})
+}
+
+func listCategories(w http.ResponseWriter, _ []byte, _ *session) {
+	categories := []map[string]string{}
+	for _, c := range content.Categories {
+		categories = append(categories, map[string]string{"id": c.ID, "name": c.Name})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"categories": categories})
+}
+
+func listReactions(w http.ResponseWriter, _ []byte, _ *session) {
+	reactions := []map[string]string{}
+	for _, r := range content.Reactions {
+		reactions = append(reactions, map[string]string{"id": r.ID, "text": r.Text})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"reactions": reactions})
 }
 
 type settingsRequest struct {
@@ -244,7 +301,7 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 	}
 	settings := room.Settings{MaxPlayers: req.MaxPlayers, HintSeconds: req.HintSeconds, CategoryIDs: req.CategoryIDs}
 	rm, err := room.New(code, sess.playerID, settings, s.policy, s.rng, now)
-	if err != nil {
+	if err != nil || !content.ValidIDs(req.CategoryIDs) {
 		writeError(w, errInvalidSettings)
 		return
 	}
@@ -252,6 +309,9 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 	entry := &roomEntry{id: "r_" + crand.Text(), room: rm}
 	s.roomsByID[entry.id], s.roomsCode[code] = entry, entry
 	sess.roomID = entry.id
+	sess.leaveGame()
+	s.sendSessionState(sess)
+	s.publish(entry)
 	writeJSON(w, http.StatusCreated, map[string]any{"room": s.roomJSON(entry)})
 }
 
@@ -279,6 +339,7 @@ func (s *Server) joinRoom(w http.ResponseWriter, body []byte, sess *session) {
 	}
 	switch err := entry.room.Join(sess.playerID, now); {
 	case errors.Is(err, room.ErrRoomFull), errors.Is(err, room.ErrInGame):
+		s.sync(entry) // Join applied the room's expired deadlines first
 		writeError(w, errRoomUnavailable)
 		return
 	case err != nil:
@@ -287,6 +348,9 @@ func (s *Server) joinRoom(w http.ResponseWriter, body []byte, sess *session) {
 	}
 	s.leave(previous, sess, now)
 	sess.roomID = entry.id
+	sess.leaveGame()
+	s.sendSessionState(sess)
+	s.publish(entry)
 	writeJSON(w, http.StatusOK, map[string]any{"room": s.roomJSON(entry)})
 }
 
@@ -295,20 +359,26 @@ func (s *Server) joinRoom(w http.ResponseWriter, body []byte, sess *session) {
 // loss, so that is refused instead. Nothing changes until leave is called,
 // which happens only after the new room accepted the player.
 func (s *Server) roomToLeave(sess *session, keepID string, now time.Time) (*roomEntry, *apiError) {
-	entry := s.roomsByID[sess.roomID]
+	entry := s.currentRoom(sess)
 	if entry == nil || entry.id == keepID {
 		return nil, nil
 	}
 	entry.room.Tick(now)
-	v := entry.room.View()
-	if !slices.ContainsFunc(v.Members, func(m room.Member) bool { return m.ID == sess.playerID }) {
-		sess.roomID = "" // removed from it in the meantime
-		return nil, nil
-	}
-	if v.Status == room.StatusInGame {
+	if entry.room.View().Status == room.StatusInGame {
 		return nil, &errAlreadyInGame
 	}
 	return entry, nil
+}
+
+// currentRoom returns the room the player is still a member of, forgetting
+// one they were removed from in the meantime.
+func (s *Server) currentRoom(sess *session) *roomEntry {
+	entry := s.roomsByID[sess.roomID]
+	if entry != nil && slices.ContainsFunc(entry.room.View().Members, func(m room.Member) bool { return m.ID == sess.playerID }) {
+		return entry
+	}
+	sess.roomID = ""
+	return nil
 }
 
 func (s *Server) leave(entry *roomEntry, sess *session, now time.Time) {
@@ -318,6 +388,7 @@ func (s *Server) leave(entry *roomEntry, sess *session, now time.Time) {
 	// roomToLeave checked membership and the lobby status under the same lock.
 	_ = entry.room.Leave(sess.playerID, now)
 	sess.roomID = ""
+	s.publish(entry)
 	// ponytail: empty rooms are kept; how long to keep them is an open decision.
 }
 

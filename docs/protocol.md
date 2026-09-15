@@ -1,6 +1,6 @@
 # חוזי REST ו־WebSocket
 
-גרסה: `v1` (טיוטה). ממומשים כרגע `GET /healthz`, `POST /v1/sessions`, `PATCH /v1/sessions/me`, `POST /v1/rooms` ו־`POST /v1/rooms/join` (`server/internal/api`). שאר החוזה מגדיר את מה שהשרת והאפליקציה יממשו בהמשך. רקע ועקרונות: [`architecture.md`](architecture.md).
+גרסה: `v1` (טיוטה). ממומשים כרגע (`server/internal/api`): כל ה־REST, ו־`GET /v1/ws` לחדרים פרטיים ולמשחקים שבהם: כל הודעות `room.*` ו־`game.*`, `session.state`, `room.state`, `room.kicked`, `game.state` ו־`game.reaction`. לא ממומשים עדיין: `matchmaking.*` (מקבלות `invalid_message`) ו־`game.aborted`. שאר החוזה מגדיר את מה שהשרת והאפליקציה יממשו בהמשך. רקע ועקרונות: [`architecture.md`](architecture.md).
 
 ## מוסכמות
 
@@ -22,10 +22,11 @@
 
 | Method | Path | תיאור |
 | --- | --- | --- |
-| `GET` | `/healthz` | בדיקת חיות. **ממומש.** |
+| `GET` | `/healthz` | בדיקת חיות |
 | `POST` | `/v1/sessions` | יצירת שחקן אורח |
 | `PATCH` | `/v1/sessions/me` | עריכת כינוי או אווטאר |
 | `GET` | `/v1/categories` | רשימת קטגוריות |
+| `GET` | `/v1/reactions` | רשימת התגובות |
 | `POST` | `/v1/rooms` | יצירת חדר פרטי |
 | `POST` | `/v1/rooms/join` | הצטרפות לחדר לפי קוד |
 
@@ -63,7 +64,28 @@
 { "categories": [ { "id": "…", "name": "…" } ] }
 ```
 
-המבנה בלבד. רשימת הקטגוריות פתוחה.
+מחזיר את המנה הראשונה שאושרה (`docs/decisions.md`): `food`, `animals`, `sports`, `professions`, `places`, `objects`. `categoryIds` בחדר חייבים להיות מהרשימה הזו.
+
+### `GET /v1/reactions`
+
+```json
+{ "reactions": [ { "id": "laugh", "text": "😂" } ] }
+```
+
+הרשימה שאושרה. `reactionId` ב־`game.react` הוא אחד מהמזהים, והאפליקציה מציגה את `text`:
+
+| `id` | `text` |
+| --- | --- |
+| `laugh` | 😂 |
+| `thinking` | 🤔 |
+| `eyes` | 👀 |
+| `surprised` | 😮 |
+| `applause` | 👏 |
+| `eye_roll` | 🙄 |
+| `good_hint` | רמז טוב! |
+| `suspicious` | זה מחשיד |
+| `not_convinced` | לא השתכנעתי |
+| `what_connection` | מה הקשר? |
 
 ### `POST /v1/rooms`
 
@@ -71,7 +93,7 @@
 { "maxPlayers": 8, "hintSeconds": 15, "categoryIds": ["…"] }
 ```
 
-`maxPlayers` בין 4 ל־8. `hintSeconds` אחד מ־10, 15, 20. `categoryIds` אינו ריק; בדיקתו מול רשימת הקטגוריות תיתווסף כשהרשימה תיקבע. תשובה `201` עם `{ "room": Room }`, והשחקן הוא המנהל. שגיאות: `422 invalid_room_settings`, `409 already_in_activity`.
+`maxPlayers` בין 4 ל־8. `hintSeconds` אחד מ־10, 15, 20. `categoryIds` אינו ריק ומכיל רק מזהים מ־`GET /v1/categories`. תשובה `201` עם `{ "room": Room }`, והשחקן הוא המנהל. שגיאות: `422 invalid_room_settings`, `409 already_in_activity`.
 
 ### `POST /v1/rooms/join`
 
@@ -121,11 +143,30 @@
 
 ### סדר, שחזור וזמן
 
-- כל Snapshot (`game.state`, `room.state`, `matchmaking.state`) כולל `stateVersion` מונוטוני. האפליקציה מתעלמת מגרסה שאינה גדולה מהאחרונה שקיבלה.
+- כל Snapshot (`game.state`, `room.state`, `matchmaking.state`) כולל `stateVersion` מונוטוני. האפליקציה מתעלמת מגרסה שאינה גדולה מהאחרונה שקיבלה. בחדר פרטי המספור משותף ל־`room.state` ול־`game.state` של החדר: כל Snapshot מקבל מספר גדול מכל הקודמים, גם בין משחקים וגם כשרק כינוי או אווטאר השתנו.
 - מיד אחרי חיבור או חיבור מחדש השרת שולח `session.state` ואחריו את ה־Snapshot הרלוונטי. אין צורך בהודעת resume.
 - כל `deadline` הוא זמן מוחלט של השרת. האפליקציה מחשבת היסט `serverTime − זמן קבלה מקומי` ומציגה ספירה לאחור לפי `deadline`.
 - השרת שולח ping כל 10 שניות. שני pong חסרים או סגירת socket נחשבים ניתוק (`Disconnect` במנוע). ערכים טכניים הניתנים לכוונון.
 - מסך `חיבור מחדש` (26) מוצג באפליקציה ברגע שהחיבור נפל, לפי ה־Snapshot האחרון.
+
+### פרטי מימוש של החיבור
+
+- חיבור חדש לאותו session מחליף את הקודם. הקודם נסגר (`1008`), וההחלפה אינה נספרת כניתוק.
+- פתיחת חיבור של חבר חדר נחשבת חיבור מחדש (`Reconnect` בחדר), וסגירתו נחשבת ניתוק. חבר שהצטרף ב־REST מופיע כמחובר עד שחיבור ה־WebSocket שלו נסגר.
+- ping נשלח כל 10 שניות. אם ה־pong לא הגיע תוך שני מרווחים, החיבור נסגר ונחשב ניתוק.
+- הודעה שאינה JSON, או בלי `id` או `type`, מקבלת `reply` עם `invalid_message` (עם `replyTo` ריק כשאין `id`). תשובות כאלה אינן נשמרות במטמון.
+- שינויים ב־REST שולחים גם הם `session.state` ו־`room.state` לחיבורים הפתוחים: יצירת חדר, הצטרפות, מעבר בין חדרים ועדכון כינוי או אווטאר.
+- `room.kick` שולח לשחקן שהוסר `room.kicked` ואחריו `session.state` עם `activity: "none"`.
+- לקוח שאינו קורא מספיק מהר ומצטבר אצלו תור של יותר מ־64 הודעות מנותק.
+
+### פרטי מימוש של משחק
+
+- `room.start` בוחר מילה באקראי מהקטגוריות של החדר. כל עוד מילון התוכן הלא ראוי פתוח, שרת שלא הופעל עם `IMPOSTER_DEV_POLICY=1` מחזיר `content_unavailable`.
+- כל שחקני המשחק מקבלים `session.state` עם `activity: "game"`, `roomId` ו־`gameId`, ואחריו `game.state` מסונן. ה־`activity` נשאר `game` גם אחרי `ended` (מסך התוצאה), עד `game.playAgain` או `game.leave`.
+- אחרי כל שינוי, כל שחקן שעדיין מציג את המשחק מקבל `game.state` משלו. זה כולל טיימרים, וגם פקודה שנכשלה אחרי שהפעילה זמן שפג (למשל רמז מאוחר שהעביר את התור לפני שנדחה ב־`not_your_turn`).
+- שחקן שהוצא בניתוק שלישי ומתחבר מחדש מקבל `session.state` עם `activity: "game"` ו־`game.state` שבו הסטטוס שלו `removed` (מסך 27), עד `game.leave`. זה נכון גם אם בינתיים התחיל בחדר משחק חדש: הוא מקבל את המצב הסופי של המשחק שלו, ופקודות אחרות מלבד `game.leave` ו־`game.playAgain` מקבלות `game_not_found`.
+- `game.react` שולח `game.reaction` לכל שחקני המשחק, בנוסף לספירה ב־`game.state`.
+- `gameId` שאינו המשחק שהשחקן מציג מקבל `game_not_found`.
 
 ## הודעות מהאפליקציה
 
@@ -134,16 +175,16 @@
 | `matchmaking.join` | `{ categoryIds }` | `already_in_activity` |
 | `matchmaking.cancel` | `{}` | — |
 | `room.updateSettings` | `{ roomId, maxPlayers, hintSeconds, categoryIds }` | `not_room_host`, `room_settings_locked`, `invalid_room_settings`, `room_in_game` |
-| `room.kick` | `{ roomId, playerId }` | `not_room_host`, `cannot_kick_self`, `room_in_game` |
-| `room.start` | `{ roomId }` | `not_room_host`, `not_enough_players`, `room_in_game` |
+| `room.kick` | `{ roomId, playerId }` | `not_room_host`, `cannot_kick_self`, `room_in_game`, `unknown_player` |
+| `room.start` | `{ roomId }` | `not_room_host`, `not_enough_players`, `room_in_game`, `content_unavailable` |
 | `room.leave` | `{ roomId }` | — |
 | `game.confirmRole` | `{ gameId }` | `wrong_phase` |
 | `game.submitHint` | `{ gameId, text }` | `not_your_turn`, `wrong_phase`, `hint_empty`, `hint_not_one_word`, `hint_too_long`, `hint_inappropriate`, `hint_contains_secret`, `hint_duplicate` |
 | `game.react` | `{ gameId, hintIndex, reactionId }` | `invalid_hint`, `invalid_reaction`, `wrong_phase` |
 | `game.vote` | `{ gameId, targetPlayerId }` | `self_vote`, `invalid_vote_target`, `wrong_phase` |
 | `game.submitGuess` | `{ gameId, text }` | `not_impostor`, `wrong_phase` |
-| `game.leave` | `{ gameId }` | — |
-| `game.playAgain` | `{ gameId }` | `wrong_phase` |
+| `game.leave` | `{ gameId }` | — (יציאה לבית: לפני הסוף זו יציאה יזומה והפסד; ממסך התוצאות אינה נחשבת. בשני המקרים השחקן יוצא גם מהחדר) |
+| `game.playAgain` | `{ gameId }` | `wrong_phase` (לפני `ended`). בחדר פרטי מחזיר את השחקן ללובי: `session.state` עם `activity: "room"` |
 
 שגיאות כלליות לכל הודעה: `unknown_player`, `player_not_active`, `game_not_found`, `room_not_found`, `rate_limited`, `invalid_message`, `internal_error`.
 

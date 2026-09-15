@@ -3,33 +3,44 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"math/rand/v2"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/dorohayon/Imposter-IL/server/internal/content"
 	"github.com/dorohayon/Imposter-IL/server/internal/game"
 )
 
 var t0 = time.Date(2026, 9, 15, 12, 0, 0, 0, time.UTC)
 
 type client struct {
-	t   *testing.T
-	mux *http.ServeMux
-	srv *Server
+	t     *testing.T
+	mux   *http.ServeMux
+	srv   *Server
+	ts    *httptest.Server
+	clock atomic.Int64 // server time in unix nanoseconds
 }
 
 func newClient(t *testing.T) *client {
 	policy := game.Policy{
 		HintInappropriate: func(string) bool { return false },
-		ValidReaction:     func(string) bool { return true },
+		ValidReaction:     content.ValidReaction,
 	}
-	srv := NewServer(func() time.Time { return t0 }, policy)
-	mux := http.NewServeMux()
-	srv.Routes(mux)
-	return &client{t: t, mux: mux, srv: srv}
+	c := &client{t: t, mux: http.NewServeMux()}
+	c.clock.Store(t0.UnixNano())
+	pick := func([]string, *rand.Rand) (string, string, bool) { return "חיות", "פיל", true }
+	c.srv = NewServer(func() time.Time { return time.Unix(0, c.clock.Load()).UTC() }, policy, pick)
+	c.srv.Routes(c.mux)
+	c.ts = httptest.NewServer(c.mux)
+	t.Cleanup(c.ts.Close)
+	return c
 }
+
+func (c *client) advance(d time.Duration) { c.clock.Add(int64(d)) }
 
 // do sends body as JSON (raw when it is a string) and decodes the response.
 func (c *client) do(method, path, token string, body any) (int, map[string]any) {
@@ -146,12 +157,13 @@ func TestCreateRoom(t *testing.T) {
 	c := newClient(t)
 	token, id := c.session("דור")
 
-	status, body := c.do("POST", "/v1/rooms", "", map[string]any{"maxPlayers": 8, "hintSeconds": 15, "categoryIds": []string{"a"}})
+	status, body := c.do("POST", "/v1/rooms", "", map[string]any{"maxPlayers": 8, "hintSeconds": 15, "categoryIds": []string{"food"}})
 	c.wantError(401, "session_not_found", status, body)
 	for _, bad := range []map[string]any{
-		{"maxPlayers": 9, "hintSeconds": 15, "categoryIds": []string{"a"}},
-		{"maxPlayers": 8, "hintSeconds": 12, "categoryIds": []string{"a"}},
+		{"maxPlayers": 9, "hintSeconds": 15, "categoryIds": []string{"food"}},
+		{"maxPlayers": 8, "hintSeconds": 12, "categoryIds": []string{"food"}},
 		{"maxPlayers": 8, "hintSeconds": 15},
+		{"maxPlayers": 8, "hintSeconds": 15, "categoryIds": []string{"food", "cars"}},
 	} {
 		status, body := c.do("POST", "/v1/rooms", token, bad)
 		c.wantError(422, "invalid_room_settings", status, body)
@@ -170,6 +182,34 @@ func TestCreateRoom(t *testing.T) {
 		p["playerId"] != id || p["nickname"] != "דור" || p["avatarId"] != "avatar-m04-detective-hat" || p["connected"] != true,
 		p["joinedAt"] != "2026-09-15T12:00:00Z":
 		t.Fatalf("room = %v", room)
+	}
+}
+
+func TestListCategories(t *testing.T) {
+	c := newClient(t)
+	status, body := c.do("GET", "/v1/categories", "", nil)
+	c.wantError(401, "session_not_found", status, body)
+	token, _ := c.session("דור")
+	status, body = c.do("GET", "/v1/categories", token, nil)
+	categories, _ := body["categories"].([]any)
+	if status != 200 || len(categories) != 6 {
+		t.Fatalf("got %d %v", status, body)
+	}
+	if first := categories[0].(map[string]any); first["id"] != "food" || first["name"] != "אוכל" {
+		t.Fatalf("first category = %v", first)
+	}
+}
+
+func TestListReactions(t *testing.T) {
+	c := newClient(t)
+	token, _ := c.session("דור")
+	status, body := c.do("GET", "/v1/reactions", token, nil)
+	reactions, _ := body["reactions"].([]any)
+	if status != 200 || len(reactions) != 10 {
+		t.Fatalf("got %d %v", status, body)
+	}
+	if last := reactions[9].(map[string]any); last["id"] != "what_connection" || last["text"] != "מה הקשר?" {
+		t.Fatalf("last reaction = %v", last)
 	}
 }
 
@@ -280,7 +320,7 @@ func TestCannotMoveRoomsDuringAGame(t *testing.T) {
 	otherCode := c.createRoom(other, 8)["code"].(string)
 	status, body := c.join(host, otherCode)
 	c.wantError(409, "already_in_activity", status, body)
-	status, body = c.do("POST", "/v1/rooms", host, map[string]any{"maxPlayers": 8, "hintSeconds": 15, "categoryIds": []string{"a"}})
+	status, body = c.do("POST", "/v1/rooms", host, map[string]any{"maxPlayers": 8, "hintSeconds": 15, "categoryIds": []string{"food"}})
 	c.wantError(409, "already_in_activity", status, body)
 	if len(entry.room.View().Members) != 4 {
 		t.Fatal("a refused move changed the room")

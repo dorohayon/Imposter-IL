@@ -20,8 +20,9 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
     Icons.restaurant_rounded,
     Icons.pets_rounded,
     Icons.sports_soccer_rounded,
-    Icons.public_rounded,
     Icons.work_rounded,
+    Icons.public_rounded,
+    Icons.umbrella_rounded,
   ];
   final selected = <String>{demoCategories.first};
 
