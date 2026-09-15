@@ -77,4 +77,7 @@ func TestReactions(t *testing.T) {
 	if !ValidReaction("good_hint") || ValidReaction("רמז טוב!") || ValidReaction("") {
 		t.Fatal("reactions are accepted by id only")
 	}
+	if p := Policy(); p.HintInappropriate("anything") || !p.ValidReaction("laugh") {
+		t.Fatal("the MVP policy blocks no hint and accepts approved reactions")
+	}
 }

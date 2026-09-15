@@ -4,6 +4,8 @@ package content
 import (
 	"math/rand/v2"
 	"slices"
+
+	"github.com/dorohayon/Imposter-IL/server/internal/game"
 )
 
 type Category struct {
@@ -77,6 +79,16 @@ var Reactions = []Reaction{
 	{"suspicious", "זה מחשיד"},
 	{"not_convinced", "לא השתכנעתי"},
 	{"what_connection", "מה הקשר?"},
+}
+
+// Policy is the game policy for the MVP: the approved reactions, and no
+// inappropriate-words blocking (decided in docs/decisions.md).
+// ponytail: no dictionary; plug one into HintInappropriate when it is decided.
+func Policy() game.Policy {
+	return game.Policy{
+		HintInappropriate: func(string) bool { return false },
+		ValidReaction:     ValidReaction,
+	}
 }
 
 // ValidReaction reports whether id is an approved reaction id.

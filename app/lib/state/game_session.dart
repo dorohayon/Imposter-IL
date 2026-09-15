@@ -203,9 +203,7 @@ class GameSession extends ChangeNotifier {
         }
       }
       _channel = null;
-      if (connected) {
-        reconnectDeadline = serverNow.add(const Duration(seconds: 30));
-      }
+      if (connected) reconnectDeadline = _holdDeadline();
       connected = false;
       _failPending();
       _notify();
@@ -213,6 +211,19 @@ class GameSession extends ChangeNotifier {
       await Future<void>.delayed(reconnectDelay);
     }
     _loopRunning = false;
+  }
+
+  /// When the server gives up on a dropped player: it holds only their hint
+  /// turn, and removes them on a third disconnect. Otherwise there is no
+  /// deadline. A turn that comes up while offline is not known here.
+  DateTime? _holdDeadline() {
+    final current = activity == 'game' ? game : null;
+    final me = current?.player(playerId);
+    if (current == null || me == null || current.phase == 'ended') return null;
+    final myTurn =
+        current.phase == 'hints' && current.currentTurnPlayerId == playerId;
+    if (!myTurn && me.disconnects + 1 < 3) return null;
+    return serverNow.add(const Duration(seconds: 30));
   }
 
   void _onMessage(Map<String, dynamic> message) {
@@ -343,12 +354,13 @@ class GameSession extends ChangeNotifier {
       _leave('game.leave', 'gameId', gameId ?? game?.id);
 
   Future<String?> _leave(String type, String key, String? id) async {
+    // The server clears the game with session.state before it replies.
+    final left = game;
     final code = id == null ? null : await send(type, {key: id});
     // Not found means the server no longer has the player there.
     if (code != null && code != 'room_not_found' && code != 'game_not_found') {
       return code;
     }
-    final left = game;
     if (type == 'game.leave' && left != null && left.phase != 'ended') {
       _record(left.id, 'loss'); // leaving mid-game is a loss
     }

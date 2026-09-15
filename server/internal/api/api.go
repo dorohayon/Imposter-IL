@@ -106,9 +106,8 @@ type Server struct {
 	publicRooms []*roomEntry // online matches, oldest first
 }
 
-// NewServer uses policy and pickWord for games started in rooms. The content
-// is still undecided, so without them room.start fails with
-// content_unavailable rather than silently using a placeholder.
+// NewServer uses policy and pickWord for games started in rooms. Without
+// them room.start fails with content_unavailable.
 func NewServer(now func() time.Time, policy game.Policy, pickWord PickWord) *Server {
 	var seed [32]byte
 	_, _ = crand.Read(seed[:])

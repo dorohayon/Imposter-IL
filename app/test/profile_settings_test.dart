@@ -60,7 +60,7 @@ void main() {
   testWidgets('wins and losses are counted once per game and kept',
       (tester) async {
     final api = FakeApi();
-    await startAtHome(tester, api);
+    final session = await startAtHome(tester, api);
     await tapText(tester, 'משחק עם חברים');
     api.responses['POST /v1/rooms'] = {'room': roomJson()};
     await tapText(tester, 'יצירת חדר');
@@ -77,6 +77,12 @@ void main() {
     channel.snapshot('game.state', 'game',
         gameJson(phase: 'hints', turn: 'p_2')..['gameId'] = 'g_2');
     await settle(tester);
+    channel.errors['game.leave'] = 'network_error';
+    await tester.tap(find.byTooltip('יציאה'));
+    await settle(tester);
+    expect(session.losses, 0); // still in the game
+
+    channel.errors.remove('game.leave');
     await tester.tap(find.byTooltip('יציאה'));
     await tester.pumpAndSettle(); // let the game screen finish closing
 
@@ -219,7 +225,7 @@ void main() {
     expect(shared.single, contains('482913'));
   });
 
-  testWidgets('the reconnecting overlay shows the disconnect count in a game',
+  testWidgets('the reconnecting overlay counts only when the server does',
       (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);
@@ -228,26 +234,55 @@ void main() {
     await tapText(tester, 'יצירת חדר');
     await tapLive(tester, 'יצירת חדר');
     enterGame(api.channel, 'g_1');
-    api.channel.snapshot(
-        'game.state',
-        'game',
-        gameJson(phase: 'hints', turn: 'p_me', players: [
-          {...player('p_me', 'דור'), 'disconnects': 1},
-          player('p_2', 'נועה'),
-          player('p_3', 'יובל'),
-          player('p_4', 'מאיה'),
-        ]));
-    await settle(tester);
 
-    api.connectError = Exception('down');
-    await api.channel.close();
-    await settle(tester);
-    expect(find.text('מתחברים מחדש...'), findsOneWidget);
+    final bannerCountdown = find.descendant(
+      of: find.ancestor(
+          of: find.text('מתחברים מחדש...'), matching: find.byType(Material)),
+      matching: find.byType(LiveCountdown),
+    );
+    Future<void> dropWith(
+        {required String turn, required int disconnects}) async {
+      api.channel.snapshot(
+          'game.state',
+          'game',
+          gameJson(phase: 'hints', turn: turn, players: [
+            {...player('p_me', 'דור'), 'disconnects': disconnects},
+            player('p_2', 'נועה'),
+            player('p_3', 'יובל'),
+            player('p_4', 'מאיה'),
+          ]),
+          version: 10 + disconnects); // newer than the previous connection's
+      await settle(tester);
+      api.connectError = Exception('down');
+      await api.channel.close();
+      await settle(tester);
+      expect(find.text('מתחברים מחדש...'), findsOneWidget);
+    }
+
+    Future<void> reconnect() async {
+      api.connectError = null; // no retry timer may outlive the test
+      await settle(tester);
+      expect(find.text('מתחברים מחדש...'), findsNothing);
+    }
+
+    // Someone else's turn: the drop is counted but nothing is timed.
+    await dropWith(turn: 'p_2', disconnects: 0);
+    expect(find.text('ניתוק 1 מתוך 3'), findsOneWidget);
+    expect(bannerCountdown, findsNothing);
+    await reconnect();
+
+    // My turn: the server holds it for 30 seconds.
+    await dropWith(turn: 'p_me', disconnects: 1);
     expect(find.text('ניתוק 2 מתוך 3'), findsOneWidget);
-    expect(find.text('30'), findsWidgets);
+    expect(bannerCountdown, findsOneWidget);
+    expect(find.descendant(of: bannerCountdown, matching: find.text('30')),
+        findsOneWidget);
+    await reconnect();
 
-    api.connectError = null; // reconnect so no retry timer outlives the test
-    await settle(tester);
-    expect(find.text('מתחברים מחדש...'), findsNothing);
+    // A third drop removes the player after 30 seconds, turn or not.
+    await dropWith(turn: 'p_2', disconnects: 2);
+    expect(find.text('ניתוק 3 מתוך 3'), findsOneWidget);
+    expect(bannerCountdown, findsOneWidget);
+    await reconnect();
   });
 }

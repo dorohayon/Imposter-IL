@@ -39,8 +39,6 @@ go test -race ./...
 go run ./cmd/server
 ```
 
-מילון התוכן הלא ראוי עדיין פתוח, ולכן התחלת משחק זמינה רק עם מדיניות הפיתוח: `IMPOSTER_DEV_POLICY=1 go run ./cmd/server`.
-
 
 ## אפליקציית Flutter
 
@@ -57,7 +55,7 @@ flutter test
 ### הרצה מול שרת מקומי
 
 ```sh
-cd server && IMPOSTER_DEV_POLICY=1 go run ./cmd/server   # טרמינל אחד
+cd server && go run ./cmd/server   # טרמינל אחד
 cd app && flutter run                                     # טרמינל שני
 ```
 
@@ -66,7 +64,7 @@ cd app && flutter run                                     # טרמינל שני
 בדיקות ה־End-to-End מריצות ארבעה שחקנים במשחק פרטי מלא, וארבעה שחקנים שמוצאים זה את זה במשחק ברשת, מול השרת:
 
 ```sh
-cd server && IMPOSTER_DEV_POLICY=1 PORT=18080 go run ./cmd/server
+cd server && PORT=18080 go run ./cmd/server
 cd app && IMPOSTER_E2E_SERVER=http://localhost:18080 flutter test test/e2e
 ```
 
@@ -76,4 +74,4 @@ cd app && IMPOSTER_E2E_SERVER=http://localhost:18080 flutter test test/e2e
 
 **באפליקציה:** עריכת כינוי ואווטאר, ניצחונות והפסדים שנשמרים במכשיר בלבד, הגדרות רטט ותגובות, שיתוף קוד החדר בתפריט המערכת, והפונטים Secular One ו־Rubik. האייקון ומסך הפתיחה זמניים (`app/branding`; נוצרים מחדש עם `dart run flutter_launcher_icons` ו־`dart run flutter_native_splash:create`).
 
-**פתוח:** צלילים, לוגו ואייקון סופיים, בדיקה על מכשירים, מזהה אפליקציה סופי, מילון תוכן לא ראוי (ובלעדיו משחק מתחיל רק בשרת עם `IMPOSTER_DEV_POLICY=1`), ותנאי שימוש ומדיניות פרטיות.
+**פתוח:** צלילים, לוגו ואייקון סופיים, בדיקה על מכשירים, מזהה אפליקציה סופי, חסימת תוכן לא ראוי (נדחתה להמשך), ותנאי שימוש ומדיניות פרטיות.
