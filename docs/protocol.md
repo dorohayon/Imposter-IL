@@ -184,7 +184,7 @@
 }
 ```
 
-`status`: `lobby` | `in_game`. `hostTransfer.reason`: `host_timeout` | `host_left` | `host_removed` (מסך 22). `hostReconnectDeadline` מלא בזמן 30 השניות שבהן ממתינים למנהל מנותק.
+`status`: `lobby` | `in_game`. `hostTransfer.reason`: `host_timeout` | `host_left` | `host_removed` (מסך 22). `hostReconnectDeadline` מלא בזמן 30 השניות שבהן ממתינים למנהל מנותק. `hostPlayerId` הוא `null` כשהזמן נגמר ואין שחקן אחר מחובר, עד שחבר אחר מתחבר או מצטרף.
 
 ### `GameView`
 

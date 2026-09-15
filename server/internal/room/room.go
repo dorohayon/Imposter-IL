@@ -9,6 +9,7 @@
 package room
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"math/rand/v2"
@@ -46,6 +47,7 @@ const (
 var (
 	ErrInvalidCode      = errors.New("room code must be six digits")
 	ErrInvalidSettings  = errors.New("invalid room settings")
+	ErrInvalidPlayerID  = errors.New("player id is required")
 	ErrUnknownPlayer    = errors.New("player is not in the room")
 	ErrNotHost          = errors.New("only the host can do this")
 	ErrSettingsLocked   = errors.New("room settings are locked")
@@ -87,7 +89,7 @@ type View struct {
 	Version               uint64
 	Code                  string
 	Status                Status
-	HostID                string
+	HostID                string // empty while waiting for a member to take over
 	Settings              Settings
 	SettingsLocked        bool
 	Members               []Member
@@ -105,10 +107,11 @@ type Room struct {
 	version  uint64
 
 	hostDeadline time.Time
-	// hostOverdue is set when the host missed the deadline while nobody else
-	// was connected; the first member to reconnect then becomes host.
-	hostOverdue bool
-	transfer    *HostTransfer
+	// hostPendingFrom is the host who missed the reconnect deadline while
+	// nobody else was connected. The room then has no host until another
+	// member connects or joins; the original host cannot take it back.
+	hostPendingFrom string
+	transfer        *HostTransfer
 
 	policy       game.Policy
 	rng          *rand.Rand
@@ -164,6 +167,9 @@ func New(code, hostID string, settings Settings, policy game.Policy, rng *rand.R
 // Join adds a player. Joining again while already a member changes nothing.
 // The first other player to join locks the settings for good.
 func (r *Room) Join(playerID string, now time.Time) error {
+	if playerID == "" {
+		return ErrInvalidPlayerID
+	}
 	r.Tick(now)
 	if r.member(playerID) != nil {
 		return nil
@@ -176,6 +182,9 @@ func (r *Room) Join(playerID string, now time.Time) error {
 	}
 	r.members = append(r.members, Member{ID: playerID, Connected: true, JoinedAt: now})
 	r.locked = true
+	if r.hostPendingFrom != "" {
+		r.transferHost(ReasonHostTimeout, now)
+	}
 	r.version++
 	return nil
 }
@@ -325,10 +334,13 @@ func (r *Room) Reconnect(playerID string, now time.Time) error {
 		}
 	}
 	switch {
+	// Checked first: a host who missed the deadline is no longer host.
+	case r.hostPendingFrom != "":
+		if playerID != r.hostPendingFrom {
+			r.transferHost(ReasonHostTimeout, now)
+		}
 	case playerID == r.host:
-		r.hostDeadline, r.hostOverdue = time.Time{}, false
-	case r.hostOverdue:
-		r.transferHost(ReasonHostTimeout, now)
+		r.hostDeadline = time.Time{}
 	}
 	r.syncGame(now)
 	r.version++
@@ -415,12 +427,13 @@ func (r *Room) removeMember(id string) bool {
 }
 
 // transferHost hands the room to the connected member who has been in it the
-// longest. On a timeout with nobody connected the host is kept until someone
-// reconnects. A host who left or was removed is always replaced while anyone
-// remains; if the new host is offline, their own reconnect timer starts.
+// longest, never back to the host being replaced. On a timeout with nobody
+// else connected the room has no host until another member connects or joins.
+// A host who left or was removed is always replaced while anyone remains; if
+// the new host is offline, their own reconnect timer starts.
 func (r *Room) transferHost(reason TransferReason, at time.Time) {
-	from := r.host
-	r.hostDeadline, r.hostOverdue = time.Time{}, false
+	from := cmp.Or(r.host, r.hostPendingFrom)
+	r.hostDeadline, r.hostPendingFrom = time.Time{}, ""
 	var to *Member
 	for i := range r.members {
 		if m := &r.members[i]; m.ID != from && m.Connected {
@@ -429,7 +442,7 @@ func (r *Room) transferHost(reason TransferReason, at time.Time) {
 		}
 	}
 	if to == nil && reason == ReasonHostTimeout {
-		r.hostOverdue = true
+		r.host, r.hostPendingFrom = "", from
 		return
 	}
 	if to == nil {

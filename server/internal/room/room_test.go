@@ -103,6 +103,10 @@ func TestJoinLocksSettingsAndRespectsCapacity(t *testing.T) {
 		t.Fatal("repeated join changed the room")
 	}
 
+	wantErr(t, r.Join("", t0), ErrInvalidPlayerID)
+	if len(r.View().Members) != 2 {
+		t.Fatal("an empty player id became a member")
+	}
 	must(t, r.Join("p2", t0))
 	must(t, r.Join("p3", t0))
 	must(t, r.Join("p4", t0))
@@ -267,20 +271,44 @@ func TestHostReturningInTimeKeepsTheRoom(t *testing.T) {
 	}
 }
 
-func TestHostTimeoutWithNobodyConnectedWaitsForFirstReturn(t *testing.T) {
+// timedOutWithNobodyOnline leaves the room without a host: the host missed the
+// reconnect deadline while p1 and p2 were offline too.
+func timedOutWithNobodyOnline(t *testing.T) *Room {
+	t.Helper()
 	r := newRoom(t, settings(), "p1", "p2")
-	must(t, r.Disconnect("p1", t0))
-	must(t, r.Disconnect("p2", t0))
-	must(t, r.Disconnect("host", t0))
-	r.Tick(t0.Add(30 * time.Second))
-	wantHost(t, r, "host")
-	if !r.Deadline().IsZero() {
-		t.Fatal("nothing should be scheduled while waiting")
+	for _, id := range []string{"p1", "p2", "host"} {
+		must(t, r.Disconnect(id, t0))
 	}
+	r.Tick(t0.Add(30 * time.Second))
+	wantHost(t, r, "")
+	if !r.Deadline().IsZero() || r.View().HostTransfer != nil {
+		t.Fatal("nothing should be scheduled or transferred while waiting")
+	}
+	return r
+}
+
+func TestHostTimeoutWithNobodyOnlineGoesToFirstOtherMemberBack(t *testing.T) {
+	r := timedOutWithNobodyOnline(t)
+
+	// The original host coming back first does not get the room back.
+	must(t, r.Reconnect("host", t0.Add(40*time.Second)))
+	wantHost(t, r, "")
+	wantErr(t, r.Kick("host", "p1", t0.Add(40*time.Second)), ErrNotHost)
+	wantErr(t, r.Start("host", "animals", "פיל", t0.Add(40*time.Second)), ErrNotHost)
+
 	must(t, r.Reconnect("p2", t0.Add(time.Minute)))
 	wantHost(t, r, "p2")
-	if r.View().HostTransfer.Reason != ReasonHostTimeout {
-		t.Fatal("wrong transfer reason")
+	if tr := r.View().HostTransfer; tr == nil || *tr != (HostTransfer{From: "host", To: "p2", Reason: ReasonHostTimeout}) {
+		t.Fatalf("transfer = %+v", tr)
+	}
+}
+
+func TestHostTimeoutWithNobodyOnlineGoesToNewJoiner(t *testing.T) {
+	r := timedOutWithNobodyOnline(t)
+	must(t, r.Join("p3", t0.Add(time.Minute)))
+	wantHost(t, r, "p3")
+	if tr := r.View().HostTransfer; tr == nil || tr.From != "host" || tr.Reason != ReasonHostTimeout {
+		t.Fatalf("transfer = %+v", tr)
 	}
 }
 
