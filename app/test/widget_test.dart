@@ -44,17 +44,17 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
-  testWidgets('placeholder actions are disabled', (tester) async {
+  testWidgets('features without content yet are shown as unavailable',
+      (tester) async {
     await startAtHome(tester);
-
-    await tester.tap(find.byTooltip('פרופיל'));
-    await tester.pumpAndSettle();
-    expect(isEnabled(tester, 'עריכת פרטים — בקרוב'), isFalse);
-    await tester.tap(find.byType(BackButton));
-    await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('הגדרות'));
     await tester.pumpAndSettle();
+    final sound = find.ancestor(
+      of: find.text('צלילים'),
+      matching: find.byType(SwitchListTile),
+    );
+    expect(tester.widget<SwitchListTile>(sound).onChanged, isNull);
     for (final title in ['תנאי שימוש', 'מדיניות פרטיות']) {
       final tile = find.ancestor(
         of: find.text(title),

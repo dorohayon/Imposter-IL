@@ -7,16 +7,89 @@ import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'home_screen.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: ProfileForm(
+          title: 'בואו נכיר',
+          subtitle: 'בחרו כינוי ודמות בלשית',
+          submitLabel: 'ממשיכים',
+          busyLabel: 'מתחברים...',
+          onSubmit: (nickname, avatarId) async {
+            await SessionScope.read(context).signIn(nickname, avatarId);
+            if (!context.mounted) return;
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
+            );
+          },
+        ),
+      ),
+    );
+  }
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
-  final _nickname = TextEditingController();
-  int _selectedAvatar = 0;
+/// Changes the nickname and avatar of the current guest.
+class ProfileEditScreen extends StatelessWidget {
+  const ProfileEditScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final session = SessionScope.read(context);
+    return GameScaffold(
+      title: 'עריכת פרטים',
+      child: ProfileForm(
+        scrollable: false,
+        initialNickname: session.nickname ?? '',
+        initialAvatarId: session.avatarId,
+        submitLabel: 'שמירה',
+        busyLabel: 'שומרים...',
+        onSubmit: (nickname, avatarId) async {
+          await session.updateProfile(nickname, avatarId);
+          if (context.mounted) Navigator.of(context).pop();
+        },
+      ),
+    );
+  }
+}
+
+/// A nickname field and the 12 avatars. [onSubmit] may throw [ApiException].
+class ProfileForm extends StatefulWidget {
+  const ProfileForm({
+    required this.submitLabel,
+    required this.busyLabel,
+    required this.onSubmit,
+    this.title,
+    this.subtitle,
+    this.initialNickname = '',
+    this.initialAvatarId,
+    this.scrollable = true,
+    super.key,
+  });
+
+  final String? title;
+  final String? subtitle;
+  final String initialNickname;
+  final String? initialAvatarId;
+  final String submitLabel;
+  final String busyLabel;
+  final bool scrollable;
+  final Future<void> Function(String nickname, String avatarId) onSubmit;
+
+  @override
+  State<ProfileForm> createState() => _ProfileFormState();
+}
+
+class _ProfileFormState extends State<ProfileForm> {
+  late final _nickname = TextEditingController(text: widget.initialNickname);
+  late int _selectedAvatar = () {
+    final index = avatarAssets
+        .indexWhere((asset) => avatarIdOf(asset) == widget.initialAvatarId);
+    return index < 0 ? 0 : index;
+  }();
   String? _error;
   bool _busy = false;
 
@@ -26,7 +99,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  Future<void> _continue() async {
+  Future<void> _submit() async {
     final value = _nickname.text.trim();
     if (value.characters.length < 2) {
       setState(() => _error = 'צריך לבחור כינוי של לפחות 2 תווים');
@@ -34,13 +107,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
     setState(() => _busy = true);
     try {
-      await SessionScope.read(context)
-          .signIn(value, avatarIdOf(avatarAssets[_selectedAvatar]));
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
-      );
+      await widget.onSubmit(value, avatarIdOf(avatarAssets[_selectedAvatar]));
     } on ApiException catch (e) {
+      if (!mounted) return;
       setState(() {
         _busy = false;
         _error = switch (e.code) {
@@ -54,70 +123,83 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
-          children: [
-            Text('בואו נכיר',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineLarge),
-            const SizedBox(height: 8),
-            const Text('בחרו כינוי ודמות בלשית',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.muted, fontSize: 17)),
-            const SizedBox(height: 24),
-            Center(
-                child: AvatarView(
-                    asset: avatarAssets[_selectedAvatar],
-                    size: 132,
-                    selected: true)),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _nickname,
-              maxLength: 18,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                  color: AppColors.night,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700),
-              decoration: InputDecoration(
-                hintText: 'הכינוי שלי',
-                errorText: _error,
-                prefixIcon:
-                    const Icon(Icons.edit_rounded, color: AppColors.night),
-              ),
-              onChanged: (_) {
-                if (_error != null) setState(() => _error = null);
-              },
-              onSubmitted: (_) => _continue(),
-            ),
-            const SizedBox(height: 12),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: avatarAssets.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-              ),
-              itemBuilder: (context, index) => GestureDetector(
-                onTap: () => setState(() => _selectedAvatar = index),
-                child: AvatarView(
-                  asset: avatarAssets[index],
-                  selected: index == _selectedAvatar,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            PrimaryButton(
-              label: _busy ? 'מתחברים...' : 'ממשיכים',
-              onPressed: _busy ? null : _continue,
-            ),
-          ],
+    final children = [
+      if (widget.title != null)
+        Text(
+          widget.title!,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineLarge,
+        ),
+      if (widget.subtitle != null) ...[
+        const SizedBox(height: 8),
+        Text(
+          widget.subtitle!,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.muted, fontSize: 17),
+        ),
+      ],
+      const SizedBox(height: 24),
+      Center(
+        child: AvatarView(
+          asset: avatarAssets[_selectedAvatar],
+          size: 132,
+          selected: true,
         ),
       ),
+      const SizedBox(height: 24),
+      TextField(
+        controller: _nickname,
+        maxLength: 18,
+        textAlign: TextAlign.start,
+        style: const TextStyle(
+          color: AppColors.night,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+        decoration: InputDecoration(
+          hintText: 'הכינוי שלי',
+          errorText: _error,
+          prefixIcon: const Icon(Icons.edit_rounded, color: AppColors.night),
+        ),
+        onChanged: (_) {
+          if (_error != null) setState(() => _error = null);
+        },
+        onSubmitted: (_) => _submit(),
+      ),
+      const SizedBox(height: 12),
+      GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: avatarAssets.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+        ),
+        itemBuilder: (context, index) => Semantics(
+          button: true,
+          selected: index == _selectedAvatar,
+          label: 'דמות ${index + 1}',
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () => setState(() => _selectedAvatar = index),
+            child: AvatarView(
+              asset: avatarAssets[index],
+              selected: index == _selectedAvatar,
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 24),
+      PrimaryButton(
+        label: _busy ? widget.busyLabel : widget.submitLabel,
+        onPressed: _busy ? null : _submit,
+      ),
+    ];
+    if (!widget.scrollable) return Column(children: children);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+      children: children,
     );
   }
 }

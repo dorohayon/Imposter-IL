@@ -1,39 +1,63 @@
 import 'package:flutter/material.dart';
 
+import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
+import 'onboarding_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen(
-      {required this.nickname, required this.avatar, super.key});
-
-  final String nickname;
-  final String avatar;
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final session = SessionScope.of(context);
     return GameScaffold(
       title: 'הפרופיל שלי',
       child: Column(
         children: [
-          AvatarView(asset: avatar, size: 138, selected: true),
+          AvatarView(
+            asset: 'assets/avatars/${session.avatarId}.webp',
+            size: 138,
+            selected: true,
+          ),
           const SizedBox(height: 14),
-          Text(nickname, style: Theme.of(context).textTheme.headlineLarge),
-          // Disabled until editing and saving the identity are implemented.
-          const TextButton(onPressed: null, child: Text('עריכת פרטים — בקרוב')),
+          Text(
+            session.nickname ?? '',
+            style: Theme.of(context).textTheme.headlineLarge,
+          ),
+          TextButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const ProfileEditScreen(),
+              ),
+            ),
+            icon: const Icon(Icons.edit_rounded),
+            label: const Text('עריכת פרטים'),
+          ),
           const SizedBox(height: 24),
           Row(
-            children: const [
+            children: [
               Expanded(
-                  child: _StatCard(
-                      value: '0',
-                      label: 'ניצחונות',
-                      color: AppColors.turquoise)),
-              SizedBox(width: 12),
+                child: _StatCard(
+                  value: '${session.wins}',
+                  label: 'ניצחונות',
+                  color: AppColors.turquoise,
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
-                  child: _StatCard(
-                      value: '0', label: 'הפסדים', color: AppColors.coral)),
+                child: _StatCard(
+                  value: '${session.losses}',
+                  label: 'הפסדים',
+                  color: AppColors.coral,
+                ),
+              ),
             ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'הניצחונות וההפסדים נשמרים במכשיר הזה',
+            style: TextStyle(color: AppColors.muted),
           ),
         ],
       ),
@@ -42,8 +66,11 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard(
-      {required this.value, required this.label, required this.color});
+  const _StatCard({
+    required this.value,
+    required this.label,
+    required this.color,
+  });
 
   final String value;
   final String label;
@@ -56,12 +83,18 @@ class _StatCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Column(
           children: [
-            Text(value,
-                style: TextStyle(
-                    fontSize: 40, fontWeight: FontWeight.w900, color: color)),
-            Text(label,
-                style:
-                    const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.w900,
+                color: color,
+              ),
+            ),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            ),
           ],
         ),
       ),
@@ -69,42 +102,38 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  bool sounds = true;
-  bool vibration = true;
-  bool reactions = true;
-
-  @override
   Widget build(BuildContext context) {
+    final session = SessionScope.of(context);
     return GameScaffold(
       title: 'הגדרות',
       child: Column(
         children: [
-          SwitchListTile(
-            title: const Text('צלילים'),
-            secondary: const Icon(Icons.volume_up_rounded),
-            value: sounds,
-            onChanged: (value) => setState(() => sounds = value),
+          // No sound files exist yet (docs/decisions.md).
+          const SwitchListTile(
+            title: Text('צלילים'),
+            subtitle: Text('בקרוב'),
+            secondary: Icon(Icons.volume_up_rounded),
+            value: false,
+            onChanged: null,
           ),
           SwitchListTile(
             title: const Text('רטט'),
+            subtitle:
+                const Text('כשהתור שלך מגיע, כשמשחק מתחיל וכשמתחילה הצבעה'),
             secondary: const Icon(Icons.vibration_rounded),
-            value: vibration,
-            onChanged: (value) => setState(() => vibration = value),
+            value: session.vibrationOn,
+            onChanged: session.setVibration,
           ),
           SwitchListTile(
             title: const Text('הצגת תגובות'),
             subtitle: const Text('אימוג׳ים והודעות מובנות'),
             secondary: const Icon(Icons.emoji_emotions_rounded),
-            value: reactions,
-            onChanged: (value) => setState(() => reactions = value),
+            value: session.showReactions,
+            onChanged: session.setShowReactions,
           ),
           const Divider(height: 36),
           const ListTile(

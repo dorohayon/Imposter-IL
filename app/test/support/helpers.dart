@@ -88,3 +88,13 @@ Future<void> tapLive(WidgetTester tester, String text) async {
   await tester.tap(finder);
   await settle(tester);
 }
+
+/// Taps an icon button by tooltip, scrolling it into view first (the home
+/// list keeps its scroll position after navigating back).
+Future<void> tapTooltip(WidgetTester tester, String tooltip) async {
+  final finder = find.byTooltip(tooltip, skipOffstage: false);
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byTooltip(tooltip));
+  await tester.pumpAndSettle();
+}

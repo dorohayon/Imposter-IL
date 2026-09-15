@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'data/server.dart';
 import 'screens/home_screen.dart';
@@ -26,10 +27,10 @@ class ImposterApp extends StatelessWidget {
         title: 'מי המתחזה?',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.dark,
-        builder: (context, child) => Directionality(
-          textDirection: TextDirection.rtl,
-          child: child ?? const SizedBox.shrink(),
-        ),
+        // Hebrew everywhere: RTL layout and Hebrew text in built-in widgets.
+        locale: const Locale('he'),
+        supportedLocales: const [Locale('he')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
         home: session.signedIn ? const HomeScreen() : const OnboardingScreen(),
       ),
     );
