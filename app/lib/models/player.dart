@@ -27,6 +27,10 @@ class Player {
       );
 }
 
+/// The protocol avatar id: the asset file name without its extension.
+String avatarIdOf(String asset) =>
+    asset.substring(asset.lastIndexOf('/') + 1, asset.lastIndexOf('.'));
+
 const avatarAssets = <String>[
   'assets/avatars/avatar-f01-notebook.webp',
   'assets/avatars/avatar-f02-camera.webp',

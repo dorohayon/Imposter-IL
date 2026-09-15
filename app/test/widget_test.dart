@@ -1,59 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/demo/demo_data.dart';
-import 'package:imposter_il/main.dart';
 import 'package:imposter_il/screens/game_flow.dart';
 import 'package:imposter_il/screens/home_screen.dart';
 
-/// Starts the real app on the narrowest supported phone (320px) and passes
-/// onboarding, so layout overflows fail the tests too.
-Future<void> startAtHome(WidgetTester tester) async {
-  tester.view.physicalSize = const Size(320, 640);
-  tester.view.devicePixelRatio = 1;
-  addTearDown(tester.view.reset);
-
-  await tester.pumpWidget(const ImposterApp());
-  await tester.enterText(find.byType(TextField), 'דור');
-  await tapText(tester, 'ממשיכים');
-  expect(find.byType(HomeScreen), findsOneWidget);
-}
-
-Future<void> tapText(WidgetTester tester, String text) async {
-  if (find.text(text).evaluate().isEmpty) {
-    // Lazy lists (onboarding, home) build lower items only once scrolled.
-    await tester.scrollUntilVisible(
-      find.text(text),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-  }
-  final finder = find.text(text).last;
-  await tester.ensureVisible(finder);
-  await tester.pumpAndSettle();
-  await tester.tap(finder);
-  await tester.pumpAndSettle();
-}
-
-Future<void> seconds(WidgetTester tester, int count) async {
-  for (var i = 0; i < count; i++) {
-    await tester.pump(const Duration(seconds: 1));
-  }
-  await tester.pumpAndSettle();
-}
-
-Future<void> open(WidgetTester tester, Widget screen) async {
-  Navigator.of(tester.element(find.byType(HomeScreen)))
-      .push(MaterialPageRoute<void>(builder: (_) => screen));
-  await tester.pumpAndSettle();
-}
-
-bool isEnabled(WidgetTester tester, String label) {
-  final button = find.ancestor(
-    of: find.text(label),
-    matching: find.byWidgetPredicate((widget) => widget is ButtonStyleButton),
-  );
-  return tester.widget<ButtonStyleButton>(button.first).onPressed != null;
-}
+import 'support/helpers.dart';
 
 void main() {
   testWidgets('onboarding opens the Hebrew home screen', (tester) async {
@@ -232,95 +183,6 @@ void main() {
     await tester.enterText(find.byType(TextField), ' הבָּנָנָה ');
     await tapText(tester, 'שליחת ניחוש');
     expect(find.text('המתחזה ניצח!'), findsOneWidget);
-  });
-
-  testWidgets('private room: host removes players, plays, returns to lobby',
-      (tester) async {
-    await startAtHome(tester);
-    await tapText(tester, 'משחק עם חברים');
-    await tapText(tester, 'יצירת חדר');
-    await tapText(tester, '10 שניות');
-    await tapText(tester, 'יצירת חדר');
-
-    expect(find.text('החדר של נועם'), findsOneWidget);
-    expect(find.text('מנהל החדר · אני'), findsOneWidget);
-    expect(find.text('6 מתוך 8 שחקנים'), findsOneWidget);
-    expect(find.text('10 שניות לרמז'), findsOneWidget);
-    expect(find.byTooltip('הסרת נועם'), findsNothing);
-
-    for (final nickname in ['מאיה', 'דנה', 'רועי']) {
-      await tester.ensureVisible(find.byTooltip('הסרת $nickname'));
-      await tester.tap(find.byTooltip('הסרת $nickname'));
-      await tester.pumpAndSettle();
-    }
-    expect(find.text('3 מתוך 8 שחקנים'), findsOneWidget);
-    expect(find.text('צריך לפחות 4 שחקנים כדי להתחיל'), findsOneWidget);
-    expect(isEnabled(tester, 'התחלת משחק'), isFalse);
-
-    // Back to a full-enough room by leaving and creating again.
-    await tester.tap(find.byType(BackButton));
-    await tester.pumpAndSettle();
-    await tapText(tester, 'יצירת חדר');
-    await tapText(tester, '10 שניות');
-    await tapText(tester, 'יצירת חדר');
-    for (final nickname in ['מאיה', 'דנה']) {
-      await tester.ensureVisible(find.byTooltip('הסרת $nickname'));
-      await tester.tap(find.byTooltip('הסרת $nickname'));
-      await tester.pumpAndSettle();
-    }
-    expect(isEnabled(tester, 'התחלת משחק'), isTrue);
-    await tapText(tester, 'התחלת משחק');
-
-    await tapText(tester, 'הבנתי');
-    expect(find.text('התור שלך'), findsOneWidget);
-    expect(find.text('10'), findsOneWidget);
-
-    // The turn times out; removed players never take a turn.
-    await seconds(tester, 10);
-    expect(find.text('לא נשלח רמז'), findsOneWidget);
-    expect(find.text('יובל כותב רמז...'), findsOneWidget);
-    await seconds(tester, 3);
-    expect(find.text('אורי כותב רמז...'), findsOneWidget);
-    await seconds(tester, 3);
-    expect(find.text('רועי כותב רמז...'), findsOneWidget);
-    await seconds(tester, 6);
-
-    expect(find.text('מי המתחזה?'), findsOneWidget);
-    expect(find.text('מאיה'), findsNothing);
-    await seconds(tester, 20);
-    await seconds(tester, 15);
-
-    await tapText(tester, 'משחק נוסף');
-    expect(find.text('החדר של נועם'), findsOneWidget);
-    expect(find.text('4 מתוך 8 שחקנים'), findsOneWidget);
-  });
-
-  testWidgets('join room: digits only, inline error, joiner is not host',
-      (tester) async {
-    await startAtHome(tester);
-    await tapText(tester, 'משחק עם חברים');
-    await tapText(tester, 'הצטרפות לחדר');
-
-    final field = find.byType(TextField);
-    await tester.enterText(field, 'ab12cd');
-    await tester.pump();
-    expect(tester.widget<TextField>(field).controller!.text, '12');
-    expect(isEnabled(tester, 'הצטרפות'), isFalse);
-
-    await tester.enterText(field, '111111');
-    await tapText(tester, 'הצטרפות');
-    expect(find.text('החדר לא נמצא או שאינו זמין כרגע'), findsOneWidget);
-    expect(find.text('ניסיון נוסף'), findsOneWidget);
-
-    // The code stays editable after the error.
-    await tester.enterText(field, demoRoomCode);
-    await tapText(tester, 'הצטרפות');
-
-    expect(find.text('החדר של נועם'), findsOneWidget);
-    expect(find.text('מנהל החדר'), findsOneWidget);
-    expect(find.text('אני'), findsOneWidget);
-    expect(find.byIcon(Icons.person_remove_rounded), findsNothing);
-    expect(isEnabled(tester, 'רק מנהל החדר יכול להתחיל'), isFalse);
   });
 
   testWidgets('server-only states are reachable in debug builds',

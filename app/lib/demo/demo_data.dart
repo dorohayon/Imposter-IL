@@ -1,7 +1,7 @@
 import '../models/player.dart';
 
-// Prototype-only content. Players, roles, words, hints, categories and room
-// codes will come from the server (docs/protocol.md). Category names follow the
+// Prototype-only content for the online flow, which has no server support yet
+// (matchmaking). Private rooms use the real server. Category names follow the
 // approved first batch in server/internal/content; nothing else is product data.
 
 const demoCategories = [
@@ -15,7 +15,6 @@ const demoCategories = [
 ];
 const demoCategory = 'אוכל';
 const demoWord = 'בננה';
-const demoRoomCode = '482731';
 
 /// How long another demo player "takes" to send a hint, and the pause before
 /// the demo moves from the last hint to voting.
@@ -58,8 +57,6 @@ const demoPlayers = <Player>[
 ];
 
 const demoOnlineMe = 'מאיה';
-const demoHostMe = 'נועם';
-const demoJoinerMe = 'רועי';
 
 /// The scripted game a prototype flow walks through.
 class DemoGame {
@@ -67,32 +64,18 @@ class DemoGame {
     required this.me,
     this.isImpostor = false,
     this.hintSeconds = 15,
-    this.roster = demoPlayers,
   });
 
   final String me;
   final bool isImpostor;
   final int hintSeconds;
 
-  /// Players in turn order; a private room passes whoever is left in it.
-  final List<Player> roster;
-
-  /// The demo impostor is יובל unless the current player is the impostor or
-  /// יובל was removed from the room.
-  String get impostor {
-    if (isImpostor) return me;
-    final others = roster.where((player) => player.nickname != me);
-    return others
-        .firstWhere(
-          (player) => player.nickname == 'יובל',
-          orElse: () => others.first,
-        )
-        .nickname;
-  }
+  /// The demo impostor is יובל unless the current player is the impostor.
+  String get impostor => isImpostor ? me : 'יובל';
 
   /// Roster in turn order, with the current player marked and without a hint.
   List<Player> get players => [
-        for (final player in roster)
+        for (final player in demoPlayers)
           player.nickname == me
               ? Player(
                   nickname: player.nickname,

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../demo/prototype_states_screen.dart';
+import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'online_flow.dart';
@@ -9,14 +10,7 @@ import 'private_flow.dart';
 import 'secondary_screens.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({
-    required this.nickname,
-    required this.avatar,
-    super.key,
-  });
-
-  final String nickname;
-  final String avatar;
+  const HomeScreen({super.key});
 
   void _open(BuildContext context, Widget screen) {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
@@ -40,10 +34,16 @@ class HomeScreen extends StatelessWidget {
                 const Spacer(),
                 IconButton.filledTonal(
                   tooltip: 'פרופיל',
-                  onPressed: () => _open(
-                    context,
-                    ProfileScreen(nickname: nickname, avatar: avatar),
-                  ),
+                  onPressed: () {
+                    final session = SessionScope.read(context);
+                    _open(
+                      context,
+                      ProfileScreen(
+                        nickname: session.nickname ?? '',
+                        avatar: 'assets/avatars/${session.avatarId}.webp',
+                      ),
+                    );
+                  },
                   icon: const Icon(Icons.person_rounded),
                 ),
               ],

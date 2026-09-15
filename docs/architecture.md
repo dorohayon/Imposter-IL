@@ -13,7 +13,7 @@
 
 ```text
 Imposter-IL/
-├── app/                  # Flutter — Prototype UI עם נתוני דמה
+├── app/                  # Flutter: חדרים פרטיים מחוברים לשרת; משחק ברשת על נתוני דמה
 ├── server/               # Go module: github.com/dorohayon/Imposter-IL/server
 │   ├── cmd/server/       # נקודת הכניסה: HTTP, /healthz, graceful shutdown
 │   ├── internal/game/    # מנוע המשחק — ללא HTTP, WebSocket או מסד נתונים
@@ -52,9 +52,14 @@ Imposter-IL/
 | `internal/api` | REST ו־WebSocket: sessions אורח (כינוי ואווטאר), קטגוריות ותגובות, יצירת חדר עם קוד ייחודי והצטרפות לפי קוד, חיבור אחד לכל session, idempotency, ping, פקודות חדר ומשחק, טיימרים ושליחת `session.state`, `room.state`, `game.state` ו־`game.reaction`. מחזיק הכול בזיכרון מאחורי מנעול אחד. |
 | `internal/matchmaking` (עתידי) | תור חיפוש לפי קטגוריות, יעד 6, המתנה לעד 8 וספירה לאחור. |
 
-### ארכיטקטורת Flutter מוצעת
+### ארכיטקטורת Flutter
 
-שכבות: `presentation` (מסכים ורכיבי Design System), `state` (מצב מסך שנגזר מ־Snapshot אחרון), `data` (לקוח REST, לקוח WebSocket, אחסון מקומי). בחירת ספריות ניהול State וניווט תיעשה ביצירת הפרויקט.
+- `lib/data/server.dart` — לקוח REST ו־WebSocket על `dart:io`, בלי ספריות רשת. כתובת השרת מ־`--dart-define=IMPOSTER_SERVER`.
+- `lib/data/models.dart` — מודלים מוקלדים ל־`Room`, `GameView`, קטגוריות ותגובות.
+- `lib/state/game_session.dart` — `GameSession` (`ChangeNotifier`) שמוזרק דרך `SessionScope` (`InheritedNotifier`), בלי ספריית ניהול State. מחזיק את זהות האורח (נשמרת ב־`shared_preferences`), לולאת חיבור מחדש, תשובות לפקודות, ה־Snapshot האחרון של החדר והמשחק, התעלמות מ־`stateVersion` ישן, והיסט השעון מול `serverTime`.
+- `lib/screens/live_room.dart` — מסך אחד לחדר פרטי שמחליף בין לובי לשלבי המשחק לפי ה־Snapshot, כולל מסכי הוצאה, תקלה בשרת והודעת חיבור מחדש.
+- `lib/demo/` — נתוני דמה לזרימת משחק ברשת, עד שיהיה Matchmaking.
+- ניווט ב־`Navigator` הרגיל. בדיקות Widget משתמשות בשרת מדומה (`test/support/fake_server.dart`), ובדיקת ה־End-to-End (`test/e2e`) מריצה את שכבת ה־session מול השרת האמיתי.
 
 ## State Machines
 
