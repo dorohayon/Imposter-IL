@@ -35,20 +35,20 @@ abstract final class AppTheme {
           fontFamily: 'Secular One',
           fontSize: 44,
           height: 1.05,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w400, // the only weight Secular One has
           color: AppColors.cream,
         ),
         headlineLarge: TextStyle(
           fontFamily: 'Secular One',
           fontSize: 32,
           height: 1.1,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w400,
           color: AppColors.cream,
         ),
         headlineMedium: TextStyle(
           fontFamily: 'Secular One',
           fontSize: 26,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w400,
           color: AppColors.cream,
         ),
         titleLarge: TextStyle(

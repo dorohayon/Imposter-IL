@@ -49,16 +49,7 @@ class HomeScreen extends StatelessWidget {
                 const Spacer(),
                 IconButton.filledTonal(
                   tooltip: 'פרופיל',
-                  onPressed: () {
-                    final session = SessionScope.read(context);
-                    _open(
-                      context,
-                      ProfileScreen(
-                        nickname: session.nickname ?? '',
-                        avatar: 'assets/avatars/${session.avatarId}.webp',
-                      ),
-                    );
-                  },
+                  onPressed: () => _open(context, const ProfileScreen()),
                   icon: const Icon(Icons.person_rounded),
                 ),
               ],

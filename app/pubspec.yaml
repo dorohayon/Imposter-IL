@@ -14,15 +14,55 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  share_plus: ^13.3.0
   shared_preferences: ^2.3.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
 
 flutter:
   uses-material-design: true
   assets:
     - assets/avatars/
     - assets/illustrations/
+  # Google Fonts under the SIL Open Font License (assets/fonts/OFL-*.txt).
+  fonts:
+    - family: Rubik
+      fonts:
+        - asset: assets/fonts/Rubik-Regular.ttf
+        - asset: assets/fonts/Rubik-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Rubik-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Rubik-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/Rubik-Black.ttf
+          weight: 900
+    - family: Secular One
+      fonts:
+        - asset: assets/fonts/SecularOne-Regular.ttf
+
+# Temporary app icon and splash from the existing detective art, until the
+# final logo exists (TASKS.md, Design V1). Regenerate with:
+#   dart run flutter_launcher_icons && dart run flutter_native_splash:create
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: branding/icon.png
+  adaptive_icon_background: "#14132B"
+  adaptive_icon_foreground: branding/icon-foreground.png
+  remove_alpha_ios: true
+  background_color_ios: "#14132B"
+
+flutter_native_splash:
+  color: "#14132B"
+  image: branding/splash.png
+  android_12:
+    color: "#14132B"
+    image: branding/icon-foreground.png

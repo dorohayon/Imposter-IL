@@ -1,7 +1,7 @@
 // End-to-end: app sessions play against a real server, in a private room and
 // through online matchmaking.
 //
-//   cd server && IMPOSTER_DEV_POLICY=1 PORT=18080 go run ./cmd/server
+//   cd server && PORT=18080 go run ./cmd/server
 //   cd app && IMPOSTER_E2E_SERVER=http://localhost:18080 flutter test test/e2e
 //
 // Skipped when IMPOSTER_E2E_SERVER is not set.

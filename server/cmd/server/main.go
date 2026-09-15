@@ -14,8 +14,6 @@ import (
 
 	"github.com/dorohayon/Imposter-IL/server/internal/api"
 	"github.com/dorohayon/Imposter-IL/server/internal/content"
-	"github.com/dorohayon/Imposter-IL/server/internal/devpolicy"
-	"github.com/dorohayon/Imposter-IL/server/internal/game"
 )
 
 func main() {
@@ -45,13 +43,6 @@ func newMux() *http.ServeMux {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
-	// The inappropriate-words dictionary is still open, so games start only
-	// with the development stand-in switched on.
-	policy := game.Policy{ValidReaction: content.ValidReaction}
-	if os.Getenv(devpolicy.EnvVar) == "1" {
-		log.Printf("%s=1: no inappropriate-words dictionary, not for production", devpolicy.EnvVar)
-		policy = devpolicy.Policy()
-	}
-	api.NewServer(time.Now, policy, content.Pick).Routes(mux)
+	api.NewServer(time.Now, content.Policy(), content.Pick).Routes(mux)
 	return mux
 }

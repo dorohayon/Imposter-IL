@@ -161,7 +161,7 @@
 
 ### פרטי מימוש של משחק
 
-- `room.start` בוחר מילה באקראי מהקטגוריות של החדר. כל עוד מילון התוכן הלא ראוי פתוח, שרת שלא הופעל עם `IMPOSTER_DEV_POLICY=1` מחזיר `content_unavailable`.
+- `room.start` בוחר מילה באקראי מהקטגוריות של החדר. `content_unavailable` מוחזר רק כשהשרת הורכב בלי תוכן או מדיניות משחק.
 - כל שחקני המשחק מקבלים `session.state` עם `activity: "game"`, `roomId` ו־`gameId`, ואחריו `game.state` מסונן. ה־`activity` נשאר `game` גם אחרי `ended` (מסך התוצאה), עד `game.playAgain` או `game.leave`.
 - אחרי כל שינוי, כל שחקן שעדיין מציג את המשחק מקבל `game.state` משלו. זה כולל טיימרים, וגם פקודה שנכשלה אחרי שהפעילה זמן שפג (למשל רמז מאוחר שהעביר את התור לפני שנדחה ב־`not_your_turn`).
 - שחקן שהוצא בניתוק שלישי ומתחבר מחדש מקבל `session.state` עם `activity: "game"` ו־`game.state` שבו הסטטוס שלו `removed` (מסך 27), עד `game.leave`. זה נכון גם אם בינתיים התחיל בחדר משחק חדש: הוא מקבל את המצב הסופי של המשחק שלו, ופקודות אחרות מלבד `game.leave` ו־`game.playAgain` מקבלות `game_not_found`.
@@ -286,7 +286,7 @@
 
 | מסך | מקור |
 | --- | --- |
-| 2 כינוי חסום | `422 nickname_blocked` |
+| 2 כינוי חסום | `422 nickname_blocked` (נדחה להמשך; השרת אינו מחזיר אותו כרגע) |
 | 5 חיפוש שחקנים | `matchmaking.state` |
 | 6 אין התאמה | `matchmaking.noMatch` |
 | 7–8 חשיפת תפקיד | `game.state` עם `phase: role_reveal` ו־`myRole` |

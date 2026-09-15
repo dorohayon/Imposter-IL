@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../data/models.dart';
 import '../models/player.dart';
@@ -30,6 +31,10 @@ const _commandErrors = {
   'invalid_vote_target': 'אי אפשר להצביע לשחקן הזה',
   'network_error': 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
 };
+
+/// Opens the system share sheet. Tests replace it.
+Future<void> Function(String text) shareText =
+    (text) => SharePlus.instance.share(ShareParams(text: text));
 
 String commandMessage(String code) =>
     _commandErrors[code] ?? 'משהו השתבש. נסו שוב.';
@@ -136,6 +141,25 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
   void _cancelSearch() =>
       _leaveThen(SessionScope.read(context).cancelSearch, _backToCategories);
 
+  GameView? _lastGame;
+
+  /// Vibrates when a game starts, when it becomes my turn and when voting
+  /// starts, if the player enabled vibration.
+  void _vibrateOnChanges(GameSession session, GameView? game) {
+    final previous = _lastGame;
+    _lastGame = game;
+    if (game == null || !session.vibrationOn) return;
+    final myTurnNow = game.phase == 'hints' &&
+        game.currentTurnPlayerId == session.playerId &&
+        previous?.currentTurnPlayerId != session.playerId;
+    final votingNow =
+        (game.phase == 'voting' || game.phase == 'runoff_voting') &&
+            previous?.phase != game.phase;
+    if (previous?.id != game.id || myTurnNow || votingNow) {
+      _afterFrame(HapticFeedback.mediumImpact);
+    }
+  }
+
   void _afterFrame(VoidCallback action) =>
       WidgetsBinding.instance.addPostFrameCallback((_) => action());
 
@@ -185,6 +209,7 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     final room = session.room;
     final search = session.search;
     final inGame = session.activity == 'game' && game != null;
+    _vibrateOnChanges(session, inGame ? game : null);
     final searching = session.activity == 'matchmaking';
     final Widget body = inGame
         ? _LiveGame(game: game, onLeave: _leaveGame)
@@ -218,36 +243,64 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
   }
 }
 
+/// Screen 21: shown over the current screen while the connection is down.
+/// In a game it also shows which disconnect this is and how long the server
+/// holds the player's turn.
 class _ReconnectingBanner extends StatelessWidget {
   const _ReconnectingBanner();
 
   @override
   Widget build(BuildContext context) {
+    final session = SessionScope.of(context);
+    final game = session.activity == 'game' ? session.game : null;
+    final me = game?.player(session.playerId);
+    final inPlay = game != null && game.phase != 'ended' && me != null;
+    final deadline = session.reconnectDeadline;
     return Align(
       alignment: Alignment.topCenter,
       child: SafeArea(
+        minimum: const EdgeInsets.symmetric(horizontal: 16),
         child: Material(
           color: AppColors.purple,
           borderRadius: BorderRadius.circular(18),
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.cream,
+                if (inPlay && deadline != null)
+                  SizedBox.square(
+                    dimension: 54,
+                    child: LiveCountdown(deadline: deadline),
+                  )
+                else
+                  const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.cream,
+                    ),
                   ),
-                ),
-                SizedBox(width: 10),
-                Text(
-                  'מתחברים מחדש...',
-                  style: TextStyle(
-                    color: AppColors.cream,
-                    fontWeight: FontWeight.w800,
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'מתחברים מחדש...',
+                        style: TextStyle(
+                          color: AppColors.cream,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      if (inPlay)
+                        Text(
+                          // The server counts this drop once it notices it.
+                          'ניתוק ${me.disconnects + 1} מתוך 3',
+                          style: const TextStyle(color: AppColors.cream),
+                        ),
+                    ],
                   ),
                 ),
               ],
@@ -432,6 +485,14 @@ class _Lobby extends StatelessWidget {
                       ],
                     ),
                   ),
+                  IconButton.filledTonal(
+                    tooltip: 'שיתוף הקוד',
+                    onPressed: () => shareText(
+                      'בואו לשחק איתי ב״מי המתחזה?״. קוד החדר: ${room.code}',
+                    ),
+                    icon: const Icon(Icons.share_rounded),
+                  ),
+                  const SizedBox(width: 8),
                   IconButton.filled(
                     tooltip: 'העתקת הקוד',
                     onPressed: () async {
@@ -841,7 +902,9 @@ class _HintsState extends State<_Hints> {
                   player: _player(p, me, hint: h.missing ? '' : h.text),
                 ),
               ),
-          if (lastHint != null && !lastHint.missing) ...[
+          if (lastHint != null &&
+              !lastHint.missing &&
+              session.showReactions) ...[
             const SizedBox(height: 10),
             Text(
               'תגובות לרמז של ${game.player(lastHint.playerId)?.nickname ?? ''}',

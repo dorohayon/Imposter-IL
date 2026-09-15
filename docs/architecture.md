@@ -20,7 +20,6 @@ Imposter-IL/
 │   ├── internal/room/    # חדר פרטי — עוטף משחקים, גם הוא ללא תקשורת
 │   ├── internal/matchmaking/ # כללי ההתחלה של משחק ברשת: טיימרים וקטגוריות משותפות
 │   ├── internal/content/ # הקטגוריות, המילים והתגובות שאושרו
-│   ├── internal/devpolicy/ # ללא מילון תוכן לא ראוי, לפיתוח בלבד (IMPOSTER_DEV_POLICY=1)
 │   └── internal/api/     # REST ו־WebSocket: sessions אורח, חדרים ו־Snapshots, בזיכרון
 ├── assets/               # אווטארים ואילוסטרציות
 ├── docs/                 # אפיון, ארכיטקטורה ופרוטוקול
@@ -45,11 +44,10 @@ Imposter-IL/
 | רכיב | אחריות |
 | --- | --- |
 | `app/` (Flutter) | UI, RTL, ניווט, שמירת כינוי ואווטאר מקומית, חיבור REST ו־WebSocket, חיבור מחדש אוטומטי והצגת Snapshots. אינו מחשב חוקים או טיימרים. |
-| `cmd/server` | הרכבת השרת, הגדרות מסביבה (`PORT`, `IMPOSTER_DEV_POLICY`), `/healthz`, כיבוי מסודר. |
+| `cmd/server` | הרכבת השרת, הגדרות מסביבה (`PORT`), `/healthz`, כיבוי מסודר. |
 | `internal/game` | State Machine של משחק יחיד: תפקידים, תורות, רמזים, תגובות, הצבעה, ניחוש, ניתוקים, יציאות ותוצאה. מקבל זמן ו־RNG מבחוץ. |
 | `internal/room` | חדר פרטי: קוד, רשימת שחקנים, מנהל, הסרה, נעילת הגדרות, העברת ניהול ומשחק נוסף. |
 | `internal/content` | הקטגוריות, המילים והתגובות שאושרו, בחירת מילה ובדיקת מזהים. |
-| `internal/devpolicy` | מדיניות פיתוח בלבד במקום מילון התוכן הלא ראוי שעדיין פתוח. |
 | `internal/api` | REST ו־WebSocket: sessions אורח (כינוי ואווטאר), קטגוריות ותגובות, יצירת חדר עם קוד ייחודי והצטרפות לפי קוד, חיבור אחד לכל session, idempotency, ping, פקודות חדר ומשחק, טיימרים ושליחת `session.state`, `room.state`, `game.state` ו־`game.reaction`. מחזיק הכול בזיכרון מאחורי מנעול אחד. |
 | `internal/matchmaking` | כללי ההתחלה של משחק ברשת (30 שניות מ־4, 5 שניות מ־6, 2 דקות ל־`לא נמצא משחק מתאים`) וחיתוך קטגוריות. `internal/api` מחזיק את קבוצות החיפוש. |
 
@@ -57,7 +55,7 @@ Imposter-IL/
 
 - `lib/data/server.dart` — לקוח REST ו־WebSocket על `dart:io`, בלי ספריות רשת. כתובת השרת מ־`--dart-define=IMPOSTER_SERVER`.
 - `lib/data/models.dart` — מודלים מוקלדים ל־`Room`, `GameView`, קטגוריות ותגובות.
-- `lib/state/game_session.dart` — `GameSession` (`ChangeNotifier`) שמוזרק דרך `SessionScope` (`InheritedNotifier`), בלי ספריית ניהול State. מחזיק את זהות האורח (נשמרת ב־`shared_preferences`), לולאת חיבור מחדש, תשובות לפקודות, ה־Snapshot האחרון של החדר והמשחק, התעלמות מ־`stateVersion` ישן, והיסט השעון מול `serverTime`.
+- `lib/state/game_session.dart` — `GameSession` (`ChangeNotifier`) שמוזרק דרך `SessionScope` (`InheritedNotifier`), בלי ספריית ניהול State. מחזיק את זהות האורח (נשמרת ב־`shared_preferences`), לולאת חיבור מחדש, תשובות לפקודות, ה־Snapshot האחרון של החדר והמשחק, התעלמות מ־`stateVersion` ישן, והיסט השעון מול `serverTime`. שם נשמרים גם ניצחונות והפסדים (במכשיר בלבד; כל משחק נספר פעם אחת לפי מזהה) והגדרות הרטט והתגובות.
 - `lib/screens/live_room.dart` — מסך אחד שמחליף לפי ה־Snapshot בין חיפוש משחק ברשת (כולל `לא נמצא משחק מתאים`), לובי של חדר פרטי ושלבי המשחק, כולל מסכי הוצאה, תקלה בשרת והודעת חיבור מחדש.
 - ניווט ב־`Navigator` הרגיל. בדיקות Widget משתמשות בשרת מדומה (`test/support/fake_server.dart`), ובדיקות ה־End-to-End (`test/e2e`) מריצות את שכבת ה־session מול השרת האמיתי, בחדר פרטי ובמשחק ברשת.
 
@@ -161,7 +159,7 @@ stateDiagram-v2
 
 ## מה נשאר מחוץ לקוד כרגע
 
-המנוע אינו בוחר קטגוריה או מילה (`internal/content` עושה זאת ב־`room.start`) ואינו מכיל מילון תוכן לא ראוי או רשימת תגובות. שניהם מוזרקים דרך `game.Policy`: התגובות שאושרו מגיעות מ־`internal/content`, ומילון התוכן הלא ראוי עדיין פתוח, ולכן בפיתוח `internal/devpolicy` מספק אותו כריק רק כש־`IMPOSTER_DEV_POLICY=1`. המנוע מסרב להיווצר בלי מדיניות מלאה כדי שאף ברירת מחדל זמנית לא תהפוך בשקט להחלטת מוצר. המנוע כן אוכף את החוקים שכבר אושרו: מילה אחת (ללא רווחים), עד 25 תווים (Unicode code points), ללא תוכן ריק, וכללי השוואת המילים שב־`docs/decisions.md` (`internal/game/words.go`): חסימת המילה הסודית לאזרחים בלבד, רמז כפול עם אותיות שימוש וניחוש מנורמל.
+המנוע אינו בוחר קטגוריה או מילה (`internal/content` עושה זאת ב־`room.start`) ואינו מכיל מילון תוכן לא ראוי או רשימת תגובות. שניהם מוזרקים דרך `game.Policy`: `content.Policy()` מספק את התגובות שאושרו ובדיקת תוכן לא ראוי שאינה חוסמת דבר, כי הוחלט שבשלב זה אין חסימה. מילון עתידי יתחבר ל־`HintInappropriate` בלי לשנות את המנוע. המנוע מסרב להיווצר בלי מדיניות מלאה. המנוע כן אוכף את החוקים שכבר אושרו: מילה אחת (ללא רווחים), עד 25 תווים (Unicode code points), ללא תוכן ריק, וכללי השוואת המילים שב־`docs/decisions.md` (`internal/game/words.go`): חסימת המילה הסודית לאזרחים בלבד, רמז כפול עם אותיות שימוש וניחוש מנורמל.
 
 ## מקרי קצה שאושרו בתכנון המנוע
 
@@ -180,6 +178,5 @@ stateDiagram-v2
 cd server
 go test -race ./...
 go run ./cmd/server        # PORT=8080 כברירת מחדל
-IMPOSTER_DEV_POLICY=1 go run ./cmd/server   # מאפשר התחלת משחק בלי מילון תוכן לא ראוי
 curl localhost:8080/healthz
 ```

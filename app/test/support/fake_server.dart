@@ -17,6 +17,11 @@ class FakeChannel implements RealtimeChannel {
   void send(Map<String, dynamic> message) {
     sent.add(message);
     final code = errors[message['type']];
+    if (message['type'] == 'game.leave' && code == null) {
+      // Like the server: the player is home before the reply arrives.
+      scheduleMicrotask(() => event('session.state',
+          {'playerId': 'p_me', 'activity': 'none', 'roomId': null}));
+    }
     scheduleMicrotask(() => push({
           'v': 1,
           'type': 'reply',

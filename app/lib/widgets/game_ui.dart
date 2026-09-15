@@ -39,7 +39,9 @@ class PrimaryButton extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.yellow,
                 foregroundColor: AppColors.night,
-                disabledBackgroundColor: const Color(0xFF65606A),
+                disabledBackgroundColor: const Color(0xFF3A3850),
+                // Readable disabled text (WCAG AA on the disabled background).
+                disabledForegroundColor: AppColors.muted,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
                 ),

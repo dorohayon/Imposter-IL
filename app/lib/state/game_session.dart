@@ -20,6 +20,11 @@ class GameSession extends ChangeNotifier {
   static const _playerKey = 'session.playerId';
   static const _nicknameKey = 'session.nickname';
   static const _avatarKey = 'session.avatarId';
+  static const _winsKey = 'stats.wins';
+  static const _lossesKey = 'stats.losses';
+  static const _countedKey = 'stats.countedGames';
+  static const _vibrationKey = 'settings.vibration';
+  static const _reactionsKey = 'settings.showReactions';
 
   String? token;
   String? playerId;
@@ -30,6 +35,17 @@ class GameSession extends ChangeNotifier {
   List<ReactionOption> reactions = const [];
 
   bool connected = false;
+
+  /// While disconnected: when the server stops holding this player's turn
+  /// (docs/decisions.md, 30 seconds), for the reconnecting overlay.
+  DateTime? reconnectDeadline;
+
+  // Saved on this device only (docs/decisions.md).
+  int wins = 0;
+  int losses = 0;
+  List<String> _countedGames = [];
+  bool vibrationOn = true;
+  bool showReactions = true;
 
   /// The server lost this session mid-room or mid-game (for example it
   /// restarted). No loss is recorded; screen 29 is shown until dismissed.
@@ -71,6 +87,11 @@ class GameSession extends ChangeNotifier {
     playerId = prefs.getString(_playerKey);
     nickname = prefs.getString(_nicknameKey);
     avatarId = prefs.getString(_avatarKey);
+    wins = prefs.getInt(_winsKey) ?? 0;
+    losses = prefs.getInt(_lossesKey) ?? 0;
+    _countedGames = prefs.getStringList(_countedKey) ?? [];
+    vibrationOn = prefs.getBool(_vibrationKey) ?? true;
+    showReactions = prefs.getBool(_reactionsKey) ?? true;
     if (signedIn) unawaited(_start());
   }
 
@@ -161,6 +182,7 @@ class GameSession extends ChangeNotifier {
         final channel = await api.connect(token!);
         _channel = channel;
         connected = true;
+        reconnectDeadline = null;
         _notify();
         await for (final message in channel.messages) {
           _onMessage(message);
@@ -181,6 +203,7 @@ class GameSession extends ChangeNotifier {
         }
       }
       _channel = null;
+      if (connected) reconnectDeadline = _holdDeadline();
       connected = false;
       _failPending();
       _notify();
@@ -188,6 +211,19 @@ class GameSession extends ChangeNotifier {
       await Future<void>.delayed(reconnectDelay);
     }
     _loopRunning = false;
+  }
+
+  /// When the server gives up on a dropped player: it holds only their hint
+  /// turn, and removes them on a third disconnect. Otherwise there is no
+  /// deadline. A turn that comes up while offline is not known here.
+  DateTime? _holdDeadline() {
+    final current = activity == 'game' ? game : null;
+    final me = current?.player(playerId);
+    if (current == null || me == null || current.phase == 'ended') return null;
+    final myTurn =
+        current.phase == 'hints' && current.currentTurnPlayerId == playerId;
+    if (!myTurn && me.disconnects + 1 < 3) return null;
+    return serverNow.add(const Duration(seconds: 30));
   }
 
   void _onMessage(Map<String, dynamic> message) {
@@ -218,6 +254,10 @@ class GameSession extends ChangeNotifier {
       case 'game.state':
         if (!_isNewer(payload)) return;
         game = GameView.fromJson(payload['game'] as Map<String, dynamic>);
+        final me = game!.player(playerId);
+        final outcome =
+            me?.status == 'removed' ? 'loss' : game!.result?.outcomes[playerId];
+        if (outcome != null) _record(game!.id, outcome);
       case 'matchmaking.state':
         if (!_isNewer(payload)) return;
         search = MatchmakingView.fromJson(payload);
@@ -314,10 +354,15 @@ class GameSession extends ChangeNotifier {
       _leave('game.leave', 'gameId', gameId ?? game?.id);
 
   Future<String?> _leave(String type, String key, String? id) async {
+    // The server clears the game with session.state before it replies.
+    final left = game;
     final code = id == null ? null : await send(type, {key: id});
     // Not found means the server no longer has the player there.
     if (code != null && code != 'room_not_found' && code != 'game_not_found') {
       return code;
+    }
+    if (type == 'game.leave' && left != null && left.phase != 'ended') {
+      _record(left.id, 'loss'); // leaving mid-game is a loss
     }
     _clearActivity();
     _notify();
@@ -354,6 +399,43 @@ class GameSession extends ChangeNotifier {
   void dismissNoMatch() {
     noMatchCategories = null;
     _notify();
+  }
+
+  /// Counts a game's win or loss once. Server errors never reach here, so a
+  /// crash records nothing.
+  void _record(String gameId, String outcome) {
+    if (_countedGames.contains(gameId)) return;
+    _countedGames = [..._countedGames, gameId];
+    if (_countedGames.length > 50) _countedGames.removeAt(0);
+    outcome == 'win' ? wins++ : losses++;
+    unawaited(SharedPreferences.getInstance().then((prefs) async {
+      await prefs.setInt(_winsKey, wins);
+      await prefs.setInt(_lossesKey, losses);
+      await prefs.setStringList(_countedKey, _countedGames);
+    }));
+  }
+
+  /// Changes the nickname and avatar on the server. Throws [ApiException].
+  Future<void> updateProfile(String nickname, String avatarId) async {
+    await api.request(
+      'PATCH',
+      '/v1/sessions/me',
+      token: token,
+      body: {'nickname': nickname, 'avatarId': avatarId},
+    );
+    await _saveIdentity(token!, playerId!, nickname.trim(), avatarId);
+  }
+
+  Future<void> setVibration(bool on) async {
+    vibrationOn = on;
+    _notify();
+    await (await SharedPreferences.getInstance()).setBool(_vibrationKey, on);
+  }
+
+  Future<void> setShowReactions(bool on) async {
+    showReactions = on;
+    _notify();
+    await (await SharedPreferences.getInstance()).setBool(_reactionsKey, on);
   }
 
   void consumeKicked() {
