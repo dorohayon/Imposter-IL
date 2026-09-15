@@ -47,7 +47,8 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            const Illustration('assets/illustrations/home-hero.webp', height: 245),
+            const Illustration('assets/illustrations/home-hero.webp',
+                height: 245),
             Text(
               'מי המתחזה?',
               textAlign: TextAlign.center,
@@ -74,7 +75,8 @@ class HomeScreen extends StatelessWidget {
             TextButton.icon(
               onPressed: () => _open(context, const HowToPlayScreen()),
               icon: const Icon(Icons.help_outline_rounded),
-              label: const Text('איך משחקים?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+              label: const Text('איך משחקים?',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
             ),
           ],
         ),

@@ -9,7 +9,8 @@ class CategorySelectionScreen extends StatefulWidget {
   const CategorySelectionScreen({super.key});
 
   @override
-  State<CategorySelectionScreen> createState() => _CategorySelectionScreenState();
+  State<CategorySelectionScreen> createState() =>
+      _CategorySelectionScreenState();
 }
 
 class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
@@ -88,7 +89,9 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                     color: isSelected ? AppColors.yellow : AppColors.nightSoft,
                     borderRadius: BorderRadius.circular(26),
                     border: Border.all(
-                      color: isSelected ? AppColors.yellow : const Color(0xFF4A4860),
+                      color: isSelected
+                          ? AppColors.yellow
+                          : const Color(0xFF4A4860),
                       width: 2,
                     ),
                   ),
@@ -97,8 +100,12 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                       Align(
                         alignment: Alignment.topLeft,
                         child: Icon(
-                          isSelected ? Icons.check_circle_rounded : category.icon,
-                          color: isSelected ? AppColors.night : AppColors.turquoise,
+                          isSelected
+                              ? Icons.check_circle_rounded
+                              : category.icon,
+                          color: isSelected
+                              ? AppColors.night
+                              : AppColors.turquoise,
                           size: 36,
                         ),
                       ),
@@ -107,7 +114,8 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                         child: Text(
                           category.name,
                           style: TextStyle(
-                            color: isSelected ? AppColors.night : AppColors.cream,
+                            color:
+                                isSelected ? AppColors.night : AppColors.cream,
                             fontSize: 24,
                             fontWeight: FontWeight.w900,
                           ),
@@ -140,7 +148,8 @@ class MatchmakingScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Illustration('assets/illustrations/matchmaking-team.webp', height: 180),
+          const Illustration('assets/illustrations/matchmaking-team.webp',
+              height: 180),
           Text('6 מתוך 8', style: Theme.of(context).textTheme.headlineLarge),
           const SizedBox(height: 6),
           const Text(
@@ -168,12 +177,15 @@ class MatchmakingScreen extends StatelessWidget {
                       height: 68,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF5C586E), width: 2),
+                        border: Border.all(
+                            color: const Color(0xFF5C586E), width: 2),
                       ),
-                      child: const Icon(Icons.search_rounded, color: AppColors.muted),
+                      child: const Icon(Icons.search_rounded,
+                          color: AppColors.muted),
                     ),
                     const SizedBox(height: 7),
-                    const Text('מחפשים...', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+                    const Text('מחפשים...',
+                        style: TextStyle(color: AppColors.muted, fontSize: 12)),
                   ],
                 );
               }
@@ -182,7 +194,8 @@ class MatchmakingScreen extends StatelessWidget {
                 children: [
                   AvatarView(asset: player.avatar, size: 68),
                   const SizedBox(height: 7),
-                  Text(player.nickname, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(player.nickname,
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
               );
             },
@@ -191,7 +204,8 @@ class MatchmakingScreen extends StatelessWidget {
           PrimaryButton(
             label: 'התחלת משחק',
             onPressed: () => Navigator.of(context).pushReplacement(
-              MaterialPageRoute<void>(builder: (_) => const RoleRevealScreen(isImpostor: false)),
+              MaterialPageRoute<void>(
+                  builder: (_) => const RoleRevealScreen(isImpostor: false)),
             ),
           ),
         ],

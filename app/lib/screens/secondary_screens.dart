@@ -4,7 +4,8 @@ import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({required this.nickname, required this.avatar, super.key});
+  const ProfileScreen(
+      {required this.nickname, required this.avatar, super.key});
 
   final String nickname;
   final String avatar;
@@ -26,9 +27,15 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 24),
           Row(
             children: const [
-              Expanded(child: _StatCard(value: '0', label: 'ניצחונות', color: AppColors.turquoise)),
+              Expanded(
+                  child: _StatCard(
+                      value: '0',
+                      label: 'ניצחונות',
+                      color: AppColors.turquoise)),
               SizedBox(width: 12),
-              Expanded(child: _StatCard(value: '0', label: 'הפסדים', color: AppColors.coral)),
+              Expanded(
+                  child: _StatCard(
+                      value: '0', label: 'הפסדים', color: AppColors.coral)),
             ],
           ),
         ],
@@ -38,7 +45,8 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard({required this.value, required this.label, required this.color});
+  const _StatCard(
+      {required this.value, required this.label, required this.color});
 
   final String value;
   final String label;
@@ -51,8 +59,12 @@ class _StatCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Column(
           children: [
-            Text(value, style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: color)),
-            Text(label, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text(value,
+                style: TextStyle(
+                    fontSize: 40, fontWeight: FontWeight.w900, color: color)),
+            Text(label,
+                style:
+                    const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
           ],
         ),
       ),
@@ -125,11 +137,23 @@ class HowToPlayScreen extends StatelessWidget {
   const HowToPlayScreen({super.key});
 
   static const steps = [
-    ('כולם מקבלים מילה', 'חוץ מהמתחזה, שרואה רק את הקטגוריה.', Icons.visibility_rounded),
+    (
+      'כולם מקבלים מילה',
+      'חוץ מהמתחזה, שרואה רק את הקטגוריה.',
+      Icons.visibility_rounded
+    ),
     ('כותבים רמז בתור', 'כל רמז הוא מילה אחת בלבד.', Icons.edit_note_rounded),
-    ('מגיבים לרמזים', 'אפשר לשלוח אימוג׳ים והודעות מובנות.', Icons.emoji_emotions_rounded),
+    (
+      'מגיבים לרמזים',
+      'אפשר לשלוח אימוג׳ים והודעות מובנות.',
+      Icons.emoji_emotions_rounded
+    ),
     ('מצביעים', 'מי לדעתכם הוא המתחזה?', Icons.how_to_vote_rounded),
-    ('הזדמנות אחרונה', 'אם נתפס, המתחזה יכול לנחש את המילה ולנצח.', Icons.psychology_rounded),
+    (
+      'הזדמנות אחרונה',
+      'אם נתפס, המתחזה יכול לנחש את המילה ולנצח.',
+      Icons.psychology_rounded
+    ),
   ];
 
   @override
@@ -138,7 +162,8 @@ class HowToPlayScreen extends StatelessWidget {
       title: 'איך משחקים?',
       child: Column(
         children: [
-          const Illustration('assets/illustrations/how-to-play.webp', height: 210),
+          const Illustration('assets/illustrations/how-to-play.webp',
+              height: 210),
           ...List.generate(steps.length, (index) {
             final step = steps[index];
             return Card(
@@ -146,9 +171,11 @@ class HowToPlayScreen extends StatelessWidget {
                 leading: CircleAvatar(
                   backgroundColor: AppColors.yellow,
                   foregroundColor: AppColors.night,
-                  child: Text('${index + 1}', style: const TextStyle(fontWeight: FontWeight.w900)),
+                  child: Text('${index + 1}',
+                      style: const TextStyle(fontWeight: FontWeight.w900)),
                 ),
-                title: Text(step.$1, style: const TextStyle(fontWeight: FontWeight.w900)),
+                title: Text(step.$1,
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
                 subtitle: Text(step.$2),
                 trailing: Icon(step.$3, color: AppColors.turquoise),
               ),
@@ -160,7 +187,14 @@ class HowToPlayScreen extends StatelessWidget {
   }
 }
 
-enum SystemStateType { noCategoryMatch, reconnecting, removed, stopped, joinError, serverError }
+enum SystemStateType {
+  noCategoryMatch,
+  reconnecting,
+  removed,
+  stopped,
+  joinError,
+  serverError
+}
 
 class SystemStateScreen extends StatelessWidget {
   const SystemStateScreen({required this.type, super.key});
@@ -211,13 +245,19 @@ class SystemStateScreen extends StatelessWidget {
     return GameScaffold(
       title: data.title,
       timer: type == SystemStateType.reconnecting ? 30 : null,
-      bottom: PrimaryButton(label: data.action, onPressed: () => Navigator.of(context).pop()),
+      bottom: PrimaryButton(
+          label: data.action, onPressed: () => Navigator.of(context).pop()),
       child: Column(
         children: [
           Illustration(data.image, height: 260),
-          Text(data.title, style: Theme.of(context).textTheme.headlineLarge, textAlign: TextAlign.center),
+          Text(data.title,
+              style: Theme.of(context).textTheme.headlineLarge,
+              textAlign: TextAlign.center),
           const SizedBox(height: 12),
-          Text(data.body, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted, fontSize: 17, height: 1.45)),
+          Text(data.body,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  color: AppColors.muted, fontSize: 17, height: 1.45)),
         ],
       ),
     );

@@ -29,7 +29,11 @@ class RoleRevealScreen extends StatelessWidget {
                 : 'assets/illustrations/role-citizen.webp',
             height: 245,
           ),
-          const Text('קטגוריה: אוכל', style: TextStyle(color: AppColors.turquoise, fontSize: 18, fontWeight: FontWeight.w800)),
+          const Text('קטגוריה: אוכל',
+              style: TextStyle(
+                  color: AppColors.turquoise,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800)),
           const SizedBox(height: 12),
           Text(
             isImpostor ? 'אתה המתחזה' : 'המילה שלך',
@@ -60,7 +64,8 @@ class RoleRevealScreen extends StatelessWidget {
                 ? 'נסה להשתלב, להבין את הרמזים ולגלות את המילה.'
                 : 'תן רמז של מילה אחת בלי לחשוף את המילה הסודית.',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, fontSize: 17, height: 1.45),
+            style: const TextStyle(
+                color: AppColors.muted, fontSize: 17, height: 1.45),
           ),
         ],
       ),
@@ -81,7 +86,14 @@ class _HintRoundScreenState extends State<HintRoundScreen> {
   bool _submitted = false;
   final _reactions = <String>[];
 
-  static const reactionOptions = ['😂', '🤔', '🔥', 'חשוד מאוד', 'רמז טוב!', 'לא הבנתי'];
+  static const reactionOptions = [
+    '😂',
+    '🤔',
+    '🔥',
+    'חשוד מאוד',
+    'רמז טוב!',
+    'לא הבנתי'
+  ];
 
   @override
   void dispose() {
@@ -91,7 +103,8 @@ class _HintRoundScreenState extends State<HintRoundScreen> {
 
   void _submit() {
     final hint = _controller.text.trim();
-    final words = hint.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).toList();
+    final words =
+        hint.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).toList();
     if (hint.isEmpty) {
       setState(() => _error = 'צריך לכתוב רמז');
     } else if (words.length != 1) {
@@ -135,16 +148,23 @@ class _HintRoundScreenState extends State<HintRoundScreen> {
           ),
           const SizedBox(height: 4),
           if (!_submitted) ...[
-            Text('התור שלך', style: Theme.of(context).textTheme.headlineLarge, textAlign: TextAlign.center),
+            Text('התור שלך',
+                style: Theme.of(context).textTheme.headlineLarge,
+                textAlign: TextAlign.center),
             const SizedBox(height: 6),
-            const Text('רמז אחד, מילה אחת', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted)),
+            const Text('רמז אחד, מילה אחת',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.muted)),
             const SizedBox(height: 16),
             TextField(
               controller: _controller,
               maxLength: 25,
               autofocus: true,
               textAlign: TextAlign.right,
-              style: const TextStyle(color: AppColors.night, fontSize: 21, fontWeight: FontWeight.w800),
+              style: const TextStyle(
+                  color: AppColors.night,
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800),
               decoration: InputDecoration(
                 hintText: 'הרמז שלי',
                 errorText: _error,
@@ -155,27 +175,33 @@ class _HintRoundScreenState extends State<HintRoundScreen> {
               onSubmitted: (_) => _submit(),
             ),
           ] else ...[
-            const AvatarView(asset: 'assets/avatars/avatar-m02-binoculars.webp', size: 92),
+            const AvatarView(
+                asset: 'assets/avatars/avatar-m02-binoculars.webp', size: 92),
             const SizedBox(height: 10),
-            Text('יובל כותב רמז...', style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
+            Text('יובל כותב רמז...',
+                style: Theme.of(context).textTheme.headlineMedium,
+                textAlign: TextAlign.center),
           ],
           const SizedBox(height: 22),
-          const Text('הרמזים שנחשפו', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+          const Text('הרמזים שנחשפו',
+              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
           const SizedBox(height: 10),
           ...demoPlayers.take(3).map(
-            (player) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: PlayerCard(player: player),
-            ),
-          ),
+                (player) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: PlayerCard(player: player),
+                ),
+              ),
           const SizedBox(height: 10),
-          const Text('תגובות לרמז האחרון', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+          const Text('תגובות לרמז האחרון',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: reactionOptions.map((reaction) {
-              final count = _reactions.where((value) => value == reaction).length;
+              final count =
+                  _reactions.where((value) => value == reaction).length;
               return ActionChip(
                 onPressed: () => setState(() => _reactions.add(reaction)),
                 avatar: count == 0 ? null : CircleAvatar(child: Text('$count')),
@@ -199,9 +225,14 @@ class _HintRoundScreenState extends State<HintRoundScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('המילה שלך', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              Text('המילה שלך',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
               SizedBox(height: 10),
-              Text('בננה', style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: AppColors.night)),
+              Text('בננה',
+                  style: TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.night)),
             ],
           ),
         ),
@@ -224,7 +255,8 @@ class _VotingScreenState extends State<VotingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final candidates = widget.isRevote ? demoPlayers.sublist(1, 3) : demoPlayers;
+    final candidates =
+        widget.isRevote ? demoPlayers.sublist(1, 3) : demoPlayers;
     return GameScaffold(
       title: widget.isRevote ? 'הצבעה חוזרת' : 'מי המתחזה?',
       timer: widget.isRevote ? 15 : 20,
@@ -234,7 +266,8 @@ class _VotingScreenState extends State<VotingScreen> {
         onPressed: _selected == null
             ? null
             : () => Navigator.of(context).pushReplacement(
-                  MaterialPageRoute<void>(builder: (_) => const ImpostorGuessScreen()),
+                  MaterialPageRoute<void>(
+                      builder: (_) => const ImpostorGuessScreen()),
                 ),
       ),
       child: Column(
@@ -245,7 +278,8 @@ class _VotingScreenState extends State<VotingScreen> {
               padding: EdgeInsets.only(bottom: 12),
               child: Text(
                 'תיקו נוסף מעניק ניצחון למתחזה',
-                style: TextStyle(color: AppColors.coral, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                    color: AppColors.coral, fontWeight: FontWeight.w800),
               ),
             ),
           ...List.generate(candidates.length, (index) {
@@ -292,20 +326,28 @@ class _ImpostorGuessScreenState extends State<ImpostorGuessScreen> {
       bottom: PrimaryButton(
         label: 'שליחת ניחוש',
         onPressed: () => Navigator.of(context).pushReplacement(
-          MaterialPageRoute<void>(builder: (_) => const ResultScreen(citizensWon: true)),
+          MaterialPageRoute<void>(
+              builder: (_) => const ResultScreen(citizensWon: true)),
         ),
       ),
       child: Column(
         children: [
-          const Illustration('assets/illustrations/role-impostor.webp', height: 230),
-          Text('המתחזה עדיין יכול לנצח', style: Theme.of(context).textTheme.headlineLarge, textAlign: TextAlign.center),
+          const Illustration('assets/illustrations/role-impostor.webp',
+              height: 230),
+          Text('המתחזה עדיין יכול לנצח',
+              style: Theme.of(context).textTheme.headlineLarge,
+              textAlign: TextAlign.center),
           const SizedBox(height: 10),
-          const Text('מה הייתה המילה הסודית?', style: TextStyle(color: AppColors.muted, fontSize: 17)),
+          const Text('מה הייתה המילה הסודית?',
+              style: TextStyle(color: AppColors.muted, fontSize: 17)),
           const SizedBox(height: 20),
           TextField(
             controller: _guess,
             textAlign: TextAlign.right,
-            style: const TextStyle(color: AppColors.night, fontSize: 20, fontWeight: FontWeight.w800),
+            style: const TextStyle(
+                color: AppColors.night,
+                fontSize: 20,
+                fontWeight: FontWeight.w800),
             decoration: const InputDecoration(hintText: 'הניחוש שלי'),
           ),
         ],
@@ -328,11 +370,13 @@ class ResultScreen extends StatelessWidget {
         children: [
           PrimaryButton(
             label: 'משחק נוסף',
-            onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+            onPressed: () =>
+                Navigator.of(context).popUntil((route) => route.isFirst),
           ),
           const SizedBox(height: 8),
           TextButton(
-            onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+            onPressed: () =>
+                Navigator.of(context).popUntil((route) => route.isFirst),
             child: const Text('חזרה למסך הבית'),
           ),
         ],
@@ -352,7 +396,9 @@ class ResultScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            citizensWon ? 'המתחזה נתפס ולא ניחש את המילה' : 'המתחזה הצליח לגלות את המילה',
+            citizensWon
+                ? 'המתחזה נתפס ולא ניחש את המילה'
+                : 'המתחזה הצליח לגלות את המילה',
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, fontSize: 17),
           ),
@@ -362,11 +408,18 @@ class ResultScreen extends StatelessWidget {
               padding: const EdgeInsets.all(18),
               child: Column(
                 children: const [
-                  ListTile(title: Text('המתחזה'), trailing: Text('יובל', style: TextStyle(fontWeight: FontWeight.w900))),
+                  ListTile(
+                      title: Text('המתחזה'),
+                      trailing: Text('יובל',
+                          style: TextStyle(fontWeight: FontWeight.w900))),
                   Divider(),
-                  ListTile(title: Text('המילה'), trailing: Text('בננה', style: TextStyle(fontWeight: FontWeight.w900))),
+                  ListTile(
+                      title: Text('המילה'),
+                      trailing: Text('בננה',
+                          style: TextStyle(fontWeight: FontWeight.w900))),
                   Divider(),
-                  ListTile(title: Text('חלוקת הקולות'), trailing: Text('יובל — 4')),
+                  ListTile(
+                      title: Text('חלוקת הקולות'), trailing: Text('יובל — 4')),
                 ],
               ),
             ),

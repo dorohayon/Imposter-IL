@@ -18,7 +18,8 @@ class FriendsScreen extends StatelessWidget {
       title: 'משחק עם חברים',
       child: Column(
         children: [
-          const Illustration('assets/illustrations/private-room.webp', height: 270),
+          const Illustration('assets/illustrations/private-room.webp',
+              height: 270),
           PrimaryButton(
             label: 'יצירת חדר',
             onPressed: () => _open(context, const CreateRoomScreen()),
@@ -59,8 +60,11 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Illustration('assets/illustrations/private-room.webp', height: 185),
-          Text('מספר שחקנים מרבי: $players', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          const Illustration('assets/illustrations/private-room.webp',
+              height: 185),
+          Text('מספר שחקנים מרבי: $players',
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           Slider(
             value: players.toDouble(),
             min: 4,
@@ -70,7 +74,8 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
             onChanged: (value) => setState(() => players = value.round()),
           ),
           const SizedBox(height: 18),
-          const Text('זמן לרמז', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          const Text('זמן לרמז',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           SegmentedButton<int>(
             segments: const [
@@ -79,10 +84,12 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               ButtonSegment(value: 20, label: Text('20 שניות')),
             ],
             selected: {hintSeconds},
-            onSelectionChanged: (value) => setState(() => hintSeconds = value.first),
+            onSelectionChanged: (value) =>
+                setState(() => hintSeconds = value.first),
           ),
           const SizedBox(height: 22),
-          const Text('קטגוריות', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          const Text('קטגוריות',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           const Wrap(
             spacing: 8,
@@ -124,21 +131,28 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
         label: 'הצטרפות',
         onPressed: code.text.length == 6
             ? () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => const PrivateLobbyScreen(isHost: false)),
+                  MaterialPageRoute<void>(
+                      builder: (_) => const PrivateLobbyScreen(isHost: false)),
                 )
             : null,
       ),
       child: Column(
         children: [
-          const Illustration('assets/illustrations/private-room.webp', height: 230),
-          const Text('הכניסו את קוד החדר שקיבלתם', style: TextStyle(color: AppColors.muted, fontSize: 17)),
+          const Illustration('assets/illustrations/private-room.webp',
+              height: 230),
+          const Text('הכניסו את קוד החדר שקיבלתם',
+              style: TextStyle(color: AppColors.muted, fontSize: 17)),
           const SizedBox(height: 18),
           TextField(
             controller: code,
             maxLength: 6,
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.night, fontSize: 30, fontWeight: FontWeight.w900, letterSpacing: 8),
+            style: const TextStyle(
+                color: AppColors.night,
+                fontSize: 30,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 8),
             decoration: const InputDecoration(hintText: '000000'),
             onChanged: (_) => setState(() {}),
           ),
@@ -161,7 +175,9 @@ class PrivateLobbyScreen extends StatelessWidget {
         label: 'התחלת משחק',
         onPressed: demoPlayers.length >= 4 && isHost
             ? () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => const RoleRevealScreen(isImpostor: false)),
+                  MaterialPageRoute<void>(
+                      builder: (_) =>
+                          const RoleRevealScreen(isImpostor: false)),
                 )
             : null,
       ),
@@ -176,8 +192,13 @@ class PrivateLobbyScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('קוד החדר', style: TextStyle(color: AppColors.muted)),
-                        Text('482731', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, letterSpacing: 3)),
+                        Text('קוד החדר',
+                            style: TextStyle(color: AppColors.muted)),
+                        Text('482731',
+                            style: TextStyle(
+                                fontSize: 30,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 3)),
                       ],
                     ),
                   ),
@@ -193,20 +214,23 @@ class PrivateLobbyScreen extends StatelessWidget {
           const SizedBox(height: 12),
           const Align(
             alignment: Alignment.centerRight,
-            child: Text('6 מתוך 8 שחקנים', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            child: Text('6 מתוך 8 שחקנים',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           ),
           const SizedBox(height: 8),
           ...demoPlayers.map(
             (player) => Card(
               child: ListTile(
                 leading: AvatarView(asset: player.avatar, size: 52),
-                title: Text(player.nickname, style: const TextStyle(fontWeight: FontWeight.w800)),
+                title: Text(player.nickname,
+                    style: const TextStyle(fontWeight: FontWeight.w800)),
                 subtitle: player.isMe ? const Text('מנהל החדר') : null,
                 trailing: isHost && !player.isMe
                     ? IconButton(
                         tooltip: 'הסרת שחקן',
                         onPressed: () {},
-                        icon: const Icon(Icons.person_remove_rounded, color: AppColors.coral),
+                        icon: const Icon(Icons.person_remove_rounded,
+                            color: AppColors.coral),
                       )
                     : null,
               ),

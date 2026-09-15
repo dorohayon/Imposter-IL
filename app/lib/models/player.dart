@@ -32,10 +32,29 @@ const avatarAssets = <String>[
 ];
 
 const demoPlayers = <Player>[
-  Player(nickname: 'נועם', avatar: 'assets/avatars/avatar-f01-notebook.webp', hint: 'מתוק', isMe: true),
-  Player(nickname: 'יובל', avatar: 'assets/avatars/avatar-m02-binoculars.webp', hint: 'קיץ'),
-  Player(nickname: 'מאיה', avatar: 'assets/avatars/avatar-f02-camera.webp', hint: 'קר'),
-  Player(nickname: 'אורי', avatar: 'assets/avatars/avatar-m04-detective-hat.webp', hint: 'כדור'),
-  Player(nickname: 'דנה', avatar: 'assets/avatars/avatar-f04-map.webp', hint: 'צהוב'),
-  Player(nickname: 'רועי', avatar: 'assets/avatars/avatar-m05-badge.webp', hint: 'קליפה'),
+  Player(
+      nickname: 'נועם',
+      avatar: 'assets/avatars/avatar-f01-notebook.webp',
+      hint: 'מתוק',
+      isMe: true),
+  Player(
+      nickname: 'יובל',
+      avatar: 'assets/avatars/avatar-m02-binoculars.webp',
+      hint: 'קיץ'),
+  Player(
+      nickname: 'מאיה',
+      avatar: 'assets/avatars/avatar-f02-camera.webp',
+      hint: 'קר'),
+  Player(
+      nickname: 'אורי',
+      avatar: 'assets/avatars/avatar-m04-detective-hat.webp',
+      hint: 'כדור'),
+  Player(
+      nickname: 'דנה',
+      avatar: 'assets/avatars/avatar-f04-map.webp',
+      hint: 'צהוב'),
+  Player(
+      nickname: 'רועי',
+      avatar: 'assets/avatars/avatar-m05-badge.webp',
+      hint: 'קליפה'),
 ];

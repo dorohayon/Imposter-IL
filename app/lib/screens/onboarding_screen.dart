@@ -46,21 +46,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
           children: [
-            Text('בואו נכיר', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineLarge),
+            Text('בואו נכיר',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineLarge),
             const SizedBox(height: 8),
-            const Text('בחרו כינוי ודמות בלשית', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 17)),
+            const Text('בחרו כינוי ודמות בלשית',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.muted, fontSize: 17)),
             const SizedBox(height: 24),
-            Center(child: AvatarView(asset: avatarAssets[_selectedAvatar], size: 132, selected: true)),
+            Center(
+                child: AvatarView(
+                    asset: avatarAssets[_selectedAvatar],
+                    size: 132,
+                    selected: true)),
             const SizedBox(height: 24),
             TextField(
               controller: _nickname,
               maxLength: 18,
               textAlign: TextAlign.right,
-              style: const TextStyle(color: AppColors.night, fontSize: 18, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                  color: AppColors.night,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700),
               decoration: InputDecoration(
                 hintText: 'הכינוי שלי',
                 errorText: _error,
-                prefixIcon: const Icon(Icons.edit_rounded, color: AppColors.night),
+                prefixIcon:
+                    const Icon(Icons.edit_rounded, color: AppColors.night),
               ),
               onChanged: (_) {
                 if (_error != null) setState(() => _error = null);

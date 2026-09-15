@@ -30,7 +30,9 @@ class PrimaryButton extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                 ),
               ),
-              child: Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              child: Text(label,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w800)),
             )
           : FilledButton(
               onPressed: onPressed,
@@ -42,14 +44,17 @@ class PrimaryButton extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                 ),
               ),
-              child: Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+              child: Text(label,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w900)),
             ),
     );
   }
 }
 
 class TimerBadge extends StatelessWidget {
-  const TimerBadge({required this.seconds, this.color = AppColors.yellow, super.key});
+  const TimerBadge(
+      {required this.seconds, this.color = AppColors.yellow, super.key});
 
   final int seconds;
   final Color color;
@@ -65,7 +70,10 @@ class TimerBadge extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: color,
-          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))],
+          boxShadow: const [
+            BoxShadow(
+                color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
+          ],
         ),
         child: Text(
           '$seconds',
@@ -113,7 +121,10 @@ class GameScaffold extends StatelessWidget {
               child: Row(
                 textDirection: TextDirection.ltr,
                 children: [
-                  if (timer != null) TimerBadge(seconds: timer!) else const SizedBox(width: 54),
+                  if (timer != null)
+                    TimerBadge(seconds: timer!)
+                  else
+                    const SizedBox(width: 54),
                   Expanded(
                     child: Text(
                       title,
@@ -219,9 +230,12 @@ class PlayerCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(player.nickname, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    Text(player.nickname,
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w800)),
                     if (player.hint != null)
-                      Text('הרמז: ${player.hint}', style: const TextStyle(color: AppColors.muted)),
+                      Text('הרמז: ${player.hint}',
+                          style: const TextStyle(color: AppColors.muted)),
                   ],
                 ),
               ),
