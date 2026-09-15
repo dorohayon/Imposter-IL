@@ -239,3 +239,47 @@ func TestMatchmakingPlayAgainSearchesTogetherAndFillsUp(t *testing.T) {
 	wantOK(t, rest[2].w.command("home", "game.leave", map[string]any{"gameId": gameID}))
 	rest[2].w.sessionState(func(s map[string]any) bool { return s["activity"] == "none" })
 }
+
+func TestMatchmakingPlayAgainStaysTogetherEvenWithDifferentCategories(t *testing.T) {
+	c := newClient(t)
+	// Two of the four matched only on animals: one also picked food, one
+	// also picked sports.
+	players := []*wsPlayer{
+		c.searcher("אוכל-וחיות", "food", "animals"),
+		c.searcher("חיות", "animals"),
+		c.searcher("ספורט-וחיות", "sports", "animals"),
+		c.searcher("חיות2", "animals"),
+	}
+	c.advance(30 * time.Second)
+	c.tickAll()
+	games := wantGameStarted(t, players...)
+	var gameID, impostor string
+	for i, g := range games {
+		gameID = g["gameId"].(string)
+		if g["myRole"] == "impostor" {
+			impostor = players[i].id
+		}
+	}
+
+	// Bigger groups wait elsewhere: food lovers and sports fans.
+	c.searchers(3, "food")
+	c.searchers(3, "sports")
+
+	wantOK(t, byID(players, impostor).w.command("bye", "game.leave", map[string]any{"gameId": gameID}))
+	var rest []*wsPlayer
+	for _, p := range players {
+		if p.id != impostor {
+			rest = append(rest, p)
+		}
+	}
+	for _, p := range rest {
+		p.w.gameState(phase("ended"))
+		wantOK(t, p.w.command("again", "game.playAgain", map[string]any{"gameId": gameID}))
+	}
+	room := rest[0].roomID(c)
+	for _, p := range rest[1:] {
+		if p.roomID(c) != room {
+			t.Fatal("players who chose another game were split into different groups")
+		}
+	}
+}

@@ -44,7 +44,7 @@ go run ./cmd/server
 
 ## אפליקציית Flutter
 
-נדרש Flutter 3.27.0 ומעלה (Dart 3.6). ה־CI מריץ `flutter analyze` ו־`flutter test` על גרסת המינימום ועל stable, בדיקת פורמט על stable, ובדיקת End-to-End מול שרת אמיתי.
+נדרש Flutter 3.44.0 ומעלה, בגלל תבניות Android ו־iOS. ה־CI מריץ `flutter analyze` ו־`flutter test` על גרסת המינימום ועל stable, בדיקת פורמט על stable, build של Android ושל iOS (סימולטור) על גרסת המינימום, ובדיקת End-to-End מול שרת אמיתי.
 
 ```sh
 cd app

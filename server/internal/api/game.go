@@ -86,9 +86,9 @@ func (s *Server) gameCommand(sess *session, typ string, p commandPayload, now ti
 			return "wrong_phase"
 		}
 		if entry.public {
-			// Players who continue search again with their categories, which
-			// puts them in the same room.
-			return s.joinSearch(sess, sess.searchCategories, now)
+			// Players who continue search again in the match's room, so they
+			// stay together while new players fill the empty spots.
+			return s.joinSearch(sess, entry, sess.searchCategories, now)
 		}
 		sess.leaveGame()
 		s.sendSessionState(sess)

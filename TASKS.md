@@ -141,13 +141,13 @@
 - [ ] לבחור Analytics, Crash Reporting, Logging ו־Monitoring.
 - [ ] להגדיר סביבות development, staging ו־production. — בפיתוח `IMPOSTER_DEV_POLICY=1` מאפשר משחק בלי מילון תוכן לא ראוי, והאפליקציה מקבלת כתובת שרת ב־`--dart-define=IMPOSTER_SERVER`.
 - [x] להקים CI לשרת: formatting, lint, vet ובדיקות.
-- [ ] להוסיף ל־CI build, lint ובדיקות לאפליקציית Flutter. — format, analyze ו־widget tests על Flutter 3.27.0 ועל stable, ובדיקת End-to-End מול השרת; build של Android/iOS עדיין לא ב־CI.
+- [ ] להוסיף ל־CI build, lint ובדיקות לאפליקציית Flutter. — format, analyze ו־widget tests על Flutter 3.44.0 ועל stable, build של Android ושל iOS (סימולטור) על 3.44.0, ובדיקת End-to-End מול השרת.
 
 ## P1 — מימוש MVP
 
 ### תשתית אפליקציה
 
-- [ ] ליצור פרויקט אפליקציה עובד ל־Android ול־iPhone. — מעטפות Android ו־iOS נוצרו עם המזהה הזמני `com.example.imposter_il`; build של Android debug עובר מקומית; iOS לא נבנה עדיין (אין Xcode מלא בסביבת הפיתוח).
+- [ ] ליצור פרויקט אפליקציה עובד ל־Android ול־iPhone. — מעטפות Android ו־iOS נוצרו עם המזהה הזמני `com.example.imposter_il`; build של Android debug ושל iOS לסימולטור רץ ב־CI על Flutter 3.44.0; בדיקה על מכשירים עדיין פתוחה.
 - [x] לממש Design Tokens ורכיבי בסיס מתוך ה־Design System.
 - [ ] להוסיף את הפונטים Secular One ו־Rubik.
 - [x] לחבר את האווטארים והאילוסטרציות לניהול Assets.
@@ -255,6 +255,8 @@
 - [ ] להוסיף קטגוריות, מילים ואיורים חדשים בהתאם לנתוני שימוש.
 
 ## יומן עדכונים
+
+- 2026-09-15 — תיקוני Bugbot: מינימום Flutter עלה ל־3.44.0 בגלל תבניות Android/iOS, ונוספו ל־CI build של Android ושל iOS; פתיחה מחדש של האפליקציה באמצע משחק חוזרת אליו; יציאה מחדר, ממשחק ומחיפוש מחכה לאישור השרת; שחקנים שבוחרים `משחק נוסף` נשארים באותה קבוצה גם כשבחרו קטגוריות שונות; ובחירת הצבעה מתאפסת בהצבעה חוזרת.
 
 - 2026-09-15 — הוחלטו ומומשו כללי Matchmaking: 30 שניות מהשחקן הרביעי, ספירה של 5 שניות מהשישי (גם ב־8) שאינה נעצרת בביטול כל עוד נשארו 4, התחלה מחדש מתחת ל־4, ו־`לא נמצא משחק מתאים` אחרי 2 דקות. השרת מקבץ שחקנים לפי קטגוריה משותפת, `משחק נוסף` מחזיר לחיפוש יחד, והאפליקציה מחוברת למשחק ברשת. נתוני הדמה והעתק כללי המילים באפליקציה הוסרו.
 

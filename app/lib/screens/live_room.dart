@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -100,17 +101,30 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
-  void _leaveRoom() {
-    final session = SessionScope.read(context);
-    _goHome();
-    unawaited(session.leaveRoom());
+  bool _leaveInFlight = false;
+
+  /// Runs a leave command and navigates only once the server confirmed it.
+  Future<void> _leaveThen(
+    Future<String?> Function() leave,
+    VoidCallback navigate,
+  ) async {
+    if (_leaveInFlight) return;
+    _leaveInFlight = true;
+    final messenger = ScaffoldMessenger.of(context);
+    final code = await leave();
+    _leaveInFlight = false;
+    if (code != null) {
+      messenger.showSnackBar(SnackBar(content: Text(commandMessage(code))));
+      return;
+    }
+    navigate();
   }
 
-  void _leaveGame() {
-    final session = SessionScope.read(context);
-    _goHome();
-    unawaited(session.leaveGame());
-  }
+  void _leaveRoom() =>
+      _leaveThen(SessionScope.read(context).leaveRoom, _goHome);
+
+  void _leaveGame() =>
+      _leaveThen(SessionScope.read(context).leaveGame, _goHome);
 
   /// Back to the category picker, which opened the search.
   void _backToCategories() {
@@ -119,11 +133,8 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     Navigator.of(context).pop();
   }
 
-  void _cancelSearch() {
-    final session = SessionScope.read(context);
-    _backToCategories();
-    unawaited(session.cancelSearch());
-  }
+  void _cancelSearch() =>
+      _leaveThen(SessionScope.read(context).cancelSearch, _backToCategories);
 
   void _afterFrame(VoidCallback action) =>
       WidgetsBinding.instance.addPostFrameCallback((_) => action());
@@ -879,6 +890,16 @@ class _Voting extends StatefulWidget {
 
 class _VotingState extends State<_Voting> {
   String? _selected;
+
+  @override
+  void didUpdateWidget(_Voting old) {
+    super.didUpdateWidget(old);
+    // A runoff (or any new candidate list) starts without a selection.
+    if (old.game.phase != widget.game.phase ||
+        !listEquals(old.game.voteCandidates, widget.game.voteCandidates)) {
+      _selected = null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

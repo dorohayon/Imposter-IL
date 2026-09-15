@@ -24,7 +24,7 @@ func (s *Server) matchmakingCommand(sess *session, typ string, p commandPayload,
 		if sess.gameID != "" || s.currentRoom(sess) != nil {
 			return "already_in_activity"
 		}
-		return s.joinSearch(sess, p.CategoryIDs, now)
+		return s.joinSearch(sess, nil, p.CategoryIDs, now)
 	case "matchmaking.cancel":
 		if entry := s.currentRoom(sess); entry != nil && s.searching(entry) {
 			s.leaveSearch(sess, entry, now)
@@ -69,10 +69,11 @@ func (s *Server) accepts(entry *roomEntry, categories []string) bool {
 	return members == 0 || len(matchmaking.Shared(s.sharedCategories(entry), categories)) > 0
 }
 
-// joinSearch puts the player in the fullest public room that shares a
-// category with them, otherwise in a new one. Players who continue after a
-// game have the same categories, so they land in the same room.
-func (s *Server) joinSearch(sess *session, categories []string, now time.Time) string {
+// joinSearch puts the player in previous when it still accepts them, so
+// players continuing after a game stay together even if their own category
+// selections differ; otherwise in the fullest public room that shares a
+// category with them; otherwise in a new one.
+func (s *Server) joinSearch(sess *session, previous *roomEntry, categories []string, now time.Time) string {
 	switch {
 	case !content.ValidIDs(categories):
 		return "invalid_categories"
@@ -80,10 +81,14 @@ func (s *Server) joinSearch(sess *session, categories []string, now time.Time) s
 		return "content_unavailable"
 	}
 	var entry *roomEntry
-	for _, candidate := range s.publicRooms {
-		if s.accepts(candidate, categories) &&
-			(entry == nil || len(candidate.room.View().Members) > len(entry.room.View().Members)) {
-			entry = candidate
+	if previous != nil && s.accepts(previous, categories) {
+		entry = previous
+	} else {
+		for _, candidate := range s.publicRooms {
+			if s.accepts(candidate, categories) &&
+				(entry == nil || len(candidate.room.View().Members) > len(entry.room.View().Members)) {
+				entry = candidate
+			}
 		}
 	}
 	if entry == nil {

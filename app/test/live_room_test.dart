@@ -350,4 +350,70 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('session.token'), 'token-2');
   });
+
+  testWidgets('reopening the app mid-game returns to the game', (tester) async {
+    final api = FakeApi();
+    await startApp(tester, api, saved: {
+      'session.token': 'token-1',
+      'session.playerId': 'p_me',
+      'session.nickname': 'דור',
+      'session.avatarId': 'avatar-f01-notebook',
+    });
+    expect(find.byType(HomeScreen), findsOneWidget);
+
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    api.channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
+    await settle(tester);
+    expect(find.byType(LiveRoomScreen), findsOneWidget);
+    expect(find.text('המשימה שלך'), findsOneWidget);
+  });
+
+  testWidgets('leaving waits for the server and stays put if it fails',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+
+    api.channel.errors['room.leave'] = 'network_error';
+    await tester.tap(find.byType(BackButton).last);
+    await settle(tester);
+    expect(find.byType(LiveRoomScreen), findsOneWidget);
+    expect(
+        find.text('אין חיבור לשרת. בדקו את החיבור ונסו שוב.'), findsOneWidget);
+
+    api.channel.errors.remove('room.leave');
+    await tester.tap(find.byType(BackButton).last);
+    await settle(tester);
+    expect(api.channel.commands('room.leave'), hasLength(2));
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('a runoff starts without the earlier vote selection',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    api.channel.snapshot('game.state', 'game',
+        gameJson(phase: 'voting', candidates: ['p_me', 'p_2', 'p_3', 'p_4']));
+    await settle(tester);
+    await tapLive(tester, 'נועה');
+    expect(isEnabled(tester, 'אישור הצבעה'), isTrue);
+
+    api.channel.snapshot('game.state', 'game',
+        gameJson(phase: 'runoff_voting', candidates: ['p_2', 'p_3']));
+    await settle(tester);
+    expect(find.text('תיקו נוסף מעניק ניצחון למתחזה'), findsOneWidget);
+    expect(isEnabled(tester, 'אישור הצבעה'), isFalse);
+  });
 }

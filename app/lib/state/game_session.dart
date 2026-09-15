@@ -305,18 +305,23 @@ class GameSession extends ChangeNotifier {
     _notify();
   }
 
-  Future<String?> leaveRoom() async {
-    final id = roomId;
-    _clearActivity();
-    _notify();
-    return id == null ? null : send('room.leave', {'roomId': id});
-  }
+  /// Leaves the room once the server confirms it. Returns an error code, or
+  /// null when the player is out.
+  Future<String?> leaveRoom() => _leave('room.leave', 'roomId', roomId);
 
-  Future<String?> leaveGame() async {
-    final id = gameId ?? game?.id;
+  /// Leaves the game (and its room) once the server confirms it.
+  Future<String?> leaveGame() =>
+      _leave('game.leave', 'gameId', gameId ?? game?.id);
+
+  Future<String?> _leave(String type, String key, String? id) async {
+    final code = id == null ? null : await send(type, {key: id});
+    // Not found means the server no longer has the player there.
+    if (code != null && code != 'room_not_found' && code != 'game_not_found') {
+      return code;
+    }
     _clearActivity();
     _notify();
-    return id == null ? null : send('game.leave', {'gameId': id});
+    return null;
   }
 
   /// Starts an online search. Returns an error code, or null on success.
@@ -335,10 +340,15 @@ class GameSession extends ChangeNotifier {
     return code;
   }
 
-  Future<String?> cancelSearch() {
+  /// Cancels the online search once the server confirms it. Without a
+  /// connection the search is already cancelled, since disconnecting cancels
+  /// it on the server.
+  Future<String?> cancelSearch() async {
+    final code = await send('matchmaking.cancel', {});
+    if (code != null && connected) return code;
     _clearActivity();
     _notify();
-    return send('matchmaking.cancel', {});
+    return null;
   }
 
   void dismissNoMatch() {
