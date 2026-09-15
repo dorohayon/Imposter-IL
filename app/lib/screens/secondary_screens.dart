@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../demo/demo_countdown.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
+import 'online_flow.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen(
@@ -19,11 +21,8 @@ class ProfileScreen extends StatelessWidget {
           AvatarView(asset: avatar, size: 138, selected: true),
           const SizedBox(height: 14),
           Text(nickname, style: Theme.of(context).textTheme.headlineLarge),
-          TextButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.edit_rounded),
-            label: const Text('עריכת פרטים'),
-          ),
+          // Disabled until editing and saving the identity are implemented.
+          const TextButton(onPressed: null, child: Text('עריכת פרטים — בקרוב')),
           const SizedBox(height: 24),
           Row(
             children: const [
@@ -115,17 +114,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: Text('שפה'),
             trailing: Text('עברית'),
           ),
-          ListTile(
-            leading: const Icon(Icons.description_outlined),
-            title: const Text('תנאי שימוש'),
-            trailing: const Icon(Icons.chevron_left_rounded),
-            onTap: () {},
+          // Disabled until the documents exist (TASKS.md, P2).
+          const ListTile(
+            enabled: false,
+            leading: Icon(Icons.description_outlined),
+            title: Text('תנאי שימוש'),
+            subtitle: Text('בקרוב'),
           ),
-          ListTile(
-            leading: const Icon(Icons.privacy_tip_outlined),
-            title: const Text('מדיניות פרטיות'),
-            trailing: const Icon(Icons.chevron_left_rounded),
-            onTap: () {},
+          const ListTile(
+            enabled: false,
+            leading: Icon(Icons.privacy_tip_outlined),
+            title: Text('מדיניות פרטיות'),
+            subtitle: Text('בקרוב'),
           ),
         ],
       ),
@@ -187,12 +187,16 @@ class HowToPlayScreen extends StatelessWidget {
   }
 }
 
+typedef _Action = ({String label, VoidCallback onPressed});
+
+/// System states that only the server can trigger. Until the client is
+/// connected they are opened from the debug-only prototype states list.
+/// The join error is shown inline on [JoinRoomScreen] (screen 23).
 enum SystemStateType {
   noCategoryMatch,
   reconnecting,
   removed,
   stopped,
-  joinError,
   serverError
 }
 
@@ -203,61 +207,109 @@ class SystemStateScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = switch (type) {
+    final navigator = Navigator.of(context);
+    void home() => navigator.popUntil((route) => route.isFirst);
+    void replace(Widget screen) => navigator.pushReplacement(
+          MaterialPageRoute<void>(builder: (_) => screen),
+        );
+
+    final ({
+      String title,
+      String body,
+      String image,
+      _Action? primary,
+      _Action? secondary,
+    }) data = switch (type) {
       SystemStateType.noCategoryMatch => (
           title: 'לא נמצא משחק מתאים',
           body: 'אפשר לבחור קטגוריות אחרות או לנסות שוב.',
           image: 'assets/illustrations/no-category-match.webp',
-          action: 'בחירת קטגוריות מחדש',
+          primary: (
+            label: 'בחירת קטגוריות מחדש',
+            onPressed: () => replace(const CategorySelectionScreen()),
+          ),
+          secondary: (
+            label: 'ניסיון נוסף',
+            onPressed: () => replace(const MatchmakingScreen()),
+          ),
         ),
       SystemStateType.reconnecting => (
           title: 'מתחברים מחדש',
           body: 'מנסים להחזיר אותך למשחק. ניתוק 2 מתוך 3.',
           image: 'assets/illustrations/connection-error.webp',
-          action: 'המשך המתנה',
+          primary: null,
+          secondary: null,
         ),
       SystemStateType.removed => (
           title: 'הוצאת מהמשחק',
           body: 'זה היה הניתוק השלישי ונרשם הפסד.',
           image: 'assets/illustrations/connection-error.webp',
-          action: 'חזרה למסך הבית',
+          primary: (label: 'חזרה למסך הבית', onPressed: home),
+          secondary: null,
         ),
       SystemStateType.stopped => (
           title: 'המשחק הופסק',
           body: 'לא נשארו מספיק שחקנים כדי להמשיך.',
           image: 'assets/illustrations/connection-error.webp',
-          action: 'חזרה למסך הבית',
-        ),
-      SystemStateType.joinError => (
-          title: 'לא הצלחנו להצטרף',
-          body: 'החדר לא נמצא או שאינו זמין כרגע.',
-          image: 'assets/illustrations/private-room.webp',
-          action: 'ניסיון נוסף',
+          primary: (label: 'חזרה למסך הבית', onPressed: home),
+          secondary: null,
         ),
       SystemStateType.serverError => (
           title: 'משהו השתבש',
-          body: 'המשחק הופסק עקב תקלה בשרת. לא נרשם הפסד.',
+          body: 'המשחק הופסק עקב תקלה בחיבור לשרת. לא נרשם הפסד.',
           image: 'assets/illustrations/connection-error.webp',
-          action: 'ניסיון נוסף',
+          // Demo: retrying just closes the error.
+          primary: (label: 'ניסיון נוסף', onPressed: () => navigator.pop()),
+          secondary: (label: 'חזרה למסך הבית', onPressed: home),
         ),
     };
+    final primary = data.primary;
+    final secondary = data.secondary;
 
     return GameScaffold(
       title: data.title,
-      timer: type == SystemStateType.reconnecting ? 30 : null,
-      bottom: PrimaryButton(
-          label: data.action, onPressed: () => Navigator.of(context).pop()),
+      timer: type == SystemStateType.reconnecting
+          // Demo: the reconnect succeeds when the countdown ends.
+          ? DemoCountdown(seconds: 30, onDone: () => navigator.pop())
+          : null,
+      onExit: type == SystemStateType.reconnecting ? home : null,
+      showBack: false,
+      bottom: primary == null
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                PrimaryButton(
+                  label: primary.label,
+                  onPressed: primary.onPressed,
+                ),
+                if (secondary != null) ...[
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: secondary.onPressed,
+                    child: Text(secondary.label),
+                  ),
+                ],
+              ],
+            ),
       child: Column(
         children: [
           Illustration(data.image, height: 260),
-          Text(data.title,
-              style: Theme.of(context).textTheme.headlineLarge,
-              textAlign: TextAlign.center),
+          Text(
+            data.title,
+            style: Theme.of(context).textTheme.headlineLarge,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 12),
-          Text(data.body,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: AppColors.muted, fontSize: 17, height: 1.45)),
+          Text(
+            data.body,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 17,
+              height: 1.45,
+            ),
+          ),
         ],
       ),
     );

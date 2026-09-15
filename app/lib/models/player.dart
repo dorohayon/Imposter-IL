@@ -10,10 +10,21 @@ class Player {
 
   final String nickname;
   final String avatar;
+
+  /// `null` before the player's turn, empty when the turn passed without a hint.
   final String? hint;
   final bool isMe;
   final bool isHost;
   final bool isDisconnected;
+
+  Player copyWith({String? hint, bool? isMe}) => Player(
+        nickname: nickname,
+        avatar: avatar,
+        hint: hint ?? this.hint,
+        isMe: isMe ?? this.isMe,
+        isHost: isHost,
+        isDisconnected: isDisconnected,
+      );
 }
 
 const avatarAssets = <String>[
@@ -29,32 +40,4 @@ const avatarAssets = <String>[
   'assets/avatars/avatar-m04-detective-hat.webp',
   'assets/avatars/avatar-m05-badge.webp',
   'assets/avatars/avatar-m06-magnifying-glass.webp',
-];
-
-const demoPlayers = <Player>[
-  Player(
-      nickname: 'נועם',
-      avatar: 'assets/avatars/avatar-f01-notebook.webp',
-      hint: 'מתוק',
-      isMe: true),
-  Player(
-      nickname: 'יובל',
-      avatar: 'assets/avatars/avatar-m02-binoculars.webp',
-      hint: 'קיץ'),
-  Player(
-      nickname: 'מאיה',
-      avatar: 'assets/avatars/avatar-f02-camera.webp',
-      hint: 'קר'),
-  Player(
-      nickname: 'אורי',
-      avatar: 'assets/avatars/avatar-m04-detective-hat.webp',
-      hint: 'כדור'),
-  Player(
-      nickname: 'דנה',
-      avatar: 'assets/avatars/avatar-f04-map.webp',
-      hint: 'צהוב'),
-  Player(
-      nickname: 'רועי',
-      avatar: 'assets/avatars/avatar-m05-badge.webp',
-      hint: 'קליפה'),
 ];

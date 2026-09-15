@@ -16,7 +16,18 @@ permissions:
 
 jobs:
   test:
+    name: test (${{ matrix.name }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Must match the minimum in app/pubspec.yaml.
+          - name: minimum 3.27.0
+            flutter-version: 3.27.0
+          - name: latest stable
+            flutter-version: ""
+            format: true
     defaults:
       run:
         working-directory: app
@@ -25,8 +36,12 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: ${{ matrix.flutter-version }}
           cache: true
+      - run: flutter --version
       - run: flutter pub get
-      - run: dart format --output=none lib test
+      # One formatter version is authoritative so the jobs cannot disagree.
+      - if: matrix.format
+        run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
       - run: flutter test

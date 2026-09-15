@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../models/player.dart';
+import '../demo/demo_countdown.dart';
+import '../demo/demo_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'game_flow.dart';
@@ -14,29 +15,17 @@ class CategorySelectionScreen extends StatefulWidget {
 }
 
 class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
-  static const categories = <({String name, IconData icon})>[
-    (name: 'הכול', icon: Icons.auto_awesome_rounded),
-    (name: 'אוכל', icon: Icons.restaurant_rounded),
-    (name: 'חיות', icon: Icons.pets_rounded),
-    (name: 'ספורט', icon: Icons.sports_soccer_rounded),
-    (name: 'מקומות', icon: Icons.public_rounded),
-    (name: 'מקצועות', icon: Icons.work_rounded),
+  static const icons = [
+    Icons.auto_awesome_rounded,
+    Icons.restaurant_rounded,
+    Icons.pets_rounded,
+    Icons.sports_soccer_rounded,
+    Icons.public_rounded,
+    Icons.work_rounded,
   ];
-  final selected = <String>{'הכול'};
+  final selected = <String>{demoCategories.first};
 
-  void _toggle(String name) {
-    setState(() {
-      if (name == 'הכול') {
-        selected
-          ..clear()
-          ..add('הכול');
-      } else {
-        selected.remove('הכול');
-        selected.contains(name) ? selected.remove(name) : selected.add(name);
-        if (selected.isEmpty) selected.add('הכול');
-      }
-    });
-  }
+  void _toggle(String name) => setState(() => toggleCategory(selected, name));
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +46,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
       body: SafeArea(
         child: GridView.builder(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          itemCount: categories.length + 1,
+          itemCount: demoCategories.length + 1,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             mainAxisExtent: 178,
@@ -74,13 +63,13 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                 ),
               );
             }
-            final category = categories[index - 1];
-            final isSelected = selected.contains(category.name);
+            final name = demoCategories[index - 1];
+            final isSelected = selected.contains(name);
             return Semantics(
               selected: isSelected,
               button: true,
               child: InkWell(
-                onTap: () => _toggle(category.name),
+                onTap: () => _toggle(name),
                 borderRadius: BorderRadius.circular(26),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
@@ -102,7 +91,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                         child: Icon(
                           isSelected
                               ? Icons.check_circle_rounded
-                              : category.icon,
+                              : icons[index - 1],
                           color: isSelected
                               ? AppColors.night
                               : AppColors.turquoise,
@@ -112,7 +101,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                       Align(
                         alignment: Alignment.bottomRight,
                         child: Text(
-                          category.name,
+                          name,
                           style: TextStyle(
                             color:
                                 isSelected ? AppColors.night : AppColors.cream,
@@ -140,6 +129,18 @@ class MatchmakingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return GameScaffold(
       title: 'מחפשים שחקנים',
+      // The server starts the game. The demo stands in for "no one else
+      // joined within 30 seconds"; players cannot start it themselves.
+      timer: DemoCountdown(
+        seconds: 30,
+        onDone: () => Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(
+            builder: (_) => const RoleRevealScreen(
+              game: DemoGame(me: demoOnlineMe),
+            ),
+          ),
+        ),
+      ),
       onExit: () => Navigator.of(context).pop(),
       bottom: PrimaryButton(
         label: 'ביטול',
@@ -173,8 +174,8 @@ class MatchmakingScreen extends StatelessWidget {
                 return Column(
                   children: [
                     Container(
-                      width: 68,
-                      height: 68,
+                      width: 60,
+                      height: 60,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
@@ -192,21 +193,13 @@ class MatchmakingScreen extends StatelessWidget {
               final player = demoPlayers[index];
               return Column(
                 children: [
-                  AvatarView(asset: player.avatar, size: 68),
+                  AvatarView(asset: player.avatar, size: 60),
                   const SizedBox(height: 7),
                   Text(player.nickname,
                       maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
               );
             },
-          ),
-          const SizedBox(height: 18),
-          PrimaryButton(
-            label: 'התחלת משחק',
-            onPressed: () => Navigator.of(context).pushReplacement(
-              MaterialPageRoute<void>(
-                  builder: (_) => const RoleRevealScreen(isImpostor: false)),
-            ),
           ),
         ],
       ),

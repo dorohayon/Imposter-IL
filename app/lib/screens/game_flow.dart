@@ -1,25 +1,42 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../demo/demo_countdown.dart';
+import '../demo/demo_data.dart';
 import '../models/player.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 
-class RoleRevealScreen extends StatelessWidget {
-  const RoleRevealScreen({required this.isImpostor, super.key});
+// Every game screen replaces the previous one, so the route below a game is
+// always where it started: the category picker (online) or the private lobby.
 
-  final bool isImpostor;
+void _leaveGame(BuildContext context) =>
+    Navigator.of(context).popUntil((route) => route.isFirst);
+
+void _replace(BuildContext context, Widget screen) =>
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => screen),
+    );
+
+class RoleRevealScreen extends StatelessWidget {
+  const RoleRevealScreen({required this.game, super.key});
+
+  final DemoGame game;
+
+  void _toHints(BuildContext context) =>
+      _replace(context, HintRoundScreen(game: game));
 
   @override
   Widget build(BuildContext context) {
+    final isImpostor = game.isImpostor;
     return GameScaffold(
       title: 'המשימה שלך',
-      timer: 10,
-      onExit: () => Navigator.of(context).popUntil((route) => route.isFirst),
+      timer: DemoCountdown(seconds: 10, onDone: () => _toHints(context)),
+      onExit: () => _leaveGame(context),
       bottom: PrimaryButton(
         label: 'הבנתי',
-        onPressed: () => Navigator.of(context).pushReplacement(
-          MaterialPageRoute<void>(builder: (_) => const HintRoundScreen()),
-        ),
+        onPressed: () => _toHints(context),
       ),
       child: Column(
         children: [
@@ -29,11 +46,14 @@ class RoleRevealScreen extends StatelessWidget {
                 : 'assets/illustrations/role-citizen.webp',
             height: 245,
           ),
-          const Text('קטגוריה: אוכל',
-              style: TextStyle(
-                  color: AppColors.turquoise,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800)),
+          const Text(
+            'קטגוריה: $demoCategory',
+            style: TextStyle(
+              color: AppColors.turquoise,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 12),
           Text(
             isImpostor ? 'אתה המתחזה' : 'המילה שלך',
@@ -49,7 +69,7 @@ class RoleRevealScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
             ),
             child: Text(
-              isImpostor ? 'המילה נשארת סודית' : 'בננה',
+              isImpostor ? 'המילה נשארת סודית' : demoWord,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: isImpostor ? AppColors.cream : AppColors.night,
@@ -65,7 +85,10 @@ class RoleRevealScreen extends StatelessWidget {
                 : 'תן רמז של מילה אחת בלי לחשוף את המילה הסודית.',
             textAlign: TextAlign.center,
             style: const TextStyle(
-                color: AppColors.muted, fontSize: 17, height: 1.45),
+              color: AppColors.muted,
+              fontSize: 17,
+              height: 1.45,
+            ),
           ),
         ],
       ),
@@ -74,29 +97,53 @@ class RoleRevealScreen extends StatelessWidget {
 }
 
 class HintRoundScreen extends StatefulWidget {
-  const HintRoundScreen({super.key});
+  const HintRoundScreen({required this.game, super.key});
+
+  final DemoGame game;
 
   @override
   State<HintRoundScreen> createState() => _HintRoundScreenState();
 }
 
 class _HintRoundScreenState extends State<HintRoundScreen> {
-  final _controller = TextEditingController();
-  String? _error;
-  bool _submitted = false;
-  final _reactions = <String>[];
-
   static const reactionOptions = [
     '😂',
     '🤔',
     '🔥',
     'חשוד מאוד',
     'רמז טוב!',
-    'לא הבנתי'
+    'לא הבנתי',
   ];
+
+  final _controller = TextEditingController();
+  late final List<Player> _players = widget.game.players;
+  late final int _meIndex = _players.indexWhere((player) => player.isMe);
+
+  /// Index of the player whose turn it is; players before it have sent.
+  /// Demo: the round opens on the current player's turn.
+  late int _turn = _meIndex;
+  String _myHint = '';
+  String? _error;
+  final _reactions = <String>[];
+  Timer? _demoTimer;
+
+  bool get _isMyTurn => _turn == _meIndex;
+  bool get _roundOver => _turn >= _players.length;
+
+  List<Player> get _revealed => [
+        for (var i = 0; i < _turn && i < _players.length; i++)
+          i == _meIndex
+              ? _players[i].copyWith(hint: _myHint)
+              // ponytail: the demo script can't react to a typed hint, so a
+              // scripted hint that repeats it is shown as not sent.
+              : _players[i].copyWith(
+                  hint: _players[i].hint == _myHint ? '' : _players[i].hint,
+                ),
+      ];
 
   @override
   void dispose() {
+    _demoTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -105,66 +152,99 @@ class _HintRoundScreenState extends State<HintRoundScreen> {
     final hint = _controller.text.trim();
     final words =
         hint.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).toList();
-    if (hint.isEmpty) {
-      setState(() => _error = 'צריך לכתוב רמז');
-    } else if (words.length != 1) {
-      setState(() => _error = 'הרמז חייב להיות מילה אחת');
-    } else if (hint.contains('בננה')) {
-      setState(() => _error = 'אסור לחשוף את המילה הסודית');
-    } else if (demoPlayers.any((player) => player.hint == hint)) {
-      setState(() => _error = 'כבר השתמשו ברמז הזה');
-    } else {
-      setState(() {
-        _error = null;
-        _submitted = true;
-      });
+    // ponytail: exact matching only. Hebrew normalization for the secret word
+    // and duplicate checks is an open decision, and the server has the final say.
+    final error = hint.isEmpty
+        ? 'צריך לכתוב רמז'
+        : words.length != 1
+            ? 'הרמז חייב להיות מילה אחת'
+            : hint.contains(demoWord)
+                ? 'אסור לחשוף את המילה הסודית'
+                : _revealed.any((player) => player.hint == hint)
+                    ? 'כבר השתמשו ברמז הזה'
+                    : null;
+    if (error != null) {
+      setState(() => _error = error);
+      return;
     }
+    _myHint = hint;
+    _nextTurn();
+  }
+
+  void _nextTurn() {
+    setState(() {
+      _turn++;
+      _error = null;
+      _reactions.clear();
+    });
+    _demoTimer?.cancel();
+    _demoTimer = Timer(demoTurnDelay, () {
+      if (!mounted) return;
+      if (_roundOver) {
+        _replace(
+          context,
+          VotingScreen(game: widget.game, players: _revealed),
+        );
+      } else {
+        _nextTurn();
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final revealed = _revealed;
     return GameScaffold(
-      title: 'קטגוריה: אוכל',
-      timer: 15,
-      onExit: () => Navigator.of(context).popUntil((route) => route.isFirst),
-      bottom: _submitted
-          ? PrimaryButton(
-              label: 'להצבעה',
-              onPressed: () => Navigator.of(context).pushReplacement(
-                MaterialPageRoute<void>(builder: (_) => const VotingScreen()),
-              ),
-            )
-          : PrimaryButton(label: 'שליחת רמז', onPressed: _submit),
+      title: 'קטגוריה: $demoCategory',
+      timer: _roundOver
+          ? null
+          : DemoCountdown(
+              key: ValueKey(_turn),
+              seconds: widget.game.hintSeconds,
+              // The other players' turns end on the demo script instead.
+              onDone: _isMyTurn ? _nextTurn : null,
+            ),
+      onExit: () => _leaveGame(context),
+      bottom: _isMyTurn
+          ? PrimaryButton(label: 'שליחת רמז', onPressed: _submit)
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () => _showSecretWord(context),
-              icon: const Icon(Icons.visibility_outlined),
-              label: const Text('הצגת המילה'),
+          // The impostor sees the category only, so there is nothing to show.
+          if (!widget.game.isImpostor)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                onPressed: () => _showSecretWord(context),
+                icon: const Icon(Icons.visibility_outlined),
+                label: const Text('הצגת המילה'),
+              ),
             ),
-          ),
           const SizedBox(height: 4),
-          if (!_submitted) ...[
-            Text('התור שלך',
-                style: Theme.of(context).textTheme.headlineLarge,
-                textAlign: TextAlign.center),
+          if (_isMyTurn) ...[
+            Text(
+              'התור שלך',
+              style: Theme.of(context).textTheme.headlineLarge,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 6),
-            const Text('רמז אחד, מילה אחת',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.muted)),
+            const Text(
+              'רמז אחד, מילה אחת',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.muted),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _controller,
               maxLength: 25,
               autofocus: true,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: const TextStyle(
-                  color: AppColors.night,
-                  fontSize: 21,
-                  fontWeight: FontWeight.w800),
+                color: AppColors.night,
+                fontSize: 21,
+                fontWeight: FontWeight.w800,
+              ),
               decoration: InputDecoration(
                 hintText: 'הרמז שלי',
                 errorText: _error,
@@ -174,47 +254,73 @@ class _HintRoundScreenState extends State<HintRoundScreen> {
               },
               onSubmitted: (_) => _submit(),
             ),
+          ] else if (_roundOver) ...[
+            Text(
+              'כל הרמזים נשלחו',
+              style: Theme.of(context).textTheme.headlineMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'עוברים להצבעה...',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.muted),
+            ),
           ] else ...[
-            const AvatarView(
-                asset: 'assets/avatars/avatar-m02-binoculars.webp', size: 92),
+            Center(child: AvatarView(asset: _players[_turn].avatar, size: 92)),
             const SizedBox(height: 10),
-            Text('יובל כותב רמז...',
-                style: Theme.of(context).textTheme.headlineMedium,
-                textAlign: TextAlign.center),
+            Text(
+              '${_players[_turn].nickname} כותב רמז...',
+              style: Theme.of(context).textTheme.headlineMedium,
+              textAlign: TextAlign.center,
+            ),
           ],
           const SizedBox(height: 22),
-          const Text('הרמזים שנחשפו',
-              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 10),
-          ...demoPlayers.take(3).map(
-                (player) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: PlayerCard(player: player),
-                ),
-              ),
-          const SizedBox(height: 10),
-          const Text('תגובות לרמז האחרון',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: reactionOptions.map((reaction) {
-              final count =
-                  _reactions.where((value) => value == reaction).length;
-              return ActionChip(
-                onPressed: () => setState(() => _reactions.add(reaction)),
-                avatar: count == 0 ? null : CircleAvatar(child: Text('$count')),
-                label: Text(reaction),
-              );
-            }).toList(),
+          const Text(
+            'הרמזים שנחשפו',
+            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
           ),
+          const SizedBox(height: 10),
+          if (revealed.isEmpty)
+            const Text(
+              'עדיין לא נשלחו רמזים',
+              style: TextStyle(color: AppColors.muted),
+            ),
+          ...revealed.map(
+            (player) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: PlayerCard(player: player),
+            ),
+          ),
+          if (revealed.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              'תגובות לרמז של ${revealed.last.nickname}',
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: reactionOptions.map((reaction) {
+                final count =
+                    _reactions.where((value) => value == reaction).length;
+                return ActionChip(
+                  onPressed: () => setState(() => _reactions.add(reaction)),
+                  avatar:
+                      count == 0 ? null : CircleAvatar(child: Text('$count')),
+                  label: Text(reaction),
+                );
+              }).toList(),
+            ),
+          ],
         ],
       ),
     );
   }
 
   void _showSecretWord(BuildContext context) {
+    assert(!widget.game.isImpostor, 'The impostor must never see the word');
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.cream,
@@ -225,14 +331,23 @@ class _HintRoundScreenState extends State<HintRoundScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('המילה שלך',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              Text(
+                'המילה שלך',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.night,
+                ),
+              ),
               SizedBox(height: 10),
-              Text('בננה',
-                  style: TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.night)),
+              Text(
+                demoWord,
+                style: TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.night,
+                ),
+              ),
             ],
           ),
         ),
@@ -242,8 +357,15 @@ class _HintRoundScreenState extends State<HintRoundScreen> {
 }
 
 class VotingScreen extends StatefulWidget {
-  const VotingScreen({this.isRevote = false, super.key});
+  const VotingScreen({
+    required this.game,
+    required this.players,
+    this.isRevote = false,
+    super.key,
+  });
 
+  final DemoGame game;
+  final List<Player> players;
   final bool isRevote;
 
   @override
@@ -251,24 +373,30 @@ class VotingScreen extends StatefulWidget {
 }
 
 class _VotingScreenState extends State<VotingScreen> {
-  int? _selected;
+  String? _selected;
+  String? _confirmed;
 
   @override
   Widget build(BuildContext context) {
-    final candidates =
-        widget.isRevote ? demoPlayers.sublist(1, 3) : demoPlayers;
+    // Demo tie for the revote: the first two other players.
+    final candidates = widget.isRevote
+        ? widget.players.where((player) => !player.isMe).take(2).toList()
+        : widget.players;
+    final isConfirmed = _selected != null && _selected == _confirmed;
     return GameScaffold(
       title: widget.isRevote ? 'הצבעה חוזרת' : 'מי המתחזה?',
-      timer: widget.isRevote ? 15 : 20,
-      onExit: () => Navigator.of(context).popUntil((route) => route.isFirst),
+      // Votes can change until time is up; the demo then says the impostor
+      // was caught.
+      timer: DemoCountdown(
+        seconds: widget.isRevote ? 15 : 20,
+        onDone: () => _replace(context, ImpostorGuessScreen(game: widget.game)),
+      ),
+      onExit: () => _leaveGame(context),
       bottom: PrimaryButton(
-        label: 'אישור הצבעה',
-        onPressed: _selected == null
+        label: isConfirmed ? 'ההצבעה נקלטה' : 'אישור הצבעה',
+        onPressed: _selected == null || isConfirmed
             ? null
-            : () => Navigator.of(context).pushReplacement(
-                  MaterialPageRoute<void>(
-                      builder: (_) => const ImpostorGuessScreen()),
-                ),
+            : () => setState(() => _confirmed = _selected),
       ),
       child: Column(
         children: [
@@ -279,22 +407,30 @@ class _VotingScreenState extends State<VotingScreen> {
               child: Text(
                 'תיקו נוסף מעניק ניצחון למתחזה',
                 style: TextStyle(
-                    color: AppColors.coral, fontWeight: FontWeight.w800),
+                  color: AppColors.coral,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
-          ...List.generate(candidates.length, (index) {
-            final player = candidates[index];
-            final isMe = player.isMe;
-            return Padding(
+          if (_confirmed != null)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Text(
+                'אפשר לשנות את הבחירה עד שהזמן נגמר',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.muted),
+              ),
+            ),
+          for (final player in candidates)
+            Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: PlayerCard(
                 player: player,
-                enabled: !isMe,
-                selected: _selected == index,
-                onTap: () => setState(() => _selected = index),
+                enabled: !player.isMe,
+                selected: _selected == player.nickname,
+                onTap: () => setState(() => _selected = player.nickname),
               ),
-            );
-          }),
+            ),
         ],
       ),
     );
@@ -302,7 +438,9 @@ class _VotingScreenState extends State<VotingScreen> {
 }
 
 class ImpostorGuessScreen extends StatefulWidget {
-  const ImpostorGuessScreen({super.key});
+  const ImpostorGuessScreen({required this.game, super.key});
+
+  final DemoGame game;
 
   @override
   State<ImpostorGuessScreen> createState() => _ImpostorGuessScreenState();
@@ -317,39 +455,65 @@ class _ImpostorGuessScreenState extends State<ImpostorGuessScreen> {
     super.dispose();
   }
 
+  void _finish({required bool citizensWon}) => _replace(
+        context,
+        ResultScreen(game: widget.game, citizensWon: citizensWon),
+      );
+
   @override
   Widget build(BuildContext context) {
+    final isImpostor = widget.game.isImpostor;
     return GameScaffold(
       title: 'הזדמנות אחרונה',
-      timer: 15,
-      onExit: () => Navigator.of(context).popUntil((route) => route.isFirst),
-      bottom: PrimaryButton(
-        label: 'שליחת ניחוש',
-        onPressed: () => Navigator.of(context).pushReplacement(
-          MaterialPageRoute<void>(
-              builder: (_) => const ResultScreen(citizensWon: true)),
-        ),
+      // No guess in time counts as a wrong guess. For citizens the demo
+      // impostor never guesses right.
+      timer: DemoCountdown(
+        seconds: 15,
+        onDone: () => _finish(citizensWon: true),
       ),
+      onExit: () => _leaveGame(context),
+      bottom: isImpostor
+          ? PrimaryButton(
+              label: 'שליחת ניחוש',
+              // ponytail: exact match; guess normalization is an open decision.
+              onPressed: () =>
+                  _finish(citizensWon: _guess.text.trim() != demoWord),
+            )
+          : null,
       child: Column(
         children: [
-          const Illustration('assets/illustrations/role-impostor.webp',
-              height: 230),
-          Text('המתחזה עדיין יכול לנצח',
-              style: Theme.of(context).textTheme.headlineLarge,
-              textAlign: TextAlign.center),
+          const Illustration(
+            'assets/illustrations/role-impostor.webp',
+            height: 230,
+          ),
+          Text(
+            'המתחזה עדיין יכול לנצח',
+            style: Theme.of(context).textTheme.headlineLarge,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 10),
-          const Text('מה הייתה המילה הסודית?',
-              style: TextStyle(color: AppColors.muted, fontSize: 17)),
-          const SizedBox(height: 20),
-          TextField(
-            controller: _guess,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
+          if (isImpostor) ...[
+            const Text(
+              'מה הייתה המילה הסודית?',
+              style: TextStyle(color: AppColors.muted, fontSize: 17),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _guess,
+              textAlign: TextAlign.start,
+              style: const TextStyle(
                 color: AppColors.night,
                 fontSize: 20,
-                fontWeight: FontWeight.w800),
-            decoration: const InputDecoration(hintText: 'הניחוש שלי'),
-          ),
+                fontWeight: FontWeight.w800,
+              ),
+              decoration: const InputDecoration(hintText: 'הניחוש שלי'),
+            ),
+          ] else
+            Text(
+              '${widget.game.impostor} נתפס ומנסה לנחש את המילה',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.muted, fontSize: 17),
+            ),
         ],
       ),
     );
@@ -357,26 +521,27 @@ class _ImpostorGuessScreenState extends State<ImpostorGuessScreen> {
 }
 
 class ResultScreen extends StatelessWidget {
-  const ResultScreen({required this.citizensWon, super.key});
+  const ResultScreen(
+      {required this.game, required this.citizensWon, super.key});
 
+  final DemoGame game;
   final bool citizensWon;
 
   @override
   Widget build(BuildContext context) {
     return GameScaffold(
       title: 'תוצאות המשחק',
+      showBack: false,
       bottom: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           PrimaryButton(
             label: 'משחק נוסף',
-            onPressed: () =>
-                Navigator.of(context).popUntil((route) => route.isFirst),
+            onPressed: () => Navigator.of(context).pop(),
           ),
           const SizedBox(height: 8),
           TextButton(
-            onPressed: () =>
-                Navigator.of(context).popUntil((route) => route.isFirst),
+            onPressed: () => _leaveGame(context),
             child: const Text('חזרה למסך הבית'),
           ),
         ],
@@ -398,7 +563,7 @@ class ResultScreen extends StatelessWidget {
           Text(
             citizensWon
                 ? 'המתחזה נתפס ולא ניחש את המילה'
-                : 'המתחזה הצליח לגלות את המילה',
+                : 'המתחזה נתפס אבל ניחש את המילה',
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, fontSize: 17),
           ),
@@ -407,19 +572,27 @@ class ResultScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(18),
               child: Column(
-                children: const [
+                children: [
                   ListTile(
-                      title: Text('המתחזה'),
-                      trailing: Text('יובל',
-                          style: TextStyle(fontWeight: FontWeight.w900))),
-                  Divider(),
+                    title: const Text('המתחזה'),
+                    trailing: Text(
+                      game.impostor,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                  const Divider(),
+                  const ListTile(
+                    title: Text('המילה'),
+                    trailing: Text(
+                      demoWord,
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                  const Divider(),
                   ListTile(
-                      title: Text('המילה'),
-                      trailing: Text('בננה',
-                          style: TextStyle(fontWeight: FontWeight.w900))),
-                  Divider(),
-                  ListTile(
-                      title: Text('חלוקת הקולות'), trailing: Text('יובל — 4')),
+                    title: const Text('חלוקת הקולות'),
+                    trailing: Text('${game.impostor} — 4'),
+                  ),
                 ],
               ),
             ),

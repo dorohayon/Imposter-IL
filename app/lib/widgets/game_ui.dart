@@ -95,17 +95,25 @@ class GameScaffold extends StatelessWidget {
     this.timer,
     this.onExit,
     this.bottom,
+    this.showBack = true,
     super.key,
   });
 
   final String title;
   final Widget child;
-  final int? timer;
+
+  /// Shown top-left inside a circle, usually a [TimerBadge].
+  final Widget? timer;
+
+  /// In-game exit, top-right. Without it, a back button takes the slot
+  /// whenever the route can pop, so no screen depends on a swipe gesture.
   final VoidCallback? onExit;
   final Widget? bottom;
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
     return Scaffold(
       bottomNavigationBar: bottom == null
           ? null
@@ -121,10 +129,7 @@ class GameScaffold extends StatelessWidget {
               child: Row(
                 textDirection: TextDirection.ltr,
                 children: [
-                  if (timer != null)
-                    TimerBadge(seconds: timer!)
-                  else
-                    const SizedBox(width: 54),
+                  SizedBox(width: 54, height: 54, child: timer),
                   Expanded(
                     child: Text(
                       title,
@@ -135,13 +140,15 @@ class GameScaffold extends StatelessWidget {
                   SizedBox(
                     width: 54,
                     height: 54,
-                    child: onExit == null
-                        ? null
-                        : IconButton.filledTonal(
+                    child: onExit != null
+                        ? IconButton.filledTonal(
                             tooltip: 'יציאה',
                             onPressed: onExit,
                             icon: const Icon(Icons.close_rounded),
-                          ),
+                          )
+                        : showBack && canPop
+                            ? const BackButton()
+                            : null,
                   ),
                 ],
               ),
@@ -234,8 +241,12 @@ class PlayerCard extends StatelessWidget {
                         style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.w800)),
                     if (player.hint != null)
-                      Text('הרמז: ${player.hint}',
-                          style: const TextStyle(color: AppColors.muted)),
+                      Text(
+                        player.hint!.isEmpty
+                            ? 'לא נשלח רמז'
+                            : 'הרמז: ${player.hint}',
+                        style: const TextStyle(color: AppColors.muted),
+                      ),
                   ],
                 ),
               ),
