@@ -22,7 +22,7 @@
 
 | Method | Path | תיאור |
 | --- | --- | --- |
-| `GET` | `/healthz` | בדיקת חיות. **ממומש.** |
+| `GET` | `/healthz` | בדיקת חיות |
 | `POST` | `/v1/sessions` | יצירת שחקן אורח |
 | `PATCH` | `/v1/sessions/me` | עריכת כינוי או אווטאר |
 | `GET` | `/v1/categories` | רשימת קטגוריות |
