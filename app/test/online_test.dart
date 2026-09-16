@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:imposter_il/data/server.dart';
+import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/screens/live_room.dart';
 import 'package:imposter_il/screens/online_flow.dart';
 
@@ -46,6 +48,29 @@ void pushSearch(FakeChannel channel, String status, int players) =>
     });
 
 void main() {
+  testWidgets('category load failure shows the server error and retries',
+      (tester) async {
+    final api = FakeApi();
+    final categories = api.responses['GET /v1/categories']!;
+    api.responses['GET /v1/categories'] = const ApiException('network_error');
+    await startAtHome(tester, api);
+
+    await tapText(tester, 'משחק ברשת');
+    expect(find.text('משהו השתבש'), findsOneWidget);
+    expect(find.text('השרת לא זמין כרגע. נסו שוב בעוד רגע.'), findsOneWidget);
+    expect(find.text('ניסיון נוסף'), findsOneWidget);
+    expect(find.text('חזרה למסך הבית'), findsOneWidget);
+
+    await tapText(tester, 'חזרה למסך הבית');
+    expect(find.byType(HomeScreen), findsOneWidget);
+
+    await tapText(tester, 'משחק ברשת');
+    api.responses['GET /v1/categories'] = categories;
+    await tapText(tester, 'ניסיון נוסף');
+    expect(find.text('אוכל'), findsOneWidget);
+    expect(find.text('משהו השתבש'), findsNothing);
+  });
+
   testWidgets('search shows found players, empty spots and the status',
       (tester) async {
     final api = FakeApi();

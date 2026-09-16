@@ -40,6 +40,9 @@ class GameSession extends ChangeNotifier {
 
   List<Category> categories = const [];
   List<ReactionOption> reactions = const [];
+  bool contentLoading = false;
+  bool contentLoaded = false;
+  String? contentError;
 
   bool connected = false;
 
@@ -153,25 +156,45 @@ class GameSession extends ChangeNotifier {
     try {
       await loadContent();
     } on ApiException catch (e) {
-      if (e.code == 'session_not_found') await _replaceLostSession();
+      if (e.code == 'session_not_found') {
+        try {
+          await _replaceLostSession();
+        } on ApiException {
+          // The content error state already exposes retry to the player.
+        }
+      }
     }
     unawaited(_connectLoop());
   }
 
   Future<void> loadContent() async {
-    final results = await Future.wait([
-      api.request('GET', '/v1/categories', token: token),
-      api.request('GET', '/v1/reactions', token: token),
-    ]);
-    categories = (results[0]['categories'] as List)
-        .cast<Map<String, dynamic>>()
-        .map(Category.fromJson)
-        .toList();
-    reactions = (results[1]['reactions'] as List)
-        .cast<Map<String, dynamic>>()
-        .map(ReactionOption.fromJson)
-        .toList();
+    contentLoading = true;
+    contentError = null;
     _notify();
+    try {
+      final results = await Future.wait([
+        api.request('GET', '/v1/categories', token: token),
+        api.request('GET', '/v1/reactions', token: token),
+      ]);
+      categories = (results[0]['categories'] as List)
+          .cast<Map<String, dynamic>>()
+          .map(Category.fromJson)
+          .toList();
+      reactions = (results[1]['reactions'] as List)
+          .cast<Map<String, dynamic>>()
+          .map(ReactionOption.fromJson)
+          .toList();
+      contentLoaded = true;
+    } on ApiException catch (e) {
+      contentError = e.code;
+      rethrow;
+    } on Object {
+      contentError = 'internal_error';
+      rethrow;
+    } finally {
+      contentLoading = false;
+      _notify();
+    }
   }
 
   /// The server no longer knows the token (a restart loses every session).

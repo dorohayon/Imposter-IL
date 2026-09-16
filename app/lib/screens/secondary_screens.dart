@@ -352,3 +352,68 @@ class UpdateRequiredScreen extends StatelessWidget {
     );
   }
 }
+
+/// The approved connection-error design, used both when initial content
+/// cannot load and when an active game is aborted by the server.
+class ServerErrorScreen extends StatelessWidget {
+  const ServerErrorScreen({
+    required this.onRetry,
+    required this.onHome,
+    this.gameStopped = false,
+    super.key,
+  });
+
+  final VoidCallback onRetry;
+  final VoidCallback onHome;
+  final bool gameStopped;
+
+  @override
+  Widget build(BuildContext context) {
+    return GameScaffold(
+      title: '',
+      showBack: false,
+      showHeader: false,
+      bottom: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PrimaryButton(label: 'ניסיון נוסף', onPressed: onRetry),
+          const SizedBox(height: 8),
+          PrimaryButton(
+            label: 'חזרה למסך הבית',
+            variant: ButtonVariant.secondary,
+            onPressed: onHome,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const Illustration(
+            'assets/illustrations/connection-error.webp',
+            height: 170,
+          ),
+          Text(
+            'משהו השתבש',
+            style: Theme.of(context).textTheme.headlineLarge,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            gameStopped
+                ? 'המשחק הופסק בגלל תקלה בחיבור לשרת. זו לא אשמתכם.'
+                : 'השרת לא זמין כרגע. נסו שוב בעוד רגע.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 17,
+              height: 1.45,
+            ),
+          ),
+          if (gameStopped) ...[
+            const SizedBox(height: 16),
+            const StatusBanner(text: 'לא נרשם לכם הפסד', positive: true),
+          ],
+        ],
+      ),
+    );
+  }
+}

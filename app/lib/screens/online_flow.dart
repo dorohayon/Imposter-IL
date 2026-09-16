@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'live_room.dart';
 import 'private_flow.dart';
+import 'secondary_screens.dart';
 
 const _categoryIcons = {
   'food': Icons.restaurant_rounded,
@@ -56,7 +57,21 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = SessionScope.of(context).categories;
+    final session = SessionScope.of(context);
+    final categories = session.categories;
+    if (categories.isEmpty &&
+        (session.contentError != null || session.contentLoaded)) {
+      return ServerErrorScreen(
+        onRetry: () async {
+          try {
+            await SessionScope.read(context).loadContent();
+          } on Object {
+            // The screen stays visible so the player can retry or go home.
+          }
+        },
+        onHome: () => Navigator.of(context).pop(),
+      );
+    }
     final allIds = [for (final c in categories) c.id];
     // null is "הכול": every category, shown as that one tile rather than by
     // lighting all of them up. A non-null set is an explicit choice and may be

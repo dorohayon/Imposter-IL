@@ -10,6 +10,7 @@ import '../models/player.dart';
 import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
+import 'secondary_screens.dart';
 
 // A private room and its games, driven entirely by the server's room.state
 // and game.state snapshots. Every timer counts down to a server deadline.
@@ -188,7 +189,8 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     final session = SessionScope.of(context);
 
     if (session.sessionLost) {
-      return _ServerError(
+      return ServerErrorScreen(
+        gameStopped: true,
         onRetry: () async {
           try {
             await session.loadContent();
@@ -1586,24 +1588,6 @@ class _Removed extends StatelessWidget {
       body: 'התנתקתם שלוש פעמים במשחק הזה, ולכן שאר השחקנים ממשיכים בלעדיכם.',
       banner: ('נרשם לכם הפסד', false),
       primary: ('חזרה למסך הבית', onHome),
-    );
-  }
-}
-
-class _ServerError extends StatelessWidget {
-  const _ServerError({required this.onHome, required this.onRetry});
-
-  final VoidCallback onHome;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return _StateMessage(
-      title: 'משהו השתבש',
-      body: 'המשחק הופסק בגלל תקלה בחיבור לשרת. זו לא אשמתכם.',
-      banner: ('לא נרשם לכם הפסד', true),
-      primary: ('ניסיון נוסף', onRetry),
-      secondary: ('חזרה למסך הבית', onHome),
     );
   }
 }
