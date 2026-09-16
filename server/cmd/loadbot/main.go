@@ -41,6 +41,10 @@ var (
 	duration  = flag.Duration("for", time.Minute, "how long to keep playing")
 	rampUp    = flag.Duration("ramp", 5*time.Second, "spread player arrival over this long")
 	reactRate = flag.Float64("react", 0.3, "chance a bot reacts to each new hint")
+	// Matchmaking only groups players whose categories intersect, so bots
+	// joining a human's search have to share at least one with them.
+	categories = flag.String("categories", "food,animals,sports,professions,places,objects",
+		"comma-separated category ids to search with; the default matches anyone")
 )
 
 func main() {
@@ -206,7 +210,17 @@ func (b *bot) createSession(ctx context.Context) (string, error) {
 }
 
 func (b *bot) search(ctx context.Context) {
-	b.send(ctx, "matchmaking.join", map[string]any{"categoryIds": []string{"animals", "food"}})
+	b.send(ctx, "matchmaking.join", map[string]any{"categoryIds": categoryIDs()})
+}
+
+func categoryIDs() []string {
+	var out []string
+	for _, id := range strings.Split(*categories, ",") {
+		if id = strings.TrimSpace(id); id != "" {
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 // read reacts to every snapshot the server sends, which is the whole bot: the
