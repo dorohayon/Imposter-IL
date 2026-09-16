@@ -1,0 +1,36 @@
+# Single GCE VM: the server plus Caddy for TLS. One instance, all state in
+# memory — see docs/production-architecture-review.md, Stage 0.
+services:
+  server:
+    image: ${IMPOSTER_IMAGE:?set IMPOSTER_IMAGE}
+    restart: always
+    network_mode: host # Caddy reaches it on localhost:8080; metrics stay on loopback
+    environment:
+      PORT: "8080"
+      TRUST_PROXY: "1" # only Caddy can reach the port
+      METRICS_ADDR: "127.0.0.1:9090"
+      DRAIN_TIMEOUT: "5m"
+      LOG_LEVEL: "info"
+      # Raise this to retire old app builds; see docs/protocol.md.
+      MIN_CLIENT_BUILD: "${MIN_CLIENT_BUILD:-0}"
+    # Docker's default is 10 seconds, which would kill games mid-drain.
+    # Must exceed DRAIN_TIMEOUT.
+    stop_grace_period: 6m
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    network_mode: host
+    environment:
+      IMPOSTER_DOMAIN: ${IMPOSTER_DOMAIN:?set IMPOSTER_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data # certificates survive a redeploy
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

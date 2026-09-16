@@ -50,6 +50,10 @@ type session struct {
 	// ip is the caller's address as of the last request, for per-IP limits in
 	// handlers that only receive the session.
 	ip string
+	// connected is set the first time a WebSocket attaches. A session that
+	// never did is reaped within minutes rather than kept for a day: that is
+	// what bounds memory against someone looping POST /v1/sessions.
+	connected bool
 
 	// The categories and start time of the player's latest online search.
 	searchCategories []string

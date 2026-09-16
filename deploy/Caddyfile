@@ -1,0 +1,16 @@
+# Caddy terminates TLS (automatic Let's Encrypt) and proxies to the server.
+# Replace the hostname with yours; that one line is all the TLS setup there is.
+{$IMPOSTER_DOMAIN} {
+	encode zstd gzip
+
+	# /metrics is bound to loopback inside the container and never proxied.
+	handle /metrics* {
+		respond 404
+	}
+
+	reverse_proxy localhost:8080 {
+		# WebSockets are long-lived: no read timeout on the upgraded stream.
+		flush_interval -1
+		health_uri /healthz
+	}
+}

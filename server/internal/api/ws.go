@@ -72,7 +72,7 @@ func (s *Server) serveWS(w http.ResponseWriter, r *http.Request) {
 
 	s.mu.Lock()
 	s.metrics.wsConns++
-	sess.lastSeen = s.now()
+	sess.lastSeen, sess.connected = s.now(), true
 	s.attach(sess, c)
 	interval := s.pingInterval
 	s.mu.Unlock()

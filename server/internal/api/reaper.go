@@ -14,6 +14,10 @@ const (
 	// SessionTTL is how long a session with no connection and no room survives.
 	// Long enough that a player who closes the app overnight keeps their id.
 	SessionTTL = 24 * time.Hour
+	// UnusedSessionTTL applies to a session that never opened a WebSocket.
+	// Creating sessions is unauthenticated, so this — not the per-IP rate
+	// limit — is what bounds what an abuser can hold in memory.
+	UnusedSessionTTL = 10 * time.Minute
 	// EmptyRoomTTL answers the open decision in docs/open-decisions.md: an
 	// empty private room stays joinable by code for this long, so "everyone
 	// dropped, we are coming back" works, and is then closed.
@@ -63,7 +67,11 @@ func (s *Server) reap() {
 			sess.lastSeen = now
 			continue
 		}
-		if now.Sub(sess.lastSeen) < SessionTTL {
+		ttl := SessionTTL
+		if !sess.connected {
+			ttl = UnusedSessionTTL // created and never used
+		}
+		if now.Sub(sess.lastSeen) < ttl {
 			continue
 		}
 		delete(s.sessions, token)

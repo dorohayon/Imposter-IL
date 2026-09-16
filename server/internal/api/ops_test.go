@@ -221,3 +221,32 @@ func TestClientBuildGate(t *testing.T) {
 		t.Fatalf("build at the minimum: got %d %q", rec.Code, rec.Body.String())
 	}
 }
+
+// Creating sessions is unauthenticated, so memory is bounded by reaping the
+// ones that never connect — not by a per-IP rate low enough to lock out a
+// mobile carrier's NAT.
+func TestUnusedSessionsAreReapedQuickly(t *testing.T) {
+	c := newClient(t)
+	token, _ := c.session("דור")
+
+	c.advance(UnusedSessionTTL - time.Minute)
+	c.srv.reap()
+	if len(c.srv.sessions) != 1 {
+		t.Fatal("reaped before its TTL")
+	}
+
+	c.advance(2 * time.Minute)
+	c.srv.reap()
+	if len(c.srv.sessions) != 0 {
+		t.Fatal("an unused session outlived UnusedSessionTTL")
+	}
+
+	// One that has actually connected keeps the long TTL.
+	token, _ = c.session("נועה")
+	c.dial(token)
+	c.advance(UnusedSessionTTL + time.Minute)
+	c.srv.reap()
+	if len(c.srv.sessions) != 1 {
+		t.Fatal("a session that connected was reaped as unused")
+	}
+}

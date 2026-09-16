@@ -17,9 +17,16 @@ import (
 // Every limiter is called under s.mu, so it needs no lock of its own.
 
 // Defaults. Generous enough that no human playing the game meets them.
+//
+// Mobile carriers put thousands of subscribers behind a handful of addresses
+// (CGNAT), so a per-IP limit tight enough to bound memory on its own would
+// lock out real players on a bad day. The memory bound comes from
+// UnusedSessionTTL instead: a session that never opens a WebSocket is reaped
+// within minutes, so the worst an address can hold open is
+// sessionsPerMinute * UnusedSessionTTL.
 const (
-	sessionsPerMinute = 5  // guest sessions per IP
-	sessionsBurst     = 5  // a reinstall loop is a handful, not hundreds
+	sessionsPerMinute = 30 // guest sessions per IP; a carrier NAT is many players
+	sessionsBurst     = 30
 	joinsPerMinute    = 10 // room-code attempts per IP: 10^6 codes takes centuries
 	joinsBurst        = 10
 	commandsPerMinute = 600 // 10/s per session; reactions are unlimited by product rule
@@ -103,3 +110,12 @@ func (s *Server) TrustProxy(trust bool) {
 }
 
 var errRateLimited = apiError{http.StatusTooManyRequests, "rate_limited", "too many requests"}
+
+// DisableRateLimits turns off every limiter. Only for load testing, where the
+// simulated players all share one address; a production server without limits
+// is an unauthenticated allocation endpoint (see docs/production-architecture-review.md, R4).
+func (s *Server) DisableRateLimits() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.sessionLimit, s.joinLimit, s.commandLimit = newLimiter(0, 0), newLimiter(0, 0), newLimiter(0, 0)
+}
