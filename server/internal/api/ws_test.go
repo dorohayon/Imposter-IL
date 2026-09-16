@@ -207,13 +207,13 @@ func TestWSRepeatedMessageIDGetsTheSameReplyWithoutRunningAgain(t *testing.T) {
 		return map[string]any{"roomId": room["roomId"], "maxPlayers": 8, "hintSeconds": hint, "categoryIds": []string{"animals"}}
 	}
 
-	bad := settings(10)
+	bad := settings(30)
 	bad["categoryIds"] = []string{"cars"}
 	wantReplyError(t, w.command("bad", "room.updateSettings", bad), "invalid_room_settings")
 
-	first := w.command("same", "room.updateSettings", settings(10))
+	first := w.command("same", "room.updateSettings", settings(30))
 	wantOK(t, first)
-	second := w.command("same", "room.updateSettings", settings(20))
+	second := w.command("same", "room.updateSettings", settings(90))
 	if second["serverTime"] != first["serverTime"] || second["ok"] != true {
 		t.Fatalf("second reply = %v, want the cached %v", second, first)
 	}
@@ -221,13 +221,13 @@ func TestWSRepeatedMessageIDGetsTheSameReplyWithoutRunningAgain(t *testing.T) {
 	c.srv.mu.Lock()
 	hint := entry.room.View().Settings.HintSeconds
 	c.srv.mu.Unlock()
-	if hint != 10 {
+	if hint != 30 {
 		t.Fatalf("hint seconds = %d, the repeated message ran again", hint)
 	}
 
 	// After five minutes the id is forgotten.
 	c.advance(replyCacheTTL)
-	wantOK(t, w.command("same", "room.updateSettings", settings(20)))
+	wantOK(t, w.command("same", "room.updateSettings", settings(90)))
 }
 
 func TestWSKickAndLeave(t *testing.T) {

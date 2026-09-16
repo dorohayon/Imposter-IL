@@ -209,15 +209,15 @@ func TestRoleRevealTimesOutAfterTenSeconds(t *testing.T) {
 	wantPhase(t, g, PhaseRoleReveal)
 	g.Tick(t0.Add(10 * time.Second))
 	wantPhase(t, g, PhaseHints)
-	if want := t0.Add(25 * time.Second); !g.Deadline().Equal(want) {
+	if want := t0.Add(70 * time.Second); !g.Deadline().Equal(want) {
 		t.Fatalf("first turn deadline = %v, want %v", g.Deadline(), want)
 	}
 }
 
-func TestHintTurnsFollowOrderWithFifteenSeconds(t *testing.T) {
+func TestHintTurnsFollowOrderWithSixtySeconds(t *testing.T) {
 	g := newGame(t, 4)
 	confirmAll(t, g)
-	if want := t0.Add(15 * time.Second); !g.Deadline().Equal(want) {
+	if want := t0.Add(60 * time.Second); !g.Deadline().Equal(want) {
 		t.Fatalf("deadline = %v, want %v", g.Deadline(), want)
 	}
 	wantErr(t, g.SubmitHint(g.order[1], "early", t0), ErrNotYourTurn)
@@ -227,7 +227,7 @@ func TestHintTurnsFollowOrderWithFifteenSeconds(t *testing.T) {
 	if v.CurrentTurn != g.order[1] || len(v.Hints) != 1 || v.Hints[0].Text != "גדול" {
 		t.Fatalf("hint not shown immediately: %+v", v)
 	}
-	if want := t0.Add(18 * time.Second); !g.Deadline().Equal(want) {
+	if want := t0.Add(63 * time.Second); !g.Deadline().Equal(want) {
 		t.Fatalf("next turn deadline = %v, want %v", g.Deadline(), want)
 	}
 }
@@ -235,7 +235,7 @@ func TestHintTurnsFollowOrderWithFifteenSeconds(t *testing.T) {
 func TestMissedHintIsMarkedAndPlayerStays(t *testing.T) {
 	g := newGame(t, 4)
 	confirmAll(t, g)
-	g.Tick(t0.Add(15 * time.Second))
+	g.Tick(t0.Add(60 * time.Second))
 	if h := g.hints[0]; !h.Missing || h.PlayerID != g.order[0] {
 		t.Fatalf("hint = %+v, want missing for %s", h, g.order[0])
 	}
@@ -352,7 +352,7 @@ func TestImpostorGuess(t *testing.T) {
 		now = now.Add(20 * time.Second)
 		g.Tick(now)
 		wantPhase(t, g, PhaseImpostorGuess)
-		if want := now.Add(15 * time.Second); !g.Deadline().Equal(want) {
+		if want := now.Add(60 * time.Second); !g.Deadline().Equal(want) {
 			t.Fatalf("guess deadline = %v, want %v", g.Deadline(), want)
 		}
 		return g, now
@@ -382,7 +382,7 @@ func TestImpostorGuess(t *testing.T) {
 	})
 	t.Run("timeout", func(t *testing.T) {
 		g, now := caught(t)
-		g.Tick(now.Add(15 * time.Second))
+		g.Tick(now.Add(60 * time.Second))
 		wantResult(t, g, TeamCitizens, ReasonImpostorGuessTimeout)
 	})
 }
@@ -497,7 +497,7 @@ func TestTurnStartingWhileDisconnectedWaitsForReconnect(t *testing.T) {
 	}
 	wantErr(t, g.SubmitHint(g.order[1], "x", t0.Add(2*time.Second)), ErrNotYourTurn)
 	must(t, g.Reconnect(g.order[1], t0.Add(10*time.Second)))
-	if g.reconnecting || !g.Deadline().Equal(t0.Add(25*time.Second)) {
+	if g.reconnecting || !g.Deadline().Equal(t0.Add(70*time.Second)) {
 		t.Fatalf("reconnect must restart the hint timer, deadline %v", g.Deadline())
 	}
 	must(t, g.SubmitHint(g.order[1], "אפור", t0.Add(11*time.Second)))
@@ -588,7 +588,7 @@ func TestThirdDisconnectOutsideTurnRemovesAfterThirtySeconds(t *testing.T) {
 			must(t, g.Reconnect(p, t0))
 		}
 		now := toVoting(t, g)
-		voteAllFor(t, g, g.impostor, now) // voting ends at +20s, guess runs until +35s
+		voteAllFor(t, g, g.impostor, now) // voting ends at +20s, guess runs until +80s
 		must(t, g.Disconnect(p, now))
 		g.Tick(now.Add(20 * time.Second))
 		if want := now.Add(30 * time.Second); !g.Deadline().Equal(want) {
@@ -604,7 +604,7 @@ func TestThirdDisconnectOutsideTurnRemovesAfterThirtySeconds(t *testing.T) {
 			t.Fatalf("status = %s, want removed", g.players[p].status)
 		}
 		wantPhase(t, g, PhaseImpostorGuess)
-		g.Tick(now.Add(35 * time.Second))
+		g.Tick(now.Add(80 * time.Second))
 		if g.result.Outcomes[p] != OutcomeLoss {
 			t.Fatal("a removed citizen loses even when citizens win")
 		}

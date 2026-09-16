@@ -105,7 +105,7 @@
 { "maxPlayers": 8, "hintSeconds": 15, "categoryIds": ["…"] }
 ```
 
-`maxPlayers` בין 4 ל־8. `hintSeconds` אחד מ־10, 15, 20. `categoryIds` אינו ריק ומכיל רק מזהים מ־`GET /v1/categories`. תשובה `201` עם `{ "room": Room }`, והשחקן הוא המנהל. שגיאות: `422 invalid_room_settings`, `409 already_in_activity`.
+`maxPlayers` בין 4 ל־8. `hintSeconds` אחד מ־30, 60, 90. `categoryIds` אינו ריק ומכיל רק מזהים מ־`GET /v1/categories`. תשובה `201` עם `{ "room": Room }`, והשחקן הוא המנהל. שגיאות: `422 invalid_room_settings`, `409 already_in_activity`.
 
 ### `POST /v1/rooms/join`
 

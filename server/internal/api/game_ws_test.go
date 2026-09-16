@@ -109,7 +109,7 @@ func TestWSGamePlaysToTheEnd(t *testing.T) {
 	for _, p := range g["players"].([]any) {
 		order = append(order, p.(map[string]any)["playerId"].(string))
 	}
-	if g["currentTurnPlayerId"] != order[0] || g["deadline"] != "2026-09-15T12:00:15Z" {
+	if g["currentTurnPlayerId"] != order[0] || g["deadline"] != "2026-09-15T12:01:00Z" {
 		t.Fatalf("first turn = %v", g)
 	}
 
@@ -283,7 +283,7 @@ func TestWSCommandAfterADeadlinePublishesTheAdvanceEvenWhenItFails(t *testing.T)
 
 	// The first turn expires. The timer has not run, and the next command
 	// comes from a player whose turn it still is not.
-	c.advance(15 * time.Second)
+	c.advance(60 * time.Second)
 	wantReplyError(t, byID[order[2]].w.command("late", "game.submitHint", map[string]any{"gameId": gameID, "text": "מאוחר"}), "not_your_turn")
 	byID[order[3]].w.gameState(func(g map[string]any) bool { return g["currentTurnPlayerId"] == order[1] })
 }

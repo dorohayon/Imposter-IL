@@ -58,6 +58,9 @@ type session struct {
 	// what bounds memory against someone looping POST /v1/sessions.
 	connected bool
 	bot       bool // staging-only server actor; never has a token or WebSocket
+	// botActAt is when a staging bot has finished "thinking" and may act.
+	// Zero when it has nothing pending.
+	botActAt time.Time
 
 	// The categories and start time of the player's latest online search.
 	searchCategories []string

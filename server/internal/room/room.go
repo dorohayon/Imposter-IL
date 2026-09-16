@@ -26,8 +26,12 @@ const (
 	HostReconnectDuration = 30 * time.Second
 )
 
-// HintSecondsOptions are the hint durations a host may choose.
-var HintSecondsOptions = []int{10, 15, 20}
+// DefaultHintSeconds is the approved turn length (docs/decisions.md).
+const DefaultHintSeconds = 60
+
+// HintSecondsOptions are the hint durations a host may choose, around the
+// approved default.
+var HintSecondsOptions = []int{30, DefaultHintSeconds, 90}
 
 type Status string
 

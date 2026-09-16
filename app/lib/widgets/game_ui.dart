@@ -192,38 +192,97 @@ class LtrText extends StatelessWidget {
 }
 
 class TimerBadge extends StatelessWidget {
-  const TimerBadge({required this.seconds, this.color, super.key});
+  const TimerBadge({
+    required this.seconds,
+    this.color,
+    this.remaining,
+    this.size = 52,
+    super.key,
+  });
 
   final int seconds;
 
   /// Defaults to yellow, and to coral in the last seconds.
   final Color? color;
 
+  /// Fraction of the phase still to run, 1 at the start and 0 at the deadline.
+  /// The filled wedge drains with it, so the time left reads at a glance
+  /// without counting digits. Null keeps the circle evenly filled.
+  final double? remaining;
+
+  final double size;
+
   @override
   Widget build(BuildContext context) {
     final ring = color ?? (seconds <= 5 ? AppColors.coral : AppColors.yellow);
     return Semantics(
       label: '$seconds שניות',
-      child: Container(
-        width: 52,
-        height: 52,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: ring.withValues(alpha: 0.14),
-          border: Border.all(color: ring, width: 4),
-        ),
-        child: Text(
-          '$seconds',
-          style: TextStyle(
-            color: ring,
-            fontSize: 20,
-            fontWeight: FontWeight.w900,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: CustomPaint(
+          painter: _TimerDial(
+            ring: ring,
+            remaining: remaining?.clamp(0.0, 1.0) ?? 1,
+            stroke: size / 13,
+          ),
+          child: Center(
+            child: Text(
+              '$seconds',
+              style: TextStyle(
+                color: ring,
+                fontSize: size * .38,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+/// The timer circle: a ring, and inside it a wedge that drains clockwise from
+/// the top as the phase runs out.
+class _TimerDial extends CustomPainter {
+  const _TimerDial({
+    required this.ring,
+    required this.remaining,
+    required this.stroke,
+  });
+
+  final Color ring;
+  final double remaining;
+  final double stroke;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final centre = rect.center;
+    final radius = size.width / 2 - stroke / 2;
+
+    if (remaining > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: centre, radius: radius - stroke / 2),
+        -math.pi / 2,
+        2 * math.pi * remaining,
+        true,
+        Paint()..color = ring.withValues(alpha: .22),
+      );
+    }
+    canvas.drawCircle(
+      centre,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..color = ring,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TimerDial old) =>
+      old.remaining != remaining || old.ring != ring || old.stroke != stroke;
 }
 
 /// A short status line with an icon, in one of the system banner colors.
@@ -301,7 +360,11 @@ class GameScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     final scaffold = Scaffold(
-      backgroundColor: Colors.transparent,
+      // Transparent only when the DecoratedBox below paints the accent
+      // gradient. Without that, nothing paints behind the scaffold and the
+      // screen goes black as soon as the route transition disposes whatever
+      // was underneath.
+      backgroundColor: accent == null ? AppColors.night : Colors.transparent,
       bottomNavigationBar: bottom == null
           ? null
           : SafeArea(

@@ -71,10 +71,24 @@ class LiveCountdown extends StatefulWidget {
 class _LiveCountdownState extends State<LiveCountdown> {
   Timer? _timer;
 
+  /// How long this phase had left when the countdown first appeared, so the
+  /// dial can drain against it. The server sends a deadline, not a duration.
+  Duration? _total;
+
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
+    // Four ticks a second: the digits still change once a second, but the
+    // draining wedge moves smoothly instead of jumping.
+    _timer = Timer.periodic(
+        const Duration(milliseconds: 250), (_) => setState(() {}));
+  }
+
+  @override
+  void didUpdateWidget(LiveCountdown old) {
+    super.didUpdateWidget(old);
+    // A new deadline is a new phase or a restarted turn, so the dial refills.
+    if (old.deadline != widget.deadline) _total = null;
   }
 
   @override
@@ -87,27 +101,17 @@ class _LiveCountdownState extends State<LiveCountdown> {
   Widget build(BuildContext context) {
     final left =
         widget.deadline.difference(SessionScope.read(context).serverNow);
+    _total ??= left > Duration.zero ? left : null;
     final seconds = (left.inMilliseconds / 1000).ceil();
     final shown = seconds < 0 ? 0 : seconds;
-    if (!widget.large) return TimerBadge(seconds: shown);
-    return Container(
-      width: 120,
-      height: 120,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.yellow.withValues(alpha: .08),
-        border: Border.all(color: AppColors.yellow, width: 6),
-      ),
-      child: Text(
-        '$shown',
-        style: const TextStyle(
-          color: AppColors.yellow,
-          fontFamily: 'Secular One',
-          fontSize: 38,
-        ),
-      ),
-    );
+    final total = _total;
+    final remaining = total == null || total.inMilliseconds <= 0
+        ? null
+        : left.inMilliseconds / total.inMilliseconds;
+    if (!widget.large) {
+      return TimerBadge(seconds: shown, remaining: remaining);
+    }
+    return TimerBadge(seconds: shown, remaining: remaining, size: 120);
   }
 }
 
@@ -420,16 +424,19 @@ class _Search extends StatelessWidget {
     final found = count == 1
         ? 'נמצא שחקן אחד מתוך ${search.maxPlayers}'
         : 'נמצאו $count מתוך ${search.maxPlayers}';
+    final missing = search.maxPlayers - count;
     final status = switch (search.status) {
+      'waiting_for_more' when missing > 0 =>
+        'מחכים עד 30 שניות ל$missing שחקנים נוספים. ב־${search.maxPlayers} שחקנים מתחילים מיד.',
       'waiting_for_more' => 'מחכים עד 30 שניות לשחקנים נוספים.',
       'countdown' => 'המשחק מתחיל בעוד רגע.',
       _ => 'המשחק יתחיל כשיהיו לפחות 4 שחקנים.',
     };
     return GameScaffold(
+      // Screen 05 keeps the timer at the foot of the screen beside the line
+      // that explains it, rather than in the header circle: here the wait is
+      // the message, not a deadline to race.
       title: 'מרכיבים צוות חקירה',
-      timer: search.deadline == null
-          ? null
-          : LiveCountdown(deadline: search.deadline!),
       onExit: onCancel,
       bottom: PrimaryButton(
           label: 'ביטול חיפוש',
@@ -453,12 +460,6 @@ class _Search extends StatelessWidget {
                 fontSize: 18,
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            status,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, fontSize: 16),
           ),
           const SizedBox(height: 16),
           ListView.separated(
@@ -533,6 +534,25 @@ class _Search extends StatelessWidget {
                 ),
               );
             },
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              if (search.deadline != null) ...[
+                LiveCountdown(deadline: search.deadline!),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Text(
+                  status,
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -863,7 +883,7 @@ class _RoleReveal extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            impostor ? 'אתם המתחזה' : 'אתם בצוות האזרחים',
+            impostor ? 'אתם המתחזה' : 'אתם אזרחים',
             style: Theme.of(context).textTheme.headlineLarge,
             textAlign: TextAlign.center,
           ),
@@ -879,6 +899,20 @@ class _RoleReveal extends StatelessWidget {
                 fontFamily: 'Secular One',
                 fontSize: impostor ? 18 : 38,
               ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Screens 07 and 08 carry this line under the word card, before the
+          // numbered tips.
+          Text(
+            impostor
+                ? 'המילה לא מוצגת לכם — רק הקטגוריה.'
+                : 'אף אחד מלבדכם לא יודע מי המתחזה. שמרו על המילה בסוד.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 15,
+              height: 1.45,
             ),
           ),
           const SizedBox(height: 16),
@@ -1389,6 +1423,20 @@ class _GuessState extends State<_Guess> {
                 fontWeight: FontWeight.w800,
               ),
               decoration: const InputDecoration(hintText: 'מה המילה?'),
+            ),
+            const SizedBox(height: 8),
+            // Screen 14 reassures the impostor that typing is private, and
+            // spells out what losing the clock costs.
+            const Text(
+              'הניחוש לא מוצג לשחקנים בזמן ההקלדה',
+              style: TextStyle(color: AppColors.muted, fontSize: 13),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'אם הזמן ייגמר או שהניחוש יהיה שגוי — האזרחים מנצחים.',
+              textAlign: TextAlign.center,
+              style:
+                  TextStyle(color: AppColors.muted, fontSize: 14, height: 1.4),
             ),
           ] else
             const Text(

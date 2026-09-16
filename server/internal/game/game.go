@@ -114,10 +114,10 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		RoleRevealTimeout:  10 * time.Second,
-		HintDuration:       15 * time.Second,
+		HintDuration:       60 * time.Second,
 		VoteDuration:       20 * time.Second,
 		RunoffVoteDuration: 15 * time.Second,
-		GuessDuration:      15 * time.Second,
+		GuessDuration:      60 * time.Second,
 		ReconnectDuration:  30 * time.Second,
 	}
 }

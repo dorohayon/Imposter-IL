@@ -102,7 +102,9 @@ func (s *Server) joinSearch(sess *session, previous *roomEntry, categories []str
 		}
 	}
 	if entry == nil {
-		settings := room.Settings{MaxPlayers: matchmaking.MaxPlayers, HintSeconds: 15, CategoryIDs: categories}
+		// Online matches always use the approved default; only a private room's
+		// host picks a different one.
+		settings := room.Settings{MaxPlayers: matchmaking.MaxPlayers, HintSeconds: room.DefaultHintSeconds, CategoryIDs: categories}
 		rm, err := room.New(publicRoomCode, sess.playerID, settings, s.policy, s.rng, now)
 		if err != nil {
 			return "internal_error"

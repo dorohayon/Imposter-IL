@@ -139,7 +139,7 @@ class CreateRoomScreen extends StatefulWidget {
 
 class _CreateRoomScreenState extends State<CreateRoomScreen> {
   int players = 8;
-  int hintSeconds = 15;
+  int hintSeconds = 60;
   Set<String>? _selected; // null until the categories load: all of them
   bool _busy = false;
 
@@ -219,7 +219,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
           ),
           const SizedBox(height: 8),
           _OptionRow<int>(
-            values: const [10, 15, 20],
+            values: const [30, 60, 90],
             selected: hintSeconds,
             label: (value) => '$value שניות',
             onSelected: (value) => setState(() => hintSeconds = value),

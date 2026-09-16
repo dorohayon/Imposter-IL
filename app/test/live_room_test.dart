@@ -63,13 +63,13 @@ void main() {
     // leaves it and picks just that one.
     expect(find.text('חפצים'), findsOneWidget);
     await tapText(tester, 'חפצים');
-    await tapText(tester, '10 שניות');
+    await tapText(tester, '30 שניות');
     await tapLive(tester, 'יצירת חדר');
 
     final (_, _, body) = api.requests.firstWhere((r) => r.$2 == '/v1/rooms');
     expect(body, {
       'maxPlayers': 8,
-      'hintSeconds': 10,
+      'hintSeconds': 30,
       'categoryIds': ['objects'],
     });
     expect(find.text('482 913'), findsOneWidget); // grouped in the lobby
@@ -192,7 +192,7 @@ void main() {
     });
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
-    expect(find.text('אתם בצוות האזרחים'), findsOneWidget);
+    expect(find.text('אתם אזרחים'), findsOneWidget);
     expect(find.text('המילה הסודית'), findsOneWidget);
     expect(find.text('פיל'), findsOneWidget);
     await tapLive(tester, 'הבנתי');
@@ -485,7 +485,7 @@ void main() {
     api.channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
     expect(find.byType(LiveRoomScreen), findsOneWidget);
-    expect(find.text('אתם בצוות האזרחים'), findsOneWidget);
+    expect(find.text('אתם אזרחים'), findsOneWidget);
   });
 
   testWidgets('leaving waits for the server and stays put if it fails',
