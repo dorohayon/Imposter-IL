@@ -25,6 +25,7 @@ type metrics struct {
 	panics       int64
 	aborted      int64
 	rateLimited  int64
+	reports      int64
 	reapedRooms  int64
 	reapedSess   int64
 	wsConns      int64
@@ -173,6 +174,7 @@ func (s *Server) Metrics(w http.ResponseWriter, _ *http.Request) {
 	p("imposter_panics_total", "counter", "Panics recovered.", m.panics)
 	p("imposter_games_aborted_total", "counter", "Games ended by server error.", m.aborted)
 	p("imposter_rate_limited_total", "counter", "Requests and commands refused by a rate limit.", m.rateLimited)
+	p("imposter_reports_total", "counter", "Players reported for their hints or nickname.", m.reports)
 	p("imposter_reaped_rooms_total", "counter", "Empty rooms closed by the reaper.", m.reapedRooms)
 	p("imposter_reaped_sessions_total", "counter", "Idle sessions dropped by the reaper.", m.reapedSess)
 	p("imposter_publish_seconds_sum", "counter", "Time spent building and queueing snapshots.", float64(m.publishNanos)/1e9)

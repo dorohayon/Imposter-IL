@@ -1,0 +1,23 @@
+# Words refused in hints and nicknames, one per line. Blank lines and lines
+# starting with # are ignored. Matching is case- and spelling-normalised
+# (internal/content/blocklist.go), so only the base form is needed here.
+#
+# THIS LIST IS NOT APPROVED PRODUCT CONTENT. docs/open-decisions.md owns it.
+# It is a starter set so the filter that the app stores require is not empty;
+# the product owner reviews and extends it before submission.
+
+זין
+זיין
+כוס
+כוסית
+תחת
+חרא
+שרמוטה
+זונה
+מניאק
+בן זונה
+לזיין
+דפוק
+מפגר
+נאצי
+היטלר

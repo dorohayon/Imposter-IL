@@ -288,6 +288,11 @@ func applyProfile(sess *session, req profileRequest) *apiError {
 		if !ok {
 			return &errInvalidNickname
 		}
+		// Nicknames are shown to strangers, so they go through the same
+		// blocklist as hints (screen 2).
+		if content.Blocked(n) {
+			return &errNicknameBlocked
+		}
 		nickname = n
 	}
 	if req.AvatarID != nil {

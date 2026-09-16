@@ -102,6 +102,12 @@ class _StatCard extends StatelessWidget {
   }
 }
 
+/// Support address shown in settings and required by the stores alongside
+/// reporting (App Store review guideline 1.2). Empty hides the row.
+///
+/// MUST be filled in before submission — see docs/production-architecture-review.md.
+const supportEmail = '';
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -154,6 +160,22 @@ class SettingsScreen extends StatelessWidget {
             title: Text('מדיניות פרטיות'),
             subtitle: Text('בקרוב'),
           ),
+          if (supportEmail.isNotEmpty)
+            const ListTile(
+              leading: Icon(Icons.mail_outline_rounded),
+              title: Text('יצירת קשר'),
+              subtitle: Text(supportEmail),
+            ),
+          if (session.muted.isNotEmpty)
+            ListTile(
+              leading: const Icon(Icons.flag_outlined),
+              title: const Text('שחקנים שדיווחתם עליהם'),
+              subtitle: Text('${session.muted.length} שחקנים מוסתרים'),
+              trailing: TextButton(
+                onPressed: session.clearMuted,
+                child: const Text('ניקוי'),
+              ),
+            ),
         ],
       ),
     );

@@ -1,6 +1,6 @@
 # חוזי REST ו־WebSocket
 
-גרסה: `v1` (טיוטה). ממומשים כרגע (`server/internal/api`): כל ה־REST, ו־`GET /v1/ws` לחדרים פרטיים, למשחק ברשת ולמשחקים בשניהם: כל הודעות `matchmaking.*`, `room.*` ו־`game.*`, `session.state`, `matchmaking.state`, `matchmaking.noMatch`, `room.state`, `room.kicked`, `game.state` ו־`game.reaction`. לא ממומש עדיין: `game.aborted`. שאר החוזה מגדיר את מה שהשרת והאפליקציה יממשו בהמשך. רקע ועקרונות: [`architecture.md`](architecture.md).
+גרסה: `v1` (טיוטה). ממומשים כרגע (`server/internal/api`): כל ה־REST, ו־`GET /v1/ws` לחדרים פרטיים, למשחק ברשת ולמשחקים בשניהם: כל הודעות `matchmaking.*`, `room.*` ו־`game.*`, `session.state`, `matchmaking.state`, `matchmaking.noMatch`, `room.state`, `room.kicked`, `game.state`, `game.reaction` ו־`game.aborted`. שאר החוזה מגדיר את מה שהשרת והאפליקציה יממשו בהמשך. רקע ועקרונות: [`architecture.md`](architecture.md).
 
 ## מוסכמות
 
@@ -16,7 +16,19 @@
 { "error": { "code": "room_not_found", "message": "room not found" } }
 ```
 
-שגיאות REST כלליות: `400 invalid_message` (גוף שאינו JSON או גדול מ־64KB), `401 session_not_found` (טוקן חסר או לא מוכר), `500 internal_error`.
+שגיאות REST כלליות: `400 invalid_message` (גוף שאינו JSON או גדול מ־64KB), `401 session_not_found` (טוקן חסר או לא מוכר), `426 client_too_old` (גרסת אפליקציה ישנה מדי), `429 rate_limited`, `500 internal_error`, `503 server_draining` (השרת מתחיל כיבוי מסודר ואינו מקבל פעילות חדשה).
+
+### גרסת אפליקציה
+
+כל בקשת REST וחיבור WebSocket נושאים `X-Client-Build: <מספר>` — ה־build של האפליקציה (`clientBuild` ב־`app/lib/data/server.dart`, זהה למספר שאחרי `+` ב־`pubspec.yaml`). אם הוא קטן מ־`MIN_CLIENT_BUILD` של השרת, הבקשה נדחית ב־`426 client_too_old` והאפליקציה מציגה מסך עדכון שאין ממנו חזרה. ברירת המחדל של השרת היא 0, כלומר כל גרסה מתקבלת, כולל לקוח שאינו שולח את הכותרת.
+
+### הגבלות קצב
+
+`429 rate_limited` ב־REST, ו־`rate_limited` ב־`reply` של WebSocket. המכסות: יצירת session ‏5 לדקה לכל IP, הצטרפות לחדר ‏10 לדקה לכל IP (כדי שלא יהיה אפשר לסרוק את מרחב הקודים בן שש הספרות), ופקודות WebSocket ‏600 לדקה לכל session. שחקן אמיתי אינו מגיע למכסות האלה.
+
+### כיבוי מסודר
+
+בזמן `SIGTERM` השרת מפסיק לקבל פעילות חדשה (`503 server_draining` ליצירת חדר, הצטרפות, `matchmaking.join`, `room.start` ו־`game.playAgain` ברשת), ממתין עד `DRAIN_TIMEOUT` שהמשחקים הפעילים יסתיימו, ורק אז יוצא. `GET /readyz` מחזיר `503` לאורך כל הזמן הזה, ו־`GET /healthz` ממשיך להחזיר `200` כדי שהתהליך לא ייהרג באמצע המשחקים.
 
 ## REST
 
@@ -50,7 +62,7 @@
 { "playerId": "p_01J8", "sessionToken": "…" }
 ```
 
-שגיאות: `422 invalid_nickname` (אחרי הסרת רווחים בקצוות הכינוי ריק או קצר מ־2 תווים), `422 nickname_blocked` (מסך 2; ממתין למילון), `422 invalid_avatar`. הכינוי נשמר אחרי הסרת הרווחים.
+שגיאות: `422 invalid_nickname` (אחרי הסרת רווחים בקצוות הכינוי ריק או קצר מ־2 תווים), `422 nickname_blocked` (מסך 2; רשימת המילים החסומות בשרת), `422 invalid_avatar`. הכינוי נשמר אחרי הסרת הרווחים.
 
 ה־`sessionToken` מזהה את החיבור לצורך חיבור מחדש בלבד. האם ניצחונות והפסדים יגובו בשרת באמצעותו — פתוח. כללי הכינוי (אורך, מילון) — פתוחים. `avatarId` הוא שם קובץ האווטאר בלי הסיומת.
 
@@ -192,6 +204,7 @@
 | `game.react` | `{ gameId, hintIndex, reactionId }` | `invalid_hint`, `invalid_reaction`, `wrong_phase` |
 | `game.vote` | `{ gameId, targetPlayerId }` | `self_vote`, `invalid_vote_target`, `wrong_phase` |
 | `game.submitGuess` | `{ gameId, text }` | `not_impostor`, `wrong_phase` |
+| `game.report` | `{ gameId, playerId, hintIndex?, reason? }` | `invalid_message` (שחקן חסר, דיווח עצמי או שחקן שאינו במשחק), `game_not_found`. הדיווח נרשם ונספר בשרת; אין מסך מודרציה. האפליקציה מסתירה מאותו רגע את הרמזים של המדווח במכשיר הזה. |
 | `game.leave` | `{ gameId }` | — (יציאה לבית: לפני הסוף זו יציאה יזומה והפסד; ממסך התוצאות אינה נחשבת. בשני המקרים השחקן יוצא גם מהחדר) |
 | `game.playAgain` | `{ gameId }` | `wrong_phase` (לפני `ended`). בחדר פרטי מחזיר את השחקן ללובי: `session.state` עם `activity: "room"` |
 
@@ -286,7 +299,7 @@
 
 | מסך | מקור |
 | --- | --- |
-| 2 כינוי חסום | `422 nickname_blocked` (נדחה להמשך; השרת אינו מחזיר אותו כרגע) |
+| 2 כינוי חסום | `422 nickname_blocked` |
 | 5 חיפוש שחקנים | `matchmaking.state` |
 | 6 אין התאמה | `matchmaking.noMatch` |
 | 7–8 חשיפת תפקיד | `game.state` עם `phase: role_reveal` ו־`myRole` |

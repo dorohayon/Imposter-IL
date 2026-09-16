@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/dorohayon/Imposter-IL/server/internal/content"
-	"github.com/dorohayon/Imposter-IL/server/internal/game"
 )
 
 var t0 = time.Date(2026, 9, 15, 12, 0, 0, 0, time.UTC)
@@ -26,10 +25,9 @@ type client struct {
 }
 
 func newClient(t *testing.T) *client {
-	policy := game.Policy{
-		HintInappropriate: func(string) bool { return false },
-		ValidReaction:     content.ValidReaction,
-	}
+	// The policy the binary is built with, so tests exercise the real
+	// blocklist rather than a stub that blocks nothing.
+	policy := content.Policy()
 	c := &client{t: t, mux: http.NewServeMux()}
 	c.clock.Store(t0.UnixNano())
 	pick := func([]string, *rand.Rand) (string, string, bool) { return "חיות", "פיל", true }
