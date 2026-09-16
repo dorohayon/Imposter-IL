@@ -65,16 +65,19 @@ func (s *Server) serveWS(w http.ResponseWriter, r *http.Request) {
 		cancel()
 		_ = ws.CloseNow()
 		s.mu.Lock()
+		s.metrics.wsConns--
 		s.detach(sess, c)
 		s.mu.Unlock()
 	}()
 
 	s.mu.Lock()
+	s.metrics.wsConns++
+	sess.lastSeen, sess.connected = s.now(), true
 	s.attach(sess, c)
 	interval := s.pingInterval
 	s.mu.Unlock()
-	go s.writeLoop(c)
-	go pingLoop(c, interval)
+	s.safely("writeLoop", func() { s.writeLoop(c) })
+	s.safely("pingLoop", func() { pingLoop(c, interval) })
 	s.readLoop(sess, c)
 }
 
@@ -143,9 +146,20 @@ func (s *Server) readLoop(sess *session, c *conn) {
 		}
 		s.mu.Lock()
 		now := s.now()
+		sess.lastSeen = now
 		msg, ok := sess.replies.get(env.ID, now)
-		if !ok {
-			msg = reply(env.ID, s.dispatch(sess, env, now), now)
+		switch {
+		case ok:
+			// Replayed message id: the cached reply, command not run again.
+		case !s.commandLimit.allow(sess.playerID, now):
+			s.metrics.rateLimited++
+			s.countCommand("rate_limited")
+			msg = reply(env.ID, "rate_limited", now)
+			sess.replies.put(env.ID, msg, now)
+		default:
+			code := s.dispatchSafe(sess, env, now)
+			s.countCommand(code)
+			msg = reply(env.ID, code, now)
 			sess.replies.put(env.ID, msg, now)
 		}
 		s.queue(c, msg)
@@ -224,6 +238,7 @@ func (s *Server) sendSessionState(sess *session) {
 // player showing the room's game, and reschedules the room's timer. Call it
 // after anything that may change the room or its game.
 func (s *Server) publish(entry *roomEntry) {
+	defer s.timePublish(time.Now())
 	now := s.now()
 	s.settleFinishedMatch(entry, now)
 	v := entry.room.View()
@@ -259,6 +274,8 @@ func (s *Server) schedule(entry *roomEntry) {
 	entry.timer = time.AfterFunc(max(deadline.Sub(s.now()), 0), func() {
 		s.mu.Lock()
 		defer s.mu.Unlock()
+		// Runs before the unlock above, so it still holds the lock it needs.
+		defer s.recoverRoom(entry, "timer")
 		s.tickRoom(entry)
 	})
 }
@@ -301,6 +318,25 @@ func (s *Server) syncSession(sess *session) {
 	if sess.gameRoom != nil && sess.gameRoom.id != sess.roomID {
 		s.sync(sess.gameRoom)
 	}
+}
+
+// dispatchSafe runs a command so that a panic costs the player's room rather
+// than the process and every other game on it. The player gets internal_error.
+func (s *Server) dispatchSafe(sess *session, env envelope, now time.Time) (code string) {
+	entry := s.roomsByID[sess.roomID]
+	if entry == nil {
+		entry = sess.gameRoom
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			s.panicked("command "+env.Type, r)
+			if entry != nil {
+				s.abortRoom(entry)
+			}
+			code = "internal_error"
+		}
+	}()
+	return s.dispatch(sess, env, now)
 }
 
 // dispatch runs one client command and returns its error code, or "" on success.
@@ -360,6 +396,9 @@ func (s *Server) roomCommand(sess *session, typ string, p commandPayload, now ti
 			}
 		}
 	case "room.start":
+		if s.draining {
+			return "server_draining"
+		}
 		return s.startGame(sess, entry, now)
 	case "room.leave":
 		if err = entry.room.Leave(sess.playerID, now); err == nil {

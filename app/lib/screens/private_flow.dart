@@ -75,7 +75,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         hintSeconds: hintSeconds,
         categoryIds: [
           for (final c in session.categories)
-            if (_selected?.contains(c.id) ?? true) c.id,
+            if (_selected?.contains(c.id) ?? true) c.id, // null is "הכול"
         ],
       );
       if (mounted) _openRoom(context);
@@ -100,21 +100,26 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   @override
   Widget build(BuildContext context) {
     final categories = SessionScope.of(context).categories;
-    final allIds = {for (final c in categories) c.id};
-    final selected = _selected ?? allIds;
+    // null is "הכול": every category, shown as that one chip rather than by
+    // selecting all of them. A non-null set may be empty, which blocks
+    // creating the room — the server needs at least one category.
+    final all = _selected == null;
+    final selected = _selected ?? const <String>{};
     final loaded = categories.isNotEmpty;
 
     void toggle(String id) => setState(() {
-          final next = {...selected};
-          if (!next.remove(id)) next.add(id);
-          if (next.isNotEmpty) _selected = next; // keep at least one
+          // Leaving "הכול" starts a fresh choice of just this category.
+          final next = all ? <String>{id} : {...selected};
+          if (!all && !next.remove(id)) next.add(id);
+          _selected = next;
         });
 
     return GameScaffold(
       title: 'יצירת חדר',
       bottom: PrimaryButton(
         label: _busy ? 'יוצרים חדר...' : 'יצירת חדר',
-        onPressed: loaded && !_busy ? _create : null,
+        onPressed:
+            loaded && !_busy && (all || selected.isNotEmpty) ? _create : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -179,8 +184,9 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               children: [
                 FilterChip(
                   label: const Text('הכול'),
-                  selected: selected.length == allIds.length,
-                  onSelected: (_) => setState(() => _selected = allIds),
+                  selected: all,
+                  onSelected: (_) =>
+                      setState(() => _selected = all ? <String>{} : null),
                 ),
                 for (final c in categories)
                   FilterChip(

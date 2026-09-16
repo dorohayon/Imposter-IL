@@ -82,7 +82,13 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 12),
             TextButton.icon(
               onPressed: () => _open(context, const HowToPlayScreen()),
-              icon: const Icon(Icons.help_outline_rounded),
+              // Flutter mirrors this icon in RTL (matchTextDirection), which
+              // flips the question mark backwards. Hebrew uses the same glyph,
+              // so force it upright.
+              icon: const Directionality(
+                textDirection: TextDirection.ltr,
+                child: Icon(Icons.help_outline_rounded),
+              ),
               label: const Text('איך משחקים?',
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
             ),

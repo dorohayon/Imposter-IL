@@ -59,7 +59,8 @@ void main() {
     await tapText(tester, 'משחק עם חברים');
     await tapText(tester, 'יצירת חדר');
 
-    // Categories come from the server; deselect one before creating.
+    // Categories come from the server. "הכול" is the default; tapping one
+    // leaves it and picks just that one.
     expect(find.text('חפצים'), findsOneWidget);
     await tapText(tester, 'חפצים');
     await tapText(tester, '10 שניות');
@@ -69,7 +70,7 @@ void main() {
     expect(body, {
       'maxPlayers': 8,
       'hintSeconds': 10,
-      'categoryIds': ['food', 'animals', 'sports', 'professions', 'places'],
+      'categoryIds': ['objects'],
     });
     expect(find.text('482913'), findsOneWidget);
     expect(find.text('מנהל החדר · אני'), findsOneWidget);
@@ -142,7 +143,8 @@ void main() {
     });
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
-    expect(find.text('המילה שלך'), findsOneWidget);
+    expect(find.text('אתם אזרחים'), findsOneWidget);
+    expect(find.text('המילה הסודית'), findsOneWidget);
     expect(find.text('פיל'), findsOneWidget);
     await tapLive(tester, 'הבנתי');
     expect(channel.commands('game.confirmRole').single['payload'],
@@ -415,5 +417,50 @@ void main() {
     await settle(tester);
     expect(find.text('תיקו נוסף מעניק ניצחון למתחזה'), findsOneWidget);
     expect(isEnabled(tester, 'אישור הצבעה'), isFalse);
+  });
+
+  testWidgets('reporting a hint sends it and hides that player',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    final channel = api.channel;
+
+    channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1'
+    });
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(
+          phase: 'hints',
+          turn: 'p_3',
+          hints: [
+            {
+              'playerId': 'p_2',
+              'text': 'גסות',
+              'missing': false,
+              'reactions': <String, dynamic>{}
+            },
+          ],
+        ));
+    await settle(tester);
+    expect(find.text('הרמז: גסות'), findsOneWidget);
+
+    // A visible button, not a hidden gesture.
+    await tester.tap(find.byTooltip('דיווח על הרמז'));
+    await tester.pumpAndSettle();
+    await tapText(tester, 'דיווח');
+    await settle(tester);
+
+    expect(channel.commands('game.report').single['payload'],
+        {'gameId': 'g_1', 'playerId': 'p_2', 'hintIndex': 0});
+    // The hint is hidden on this device, and cannot be reported twice.
+    expect(find.text('הרמז: גסות'), findsNothing);
+    expect(find.text('הרמז: הוסתר'), findsOneWidget);
+    expect(find.byTooltip('דיווח על הרמז'), findsNothing);
   });
 }

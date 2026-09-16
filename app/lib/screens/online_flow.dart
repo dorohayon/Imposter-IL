@@ -58,16 +58,21 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
   Widget build(BuildContext context) {
     final categories = SessionScope.of(context).categories;
     final allIds = [for (final c in categories) c.id];
-    final selected = _selected ?? allIds.toSet();
+    // null is "הכול": every category, shown as that one tile rather than by
+    // lighting all of them up. A non-null set is an explicit choice and may be
+    // empty, which disables the search button.
+    final all = _selected == null;
+    final selected = _selected ?? const <String>{};
 
     void toggle(String id) => setState(() {
           if (id == _allId) {
-            _selected = null;
+            _selected = all ? <String>{} : null;
             return;
           }
-          final next = {...selected};
-          if (!next.remove(id)) next.add(id);
-          if (next.isNotEmpty) _selected = next; // keep at least one
+          // Leaving "הכול" starts a fresh choice of just this category.
+          final next = all ? <String>{id} : {...selected};
+          if (!all && !next.remove(id)) next.add(id);
+          _selected = next;
         });
 
     final tiles = [
@@ -89,11 +94,12 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
         minimum: const EdgeInsets.fromLTRB(20, 8, 20, 16),
         child: PrimaryButton(
           label: _busy ? 'מתחילים חיפוש...' : 'חפש משחק',
-          onPressed: categories.isEmpty || _busy
+          // Nothing chosen means nothing to search for.
+          onPressed: categories.isEmpty || _busy || (!all && selected.isEmpty)
               ? null
               : () => _search([
                     for (final id in allIds)
-                      if (selected.contains(id)) id,
+                      if (all || selected.contains(id)) id,
                   ]),
         ),
       ),
@@ -125,9 +131,8 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                     );
                   }
                   final tile = tiles[index - 1];
-                  final isSelected = tile.id == _allId
-                      ? selected.length == allIds.length
-                      : selected.contains(tile.id);
+                  final isSelected =
+                      tile.id == _allId ? all : selected.contains(tile.id);
                   return Semantics(
                     selected: isSelected,
                     button: true,

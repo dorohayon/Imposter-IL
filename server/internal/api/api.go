@@ -11,6 +11,7 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -38,9 +39,21 @@ var AvatarIDs = []string{
 
 type session struct {
 	playerID string
+	token    string // key in Server.sessions, so the reaper can delete it
 	nickname string
 	avatarID string
 	roomID   string // current room: a private room or a forming online match
+
+	// lastSeen is refreshed by every request, command and connection change;
+	// the reaper drops a session idle for SessionTTL.
+	lastSeen time.Time
+	// ip is the caller's address as of the last request, for per-IP limits in
+	// handlers that only receive the session.
+	ip string
+	// connected is set the first time a WebSocket attaches. A session that
+	// never did is reaped within minutes rather than kept for a day: that is
+	// what bounds memory against someone looping POST /v1/sessions.
+	connected bool
 
 	// The categories and start time of the player's latest online search.
 	searchCategories []string
@@ -60,9 +73,13 @@ type session struct {
 
 type roomEntry struct {
 	id     string
+	code   string // kept here so a room can be dropped without asking it
 	room   *room.Room
 	timer  *time.Timer // fires at room.Deadline()
 	gameID string      // id of room.Game(), if one was started
+
+	// emptySince is when the last member left, for the reaper.
+	emptySince time.Time
 
 	// Online matches (public rooms, see matchmaking.go).
 	public       bool
@@ -104,6 +121,16 @@ type Server struct {
 	roomsByID   map[string]*roomEntry
 	roomsCode   map[string]*roomEntry
 	publicRooms []*roomEntry // online matches, oldest first
+
+	draining   bool // no new rooms, searches or games; see ops.go
+	trustProxy bool // read the client address from X-Forwarded-For
+	minBuild   int  // oldest app build allowed in; 0 accepts every client
+
+	sessionLimit *limiter // guest creation, per IP
+	joinLimit    *limiter // room-code attempts, per IP
+	commandLimit *limiter // WebSocket commands, per session
+
+	metrics metrics
 }
 
 // NewServer uses policy and pickWord for games started in rooms. Without
@@ -121,19 +148,56 @@ func NewServer(now func() time.Time, policy game.Policy, pickWord PickWord) *Ser
 		players:      map[string]*session{},
 		roomsByID:    map[string]*roomEntry{},
 		roomsCode:    map[string]*roomEntry{},
+		sessionLimit: newLimiter(sessionsPerMinute, sessionsBurst),
+		joinLimit:    newLimiter(joinsPerMinute, joinsBurst),
+		commandLimit: newLimiter(commandsPerMinute, commandsBurst),
 	}
 	s.newCode = func() string { return room.NewCode(s.rng) }
 	return s
 }
 
+// RequireClientBuild refuses clients older than build. The app sends its build
+// number in X-Client-Build; a store release stays installed for years, so
+// without this gate there is no way to retire a protocol the old build speaks.
+// Zero, the default, accepts every client including ones that send no header.
+func (s *Server) RequireClientBuild(build int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.minBuild = build
+}
+
+// clientTooOld reports whether the request comes from a build we no longer
+// serve. A missing or unparsable header is treated as build 0, so only an
+// explicit minimum can lock anyone out.
+func (s *Server) clientTooOld(r *http.Request) bool {
+	s.mu.Lock()
+	min := s.minBuild
+	s.mu.Unlock()
+	if min <= 0 {
+		return false
+	}
+	build, err := strconv.Atoi(r.Header.Get("X-Client-Build"))
+	return err != nil || build < min
+}
+
+func (s *Server) gate(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if s.clientTooOld(r) {
+			writeError(w, errClientTooOld)
+			return
+		}
+		next(w, r)
+	}
+}
+
 func (s *Server) Routes(mux *http.ServeMux) {
-	mux.HandleFunc("POST /v1/sessions", s.createSession)
-	mux.HandleFunc("GET /v1/categories", s.withSession(listCategories))
-	mux.HandleFunc("GET /v1/reactions", s.withSession(listReactions))
-	mux.HandleFunc("PATCH /v1/sessions/me", s.withSession(s.updateSession))
-	mux.HandleFunc("POST /v1/rooms", s.withSession(s.createRoom))
-	mux.HandleFunc("POST /v1/rooms/join", s.withSession(s.joinRoom))
-	mux.HandleFunc("GET /v1/ws", s.serveWS)
+	mux.HandleFunc("POST /v1/sessions", s.gate(s.createSession))
+	mux.HandleFunc("GET /v1/categories", s.gate(s.withSession(listCategories)))
+	mux.HandleFunc("GET /v1/reactions", s.gate(s.withSession(listReactions)))
+	mux.HandleFunc("PATCH /v1/sessions/me", s.gate(s.withSession(s.updateSession)))
+	mux.HandleFunc("POST /v1/rooms", s.gate(s.withSession(s.createRoom)))
+	mux.HandleFunc("POST /v1/rooms/join", s.gate(s.withSession(s.joinRoom)))
+	mux.HandleFunc("GET /v1/ws", s.gate(s.serveWS))
 }
 
 type apiError struct {
@@ -153,6 +217,9 @@ var (
 	errRoomUnavailable = apiError{http.StatusConflict, "room_unavailable", "room is full or in a game"}
 	errAlreadyInGame   = apiError{http.StatusConflict, "already_in_activity", "leave the current game first"}
 	errInternal        = apiError{http.StatusInternalServerError, "internal_error", "internal error"}
+	errDraining        = apiError{http.StatusServiceUnavailable, "server_draining", "server is restarting, try again in a moment"}
+	errClientTooOld    = apiError{http.StatusUpgradeRequired, "client_too_old", "update the app to keep playing"}
+	errNicknameBlocked = apiError{http.StatusUnprocessableEntity, "nickname_blocked", "nickname is not allowed"}
 )
 
 func writeJSON(w http.ResponseWriter, status int, body any) {
@@ -198,6 +265,10 @@ func (s *Server) withSession(next func(http.ResponseWriter, []byte, *session)) h
 			writeError(w, errSessionNotFound)
 			return
 		}
+		// A panic here would leave the player's room half-changed; abort that
+		// room rather than serve from state nobody has checked.
+		defer s.recoverRoom(s.roomsByID[sess.roomID], "rest "+r.Pattern)
+		sess.lastSeen, sess.ip = s.now(), s.clientIP(r)
 		next(w, body, sess)
 		s.syncSession(sess)
 	}
@@ -220,6 +291,11 @@ func applyProfile(sess *session, req profileRequest) *apiError {
 		n, ok := validNickname(*req.Nickname)
 		if !ok {
 			return &errInvalidNickname
+		}
+		// Nicknames are shown to strangers, so they go through the same
+		// blocklist as hints (screen 2).
+		if content.Blocked(n) {
+			return &errNicknameBlocked
 		}
 		nickname = n
 	}
@@ -247,12 +323,23 @@ func (s *Server) createSession(w http.ResponseWriter, r *http.Request) {
 		writeError(w, errInvalidAvatar)
 		return
 	}
-	sess := &session{playerID: "p_" + crand.Text()}
+	s.mu.Lock()
+	now := s.now()
+	if !s.sessionLimit.allow(s.clientIP(r), now) {
+		s.metrics.rateLimited++
+		s.mu.Unlock()
+		writeError(w, errRateLimited)
+		return
+	}
+	s.mu.Unlock()
+
+	sess := &session{playerID: "p_" + crand.Text(), lastSeen: now, ip: s.clientIP(r)}
 	if err := applyProfile(sess, req); err != nil {
 		writeError(w, *err)
 		return
 	}
 	token := crand.Text()
+	sess.token = token
 	s.mu.Lock()
 	s.sessions[token], s.players[sess.playerID] = sess, sess
 	s.mu.Unlock()
@@ -301,6 +388,10 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 	if !decode(w, body, &req) {
 		return
 	}
+	if s.draining {
+		writeError(w, errDraining)
+		return
+	}
 	now := s.now()
 	previous, apiErr := s.roomToLeave(sess, "", now)
 	if apiErr != nil {
@@ -318,7 +409,7 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 		return
 	}
 	s.leave(previous, sess, now)
-	entry := &roomEntry{id: "r_" + crand.Text(), room: rm}
+	entry := &roomEntry{id: "r_" + crand.Text(), code: code, room: rm}
 	s.roomsByID[entry.id], s.roomsCode[code] = entry, entry
 	sess.roomID = entry.id
 	sess.leaveGame()
@@ -332,6 +423,16 @@ func (s *Server) joinRoom(w http.ResponseWriter, body []byte, sess *session) {
 		Code string `json:"code"`
 	}
 	if !decode(w, body, &req) {
+		return
+	}
+	if s.draining {
+		writeError(w, errDraining)
+		return
+	}
+	// Rate limited before the lookup: this is the room-code enumeration path.
+	if !s.joinLimit.allow(sess.ip, s.now()) {
+		s.metrics.rateLimited++
+		writeError(w, errRateLimited)
 		return
 	}
 	if !room.ValidCode(req.Code) {

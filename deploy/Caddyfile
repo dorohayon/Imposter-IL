@@ -1,0 +1,17 @@
+# Caddy terminates TLS (automatic Let's Encrypt) and proxies to the server.
+# The hostname comes from IMPOSTER_DOMAIN in .env.
+{$IMPOSTER_DOMAIN} {
+	encode zstd gzip
+
+	# Metrics are published on the VM's loopback only, never through here.
+	handle /metrics* {
+		respond 404
+	}
+
+	# "server" is the compose service name on the private bridge network.
+	reverse_proxy server:8080 {
+		# WebSockets are long-lived: no read timeout on the upgraded stream.
+		flush_interval -1
+		health_uri /healthz
+	}
+}

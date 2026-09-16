@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'data/server.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/secondary_screens.dart';
 import 'state/game_session.dart';
 import 'theme/app_theme.dart';
 
@@ -24,15 +25,35 @@ class ImposterApp extends StatelessWidget {
     return SessionScope(
       session: session,
       child: MaterialApp(
-        title: 'מי המתחזה?',
+        // The trailing "?" is a neutral character, so in the LTR context of the
+        // task switcher it would sit on the wrong side. \u200f (RLM) pins it.
+        title: 'מי המתחזה?\u200f',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.dark,
         // Hebrew everywhere: RTL layout and Hebrew text in built-in widgets.
         locale: const Locale('he'),
         supportedLocales: const [Locale('he')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        home: session.signedIn ? const HomeScreen() : const OnboardingScreen(),
+        // builder wraps the Navigator, so an unsupported build is covered
+        // wherever the player happens to be — home is not enough, since
+        // client_too_old can arrive while they are deep in a pushed route.
+        builder: (context, child) => SessionScope.of(context).needsUpdate
+            ? const UpdateRequiredScreen()
+            : child!,
+        home: const _Start(),
       ),
     );
+  }
+}
+
+/// Picks the first screen, below [SessionScope] so it follows the session
+/// rather than the state it had at launch.
+class _Start extends StatelessWidget {
+  const _Start();
+
+  @override
+  Widget build(BuildContext context) {
+    final session = SessionScope.of(context);
+    return session.signedIn ? const HomeScreen() : const OnboardingScreen();
   }
 }

@@ -2,7 +2,9 @@ package api
 
 import (
 	"errors"
+	"log/slog"
 	"math/rand/v2"
+	"slices"
 	"time"
 
 	"github.com/dorohayon/Imposter-IL/server/internal/game"
@@ -80,6 +82,22 @@ func (s *Server) gameCommand(sess *session, typ string, p commandPayload, now ti
 		}
 		sess.leaveGame()
 		s.sendSessionState(sess)
+	case "game.report":
+		// Reporting is required of any app showing user-written text to
+		// strangers (App Store 1.2, Play UGC). There is no moderation queue
+		// and no accounts to ban, so a report is recorded and counted; the
+		// app also stops showing that player's text on the reporter's device.
+		target := entry.room.Game()
+		if p.PlayerID == "" || p.PlayerID == id || target == nil ||
+			!slices.Contains(target.PlayerIDs(), p.PlayerID) {
+			return "invalid_message"
+		}
+		s.metrics.reports++
+		slog.Warn("player reported",
+			"gameId", sess.gameID, "byPlayerId", id, "playerId", p.PlayerID,
+			"hintIndex", p.HintIndex, "reason", p.Text)
+		return "" // nothing in the game changed, so nothing to publish
+
 	case "game.playAgain":
 		v, viewErr := sess.game.View(id)
 		if viewErr != nil || v.Phase != game.PhaseEnded {

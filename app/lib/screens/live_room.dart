@@ -683,11 +683,20 @@ class _RoleReveal extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            impostor ? 'אתה המתחזה' : 'המילה שלך',
+            impostor ? 'אתם המתחזה' : 'אתם אזרחים',
             style: Theme.of(context).textTheme.headlineLarge,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
+          const Text(
+            'המילה הסודית',
+            style: TextStyle(
+              color: AppColors.muted,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(22),
@@ -696,7 +705,7 @@ class _RoleReveal extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
             ),
             child: Text(
-              impostor ? 'המילה נשארת סודית' : game.secretWord ?? '',
+              impostor ? 'לא מוצגת לכם' : game.secretWord ?? '',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: impostor ? AppColors.cream : AppColors.night,
@@ -708,8 +717,8 @@ class _RoleReveal extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             impostor
-                ? 'נסה להשתלב, להבין את הרמזים ולגלות את המילה.'
-                : 'תן רמז של מילה אחת בלי לחשוף את המילה הסודית.',
+                ? 'המילה לא מוצגת לכם — רק הקטגוריה.'
+                : 'אף אחד מלבדכם לא יודע מי המתחזה. שמרו על המילה בסוד.',
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: AppColors.muted,
@@ -894,12 +903,29 @@ class _HintsState extends State<_Hints> {
               'עדיין לא נשלחו רמזים',
               style: TextStyle(color: AppColors.muted),
             ),
-          for (final h in game.hints)
+          for (final (i, h) in game.hints.indexed)
             if (game.player(h.playerId) case final p?)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: PlayerCard(
-                  player: _player(p, me, hint: h.missing ? '' : h.text),
+                child: _ReportableHint(
+                  card: PlayerCard(
+                    player: _player(
+                      p,
+                      me,
+                      hint: switch (h) {
+                        _ when h.missing => '',
+                        _ when session.muted.contains(h.playerId) => 'הוסתר',
+                        _ => h.text,
+                      },
+                    ),
+                  ),
+                  playerId: h.playerId,
+                  nickname: p.nickname,
+                  hintIndex: i,
+                  // Nobody reports themself, and a hidden hint is already dealt with.
+                  canReport: h.playerId != me &&
+                      !h.missing &&
+                      !session.muted.contains(h.playerId),
                 ),
               ),
           if (lastHint != null &&
@@ -1316,6 +1342,79 @@ class _StateMessage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A hint with the report action beside it.
+///
+/// Required of any app that shows text one player wrote to another (App Store
+/// review guideline 1.2, Google Play's UGC policy). It is a visible button
+/// rather than a long-press, so the action is not hidden behind a gesture.
+class _ReportableHint extends StatelessWidget {
+  const _ReportableHint({
+    required this.card,
+    required this.playerId,
+    required this.nickname,
+    required this.hintIndex,
+    required this.canReport,
+  });
+
+  final Widget card;
+  final String playerId;
+  final String nickname;
+  final int hintIndex;
+  final bool canReport;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!canReport) return card;
+    return Row(
+      children: [
+        Expanded(child: card),
+        IconButton(
+          tooltip: 'דיווח על הרמז',
+          icon: const Icon(Icons.flag_outlined, color: AppColors.muted),
+          onPressed: () => _confirm(context),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _confirm(BuildContext context) async {
+    final session = SessionScope.read(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('לדווח על הרמז?'),
+        content: Text(
+          'הרמז יישלח לבדיקה, ולא תראו יותר רמזים של $nickname במכשיר הזה.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('ביטול'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('דיווח'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final code = await session.reportPlayer(playerId, hintIndex: hintIndex);
+    // The hiding is local and holds either way; the report itself may not
+    // have reached the server, and saying it did would be a lie.
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          code == null
+              ? 'הדיווח נשלח. הרמזים האלה יוסתרו.'
+              : 'הרמזים האלה יוסתרו, אבל הדיווח לא נשלח. ${commandMessage(code)}',
+        ),
       ),
     );
   }
