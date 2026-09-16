@@ -20,6 +20,8 @@
 - [נכסי איור — 12 אווטארים ו־11 אילוסטרציות](assets/README.md)
 - [ארכיטקטורה ו־State Machines](docs/architecture.md)
 - [חוזי REST ו־WebSocket](docs/protocol.md)
+- [סקירת ארכיטקטורה לקראת ייצור](docs/production-architecture-review.md)
+- [הרצה ב־Production](deploy/README.md)
 - [מעקב משימות וסטטוס](TASKS.md)
 
 ## סטטוס
@@ -29,6 +31,8 @@
 - מצב שאלה: מחוץ ל־MVP ויתוכנן בהמשך
 - כיוון עיצובי: נקבע; 12 אווטארים ו־11 אילוסטרציות בגרסת v1 נמצאים תחת `assets/`
 - שרת Go: מנוע משחק, חדרים פרטיים, Matchmaking, REST ו־WebSocket, 6 קטגוריות תוכן ורשימת תגובות
+- חוסן ייצור: כיבוי מסודר, הכלת `panic`, ניקוי sessions וחדרים, הגבלות קצב, `/metrics` ולוגים ב־JSON
+- Hosting: מכונה אחת ב־GCE (`e2-micro`, Free Tier) עם Caddy; הנוהל ב־[`deploy/`](deploy/)
 - Flutter: מעטפות Android/iOS; משחק ברשת, חדרים פרטיים ומשחקים מחוברים לשרת; פרופיל, הגדרות, פונטים, שיתוף ואייקון זמני
 
 ## הרצת בדיקות השרת
@@ -37,6 +41,16 @@
 cd server
 go test -race ./...
 go run ./cmd/server
+```
+
+### בדיקת עומס
+
+`cmd/loadbot` מריץ שחקנים מדומים מול הפרוטוקול האמיתי, כדי שתקרת הקיבולת תהיה מדידה ולא הערכה:
+
+```sh
+RATE_LIMITS=off go run ./cmd/server                      # טרמינל אחד
+go run ./cmd/loadbot -players 240 -for 60s               # טרמינל שני
+curl -s localhost:9090/metrics | grep imposter_publish   # וגם המדדים של השרת
 ```
 
 
@@ -74,4 +88,4 @@ cd app && IMPOSTER_E2E_SERVER=http://localhost:18080 flutter test test/e2e
 
 **באפליקציה:** עריכת כינוי ואווטאר, ניצחונות והפסדים שנשמרים במכשיר בלבד, הגדרות רטט ותגובות, שיתוף קוד החדר בתפריט המערכת, והפונטים Secular One ו־Rubik. האייקון ומסך הפתיחה זמניים (`app/branding`; נוצרים מחדש עם `dart run flutter_launcher_icons` ו־`dart run flutter_native_splash:create`).
 
-**פתוח:** צלילים, לוגו ואייקון סופיים, בדיקה על מכשירים, מזהה אפליקציה סופי, חסימת תוכן לא ראוי (נדחתה להמשך), ותנאי שימוש ומדיניות פרטיות.
+**פתוח:** צלילים, לוגו ואייקון סופיים, בדיקה על מכשירים, מזהה אפליקציה סופי ו־keystore ל־Release, אישור רשימת המילים החסומות, כתובת תמיכה, דיווח קריסות, ותנאי שימוש ומדיניות פרטיות. הרשימה המלאה ב־[`TASKS.md`](TASKS.md).

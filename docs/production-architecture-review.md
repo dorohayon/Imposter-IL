@@ -151,21 +151,36 @@ Why it matters: this is *the* thing that forces horizontal scaling to be designe
 needed, because the failure is silent and product-visible ("nobody is ever online") rather than
 a crash. It is also the reason §3 puts room-affinity routing before anything else.
 
-### R6 — One global mutex, with JSON marshalling inside it · **watch, don't fix yet**
+### R6 — One global mutex, with JSON marshalling inside it · **measured; no action needed yet**
 
 `Server.mu` covers every session, room, game, timer and snapshot. `publish` → `publishGame`
 marshals one filtered `game.state` **per player** while holding it.
 
-Rough arithmetic, to be replaced by measurement: a `game.state` marshal is on the order of
-10–30 µs; a publish touches ≤ 8 players, so ~100–250 µs of lock per state change; a game
-generates a state change roughly every 3 seconds across all players. That puts the ceiling
-somewhere in the low thousands of concurrent games per instance before lock contention
-dominates — which is a *lot* of players for launch.
+**Measured** with `server/cmd/loadbot`, 240 simulated players for 60 s on one laptop core:
 
-Why it matters: it does not matter yet, and the code already documents the escape hatch
-("ponytail: one lock for everything … move each room into its own actor goroutine"). The risk is
-only that nobody measures it and it is discovered under load. Action: measure it (§6, load
-harness), do not pre-optimise it.
+| | |
+| --- | --- |
+| Concurrent players / games | 240 / 30 |
+| Command latency | p50 2.1 ms, p95 11.2 ms, p99 14.4 ms, max 19.3 ms |
+| Publishes | 9,973 — mean **143 µs** each |
+| Total time holding the lock | 1.43 s of 60 s = **2.4 % of one core** |
+| Heap | 10.4 MB, ≈ 43 KB per connected player |
+| Panics, goroutine leaks | none; goroutines returned to baseline after disconnect |
+
+Extrapolating the lock alone: 30 games cost 2.4 % of a core, so publish contention only
+becomes the bottleneck somewhere near a thousand concurrent games per core. Memory is not the
+binding constraint either — 43 KB per player means a 1 GB instance runs out of CPU long before
+RAM.
+
+Why it matters: it now demonstrably does not, at any traffic this game will see at launch. The
+escape hatch stays documented in the code ("ponytail: one lock for everything … move each room
+into its own actor goroutine"); do not take it until production metrics say so.
+
+Two things the harness found, both in the harness rather than the server: a client that writes
+from its read loop gets dropped by the server's slow-consumer guard (correct behaviour), and
+reacting to every snapshot rather than once per hint is a feedback loop — a reaction publishes a
+snapshot, which prompts another reaction. The second is worth remembering as a shape of abuse
+the reaction rate limit has to cover.
 
 ### R7 — Zero observability · **blocker**
 
@@ -502,22 +517,25 @@ accounts, leaderboards, friends, purchases, or an anti-cheat/abuse history.
 
 Effort is one focused engineer. Each item names the risk it closes.
 
-### P0 — Before store submission (~2–3 weeks)
+### P0 — Before store submission
+
+Most of this is implemented; what is left needs decisions or accounts that are the owner's,
+not the code's.
 
 | # | Work | Closes | Effort |
 | --- | --- | --- | --- |
-| 1 | `recover()` in timer callback + read/write loops; panic counter; end the affected game with `game.aborted` | R2, R11 | 1 d |
-| 2 | Reaper: idle sessions (24 h), empty rooms (30 min — also answers an open decision), release finished-game references | R3 | 1 d |
-| 3 | Rate limits: per-IP on `POST /v1/sessions` and `/v1/rooms/join`; per-session bucket on WS commands; return the already-specified `rate_limited` | R4 | 1–2 d |
-| 4 | Graceful drain: `/readyz`, refuse new matches/rooms, wait out in-flight games, then exit | R1 | 1 d |
-| 5 | `log/slog` JSON logs with ids + `/metrics` + a dashboard and 4 alerts | R7 | 2–3 d |
-| 6 | Crash reporting in the Flutter app | R7 | 0.5 d |
-| 7 | `X-Client-Version` + `minClientVersion` in `session.state` + an update screen in the app | R8 | 1 d |
-| 8 | Bundle id, release keystore, Play App Signing, portrait lock, `PrivacyInfo.xcprivacy` | §4 | 1 d |
+| ~~1~~ | ~~`recover()` in timer callback + read/write loops; panic counter; `game.aborted`~~ **done** | R2, R11 | — |
+| ~~2~~ | ~~Reaper: idle sessions (24 h), empty rooms (30 min)~~ **done** | R3 | — |
+| ~~3~~ | ~~Rate limits per IP and per session, returning `rate_limited`~~ **done** | R4 | — |
+| ~~4~~ | ~~Graceful drain: `/readyz`, refuse new activity, wait out live games~~ **done** | R1 | — |
+| 5 | `log/slog` JSON logs and `/metrics` **done**; dashboard and alerts still open (`deploy/README.md` lists what to alert on) | R7 | 1 d |
+| 6 | Crash reporting in the Flutter app — **not started**, needs a vendor account | R7 | 0.5 d |
+| ~~7~~ | ~~`X-Client-Build` + `MIN_CLIENT_BUILD` + an update screen~~ **done** | R8 | — |
+| 8 | Portrait lock and `PrivacyInfo.xcprivacy` **done**; bundle id, keystore and Play App Signing still open (owner's call) | §4 | 0.5 d |
 | 9 | Privacy policy + terms, hosted; store listings; App Privacy / Data Safety answers | §4 | 1–2 d |
-| 10 | **UGC compliance** — see §7 for the minimum design | R9 | 2–3 d |
-| 11 | Deploy: Dockerfile + Fly config + tag-triggered GitHub Action + documented rollback | — | 1 d |
-| 12 | Load harness `cmd/loadbot`: N virtual players over the real WS protocol; report p50/p99 command latency, memory per game, max concurrent games. Publish the capacity number | R6 | 2–3 d |
+| 10 | ~~UGC: blocklist, `game.report`, per-device hiding~~ **done**; the word list and `supportEmail` need the owner | R9 | — |
+| ~~11~~ | ~~Deploy: Dockerfile, GCE free-tier runbook, tag-triggered Action, rollback~~ **done** (`deploy/`) | — | — |
+| ~~12~~ | ~~Load harness `cmd/loadbot`~~ **done**; capacity number in R6 | R6 | — |
 
 ### P1 — First 90 days, or on the first scale signal
 
