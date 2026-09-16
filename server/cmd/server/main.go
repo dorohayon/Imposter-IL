@@ -4,12 +4,14 @@ package main
 import (
 	"cmp"
 	"context"
+	"crypto/subtle"
 	"errors"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -21,6 +23,8 @@ import (
 //
 //	PORT           listen port (default 8080)
 //	METRICS_ADDR   private /metrics listener (default 127.0.0.1:9090, "" to disable)
+//	METRICS_TOKEN  also serve /metrics on the public port behind this bearer
+//	               token, for hosts with no way to reach loopback (Cloud Run)
 //	TRUST_PROXY    "1" to read the client address from X-Forwarded-For
 //	RATE_LIMITS    "off" for load tests only; never in production
 //	DRAIN_TIMEOUT  how long to let games finish on SIGTERM (default 10m)
@@ -139,6 +143,19 @@ func newMuxFor(srv *api.Server) *http.ServeMux {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
+	// On a host with no shell (Cloud Run), loopback is unreachable, so the
+	// only way to read the counters is over the public port. Behind a bearer
+	// token, because they say how many games and players exist.
+	if token := os.Getenv("METRICS_TOKEN"); token != "" {
+		mux.HandleFunc("GET /metrics", func(w http.ResponseWriter, r *http.Request) {
+			got, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+			if subtle.ConstantTimeCompare([]byte(got), []byte(token)) != 1 {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			srv.Metrics(w, r)
+		})
+	}
 	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if srv.Draining() {

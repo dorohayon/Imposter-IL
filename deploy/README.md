@@ -7,6 +7,23 @@ The one property that decides the host: **the platform must not stop the
 process on its own schedule.** Games live in RAM and need a drain window, so
 Cloud Run, Lambda and App Runner are out. A plain VM is in.
 
+## Which of the three
+
+| | When | Cost |
+| --- | --- | --- |
+| `dev-tunnel.sh` | Testing on your own phones, today | **$0** |
+| `setup-cloudrun.sh` | Beta and soft launch — up without your laptop | **$0** within the free tier |
+| `setup-gcp.sh` | Once losing a game to a deploy is unacceptable | ~$2.90/month |
+
+Same container image in all three. Moving between them is a different deploy
+script, not a code change.
+
+Cloud Run's one real cost: it decides when to stop the instance and gives it
+about ten seconds, so a deploy or a scale-down ends the games in flight. They
+end *cleanly* — players see the server-error screen and no loss is recorded —
+but they end. The VM drains properly instead, which is the whole reason it is
+worth $2.90 later.
+
 ## Before you pay for anything: dev-tunnel.sh
 
 ```sh

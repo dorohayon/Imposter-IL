@@ -295,16 +295,43 @@ What Stage 0 must add to today's code:
 **Hosting.** The requirement that decides it: long-lived WebSockets on an instance whose
 *identity matters* (state is in RAM), with cheap TLS and a controllable drain.
 
-**The disqualifying property is not a vendor, it is a behaviour: the platform must not decide
-on its own when to stop your process.** Games live in RAM and need a ~10-minute drain, so any
-runtime that reclaims instances on its own schedule with a ~10-second SIGTERM grace is
-structurally wrong here — that rules out **Cloud Run, Lambda and App Runner**, and nothing else.
-Stage 1 adds a second requirement: **instances must be individually addressable**, because a room
-lives on exactly one of them. Cloud Run's cookie-based session affinity does not satisfy this for
-a mobile client opening a raw WebSocket with a Bearer header.
+**The property that matters is a behaviour, not a vendor: does the platform decide on its own
+when to stop the process?** Games live in RAM, so a runtime that reclaims instances on its own
+schedule with a ~10-second SIGTERM grace ends games in flight.
 
-Two good options, both fine:
+That is a **cost, not a disqualification**, and an earlier draft of this document was wrong to
+state it as one. With `game.aborted` implemented, an instance that disappears is handled
+correctly: players see the server-error screen and **no loss is recorded**. So the question is
+only how often it happens and whether that is tolerable at the current stage.
 
+| | Cloud Run | VM (Compute Engine) |
+| --- | --- | --- |
+| Cost at low traffic | **$0** — no external IPv4 to bill | ~$2.90/month for the address |
+| HTTPS | included, no domain needed | Caddy + a hostname |
+| Games survive a deploy | no — ~10 s grace | yes — full drain |
+| Instances | must be capped at 1 | 1, addressable at Stage 1 |
+| Operational surface | none | a box to patch |
+
+So: **Cloud Run for beta and soft launch**, where free and zero-maintenance beats losing the
+occasional game to a deploy. **Move to the VM when losing games to a deploy stops being
+acceptable** — same container image, a different deploy script, no code change.
+
+Two Cloud Run specifics that decide whether it works at all:
+
+- `--max-instances=1` is **mandatory**. Every session, room and game is in one process's memory
+  and matchmaking is a slice in it, so a second instance means two players searching at the same
+  moment never meet (R5). Cloud Run's cookie-based session affinity does not fix this for a
+  mobile client opening a raw WebSocket with a Bearer header — it is the same Stage 1 problem.
+- CPU throttling outside request handling would freeze the game's `time.AfterFunc` timers.
+  **Open WebSockets count as in-flight requests**, so CPU stays allocated whenever any player is
+  connected, which is the only time the timers matter.
+
+Lambda and App Runner remain unsuitable: neither holds long-lived WebSockets the way this needs.
+
+Three options, in the order they become right:
+
+- **Cloud Run** (`us-central1`), while the game is in beta: free within the Always Free tier,
+  no VM, no address to pay for, HTTPS and a hostname supplied. `deploy/setup-cloudrun.sh`.
 - **Fly.io**, single region (`fra`/`cdg`; ~60–80 ms RTT, gameplay-irrelevant for 15-second turns).
   Managed TLS, first-class WebSockets, rolling deploys from one config file, and `fly-replay`
   gives you Stage 1's room→instance routing as an HTTP header instead of a router you build.
@@ -315,8 +342,8 @@ Two good options, both fine:
   room-affinity router yourself when the Stage 1 trigger fires. Choose this if you already have
   GCP credits or familiarity, or want Tel Aviv latency.
 
-**Avoid:** Cloud Run / Lambda / App Runner (above). GKE and similar are not wrong, just a
-control-plane fee and a learning curve to run one stateful process.
+**Avoid:** Lambda and App Runner (above). GKE and similar are not wrong, just a control-plane
+fee and a learning curve to run one stateful process.
 
 #### Cost
 

@@ -49,3 +49,41 @@ func TestReadyzReportsDraining(t *testing.T) {
 		t.Fatalf("healthz while draining: %d", rec.Code)
 	}
 }
+
+// Cloud Run has no shell, so the loopback metrics listener is unreachable
+// there and the counters have to come over the public port — but only to
+// someone holding the token.
+func TestMetricsTokenGate(t *testing.T) {
+	t.Setenv("METRICS_TOKEN", "s3cret")
+	mux := newMuxFor(api.NewServer(time.Now, content.Policy(), content.Pick))
+
+	for _, tc := range []struct {
+		name, header string
+		want         int
+	}{
+		{"no header", "", http.StatusNotFound},
+		{"wrong token", "Bearer nope", http.StatusNotFound},
+		{"right token", "Bearer s3cret", http.StatusOK},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+			if tc.header != "" {
+				req.Header.Set("Authorization", tc.header)
+			}
+			rec := httptest.NewRecorder()
+			mux.ServeHTTP(rec, req)
+			if rec.Code != tc.want {
+				t.Fatalf("got %d, want %d", rec.Code, tc.want)
+			}
+		})
+	}
+}
+
+// Without the token there is no public /metrics at all.
+func TestMetricsNotPublicByDefault(t *testing.T) {
+	rec := httptest.NewRecorder()
+	newMux().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("got %d, want 404", rec.Code)
+	}
+}
