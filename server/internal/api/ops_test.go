@@ -227,7 +227,7 @@ func TestClientBuildGate(t *testing.T) {
 // mobile carrier's NAT.
 func TestUnusedSessionsAreReapedQuickly(t *testing.T) {
 	c := newClient(t)
-	token, _ := c.session("דור")
+	c.session("דור") // created, never connects a WebSocket
 
 	c.advance(UnusedSessionTTL - time.Minute)
 	c.srv.reap()
@@ -242,8 +242,8 @@ func TestUnusedSessionsAreReapedQuickly(t *testing.T) {
 	}
 
 	// One that has actually connected keeps the long TTL.
-	token, _ = c.session("נועה")
-	c.dial(token)
+	connected, _ := c.session("נועה")
+	c.dial(connected)
 	c.advance(UnusedSessionTTL + time.Minute)
 	c.srv.reap()
 	if len(c.srv.sessions) != 1 {

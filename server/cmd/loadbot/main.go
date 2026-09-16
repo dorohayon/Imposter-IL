@@ -168,7 +168,7 @@ func (b *bot) play(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("dial: %w", err)
 	}
-	defer ws.CloseNow()
+	defer func() { _ = ws.CloseNow() }()
 	ws.SetReadLimit(1 << 20)
 	b.ws, b.pending = ws, map[string]chan string{}
 	b.snapshots, b.reactedTo = make(chan json.RawMessage, 8), -1
@@ -187,7 +187,7 @@ func (b *bot) createSession(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	var out struct {
 		PlayerID     string `json:"playerId"`
 		SessionToken string `json:"sessionToken"`

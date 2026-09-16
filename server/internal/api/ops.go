@@ -162,7 +162,7 @@ func (s *Server) Metrics(w http.ResponseWriter, _ *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
 	p := func(name, typ, help string, value any) {
-		fmt.Fprintf(w, "# HELP %s %s\n# TYPE %s %s\n%s %v\n", name, help, name, typ, name, value)
+		_, _ = fmt.Fprintf(w, "# HELP %s %s\n# TYPE %s %s\n%s %v\n", name, help, name, typ, name, value)
 	}
 	p("imposter_games_active", "gauge", "Games in progress.", games)
 	p("imposter_rooms", "gauge", "Rooms held in memory, private and online.", rooms)
@@ -181,13 +181,13 @@ func (s *Server) Metrics(w http.ResponseWriter, _ *http.Request) {
 	p("imposter_publish_total", "counter", "Snapshot publishes.", m.publishCount)
 
 	// One series per error code, so a spike in any one is visible.
-	fmt.Fprintf(w, "# HELP imposter_commands_total Client commands by result.\n# TYPE imposter_commands_total counter\n")
+	_, _ = fmt.Fprintf(w, "# HELP imposter_commands_total Client commands by result.\n# TYPE imposter_commands_total counter\n")
 	for _, code := range slices.Sorted(maps.Keys(commands)) {
 		result := code
 		if result == "" {
 			result = "ok"
 		}
-		fmt.Fprintf(w, "imposter_commands_total{result=%q} %d\n", result, commands[code])
+		_, _ = fmt.Fprintf(w, "imposter_commands_total{result=%q} %d\n", result, commands[code])
 	}
 
 	var mem runtime.MemStats
