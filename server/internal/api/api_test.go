@@ -112,6 +112,7 @@ func TestSessionValidation(t *testing.T) {
 		{"no nickname", map[string]string{"avatarId": "avatar-f01-notebook"}, 422, "invalid_nickname"},
 		{"empty nickname", map[string]string{"nickname": "", "avatarId": "avatar-f01-notebook"}, 422, "invalid_nickname"},
 		{"one letter after trim", map[string]string{"nickname": "  ד  ", "avatarId": "avatar-f01-notebook"}, 422, "invalid_nickname"},
+		{"too long", map[string]string{"nickname": strings.Repeat("ד", MaxNicknameRunes+1), "avatarId": "avatar-f01-notebook"}, 422, "invalid_nickname"},
 		{"no avatar", map[string]string{"nickname": "דור"}, 422, "invalid_avatar"},
 		{"unknown avatar", map[string]string{"nickname": "דור", "avatarId": "contact-sheet"}, 422, "invalid_avatar"},
 	}
@@ -120,6 +121,11 @@ func TestSessionValidation(t *testing.T) {
 			status, body := c.do("POST", "/v1/sessions", "", tc.body)
 			c.wantError(tc.status, tc.code, status, body)
 		})
+	}
+
+	longest := strings.Repeat("ד", MaxNicknameRunes)
+	if status, _ := c.do("POST", "/v1/sessions", "", map[string]string{"nickname": longest, "avatarId": "avatar-f01-notebook"}); status != 201 {
+		t.Fatalf("the longest allowed nickname got %d, want 201", status)
 	}
 
 	token, id := c.session(" דו ")

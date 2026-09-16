@@ -20,14 +20,14 @@ const _commandErrors = {
   'content_unavailable': 'השרת עדיין לא מוכן להתחלת משחקים',
   'room_in_game': 'משחק כבר מתנהל בחדר',
   'wrong_phase': 'השלב הזה כבר הסתיים',
-  'not_your_turn': 'זה לא התור שלך',
+  'not_your_turn': 'זה לא התור שלכם',
   'hint_empty': 'צריך לכתוב רמז',
   'hint_not_one_word': 'הרמז חייב להיות מילה אחת',
   'hint_too_long': 'הרמז ארוך מדי',
   'hint_inappropriate': 'הרמז הזה לא מתאים. נסו מילה אחרת.',
   'hint_contains_secret': 'אסור לחשוף את המילה הסודית',
   'hint_duplicate': 'כבר השתמשו ברמז הזה',
-  'self_vote': 'אי אפשר להצביע לעצמך',
+  'self_vote': 'אי אפשר להצביע לעצמכם',
   'invalid_vote_target': 'אי אפשר להצביע לשחקן הזה',
   'network_error': 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
 };
@@ -196,7 +196,7 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     if (session.kicked) {
       _afterFrame(() {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('מנהל החדר הוציא אותך מהחדר')),
+          const SnackBar(content: Text('מנהל החדר הוציא אתכם מהחדר')),
         );
         session.consumeKicked();
         _goHome();
@@ -236,18 +236,21 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
       child: Stack(
         children: [
           body,
-          if (!session.connected) const _ReconnectingBanner(),
+          if (!session.connected)
+            _Reconnecting(onLeaveGame: inGame ? _leaveGame : null),
         ],
       ),
     );
   }
 }
 
-/// Screen 21: shown over the current screen while the connection is down.
-/// In a game it also shows which disconnect this is and how long the server
-/// holds the player's turn.
-class _ReconnectingBanner extends StatelessWidget {
-  const _ReconnectingBanner();
+/// Screens 21 and 26: shown over the current screen while the connection is
+/// down. While the server is holding the player's turn it takes the whole
+/// screen with the countdown; otherwise it is a banner on top.
+class _Reconnecting extends StatelessWidget {
+  const _Reconnecting({required this.onLeaveGame});
+
+  final VoidCallback? onLeaveGame;
 
   @override
   Widget build(BuildContext context) {
@@ -256,6 +259,65 @@ class _ReconnectingBanner extends StatelessWidget {
     final me = game?.player(session.playerId);
     final inPlay = game != null && game.phase != 'ended' && me != null;
     final deadline = session.reconnectDeadline;
+    if (inPlay && deadline != null) {
+      return Material(
+        color: AppColors.night,
+        child: GameScaffold(
+          title: 'מתחברים מחדש...',
+          timer: LiveCountdown(deadline: deadline),
+          showBack: false,
+          bottom: onLeaveGame == null
+              ? null
+              : PrimaryButton(
+                  label: 'יציאה מהמשחק',
+                  variant: ButtonVariant.danger,
+                  onPressed: onLeaveGame,
+                ),
+          child: Column(
+            children: [
+              const Illustration(
+                'assets/illustrations/connection-error.webp',
+                height: 220,
+              ),
+              Text(
+                'קטגוריה: ${game.category}',
+                style: const TextStyle(
+                  color: AppColors.turquoise,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'החיבור אבד בזמן התור שלכם. אנחנו מנסים לחזור למשחק במשך 30 שניות.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 17,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                // The server counts this drop once it notices it.
+                'ניתוק ${me.disconnects + 1} מתוך 3',
+                style: const TextStyle(
+                  color: AppColors.cream,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'אם תחזרו — נמשיך מהתור שלכם; בניתוק השלישי תוצאו מהמשחק.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.muted),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return Align(
       alignment: Alignment.topCenter,
       child: SafeArea(
@@ -268,19 +330,13 @@ class _ReconnectingBanner extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (inPlay && deadline != null)
-                  SizedBox.square(
-                    dimension: 54,
-                    child: LiveCountdown(deadline: deadline),
-                  )
-                else
-                  const SizedBox.square(
-                    dimension: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.cream,
-                    ),
+                const SizedBox.square(
+                  dimension: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.cream,
                   ),
+                ),
                 const SizedBox(width: 10),
                 Flexible(
                   child: Column(
@@ -327,13 +383,15 @@ class _Search extends StatelessWidget {
       _ => 'צריך לפחות 4 שחקנים כדי להתחיל',
     };
     return GameScaffold(
-      title: 'מחפשים שחקנים',
+      title: 'מרכיבים צוות חקירה',
       timer: search.deadline == null
           ? null
           : LiveCountdown(deadline: search.deadline!),
       onExit: onCancel,
-      bottom:
-          PrimaryButton(label: 'ביטול', secondary: true, onPressed: onCancel),
+      bottom: PrimaryButton(
+          label: 'ביטול חיפוש',
+          variant: ButtonVariant.danger,
+          onPressed: onCancel),
       child: Column(
         children: [
           const Illustration(
@@ -341,7 +399,7 @@ class _Search extends StatelessWidget {
             height: 180,
           ),
           Text(
-            '$count מתוך ${search.maxPlayers}',
+            'נמצאו $count מתוך ${search.maxPlayers}',
             style: Theme.of(context).textTheme.headlineLarge,
           ),
           const SizedBox(height: 6),
@@ -357,7 +415,7 @@ class _Search extends StatelessWidget {
             itemCount: search.maxPlayers,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
-              mainAxisExtent: 112,
+              mainAxisExtent: 126, // two lines fit under an empty slot
               mainAxisSpacing: 12,
               crossAxisSpacing: 8,
             ),
@@ -382,7 +440,7 @@ class _Search extends StatelessWidget {
                     ),
                     const SizedBox(height: 7),
                     const Text(
-                      'מחפשים...',
+                      'מחפשים שחקן...',
                       style: TextStyle(color: AppColors.muted, fontSize: 12),
                     ),
                   ],
@@ -475,7 +533,9 @@ class _Lobby extends StatelessWidget {
                           style: TextStyle(color: AppColors.muted),
                         ),
                         Text(
-                          room.code,
+                          // Grouped for reading aloud; copy and share
+                          // still use the plain code.
+                          '${room.code.substring(0, 3)} ${room.code.substring(3)}',
                           style: const TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w900,
@@ -515,7 +575,7 @@ class _Lobby extends StatelessWidget {
           if (transfer != null && host != null)
             _Notice(
               transfer.to == me
-                  ? 'הניהול עבר אליך'
+                  ? 'הניהול עבר אליכם'
                   : 'הניהול עבר ל${host.nickname}',
             ),
           const SizedBox(height: 12),
@@ -581,12 +641,36 @@ class _Lobby extends StatelessWidget {
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                spacing: 12,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('קטגוריות: $categoryNames'),
-                  Text('${room.hintSeconds} שניות לרמז'),
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    spacing: 12,
+                    children: [
+                      Text('קטגוריות: $categoryNames'),
+                      Text('${room.hintSeconds} שניות לרמז'),
+                    ],
+                  ),
+                  if (room.settingsLocked) ...[
+                    const SizedBox(height: 10),
+                    const Row(
+                      children: [
+                        Icon(Icons.lock_rounded,
+                            size: 16, color: AppColors.yellow),
+                        SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'ההגדרות נעולות מאז שהצטרפו שחקנים',
+                            style: TextStyle(
+                              color: AppColors.yellow,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -653,7 +737,7 @@ class _RoleReveal extends StatelessWidget {
     final confirmed = game.player(session.playerId)?.roleConfirmed ?? false;
     final impostor = game.isImpostor;
     return GameScaffold(
-      title: 'המשימה שלך',
+      title: 'המשימה שלכם',
       timer: _timer(game),
       onExit: onLeave,
       bottom: PrimaryButton(
@@ -683,7 +767,7 @@ class _RoleReveal extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            impostor ? 'אתה המתחזה' : 'המילה שלך',
+            impostor ? 'אתם המתחזה' : 'אתם אזרחים',
             style: Theme.of(context).textTheme.headlineLarge,
             textAlign: TextAlign.center,
           ),
@@ -695,28 +779,55 @@ class _RoleReveal extends StatelessWidget {
               color: impostor ? AppColors.purple : AppColors.cream,
               borderRadius: BorderRadius.circular(24),
             ),
-            child: Text(
-              impostor ? 'המילה נשארת סודית' : game.secretWord ?? '',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: impostor ? AppColors.cream : AppColors.night,
-                fontSize: 32,
-                fontWeight: FontWeight.w900,
-              ),
+            child: Column(
+              children: [
+                Text(
+                  'המילה הסודית',
+                  style: TextStyle(
+                    color: impostor
+                        ? AppColors.cream.withValues(alpha: 0.75)
+                        : AppColors.night.withValues(alpha: 0.55),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  impostor
+                      ? 'המילה לא מוצגת לכם — רק הקטגוריה.'
+                      : game.secretWord ?? '',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: impostor ? AppColors.cream : AppColors.night,
+                    fontSize: impostor ? 17 : 32,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            impostor
-                ? 'נסה להשתלב, להבין את הרמזים ולגלות את המילה.'
-                : 'תן רמז של מילה אחת בלי לחשוף את המילה הסודית.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 17,
-              height: 1.45,
+          for (final (index, tip) in (impostor
+                  ? const [
+                      'הקשיבו לרמזים של האחרים ונסו להשתלב.',
+                      'אם תיתפסו — תקבלו הזדמנות אחת לנחש את המילה ולנצח.',
+                    ]
+                  : const [
+                      'בתור שלכם כותבים רמז של מילה אחת שמתאים למילה הסודית.',
+                      'רמז ברור מדי יעזור למתחזה. רמז מרומז מדי יעורר חשד.',
+                    ])
+              .indexed)
+            Card(
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.yellow,
+                  foregroundColor: AppColors.night,
+                  child: Text('${index + 1}',
+                      style: const TextStyle(fontWeight: FontWeight.w900)),
+                ),
+                title: Text(tip),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -779,7 +890,7 @@ class _HintsState extends State<_Hints> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'המילה שלך',
+                'המילה שלכם',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
@@ -819,6 +930,7 @@ class _HintsState extends State<_Hints> {
       bottom: myTurn
           ? PrimaryButton(
               label: 'שליחת רמז',
+              variant: ButtonVariant.confirm,
               onPressed: _busy ? null : _submit,
             )
           : null,
@@ -838,13 +950,13 @@ class _HintsState extends State<_Hints> {
           const SizedBox(height: 4),
           if (myTurn) ...[
             Text(
-              'התור שלך',
+              'התור שלכם',
               style: Theme.of(context).textTheme.headlineLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 6),
             const Text(
-              'רמז אחד, מילה אחת',
+              'מילה אחת, עד 25 תווים',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.muted),
             ),
@@ -861,6 +973,14 @@ class _HintsState extends State<_Hints> {
               ),
               decoration:
                   InputDecoration(hintText: 'הרמז שלי', errorText: _error),
+              buildCounter: (context,
+                      {required currentLength,
+                      required isFocused,
+                      maxLength}) =>
+                  Text(
+                '$currentLength / $maxLength',
+                style: const TextStyle(color: AppColors.muted, fontSize: 13),
+              ),
               onChanged: (_) {
                 if (_error != null) setState(() => _error = null);
               },
@@ -1025,6 +1145,12 @@ class _VotingState extends State<_Voting> {
                       final h => h.missing ? '' : h.text,
                     },
                   ),
+                  note: id == me
+                      ? 'אי אפשר להצביע לעצמכם'
+                      : switch (game.previousVotes[id]) {
+                          null => null,
+                          final votes => '$votes קולות בסבב הקודם',
+                        },
                   enabled: id != me,
                   selected: selected == id,
                   onTap: () => setState(() => _selected = id),
@@ -1147,6 +1273,8 @@ class _Result extends StatelessWidget {
         : result.voteRounds.last.values)) {
       votes[target] = (votes[target] ?? 0) + 1;
     }
+    final mostVotes = votes.values.fold(0, (a, b) => a > b ? a : b);
+    final abstained = result.abstentions.isEmpty ? 0 : result.abstentions.last;
     final impostor = game.player(result.impostorId);
 
     return GameScaffold(
@@ -1193,7 +1321,10 @@ class _Result extends StatelessWidget {
           ),
           if (outcome != null) ...[
             const SizedBox(height: 10),
-            Chip(label: Text(outcome == 'win' ? 'ניצחת' : 'הפסדת')),
+            StatusBanner(
+              text: outcome == 'win' ? 'נרשם לכם ניצחון' : 'נרשם לכם הפסד',
+              positive: outcome == 'win',
+            ),
           ],
           const SizedBox(height: 20),
           Card(
@@ -1219,17 +1350,64 @@ class _Result extends StatelessWidget {
                   if (votes.isNotEmpty) ...[
                     const Divider(),
                     const ListTile(title: Text('חלוקת הקולות')),
-                    for (final entry in votes.entries)
-                      ListTile(
-                        dense: true,
-                        title: Text(game.player(entry.key)?.nickname ?? ''),
-                        trailing: Text('${entry.value}'),
+                    for (final entry
+                        in (votes.entries.toList()
+                          ..sort((a, b) => b.value.compareTo(a.value))))
+                      _VoteBar(
+                        name: game.player(entry.key)?.nickname ?? '',
+                        votes: entry.value,
+                        of: mostVotes,
                       ),
+                    if (abstained > 0)
+                      _VoteBar(name: 'נמנעו', votes: abstained, of: mostVotes),
                   ],
                 ],
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One row of the vote breakdown: a name, a bar and the number of votes.
+class _VoteBar extends StatelessWidget {
+  const _VoteBar({required this.name, required this.votes, required this.of});
+
+  final String name;
+  final int votes;
+  final int of;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = name == 'נמנעו';
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 92,
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: muted ? AppColors.muted : null),
+            ),
+          ),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: of == 0 ? 0 : votes / of,
+                minHeight: 10,
+                backgroundColor: AppColors.night,
+                color: muted ? AppColors.muted : AppColors.yellow,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text('$votes', style: const TextStyle(fontWeight: FontWeight.w900)),
         ],
       ),
     );
@@ -1244,8 +1422,9 @@ class _Removed extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _StateMessage(
-      title: 'הוצאת מהמשחק',
-      body: 'זה היה הניתוק השלישי ונרשם הפסד.',
+      title: 'יצאתם מהמשחק',
+      body: 'התנתקתם שלוש פעמים במשחק הזה, ולכן המשחק ממשיך בלעדיכם.',
+      banner: ('נרשם לכם הפסד', false),
       primary: ('חזרה למסך הבית', onHome),
     );
   }
@@ -1260,7 +1439,8 @@ class _ServerError extends StatelessWidget {
   Widget build(BuildContext context) {
     return _StateMessage(
       title: 'משהו השתבש',
-      body: 'המשחק הופסק עקב תקלה בחיבור לשרת. לא נרשם הפסד.',
+      body: 'המשחק הופסק בגלל תקלה בחיבור לשרת. זו לא אשמתכם.',
+      banner: ('לא נרשם לכם הפסד', true),
       primary: ('חזרה למסך הבית', onHome),
     );
   }
@@ -1271,12 +1451,16 @@ class _StateMessage extends StatelessWidget {
     required this.title,
     required this.body,
     required this.primary,
+    this.banner,
     this.secondary,
     this.image = 'assets/illustrations/connection-error.webp',
   });
 
   final String title;
   final String body;
+
+  /// An optional status line under the text: (text, positive).
+  final (String, bool)? banner;
   final String image;
   final (String, VoidCallback) primary;
   final (String, VoidCallback)? secondary;
@@ -1315,6 +1499,10 @@ class _StateMessage extends StatelessWidget {
               height: 1.45,
             ),
           ),
+          if (banner case final shown?) ...[
+            const SizedBox(height: 16),
+            StatusBanner(text: shown.$1, positive: shown.$2),
+          ],
         ],
       ),
     );

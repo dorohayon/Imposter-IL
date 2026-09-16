@@ -3,66 +3,136 @@ import 'package:flutter/material.dart';
 import '../models/player.dart';
 import '../theme/app_theme.dart';
 
-class PrimaryButton extends StatelessWidget {
+/// The button styles of the design system (design/claude/design-system.md).
+enum ButtonVariant { primary, secondary, confirm, danger }
+
+class PrimaryButton extends StatefulWidget {
   const PrimaryButton({
     required this.label,
     required this.onPressed,
-    this.secondary = false,
+    this.variant = ButtonVariant.primary,
     super.key,
   });
 
   final String label;
   final VoidCallback? onPressed;
-  final bool secondary;
+  final ButtonVariant variant;
+
+  @override
+  State<PrimaryButton> createState() => _PrimaryButtonState();
+}
+
+class _PrimaryButtonState extends State<PrimaryButton> {
+  static const _sink = 6.0; // how far a filled button drops when pressed
+  static const _shadow = 8.0;
+
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed != value) setState(() => _pressed = value);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 58,
-      child: secondary
-          ? OutlinedButton(
-              onPressed: onPressed,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.cream,
-                side: const BorderSide(color: AppColors.yellow, width: 2),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+    final enabled = widget.onPressed != null;
+    // Filled buttons sit on a solid shadow and sink into it when pressed;
+    // outlined ones have no shadow to sink into.
+    final (background, foreground, shadow, border) = switch (widget.variant) {
+      ButtonVariant.primary => (
+          _pressed ? const Color(0xFFF0B400) : AppColors.yellow,
+          AppColors.night,
+          const Color(0xFFD9A900),
+          null,
+        ),
+      ButtonVariant.confirm => (
+          _pressed ? const Color(0xFF22B3A1) : AppColors.turquoise,
+          const Color(0xFF0E2B2A),
+          const Color(0xFF17A395),
+          null,
+        ),
+      ButtonVariant.secondary => (
+          Colors.transparent,
+          AppColors.turquoise,
+          null,
+          AppColors.turquoise,
+        ),
+      ButtonVariant.danger => (
+          Colors.transparent,
+          const Color(0xFFFF9B9B),
+          null,
+          AppColors.coral.withValues(alpha: 0.7),
+        ),
+    };
+    final drop = shadow != null && _pressed ? _sink : 0.0;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: widget.label,
+      child: ExcludeSemantics(
+        child: GestureDetector(
+          onTapDown: enabled ? (_) => _setPressed(true) : null,
+          onTapUp: enabled ? (_) => _setPressed(false) : null,
+          onTapCancel: enabled ? () => _setPressed(false) : null,
+          onTap: widget.onPressed,
+          child: SizedBox(
+            width: double.infinity,
+            height: 58 + (shadow == null ? 0 : _shadow),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 70),
+              height: 58,
+              margin: EdgeInsets.only(top: drop),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: enabled
+                    ? background
+                    : (shadow == null
+                        ? Colors.transparent
+                        : const Color(0xFF3A3850)),
+                borderRadius: BorderRadius.circular(18),
+                border: border == null
+                    ? null
+                    : Border.all(
+                        color: enabled ? border : AppColors.muted,
+                        width: 2,
+                      ),
+                boxShadow: shadow == null || !enabled
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: shadow,
+                          offset: Offset(0, _shadow - drop),
+                        ),
+                      ],
+              ),
+              child: Text(
+                widget.label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  // Readable disabled text (WCAG AA on the disabled background).
+                  color: enabled ? foreground : AppColors.muted,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
-              child: Text(label,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w800)),
-            )
-          : FilledButton(
-              onPressed: onPressed,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.yellow,
-                foregroundColor: AppColors.night,
-                disabledBackgroundColor: const Color(0xFF3A3850),
-                // Readable disabled text (WCAG AA on the disabled background).
-                disabledForegroundColor: AppColors.muted,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
-              child: Text(label,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w900)),
             ),
+          ),
+        ),
+      ),
     );
   }
 }
 
 class TimerBadge extends StatelessWidget {
-  const TimerBadge(
-      {required this.seconds, this.color = AppColors.yellow, super.key});
+  const TimerBadge({required this.seconds, this.color, super.key});
 
   final int seconds;
-  final Color color;
+
+  /// Defaults to yellow, and to coral in the last seconds.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final ring = color ?? (seconds <= 5 ? AppColors.coral : AppColors.yellow);
     return Semantics(
       label: '$seconds שניות',
       child: Container(
@@ -71,20 +141,55 @@ class TimerBadge extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: color,
-          boxShadow: const [
-            BoxShadow(
-                color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
-          ],
+          color: ring.withValues(alpha: 0.14),
+          border: Border.all(color: ring, width: 4),
         ),
         child: Text(
           '$seconds',
-          style: const TextStyle(
-            color: AppColors.night,
+          style: TextStyle(
+            color: ring,
             fontSize: 20,
             fontWeight: FontWeight.w900,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A short status line with an icon, in one of the system banner colors.
+class StatusBanner extends StatelessWidget {
+  const StatusBanner({required this.text, required this.positive, super.key});
+
+  final String text;
+  final bool positive;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = positive ? AppColors.turquoise : AppColors.coral;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            positive ? Icons.check_circle_rounded : Icons.error_rounded,
+            color: color,
+            size: 20,
+          ),
+          const SizedBox(width: 9),
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(color: color, fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -213,11 +318,15 @@ class PlayerCard extends StatelessWidget {
     required this.player,
     this.selected = false,
     this.enabled = true,
+    this.note,
     this.onTap,
     super.key,
   });
 
   final Player player;
+
+  /// An extra line under the hint, such as why a row cannot be picked.
+  final String? note;
   final bool selected;
   final bool enabled;
   final VoidCallback? onTap;
@@ -251,7 +360,19 @@ class PlayerCard extends StatelessWidget {
                         player.hint!.isEmpty
                             ? 'לא נשלח רמז'
                             : 'הרמז: ${player.hint}',
-                        style: const TextStyle(color: AppColors.muted),
+                        style: TextStyle(
+                          color: player.hint!.isEmpty
+                              ? AppColors.coral
+                              : AppColors.muted,
+                        ),
+                      ),
+                    if (note != null)
+                      Text(
+                        note!,
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 13,
+                        ),
                       ),
                   ],
                 ),

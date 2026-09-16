@@ -32,7 +32,7 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             icon: const Icon(Icons.edit_rounded),
-            label: const Text('עריכת פרטים'),
+            label: const Text('עריכת כינוי ואווטאר'),
           ),
           const SizedBox(height: 24),
           Row(

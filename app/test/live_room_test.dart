@@ -71,7 +71,7 @@ void main() {
       'hintSeconds': 10,
       'categoryIds': ['food', 'animals', 'sports', 'professions', 'places'],
     });
-    expect(find.text('482913'), findsOneWidget);
+    expect(find.text('482 913'), findsOneWidget); // grouped in the lobby
     expect(find.text('מנהל החדר · אני'), findsOneWidget);
     expect(isEnabled(tester, 'התחלת משחק'), isFalse);
 
@@ -120,9 +120,19 @@ void main() {
         player('p_me', 'דור'),
       ]),
     };
-    await tester.enterText(find.byType(TextField), '482913');
+    // The code can be typed on the screen's own keypad.
+    await tester.enterText(find.byType(TextField), '');
+    for (final digit in ['4', '8', '2', '9', '1', '9']) {
+      await tapText(tester, digit);
+    }
+    expect(isEnabled(tester, 'הצטרפות'), isTrue);
+    await tapText(tester, 'מחיקה');
+    expect(isEnabled(tester, 'הצטרפות'), isFalse); // five digits is not a code
+    await tapText(tester, '3');
+    await tapText(tester, '7'); // a seventh digit is ignored
     await tester.pump(); // typing clears the error and restores the label
     await tapLive(tester, 'הצטרפות');
+    expect(api.requests.last.$3, {'code': '482913'});
     expect(find.text('החדר של נועה'), findsOneWidget);
     expect(isEnabled(tester, 'רק מנהל החדר יכול להתחיל'), isFalse);
     expect(find.byIcon(Icons.person_remove_rounded), findsNothing);
@@ -142,7 +152,7 @@ void main() {
     });
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
-    expect(find.text('המילה שלך'), findsOneWidget);
+    expect(find.text('המילה הסודית'), findsOneWidget);
     expect(find.text('פיל'), findsOneWidget);
     await tapLive(tester, 'הבנתי');
     expect(channel.commands('game.confirmRole').single['payload'],
@@ -152,7 +162,7 @@ void main() {
     channel.snapshot(
         'game.state', 'game', gameJson(phase: 'hints', turn: 'p_me'));
     await settle(tester);
-    expect(find.text('התור שלך'), findsOneWidget);
+    expect(find.text('התור שלכם'), findsOneWidget);
     channel.errors['game.submitHint'] = 'hint_contains_secret';
     await tester.enterText(find.byType(TextField), 'הפיל');
     await tapLive(tester, 'שליחת רמז');
@@ -218,20 +228,26 @@ void main() {
           'impostorPlayerId': 'p_3',
           'secretWord': 'פיל',
           'voteRounds': [
-            {'p_me': 'p_3', 'p_2': 'p_3', 'p_4': 'p_3', 'p_3': 'p_2'},
+            {'p_me': 'p_3', 'p_2': 'p_3', 'p_4': 'p_3'},
           ],
+          'abstentions': [1],
           'outcomes': {'p_me': 'loss', 'p_3': 'win'},
         }));
     await settle(tester);
     expect(find.text('המתחזה ניצח!'), findsOneWidget);
     expect(find.text('המתחזה נתפס אבל ניחש את המילה'), findsOneWidget);
-    expect(find.text('הפסדת'), findsOneWidget);
+    expect(find.text('נרשם לכם הפסד'), findsOneWidget);
+    // The vote breakdown: three votes for the impostor and one abstention.
+    expect(find.text('חלוקת הקולות'), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
+    expect(find.text('נמנעו'), findsOneWidget);
+    expect(find.text('1'), findsOneWidget);
     await tapLive(tester, 'משחק נוסף');
     expect(channel.commands('game.playAgain'), hasLength(1));
     channel.event('session.state',
         {'playerId': 'p_me', 'activity': 'room', 'roomId': 'r_1'});
     await settle(tester);
-    expect(find.text('482913'), findsOneWidget);
+    expect(find.text('482 913'), findsOneWidget); // grouped in the lobby
   });
 
   testWidgets('the impostor never gets a word button', (tester) async {
@@ -282,7 +298,7 @@ void main() {
         .event('session.state', {'playerId': 'p_me', 'activity': 'none'});
     await settle(tester);
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.text('מנהל החדר הוציא אותך מהחדר'), findsOneWidget);
+    expect(find.text('מנהל החדר הוציא אתכם מהחדר'), findsOneWidget);
 
     await openCreatedRoom(tester, api);
     api.channel.event('session.state', {
@@ -301,7 +317,7 @@ void main() {
         ]),
         version: 100);
     await settle(tester);
-    expect(find.text('זה היה הניתוק השלישי ונרשם הפסד.'), findsOneWidget);
+    expect(find.text('נרשם לכם הפסד'), findsOneWidget);
     await tapLive(tester, 'חזרה למסך הבית');
     expect(api.channel.commands('game.leave'), hasLength(1));
     expect(find.byType(HomeScreen), findsOneWidget);
@@ -343,8 +359,7 @@ void main() {
     api.connectError = null;
     await settle(tester);
 
-    expect(find.text('המשחק הופסק עקב תקלה בחיבור לשרת. לא נרשם הפסד.'),
-        findsOneWidget);
+    expect(find.text('לא נרשם לכם הפסד'), findsOneWidget);
     await tapLive(tester, 'חזרה למסך הבית');
     expect(find.byType(HomeScreen), findsOneWidget);
     final prefs = await SharedPreferences.getInstance();
@@ -370,7 +385,7 @@ void main() {
     api.channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
     expect(find.byType(LiveRoomScreen), findsOneWidget);
-    expect(find.text('המשימה שלך'), findsOneWidget);
+    expect(find.text('המשימה שלכם'), findsOneWidget);
   });
 
   testWidgets('leaving waits for the server and stays put if it fails',
@@ -410,10 +425,21 @@ void main() {
     await tapLive(tester, 'נועה');
     expect(isEnabled(tester, 'אישור הצבעה'), isTrue);
 
-    api.channel.snapshot('game.state', 'game',
-        gameJson(phase: 'runoff_voting', candidates: ['p_2', 'p_3']));
+    // My own row is shown, and says why it cannot be picked.
+    expect(find.text('אי אפשר להצביע לעצמכם'), findsOneWidget);
+
+    api.channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(
+          phase: 'runoff_voting',
+          candidates: ['p_2', 'p_3'],
+          previousVotes: {'p_2': 2, 'p_3': 2},
+        ));
     await settle(tester);
     expect(find.text('תיקו נוסף מעניק ניצחון למתחזה'), findsOneWidget);
     expect(isEnabled(tester, 'אישור הצבעה'), isFalse);
+    // The tie that led here.
+    expect(find.text('2 קולות בסבב הקודם'), findsNWidgets(2));
   });
 }

@@ -22,9 +22,12 @@ import (
 	"github.com/dorohayon/Imposter-IL/server/internal/room"
 )
 
-// MinNicknameRunes is the approved minimum after trimming. The maximum length
-// and allowed characters are still open decisions.
-const MinNicknameRunes = 2
+// MinNicknameRunes and MaxNicknameRunes are the approved bounds after
+// trimming (docs/decisions.md). Allowed characters are still an open decision.
+const (
+	MinNicknameRunes = 2
+	MaxNicknameRunes = 18
+)
 
 const maxBodyBytes = 64 << 10
 
@@ -145,7 +148,7 @@ type apiError struct {
 var (
 	errInvalidMessage  = apiError{http.StatusBadRequest, "invalid_message", "invalid request body"}
 	errSessionNotFound = apiError{http.StatusUnauthorized, "session_not_found", "session not found"}
-	errInvalidNickname = apiError{http.StatusUnprocessableEntity, "invalid_nickname", "nickname must have at least 2 characters"}
+	errInvalidNickname = apiError{http.StatusUnprocessableEntity, "invalid_nickname", "nickname must have 2 to 18 characters"}
 	errInvalidAvatar   = apiError{http.StatusUnprocessableEntity, "invalid_avatar", "unknown avatar"}
 	errInvalidSettings = apiError{http.StatusUnprocessableEntity, "invalid_room_settings", "invalid room settings"}
 	errInvalidRoomCode = apiError{http.StatusUnprocessableEntity, "invalid_room_code", "room code must be six digits"}
@@ -205,7 +208,8 @@ func (s *Server) withSession(next func(http.ResponseWriter, []byte, *session)) h
 
 func validNickname(nickname string) (string, bool) {
 	nickname = strings.TrimSpace(nickname)
-	return nickname, utf8.RuneCountInString(nickname) >= MinNicknameRunes
+	runes := utf8.RuneCountInString(nickname)
+	return nickname, runes >= MinNicknameRunes && runes <= MaxNicknameRunes
 }
 
 type profileRequest struct {

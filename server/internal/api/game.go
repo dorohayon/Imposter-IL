@@ -190,6 +190,7 @@ type resultJSON struct {
 	ImpostorPlayerID string                  `json:"impostorPlayerId"`
 	SecretWord       string                  `json:"secretWord"`
 	VoteRounds       []map[string]string     `json:"voteRounds"`
+	Abstentions      []int                   `json:"abstentions"`
 	Outcomes         map[string]game.Outcome `json:"outcomes"`
 }
 
@@ -205,6 +206,7 @@ type gameJSON struct {
 	AwaitingReconnect   bool             `json:"awaitingReconnect"`
 	Hints               []hintJSON       `json:"hints"`
 	VoteCandidates      []string         `json:"voteCandidates"`
+	PreviousVotes       map[string]int   `json:"previousVotes,omitempty"`
 	MyVote              *string          `json:"myVote"`
 	Result              *resultJSON      `json:"result"`
 }
@@ -229,6 +231,7 @@ func (s *Server) gameJSON(gameID string, v game.View) gameJSON {
 		AwaitingReconnect:   v.Reconnecting,
 		Hints:               []hintJSON{},
 		VoteCandidates:      append([]string{}, v.Candidates...),
+		PreviousVotes:       v.PreviousVotes,
 		MyVote:              optional(v.MyVote),
 	}
 	if !v.Deadline.IsZero() {
@@ -256,6 +259,7 @@ func (s *Server) gameJSON(gameID string, v game.View) gameJSON {
 			ImpostorPlayerID: r.ImpostorID,
 			SecretWord:       r.SecretWord,
 			VoteRounds:       r.VoteRounds,
+			Abstentions:      r.Abstentions,
 			Outcomes:         r.Outcomes,
 		}
 	}

@@ -150,6 +150,7 @@ class GameResult {
     required this.impostorId,
     required this.secretWord,
     required this.voteRounds,
+    required this.abstentions,
     required this.outcomes,
   });
 
@@ -158,6 +159,7 @@ class GameResult {
         reason: json['reason'] as String,
         impostorId: json['impostorPlayerId'] as String,
         secretWord: json['secretWord'] as String,
+        abstentions: (json['abstentions'] as List? ?? const []).cast<int>(),
         voteRounds: (json['voteRounds'] as List? ?? const [])
             .map((round) => (round as Map).cast<String, String>())
             .toList(),
@@ -169,6 +171,9 @@ class GameResult {
   final String impostorId;
   final String secretWord;
   final List<Map<String, String>> voteRounds;
+
+  /// Active players who did not vote, per round.
+  final List<int> abstentions;
   final Map<String, String> outcomes;
 }
 
@@ -185,6 +190,7 @@ class GameView {
     required this.awaitingReconnect,
     required this.hints,
     required this.voteCandidates,
+    required this.previousVotes,
     required this.myVote,
     required this.result,
   });
@@ -204,6 +210,10 @@ class GameView {
       hints: _list(json['hints']).map(HintView.fromJson).toList(),
       voteCandidates:
           (json['voteCandidates'] as List? ?? const []).cast<String>(),
+      previousVotes: {
+        for (final e in (json['previousVotes'] as Map? ?? const {}).entries)
+          e.key as String: e.value as int,
+      },
       myVote: json['myVote'] as String?,
       result: result == null ? null : GameResult.fromJson(result),
     );
@@ -220,6 +230,9 @@ class GameView {
   final bool awaitingReconnect;
   final List<HintView> hints;
   final List<String> voteCandidates;
+
+  /// Votes per candidate in the round before a runoff.
+  final Map<String, int> previousVotes;
   final String? myVote;
   final GameResult? result;
 

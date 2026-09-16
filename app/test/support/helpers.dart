@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/main.dart';
 import 'package:imposter_il/screens/home_screen.dart';
+import 'package:imposter_il/widgets/game_ui.dart';
 import 'package:imposter_il/state/game_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -67,6 +68,10 @@ Future<void> open(WidgetTester tester, Widget screen) async {
 }
 
 bool isEnabled(WidgetTester tester, String label) {
+  final primary = find.widgetWithText(PrimaryButton, label);
+  if (primary.evaluate().isNotEmpty) {
+    return tester.widget<PrimaryButton>(primary.first).onPressed != null;
+  }
   final button = find.ancestor(
     of: find.text(label),
     matching: find.byWidgetPredicate((widget) => widget is ButtonStyleButton),

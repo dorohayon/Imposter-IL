@@ -257,6 +257,7 @@
   "awaitingReconnect": false,
   "hints": [ { "playerId": "p_3", "text": "חדק", "missing": false, "reactions": { "…": 3 } } ],
   "voteCandidates": [],
+  "previousVotes": { "p_2": 2, "p_4": 2 },
   "myVote": null,
   "result": null
 }
@@ -266,6 +267,7 @@
 - `secretWord` חסר אצל המתחזה עד `ended`.
 - `players` לפי סדר התורות. `status`: `active` | `left` | `removed`.
 - `myVote` הוא הקול של השחקן עצמו בלבד. קולות אחרים נחשפים רק ב־`result`.
+- `previousVotes` מופיע בהצבעה חוזרת בלבד, ומראה כמה קולות קיבל כל מועמד בסבב הקודם.
 
 `result` בסיום:
 
@@ -276,9 +278,12 @@
   "impostorPlayerId": "p_4",
   "secretWord": "…",
   "voteRounds": [ { "p_1": "p_4", "p_2": "p_4" } ],
+  "abstentions": [ 1 ],
   "outcomes": { "p_1": "win", "p_4": "loss" }
 }
 ```
+
+`abstentions` מונה לכל סבב כמה שחקנים פעילים לא הצביעו, כולל מי שהיה מנותק בסיום ההצבעה.
 
 `winner`: `citizens` | `impostor` | `null` (עבור `not_enough_players`). ערכי `reason` ב־[`architecture.md`](architecture.md#משחק-internalgame--ממומש).
 

@@ -144,7 +144,10 @@ type Result struct {
 	ImpostorID string
 	SecretWord string
 	VoteRounds []map[string]string // counted votes per round: voter -> target
-	Outcomes   map[string]Outcome
+	// Abstentions counts the active players whose vote was not counted in
+	// each round, whether they skipped it or were disconnected at the tally.
+	Abstentions []int
+	Outcomes    map[string]Outcome
 }
 
 type PlayerView struct {
@@ -169,8 +172,11 @@ type View struct {
 	Reconnecting bool // current turn is waiting for its player to reconnect
 	Hints        []Hint
 	Candidates   []string
-	MyVote       string
-	Result       *Result
+	// PreviousVotes counts the last round's votes per candidate. It is set
+	// during a runoff, so players see who tied.
+	PreviousVotes map[string]int
+	MyVote        string
+	Result        *Result
 }
 
 type player struct {
@@ -198,9 +204,10 @@ type Game struct {
 	reconnecting bool
 	hints        []Hint
 
-	candidates []string
-	votes      map[string]string
-	voteRounds []map[string]string
+	candidates  []string
+	votes       map[string]string
+	voteRounds  []map[string]string
+	abstentions []int
 
 	result *Result
 }
@@ -516,6 +523,12 @@ func (g *Game) View(playerID string) (View, error) {
 	if g.phase == PhaseHints {
 		v.CurrentTurn = g.order[g.turn]
 	}
+	if g.phase == PhaseRunoffVoting && len(g.voteRounds) > 0 {
+		v.PreviousVotes = map[string]int{}
+		for _, target := range g.voteRounds[len(g.voteRounds)-1] {
+			v.PreviousVotes[target]++
+		}
+	}
 	for _, id := range g.order {
 		p := g.players[id]
 		v.Players = append(v.Players, PlayerView{ID: id, Status: p.status, Connected: p.connected, Disconnects: p.disconnects, RoleConfirmed: p.confirmed})
@@ -612,6 +625,7 @@ func (g *Game) tally(at time.Time) {
 		}
 	}
 	g.voteRounds = append(g.voteRounds, counted)
+	g.abstentions = append(g.abstentions, len(g.activeIDs())-len(counted))
 
 	var top []string
 	most := 0
@@ -673,6 +687,7 @@ func cloneResult(result *Result) *Result {
 	clone := *result
 	clone.Outcomes = maps.Clone(result.Outcomes)
 	clone.VoteRounds = slices.Clone(result.VoteRounds)
+	clone.Abstentions = slices.Clone(result.Abstentions)
 	for i := range clone.VoteRounds {
 		clone.VoteRounds[i] = maps.Clone(clone.VoteRounds[i])
 	}
@@ -690,12 +705,13 @@ func (g *Game) end(winner Team, reason EndReason) {
 		}
 	}
 	g.result = &Result{
-		Winner:     winner,
-		Reason:     reason,
-		ImpostorID: g.impostor,
-		SecretWord: g.secret,
-		VoteRounds: g.voteRounds,
-		Outcomes:   outcomes,
+		Winner:      winner,
+		Reason:      reason,
+		ImpostorID:  g.impostor,
+		SecretWord:  g.secret,
+		VoteRounds:  g.voteRounds,
+		Abstentions: g.abstentions,
+		Outcomes:    outcomes,
 	}
 	g.reconnecting = false
 	g.setPhase(PhaseEnded, time.Time{}, 0)

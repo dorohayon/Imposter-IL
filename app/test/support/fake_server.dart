@@ -161,6 +161,7 @@ Map<String, dynamic> gameJson({
   String? turn,
   List<Map<String, dynamic>> hints = const [],
   List<String> candidates = const [],
+  Map<String, int> previousVotes = const {},
   String? myVote,
   Map<String, dynamic>? result,
   List<Map<String, dynamic>>? players,
@@ -183,6 +184,7 @@ Map<String, dynamic> gameJson({
       'awaitingReconnect': false,
       'hints': hints,
       'voteCandidates': candidates,
+      'previousVotes': previousVotes,
       'myVote': myVote,
       'result': result,
     };

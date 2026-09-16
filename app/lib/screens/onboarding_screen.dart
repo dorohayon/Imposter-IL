@@ -15,8 +15,8 @@ class OnboardingScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: ProfileForm(
-          title: 'בואו נכיר',
-          subtitle: 'בחרו כינוי ודמות בלשית',
+          title: 'מי אתם במשחק?',
+          subtitle: 'בוחרים כינוי ואווטאר ומתחילים. בלי הרשמה.',
           submitLabel: 'ממשיכים',
           busyLabel: 'מתחברים...',
           onSubmit: (nickname, avatarId) async {
@@ -55,6 +55,9 @@ class ProfileEditScreen extends StatelessWidget {
     );
   }
 }
+
+/// The server's nickname bounds (docs/decisions.md).
+const maxNicknameLength = 18;
 
 /// A nickname field and the 12 avatars. [onSubmit] may throw [ApiException].
 class ProfileForm extends StatefulWidget {
@@ -149,7 +152,7 @@ class _ProfileFormState extends State<ProfileForm> {
       const SizedBox(height: 24),
       TextField(
         controller: _nickname,
-        maxLength: 18,
+        maxLength: maxNicknameLength,
         textAlign: TextAlign.start,
         style: const TextStyle(
           color: AppColors.night,
@@ -157,7 +160,8 @@ class _ProfileFormState extends State<ProfileForm> {
           fontWeight: FontWeight.w700,
         ),
         decoration: InputDecoration(
-          hintText: 'הכינוי שלי',
+          hintText: 'הכינוי שלך',
+          helperText: 'בין 2 ל־$maxNicknameLength תווים',
           errorText: _error,
           prefixIcon: const Icon(Icons.edit_rounded, color: AppColors.night),
         ),

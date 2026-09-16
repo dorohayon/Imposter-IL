@@ -402,6 +402,23 @@ func TestAllRemainingCitizensWinEvenWithWrongVotes(t *testing.T) {
 	if len(g.result.VoteRounds) != 1 || g.result.VoteRounds[0][c[0]] != c[1] {
 		t.Fatalf("vote breakdown = %v", g.result.VoteRounds)
 	}
+	if g.result.Abstentions[0] != 0 { // everyone voted
+		t.Fatalf("abstentions = %v, want 0", g.result.Abstentions)
+	}
+}
+
+func TestAbstentionsCountActivePlayersWhoDidNotVote(t *testing.T) {
+	g := newGame(t, 4)
+	now := toVoting(t, g)
+	c := citizens(g)
+	must(t, g.Vote(c[0], g.impostor, now))
+	must(t, g.Disconnect(c[1], now)) // a disconnected vote would not count either
+	g.Tick(now.Add(20 * time.Second))
+	must(t, g.SubmitGuess(g.impostor, "wrong", now.Add(21*time.Second)))
+	// Four active players, one counted vote.
+	if got := g.result.Abstentions; len(got) != 1 || got[0] != 3 {
+		t.Fatalf("abstentions = %v, want [3]", got)
+	}
 }
 
 func TestTieGoesToRunoffAmongTiedOnly(t *testing.T) {
@@ -421,6 +438,14 @@ func TestTieGoesToRunoffAmongTiedOnly(t *testing.T) {
 	}
 	if v, _ := g.View(c[0]); v.MyVote != "" {
 		t.Fatal("runoff starts with fresh votes")
+	}
+	// The runoff shows how the tie happened.
+	if v, _ := g.View(c[0]); v.PreviousVotes[c[1]] != 1 ||
+		v.PreviousVotes[g.impostor] != 1 || len(v.PreviousVotes) != 2 {
+		t.Fatalf("previous votes = %v, want one each for the tied players", v.PreviousVotes)
+	}
+	if v, _ := g.View(c[0]); v.Phase == PhaseVoting {
+		t.Fatal("phase should be runoff")
 	}
 	wantErr(t, g.Vote(c[0], c[2], now), ErrInvalidVoteTarget)
 

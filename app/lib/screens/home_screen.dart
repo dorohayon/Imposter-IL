@@ -64,7 +64,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'מוצאים את החשוד לפני שהוא מגלה את המילה',
+              'משחק חקירה חברתי בעברית',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.muted, fontSize: 17),
             ),
@@ -76,7 +76,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 12),
             PrimaryButton(
               label: 'משחק עם חברים',
-              secondary: true,
+              variant: ButtonVariant.secondary,
               onPressed: () => _open(context, const FriendsScreen()),
             ),
             const SizedBox(height: 12),

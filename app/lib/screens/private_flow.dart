@@ -38,7 +38,7 @@ class FriendsScreen extends StatelessWidget {
           const SizedBox(height: 12),
           PrimaryButton(
             label: 'הצטרפות לחדר',
-            secondary: true,
+            variant: ButtonVariant.secondary,
             onPressed: () => _open(context, const JoinRoomScreen()),
           ),
         ],
@@ -123,17 +123,22 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
             'assets/illustrations/private-room.webp',
             height: 185,
           ),
-          Text(
-            'מספר שחקנים מרבי: $players',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          const Text(
+            'מספר שחקנים מרבי',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
           ),
-          Slider(
-            value: players.toDouble(),
-            min: 4,
-            max: 8,
-            divisions: 4,
-            label: '$players',
-            onChanged: (value) => setState(() => players = value.round()),
+          const SizedBox(height: 8),
+          SegmentedButton<int>(
+            segments: const [
+              ButtonSegment(value: 4, label: Text('4')),
+              ButtonSegment(value: 5, label: Text('5')),
+              ButtonSegment(value: 6, label: Text('6')),
+              ButtonSegment(value: 7, label: Text('7')),
+              ButtonSegment(value: 8, label: Text('8')),
+            ],
+            selected: {players},
+            onSelectionChanged: (value) =>
+                setState(() => players = value.first),
           ),
           const SizedBox(height: 18),
           const Text(
@@ -248,7 +253,7 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
             _error == null
                 ? 'assets/illustrations/private-room.webp'
                 : 'assets/illustrations/connection-error.webp',
-            height: 230,
+            height: 150,
           ),
           const Text(
             'הכניסו את קוד החדר שקיבלתם',
@@ -273,8 +278,64 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
               if (ready) _join();
             },
           ),
+          const SizedBox(height: 6),
+          _Keypad(
+            onDigit: (digit) {
+              if (code.text.length < 6) {
+                setState(() {
+                  _error = null;
+                  code.text += digit;
+                });
+              }
+            },
+            onDelete: code.text.isEmpty
+                ? null
+                : () => setState(() {
+                      _error = null;
+                      code.text = code.text.substring(0, code.text.length - 1);
+                    }),
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// Digits for the six-digit room code, so the code can be typed without the
+/// system keyboard covering the screen.
+class _Keypad extends StatelessWidget {
+  const _Keypad({required this.onDigit, required this.onDelete});
+
+  final void Function(String digit) onDigit;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget key(String label, VoidCallback? onTap) => SizedBox(
+          width: 84,
+          height: 52,
+          child: OutlinedButton(
+            onPressed: onTap,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.cream,
+              side: BorderSide(color: AppColors.cream.withValues(alpha: 0.25)),
+              padding: EdgeInsets.zero,
+            ),
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+          ),
+        );
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final digit in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'])
+          key(digit, () => onDigit(digit)),
+        key('מחיקה', onDelete),
+      ],
     );
   }
 }

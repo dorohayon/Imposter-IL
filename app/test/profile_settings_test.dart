@@ -35,7 +35,7 @@ void main() {
     await startAtHome(tester, api);
     await tester.tap(find.byTooltip('פרופיל'));
     await tester.pumpAndSettle();
-    await tapText(tester, 'עריכת פרטים');
+    await tapText(tester, 'עריכת כינוי ואווטאר');
 
     api.responses['PATCH /v1/sessions/me'] =
         const ApiException('invalid_nickname', 422);
@@ -271,12 +271,17 @@ void main() {
     expect(bannerCountdown, findsNothing);
     await reconnect();
 
-    // My turn: the server holds it for 30 seconds.
+    // My turn: the server holds it for 30 seconds, on a screen of its own.
     await dropWith(turn: 'p_me', disconnects: 1);
     expect(find.text('ניתוק 2 מתוך 3'), findsOneWidget);
     expect(bannerCountdown, findsOneWidget);
     expect(find.descendant(of: bannerCountdown, matching: find.text('30')),
         findsOneWidget);
+    expect(
+        find.text(
+            'החיבור אבד בזמן התור שלכם. אנחנו מנסים לחזור למשחק במשך 30 שניות.'),
+        findsOneWidget);
+    expect(find.text('יציאה מהמשחק'), findsOneWidget);
     await reconnect();
 
     // A third drop removes the player after 30 seconds, turn or not.
