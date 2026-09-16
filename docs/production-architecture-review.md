@@ -129,8 +129,11 @@ session replacement in `GameSession._replaceLostSession` creates a session that 
   whole space in minutes and join arbitrary strangers' private rooms. Private rooms are the
   "play with my kids" feature; this is the one place where an intrusion is genuinely upsetting.
 - `game.react` is unlimited **by product decision** ("אפשר להגיב ללא הגבלה"). Unlimited means a
-  client can emit reactions as fast as it can write, and each one fans out `game.reaction` to
-  8 players *under the global lock*. This is an amplification primitive.
+  client can emit reactions as fast as it can write, and each one fans out `game.reaction` **and
+  a full `publish`** to 8 players, under the global lock. This is an amplification primitive —
+  and a **billing** one: ~21 KB of egress per reaction, so a single client at ~100/s sustains
+  ~2 MB/s ≈ 5 TB/month ≈ **$100/mo on Fly or $600/mo on GCP, from one connection**. The rate
+  limiter pays for itself directly.
 - WebSocket connections: no per-IP cap.
 
 Why it matters: the product intentionally has no accounts, so there is no identity to ban. Rate
@@ -299,6 +302,40 @@ Two good options, both fine:
 
 **Avoid:** Cloud Run / Lambda / App Runner (above). GKE and similar are not wrong, just a
 control-plane fee and a learning curve to run one stateful process.
+
+#### Cost
+
+Verify against current pricing pages before committing; the shape is stable, the digits drift.
+
+| | Fly.io | GCE `me-west1` (Tel Aviv) |
+| --- | --- | --- |
+| Compute | shared-cpu-1x / 1 GB ~$5.70 | e2-small (2 GB) ~$14 |
+| External IPv4 | $0 shared / $2 dedicated | ~$3 (GCP bills all external IPv4) |
+| Disk | — | 10 GB balanced ~$1 |
+| TLS / LB | included | free with Caddy on the box; **+$18–25/mo** with a GCLB |
+| **Stage 0 total** | **~$6–8/mo** | **~$18/mo** |
+
+Tel Aviv runs 10–20% above `us-central1`, and GCP's e2-micro free tier is US-regions-only, so
+choosing `me-west1` forfeits it. At Stage 0 the delta is noise — decide on operational fit.
+
+**Egress is the real cost driver, and it is a consequence of the snapshot design.** Fly bills
+outbound at ~$0.02/GB; GCP internet egress is ~$0.12/GB premium, ~$0.085/GB standard — 4–6x.
+Every state change sends a full filtered snapshot to every player (correct, and not worth
+changing): a `game.state` with 8 players and 8 hints is ~3 KB, and a typical game produces
+~70–80 publishes × 8 recipients ≈ **~2 MB per game** (~250 KB per player, fine on cellular).
+
+| Volume | Egress | Fly | GCP premium |
+| --- | --- | --- | --- |
+| 1k games/day | ~60 GB/mo | ~$1 | ~$7 |
+| 10k games/day | ~600 GB/mo | ~$12 | ~$72 |
+| 100k games/day | ~6 TB/mo | ~$120 | ~$720 |
+
+Stage 1 widens it: Memorystore's smallest Basic tier is ~$35–50/mo against ~$0–10 for Upstash
+pay-as-you-go — or $0 for Redis on the same box, which is fine for a directory holding no game
+state.
+
+Lock-in is negligible either way (one Go binary in a container), so this is not a permanent
+decision. Rule: start on Fly; revisit if egress crosses ~$50/mo or GCP credits appear.
 
 Stage 0 capacity, to be confirmed by the load harness: a 1–2 GB instance should carry
 thousands of concurrent games. That is far beyond any realistic launch.
