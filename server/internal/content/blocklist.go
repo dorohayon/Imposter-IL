@@ -55,8 +55,10 @@ func Blocked(text string) bool {
 		if len([]rune(word)) >= minSubstringRunes && strings.Contains(normalized, word) {
 			return true
 		}
-		// Shorter entries still match with Hebrew prefix letters in front.
-		if strings.HasSuffix(normalized, word) && len(normalized) > len(word) {
+		// Shorter entries still match with Hebrew prefix letters in front —
+		// but only those. A plain "ends with" would refuse ordinary words that
+		// happen to end in the same letters, such as מאזין or מזין.
+		if game.IsPrefixedForm(normalized, word) {
 			return true
 		}
 	}

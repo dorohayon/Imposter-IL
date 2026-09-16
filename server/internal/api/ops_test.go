@@ -73,18 +73,10 @@ func TestReaperDropsEmptyRoomsAndIdleSessions(t *testing.T) {
 		t.Fatal("empty room outlived its TTL")
 	}
 
-	// A session in a room is never reaped, however long it idles.
+	// Room membership is not activity: with no connection the session ages
+	// out like any other, and is taken out of the room on the way.
+	// TestReaperDropsAbandonedRoomMembers covers that from the socket side.
 	c.advance(SessionTTL + time.Hour)
-	c.srv.reap()
-	if len(c.srv.sessions) != 1 {
-		t.Fatalf("sessions = %d, want the one still in a room", len(c.srv.sessions))
-	}
-
-	// Once it is out of the room and idle, it goes.
-	c.srv.mu.Lock()
-	sess := c.srv.sessions[token]
-	sess.roomID, sess.lastSeen = "", c.srv.now().Add(-SessionTTL-time.Minute)
-	c.srv.mu.Unlock()
 	c.srv.reap()
 	if len(c.srv.sessions) != 0 || len(c.srv.players) != 0 {
 		t.Fatalf("sessions %d players %d, want none", len(c.srv.sessions), len(c.srv.players))
@@ -249,4 +241,72 @@ func TestUnusedSessionsAreReapedQuickly(t *testing.T) {
 	if len(c.srv.sessions) != 1 {
 		t.Fatal("a session that connected was reaped as unused")
 	}
+}
+
+// A used bucket never climbs back to burst on its own, so sweeping on the
+// stored token count would have kept every bucket forever.
+func TestLimiterSweepDropsIdleBuckets(t *testing.T) {
+	l := newLimiter(60, 5)
+	now := t0
+	l.allow("a", now)
+	l.allow("b", now)
+	if len(l.buckets) != 2 {
+		t.Fatalf("buckets = %d, want 2", len(l.buckets))
+	}
+
+	l.sweep(now.Add(time.Minute), BucketIdle)
+	if len(l.buckets) != 2 {
+		t.Fatal("swept a bucket that was still recent")
+	}
+	l.sweep(now.Add(BucketIdle+time.Minute), BucketIdle)
+	if len(l.buckets) != 0 {
+		t.Fatalf("buckets = %d after going idle, want 0", len(l.buckets))
+	}
+}
+
+// A player who closes the app stays a room member so they can return. That
+// must not keep the session, or the room, alive for the life of the process.
+func TestReaperDropsAbandonedRoomMembers(t *testing.T) {
+	c := newClient(t)
+	token, id := c.session("דור")
+	room := c.createRoom(token, 4)
+	code := room["code"].(string)
+
+	// Connect and drop, the way closing the app does.
+	w := c.dial(token)
+	w.roomState(func(map[string]any) bool { return true })
+	_ = w.ws.CloseNow()
+	waitFor(t, func() bool {
+		c.srv.mu.Lock()
+		defer c.srv.mu.Unlock()
+		return c.srv.sessions[token].conn == nil
+	})
+
+	c.advance(SessionTTL + time.Hour)
+	c.srv.reap()
+	if _, alive := c.srv.sessions[token]; alive {
+		t.Fatal("an abandoned session survived its TTL because it held a roomId")
+	}
+	if _, alive := c.srv.players[id]; alive {
+		t.Fatal("player entry left behind")
+	}
+
+	// With its last member gone the room is empty, so the next passes drop it.
+	c.srv.reap()
+	c.advance(EmptyRoomTTL + time.Minute)
+	c.srv.reap()
+	if _, alive := c.srv.roomsCode[code]; alive {
+		t.Fatal("the room outlived every member")
+	}
+}
+
+func waitFor(t *testing.T, ok func() bool) {
+	t.Helper()
+	for range 100 {
+		if ok() {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatal("condition not reached")
 }

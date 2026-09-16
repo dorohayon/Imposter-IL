@@ -32,6 +32,11 @@ func normalizeWord(s string) string {
 	return finalLetters.Replace(b.String())
 }
 
+// IsPrefixedForm reports whether long is short carrying only Hebrew prefix
+// letters (אותיות שימוש). Exposed for the content blocklist, which has to
+// catch "והזונה" without catching "מאזין".
+func IsPrefixedForm(long, short string) bool { return isPrefixed(long, short) }
+
 // NormalizeWord exposes the normalisation above to callers that match words
 // against lists of their own, such as the content blocklist. Matching there
 // has to fold spelling exactly the way the game's own rules do, or a word

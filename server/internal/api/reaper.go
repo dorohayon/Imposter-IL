@@ -62,8 +62,11 @@ func (s *Server) reap() {
 	}
 
 	for token, sess := range s.sessions {
-		// Anyone connected, in a room or on a result screen is alive.
-		if sess.conn != nil || sess.roomID != "" || sess.gameID != "" {
+		// Only a live connection counts as alive. Membership of a room does
+		// not: a player who closes the app stays a member so they can come
+		// back, and treating that as activity would keep the session — and
+		// the room holding it — for the life of the process.
+		if sess.conn != nil {
 			sess.lastSeen = now
 			continue
 		}
@@ -74,6 +77,12 @@ func (s *Server) reap() {
 		if now.Sub(sess.lastSeen) < ttl {
 			continue
 		}
+		// Take them out of whatever they were in first, so the room can empty
+		// and be reaped on a later pass.
+		if entry := s.currentRoom(sess); entry != nil {
+			s.leave(entry, sess, now)
+		}
+		sess.leaveGame()
 		delete(s.sessions, token)
 		delete(s.players, sess.playerID)
 		s.metrics.reapedSess++
@@ -81,6 +90,7 @@ func (s *Server) reap() {
 
 	s.sessionLimit.sweep(now, BucketIdle)
 	s.joinLimit.sweep(now, BucketIdle)
+	s.commandLimit.sweep(now, BucketIdle)
 
 	if s.metrics.reapedRooms > 0 || s.metrics.reapedSess > 0 {
 		slog.Debug("reaped",

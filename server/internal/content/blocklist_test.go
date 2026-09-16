@@ -15,11 +15,19 @@ func TestBlocked(t *testing.T) {
 		"בןזונה":   true, // the space is dropped by normalisation
 		"חרא":      true,
 		"היטלר":    true,
-		// A short entry matches as a whole word or with prefix letters, but
-		// not buried inside an innocent longer word.
+		// A short entry matches as a whole word or with Hebrew prefix letters,
+		// but not any word that merely ends the same way.
 		"תחת":   true,
 		"התחת":  true,
+		"לתחת":  true,
 		"מתחתן": false,
+		"מאזין": false, // "מא" is not a run of prefix letters
+		"אוזן":  false,
+		// Known over-block: "מזין" is מ + a blocked stem, which no rule can
+		// tell from a genuine prefixed form. Refusing one ordinary word beats
+		// letting the prefixed insult through. If it matters, the fix is to
+		// revisit the list, which is the owner's (docs/open-decisions.md).
+		"מזין": true,
 	}
 	for input, want := range cases {
 		if got := Blocked(input); got != want {

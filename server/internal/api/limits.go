@@ -70,14 +70,20 @@ func (l *limiter) allow(key string, now time.Time) bool {
 	return true
 }
 
-// sweep forgets buckets that have refilled and gone quiet, so the limiter is
-// not itself a memory leak. Called by the reaper.
+// sweep forgets buckets that have gone quiet, so the limiter is not itself a
+// memory leak. Called by the reaper.
+//
+// Idleness alone is the test: tokens are only refilled inside allow, so a
+// bucket that has been used never climbs back to burst on its own, and a
+// condition on the stored token count would never fire. idle is far longer
+// than a full refill takes (minutes against at most a minute), so anything
+// this quiet would be full anyway and dropping it grants nothing.
 func (l *limiter) sweep(now time.Time, idle time.Duration) {
 	if l == nil {
 		return
 	}
 	for key, b := range l.buckets {
-		if b.tokens >= l.burst && now.Sub(b.last) > idle {
+		if now.Sub(b.last) > idle {
 			delete(l.buckets, key)
 		}
 	}

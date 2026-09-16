@@ -1405,9 +1405,17 @@ class _ReportableHint extends StatelessWidget {
       ),
     );
     if (confirmed != true) return;
-    await session.reportPlayer(playerId, hintIndex: hintIndex);
+    final code = await session.reportPlayer(playerId, hintIndex: hintIndex);
+    // The hiding is local and holds either way; the report itself may not
+    // have reached the server, and saying it did would be a lie.
     messenger.showSnackBar(
-      const SnackBar(content: Text('הדיווח נשלח. הרמזים האלה יוסתרו.')),
+      SnackBar(
+        content: Text(
+          code == null
+              ? 'הדיווח נשלח. הרמזים האלה יוסתרו.'
+              : 'הרמזים האלה יוסתרו, אבל הדיווח לא נשלח. ${commandMessage(code)}',
+        ),
+      ),
     );
   }
 }

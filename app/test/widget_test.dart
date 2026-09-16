@@ -27,6 +27,24 @@ void main() {
     expect(find.byType(BackButton), findsNothing);
   });
 
+  testWidgets('the update screen covers pushed routes too', (tester) async {
+    final api = FakeApi();
+    final session = await startAtHome(tester, api);
+
+    // Deep in the stack, the way a player is when the server stops serving
+    // their build mid-session.
+    await tapText(tester, 'איך משחקים?');
+    expect(find.text('איך משחקים?'), findsWidgets);
+
+    api.responses['GET /v1/categories'] =
+        const ApiException('client_too_old', 426);
+    await session.loadContent().catchError((Object _) {});
+    await tester.pumpAndSettle();
+
+    expect(find.byType(UpdateRequiredScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
+  });
+
   testWidgets('onboarding opens the Hebrew home screen', (tester) async {
     await startAtHome(tester);
 

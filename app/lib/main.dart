@@ -34,6 +34,12 @@ class ImposterApp extends StatelessWidget {
         locale: const Locale('he'),
         supportedLocales: const [Locale('he')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        // builder wraps the Navigator, so an unsupported build is covered
+        // wherever the player happens to be — home is not enough, since
+        // client_too_old can arrive while they are deep in a pushed route.
+        builder: (context, child) => SessionScope.of(context).needsUpdate
+            ? const UpdateRequiredScreen()
+            : child!,
         home: const _Start(),
       ),
     );
@@ -48,7 +54,6 @@ class _Start extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
-    if (session.needsUpdate) return const UpdateRequiredScreen();
     return session.signedIn ? const HomeScreen() : const OnboardingScreen();
   }
 }
