@@ -277,14 +277,28 @@ What Stage 0 must add to today's code:
 **Hosting.** The requirement that decides it: long-lived WebSockets on an instance whose
 *identity matters* (state is in RAM), with cheap TLS and a controllable drain.
 
-- **Recommended: Fly.io**, single region (`fra` or `cdg` for an Israeli audience; ~60–80 ms RTT,
-  irrelevant for 15-second turns). Managed TLS, WebSockets are first-class, `fly-replay` gives
-  you Stage 1's routing almost free, and the machine identity is addressable. ~$5–15/month at
-  launch.
-- **Acceptable alternative: one Hetzner/AWS VM + Caddy.** Cheapest, fully controlled, more
-  manual work at Stage 1.
-- **Avoid Cloud Run / Lambda / anything request-scoped-autoscaling.** They reclaim instances on
-  their own schedule, which for this design means killing live games at random.
+**The disqualifying property is not a vendor, it is a behaviour: the platform must not decide
+on its own when to stop your process.** Games live in RAM and need a ~10-minute drain, so any
+runtime that reclaims instances on its own schedule with a ~10-second SIGTERM grace is
+structurally wrong here — that rules out **Cloud Run, Lambda and App Runner**, and nothing else.
+Stage 1 adds a second requirement: **instances must be individually addressable**, because a room
+lives on exactly one of them. Cloud Run's cookie-based session affinity does not satisfy this for
+a mobile client opening a raw WebSocket with a Bearer header.
+
+Two good options, both fine:
+
+- **Fly.io**, single region (`fra`/`cdg`; ~60–80 ms RTT, gameplay-irrelevant for 15-second turns).
+  Managed TLS, first-class WebSockets, rolling deploys from one config file, and `fly-replay`
+  gives you Stage 1's room→instance routing as an HTTP header instead of a router you build.
+  ~$5–15/month at launch. This is the default recommendation *because of `fly-replay`* — it
+  removes the most annoying part of Stage 1.
+- **One VM + Caddy**, on GCE (`me-west1`, Tel Aviv — the only option here with an Israeli region,
+  ~5–10 ms), Hetzner or EC2. Equivalent Stage 0, full control, ~$15–25/month; you write the
+  room-affinity router yourself when the Stage 1 trigger fires. Choose this if you already have
+  GCP credits or familiarity, or want Tel Aviv latency.
+
+**Avoid:** Cloud Run / Lambda / App Runner (above). GKE and similar are not wrong, just a
+control-plane fee and a learning curve to run one stateful process.
 
 Stage 0 capacity, to be confirmed by the load harness: a 1–2 GB instance should carry
 thousands of concurrent games. That is far beyond any realistic launch.
