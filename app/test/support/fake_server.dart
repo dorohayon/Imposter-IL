@@ -105,7 +105,11 @@ class FakeApi extends ApiClient {
       throw const ApiException('session_not_found', 401);
     }
     final response = responses['$method $path'];
-    if (response is ApiException) throw response;
+    if (response is ApiException) {
+      // Mirror ApiClient: the real one reports this before it throws.
+      if (response.code == 'client_too_old') onClientTooOld?.call();
+      throw response;
+    }
     if (response == null) throw ApiException('unexpected $method $path');
     return response as Map<String, dynamic>;
   }

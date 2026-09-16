@@ -1,10 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/screens/home_screen.dart';
+import 'package:imposter_il/screens/secondary_screens.dart';
 
+import 'support/fake_server.dart';
 import 'support/helpers.dart';
 
 void main() {
+  testWidgets('a build the server refuses can only update', (tester) async {
+    final api = FakeApi()
+      ..responses['GET /v1/categories'] =
+          const ApiException('client_too_old', 426);
+
+    final session = await startApp(tester, api, saved: {
+      'session.token': 'token-1',
+      'session.playerId': 'p_me',
+      'session.nickname': 'דור',
+      'session.avatarId': 'avatar-m04-detective-hat',
+    });
+
+    expect(session.needsUpdate, isTrue);
+    expect(find.byType(UpdateRequiredScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
+    // No way out: an unsupported build cannot reach the rest of the app.
+    expect(find.byType(BackButton), findsNothing);
+  });
+
   testWidgets('onboarding opens the Hebrew home screen', (tester) async {
     await startAtHome(tester);
 

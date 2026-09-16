@@ -2,6 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+/// This build's number: the part after `+` in pubspec.yaml's `version`.
+/// CI checks the two agree (.github/workflows/app.yml).
+///
+/// Sent as `X-Client-Build` on every request. A store release stays installed
+/// for years, so the server's MIN_CLIENT_BUILD is the only way to retire a
+/// build whose protocol it no longer speaks; without the header there would be
+/// no way to tell an old install to update instead of failing strangely.
+const clientBuild = 1;
+
 /// The game server. Override with --dart-define=IMPOSTER_SERVER=https://host.
 Uri defaultServerUrl() {
   const configured = String.fromEnvironment('IMPOSTER_SERVER');
@@ -29,6 +38,10 @@ class ApiClient {
   ApiClient(this.baseUrl);
 
   final Uri baseUrl;
+
+  /// Called when the server refuses this build (`client_too_old`).
+  void Function()? onClientTooOld;
+
   final _http = HttpClient()..connectionTimeout = const Duration(seconds: 10);
 
   Future<Map<String, dynamic>> request(
@@ -39,6 +52,7 @@ class ApiClient {
   }) async {
     try {
       final request = await _http.openUrl(method, baseUrl.resolve(path));
+      request.headers.set('X-Client-Build', '$clientBuild');
       if (token != null) {
         request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
       }
@@ -46,18 +60,18 @@ class ApiClient {
         request.headers.contentType = ContentType.json;
         request.add(utf8.encode(jsonEncode(body)));
       }
-      final response =
-          await request.close().timeout(const Duration(seconds: 15));
+      final response = await request.close().timeout(
+            const Duration(seconds: 15),
+          );
       final text = await response.transform(utf8.decoder).join();
       final json = text.isEmpty
           ? <String, dynamic>{}
           : jsonDecode(text) as Map<String, dynamic>;
       if (response.statusCode >= 400) {
         final error = json['error'] as Map<String, dynamic>?;
-        throw ApiException(
-          error?['code'] as String? ?? 'internal_error',
-          response.statusCode,
-        );
+        final code = error?['code'] as String? ?? 'internal_error';
+        if (code == 'client_too_old') onClientTooOld?.call();
+        throw ApiException(code, response.statusCode);
       }
       return json;
     } on ApiException {
@@ -74,7 +88,10 @@ class ApiClient {
     );
     final socket = await WebSocket.connect(
       url.toString(),
-      headers: {HttpHeaders.authorizationHeader: 'Bearer $token'},
+      headers: {
+        HttpHeaders.authorizationHeader: 'Bearer $token',
+        'X-Client-Build': '$clientBuild',
+      },
     ).timeout(const Duration(seconds: 10));
     return _WebSocketChannel(socket);
   }

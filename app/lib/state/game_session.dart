@@ -11,7 +11,13 @@ import '../data/server.dart';
 /// and the latest room and game snapshots. Screens read it through
 /// [SessionScope] and rebuild when it changes.
 class GameSession extends ChangeNotifier {
-  GameSession(this.api, {this.reconnectDelay = const Duration(seconds: 2)});
+  GameSession(this.api, {this.reconnectDelay = const Duration(seconds: 2)}) {
+    api.onClientTooOld = () {
+      if (needsUpdate) return;
+      needsUpdate = true;
+      _notify();
+    };
+  }
 
   final ApiClient api;
   final Duration reconnectDelay;
@@ -50,6 +56,10 @@ class GameSession extends ChangeNotifier {
   /// The server lost this session mid-room or mid-game (for example it
   /// restarted). No loss is recorded; screen 29 is shown until dismissed.
   bool sessionLost = false;
+
+  /// The server no longer serves this build. Nothing else works until the
+  /// player updates, so this one is not dismissible.
+  bool needsUpdate = false;
 
   String activity = 'none'; // none | matchmaking | room | game
   String? roomId;
@@ -408,11 +418,13 @@ class GameSession extends ChangeNotifier {
     _countedGames = [..._countedGames, gameId];
     if (_countedGames.length > 50) _countedGames.removeAt(0);
     outcome == 'win' ? wins++ : losses++;
-    unawaited(SharedPreferences.getInstance().then((prefs) async {
-      await prefs.setInt(_winsKey, wins);
-      await prefs.setInt(_lossesKey, losses);
-      await prefs.setStringList(_countedKey, _countedGames);
-    }));
+    unawaited(
+      SharedPreferences.getInstance().then((prefs) async {
+        await prefs.setInt(_winsKey, wins);
+        await prefs.setInt(_lossesKey, losses);
+        await prefs.setStringList(_countedKey, _countedGames);
+      }),
+    );
   }
 
   /// Changes the nickname and avatar on the server. Throws [ApiException].

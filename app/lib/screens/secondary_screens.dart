@@ -213,3 +213,37 @@ class HowToPlayScreen extends StatelessWidget {
     );
   }
 }
+
+/// Shown when the server refuses this build (`client_too_old`). Nothing else
+/// is reachable: an old install whose protocol the server dropped can only
+/// update, so this screen has no way back.
+class UpdateRequiredScreen extends StatelessWidget {
+  const UpdateRequiredScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GameScaffold(
+      title: 'צריך לעדכן',
+      showBack: false,
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          const Illustration('assets/illustrations/connection-error.webp'),
+          const SizedBox(height: 20),
+          Text(
+            'יש גרסה חדשה של המשחק',
+            style: Theme.of(context).textTheme.headlineLarge,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'הגרסה שמותקנת אצלכם כבר לא נתמכת.\n'
+            'עדכנו את האפליקציה בחנות כדי להמשיך לשחק.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.muted, height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
+}

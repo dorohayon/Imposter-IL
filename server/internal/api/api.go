@@ -11,6 +11,7 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -119,6 +120,7 @@ type Server struct {
 
 	draining   bool // no new rooms, searches or games; see ops.go
 	trustProxy bool // read the client address from X-Forwarded-For
+	minBuild   int  // oldest app build allowed in; 0 accepts every client
 
 	sessionLimit *limiter // guest creation, per IP
 	joinLimit    *limiter // room-code attempts, per IP
@@ -150,14 +152,48 @@ func NewServer(now func() time.Time, policy game.Policy, pickWord PickWord) *Ser
 	return s
 }
 
+// RequireClientBuild refuses clients older than build. The app sends its build
+// number in X-Client-Build; a store release stays installed for years, so
+// without this gate there is no way to retire a protocol the old build speaks.
+// Zero, the default, accepts every client including ones that send no header.
+func (s *Server) RequireClientBuild(build int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.minBuild = build
+}
+
+// clientTooOld reports whether the request comes from a build we no longer
+// serve. A missing or unparsable header is treated as build 0, so only an
+// explicit minimum can lock anyone out.
+func (s *Server) clientTooOld(r *http.Request) bool {
+	s.mu.Lock()
+	min := s.minBuild
+	s.mu.Unlock()
+	if min <= 0 {
+		return false
+	}
+	build, err := strconv.Atoi(r.Header.Get("X-Client-Build"))
+	return err != nil || build < min
+}
+
+func (s *Server) gate(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if s.clientTooOld(r) {
+			writeError(w, errClientTooOld)
+			return
+		}
+		next(w, r)
+	}
+}
+
 func (s *Server) Routes(mux *http.ServeMux) {
-	mux.HandleFunc("POST /v1/sessions", s.createSession)
-	mux.HandleFunc("GET /v1/categories", s.withSession(listCategories))
-	mux.HandleFunc("GET /v1/reactions", s.withSession(listReactions))
-	mux.HandleFunc("PATCH /v1/sessions/me", s.withSession(s.updateSession))
-	mux.HandleFunc("POST /v1/rooms", s.withSession(s.createRoom))
-	mux.HandleFunc("POST /v1/rooms/join", s.withSession(s.joinRoom))
-	mux.HandleFunc("GET /v1/ws", s.serveWS)
+	mux.HandleFunc("POST /v1/sessions", s.gate(s.createSession))
+	mux.HandleFunc("GET /v1/categories", s.gate(s.withSession(listCategories)))
+	mux.HandleFunc("GET /v1/reactions", s.gate(s.withSession(listReactions)))
+	mux.HandleFunc("PATCH /v1/sessions/me", s.gate(s.withSession(s.updateSession)))
+	mux.HandleFunc("POST /v1/rooms", s.gate(s.withSession(s.createRoom)))
+	mux.HandleFunc("POST /v1/rooms/join", s.gate(s.withSession(s.joinRoom)))
+	mux.HandleFunc("GET /v1/ws", s.gate(s.serveWS))
 }
 
 type apiError struct {
@@ -178,6 +214,7 @@ var (
 	errAlreadyInGame   = apiError{http.StatusConflict, "already_in_activity", "leave the current game first"}
 	errInternal        = apiError{http.StatusInternalServerError, "internal_error", "internal error"}
 	errDraining        = apiError{http.StatusServiceUnavailable, "server_draining", "server is restarting, try again in a moment"}
+	errClientTooOld    = apiError{http.StatusUpgradeRequired, "client_too_old", "update the app to keep playing"}
 	errNicknameBlocked = apiError{http.StatusUnprocessableEntity, "nickname_blocked", "nickname is not allowed"}
 )
 

@@ -23,12 +23,17 @@ import (
 //	METRICS_ADDR   private /metrics listener (default 127.0.0.1:9090, "" to disable)
 //	TRUST_PROXY    "1" to read the client address from X-Forwarded-For
 //	DRAIN_TIMEOUT  how long to let games finish on SIGTERM (default 10m)
+//	MIN_CLIENT_BUILD  oldest app build served (default 0: every client)
 //	LOG_LEVEL      debug | info | warn | error (default info)
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel()})))
 
 	srv := api.NewServer(time.Now, content.Policy(), content.Pick)
 	srv.TrustProxy(os.Getenv("TRUST_PROXY") == "1")
+	if build, err := strconv.Atoi(os.Getenv("MIN_CLIENT_BUILD")); err == nil && build > 0 {
+		srv.RequireClientBuild(build)
+		slog.Info("refusing older clients", "minClientBuild", build)
+	}
 
 	addr := ":" + cmp.Or(os.Getenv("PORT"), "8080")
 	http1 := &http.Server{Addr: addr, Handler: newMuxFor(srv), ReadHeaderTimeout: 5 * time.Second}

@@ -189,3 +189,35 @@ func TestClientIPTrustsForwardedHeaderOnlyWhenTold(t *testing.T) {
 		t.Fatalf("trusted proxy: got %q, want the forwarded client", got)
 	}
 }
+
+func TestClientBuildGate(t *testing.T) {
+	c := newClient(t)
+	body := map[string]string{"nickname": "דור", "avatarId": "avatar-m04-detective-hat"}
+
+	// No minimum: a client that sends no header at all is served.
+	if status, got := c.do("POST", "/v1/sessions", "", body); status != http.StatusCreated {
+		t.Fatalf("ungated: %d %v", status, got)
+	}
+
+	c.srv.RequireClientBuild(7)
+	status, got := c.do("POST", "/v1/sessions", "", body)
+	c.wantError(http.StatusUpgradeRequired, "client_too_old", status, got)
+
+	for _, build := range []string{"6", "nonsense", ""} {
+		req := httptest.NewRequest("POST", "/v1/sessions", strings.NewReader(`{"nickname":"דור","avatarId":"avatar-m04-detective-hat"}`))
+		req.Header.Set("X-Client-Build", build)
+		rec := httptest.NewRecorder()
+		c.mux.ServeHTTP(rec, req)
+		if rec.Code != http.StatusUpgradeRequired {
+			t.Fatalf("build %q: got %d, want 426", build, rec.Code)
+		}
+	}
+
+	req := httptest.NewRequest("POST", "/v1/sessions", strings.NewReader(`{"nickname":"דור","avatarId":"avatar-m04-detective-hat"}`))
+	req.Header.Set("X-Client-Build", "7")
+	rec := httptest.NewRecorder()
+	c.mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("build at the minimum: got %d %q", rec.Code, rec.Body.String())
+	}
+}
