@@ -334,8 +334,33 @@ Stage 1 widens it: Memorystore's smallest Basic tier is ~$35–50/mo against ~$0
 pay-as-you-go — or $0 for Redis on the same box, which is fine for a directory holding no game
 state.
 
-Lock-in is negligible either way (one Go binary in a container), so this is not a permanent
-decision. Rule: start on Fly; revisit if egress crosses ~$50/mo or GCP credits appear.
+**Free tiers change the pre-launch answer.** GCP has a genuinely free path and Fly does not,
+so the cheapest option differs by phase:
+
+| Phase | Cheapest | Why |
+| --- | --- | --- |
+| Now → store submission | **GCP** free tier, or the $300 / 90-day new-account credit | A dev server with no traffic; paying anyone for it is pointless |
+| Launch onward | **Fly** | The free tier cannot carry a launched game; once paying, Fly is ~2x on compute and ~5x on egress |
+
+Three catches on GCP's Always Free e2-micro, all of which push it to pre-launch only:
+
+1. It exists **only in `us-west1` / `us-central1` / `us-east1`** — not `me-west1`. Taking the free
+   tier forfeits the Tel Aviv latency that was GCP's advantage, serving Israeli players from Iowa
+   at ~120–150 ms, worse than Fly's Frankfurt at ~60–80 ms.
+2. Free egress is **1 GB/month** — about 500 games, total. A launch day exhausts it.
+3. External IPv4 is billed even on free-tier instances (~$3/mo), so "free" is really ~$3/mo.
+
+e2-micro is also 1 GB RAM on a 0.25 vCPU baseline: fine for testing, it will throttle under real
+WebSocket load. The $300 credit is the stronger offer — it covers a proper e2-small in Tel Aviv
+through pre-launch and into the first weeks of traffic. Take it if eligible; just diary the
+90-day expiry.
+
+**Avoid Oracle Always Free** despite the headline numbers (4 ARM cores, 24 GB RAM, 10 TB egress):
+it reclaims instances it judges idle, which is the exact property that disqualifies Cloud Run.
+
+Lock-in is negligible either way (one Go binary in a container), so none of this is permanent.
+Rule: free tier or credits until launch, Fly once real traffic starts, revisit if egress crosses
+~$50/mo.
 
 Stage 0 capacity, to be confirmed by the load harness: a 1–2 GB instance should carry
 thousands of concurrent games. That is far beyond any realistic launch.
