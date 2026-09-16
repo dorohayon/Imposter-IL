@@ -113,7 +113,7 @@ type Config struct {
 // DefaultConfig returns the approved durations. Private rooms override HintDuration.
 func DefaultConfig() Config {
 	return Config{
-		RoleRevealTimeout:  10 * time.Second,
+		RoleRevealTimeout:  20 * time.Second,
 		HintDuration:       60 * time.Second,
 		VoteDuration:       20 * time.Second,
 		RunoffVoteDuration: 15 * time.Second,

@@ -195,7 +195,7 @@ func TestWSRoleRevealAdvancesOnTheTimer(t *testing.T) {
 		t.Fatal("no timer for the role reveal deadline")
 	}
 
-	c.advance(9 * time.Second)
+	c.advance(19 * time.Second)
 	c.tick(roomID) // not due yet: nothing is published
 	c.advance(time.Second)
 	c.tick(roomID)

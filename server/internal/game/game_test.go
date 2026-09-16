@@ -199,17 +199,17 @@ func TestMarkOfflineAtStartIsNotACountedDisconnect(t *testing.T) {
 	wantErr(t, g.MarkOffline(g.order[1]), ErrWrongPhase)
 }
 
-func TestRoleRevealTimesOutAfterTenSeconds(t *testing.T) {
+func TestRoleRevealTimesOutAfterTwentySeconds(t *testing.T) {
 	g := newGame(t, 4)
-	if want := t0.Add(10 * time.Second); !g.Deadline().Equal(want) {
+	if want := t0.Add(20 * time.Second); !g.Deadline().Equal(want) {
 		t.Fatalf("role reveal deadline = %v, want %v", g.Deadline(), want)
 	}
 	must(t, g.ConfirmRole(g.order[0], t0))
-	g.Tick(t0.Add(9 * time.Second))
+	g.Tick(t0.Add(19 * time.Second))
 	wantPhase(t, g, PhaseRoleReveal)
-	g.Tick(t0.Add(10 * time.Second))
+	g.Tick(t0.Add(20 * time.Second))
 	wantPhase(t, g, PhaseHints)
-	if want := t0.Add(70 * time.Second); !g.Deadline().Equal(want) {
+	if want := t0.Add(80 * time.Second); !g.Deadline().Equal(want) {
 		t.Fatalf("first turn deadline = %v, want %v", g.Deadline(), want)
 	}
 }
