@@ -56,15 +56,15 @@ jobs:
 
       - name: deploy
         run: |
+          # The VM's /var/imposter/.env holds the domain and the image, so a
+          # deploy only rewrites the image line. See deploy/README.md.
           gcloud compute ssh imposter \
             --zone="${{ vars.GCP_ZONE }}" --tunnel-through-iap --quiet \
-            --command "cd /var/imposter \
-              && sudo IMPOSTER_IMAGE='${{ steps.image.outputs.image }}' \
-                      IMPOSTER_DOMAIN='${{ vars.IMPOSTER_DOMAIN }}' \
-                      docker compose pull \
-              && sudo IMPOSTER_IMAGE='${{ steps.image.outputs.image }}' \
-                      IMPOSTER_DOMAIN='${{ vars.IMPOSTER_DOMAIN }}' \
-                      docker compose up -d"
+            --command "set -e
+              sudo sed -i 's|^IMPOSTER_IMAGE=.*|IMPOSTER_IMAGE=${{ steps.image.outputs.image }}|' /var/imposter/.env
+              cd /var/imposter
+              sudo docker compose pull
+              sudo docker compose up -d"
 
       # The old container drains before it exits, so the new one is only
       # really up once this answers.

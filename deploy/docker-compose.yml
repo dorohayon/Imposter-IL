@@ -2,7 +2,7 @@
 # memory — see docs/production-architecture-review.md, Stage 0.
 services:
   server:
-    image: ${IMPOSTER_IMAGE:?set IMPOSTER_IMAGE}
+    image: ${IMPOSTER_IMAGE:?set IMPOSTER_IMAGE in /var/imposter/.env}
     restart: always
     network_mode: host # Caddy reaches it on localhost:8080; metrics stay on loopback
     environment:
@@ -25,7 +25,7 @@ services:
     restart: always
     network_mode: host
     environment:
-      IMPOSTER_DOMAIN: ${IMPOSTER_DOMAIN:?set IMPOSTER_DOMAIN}
+      IMPOSTER_DOMAIN: ${IMPOSTER_DOMAIN:?set IMPOSTER_DOMAIN in /var/imposter/.env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data # certificates survive a redeploy
