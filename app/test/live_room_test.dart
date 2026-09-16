@@ -542,6 +542,20 @@ void main() {
     expect(isEnabled(tester, 'אישור הצבעה'), isFalse);
     // The tie that led here.
     expect(find.text('2 קולות בסבב הקודם'), findsNWidgets(2));
+
+    // A 1-1 tie is the commonest runoff in a four-player game, so the
+    // singular is the default case rather than an edge one.
+    api.channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(
+          phase: 'runoff_voting',
+          candidates: ['p_2', 'p_3'],
+          previousVotes: {'p_2': 1, 'p_3': 1},
+        ));
+    await settle(tester);
+    expect(find.text('קול אחד בסבב הקודם'), findsNWidgets(2));
+    expect(find.text('1 קולות בסבב הקודם'), findsNothing);
   });
 
   testWidgets('reporting a hint sends it and hides that player',

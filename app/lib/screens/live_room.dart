@@ -1308,6 +1308,7 @@ class _VotingState extends State<_Voting> {
                       ? 'אי אפשר להצביע לעצמכם'
                       : switch (game.previousVotes[id]) {
                           null => null,
+                          1 => 'קול אחד בסבב הקודם',
                           final votes => '$votes קולות בסבב הקודם',
                         },
                   enabled: id != me,

@@ -524,9 +524,15 @@ func (g *Game) View(playerID string) (View, error) {
 		v.CurrentTurn = g.order[g.turn]
 	}
 	if g.phase == PhaseRunoffVoting && len(g.voteRounds) > 0 {
+		// Only the players in the runoff. Counting every target would tell
+		// everyone how the group voted on someone who is not even a
+		// candidate, and docs/protocol.md reveals other players' votes only
+		// in result.
 		v.PreviousVotes = map[string]int{}
 		for _, target := range g.voteRounds[len(g.voteRounds)-1] {
-			v.PreviousVotes[target]++
+			if slices.Contains(g.candidates, target) {
+				v.PreviousVotes[target]++
+			}
 		}
 	}
 	for _, id := range g.order {

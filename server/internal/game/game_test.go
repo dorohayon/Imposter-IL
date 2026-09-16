@@ -717,3 +717,39 @@ func sameSet(a, b []string) bool {
 	slices.Sort(b)
 	return slices.Equal(a, b)
 }
+
+// The runoff shows how the tie happened, but only for the players in it.
+// Counting every target would tell the table how the group voted on someone
+// who is not a candidate, which docs/protocol.md reveals only in result.
+func TestRunoffPreviousVotesHideNonCandidates(t *testing.T) {
+	g := newGame(t, 6)
+	now := toVoting(t, g)
+	c := citizens(g) // five citizens
+
+	// c[1] and the impostor tie on two; c[0] draws one and misses the runoff.
+	must(t, g.Vote(c[0], c[1], now))
+	must(t, g.Vote(c[2], c[1], now))
+	must(t, g.Vote(c[1], g.impostor, now))
+	must(t, g.Vote(c[3], g.impostor, now))
+	must(t, g.Vote(c[4], c[0], now))
+
+	g.Tick(now.Add(20 * time.Second))
+	wantPhase(t, g, PhaseRunoffVoting)
+	if want := []string{c[1], g.impostor}; !sameSet(g.candidates, want) {
+		t.Fatalf("runoff candidates = %v, want %v", g.candidates, want)
+	}
+
+	v, err := g.View(c[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v.PreviousVotes[c[1]] != 2 || v.PreviousVotes[g.impostor] != 2 {
+		t.Fatalf("previous votes = %v, want two each for the tied players", v.PreviousVotes)
+	}
+	if _, leaked := v.PreviousVotes[c[0]]; leaked {
+		t.Fatalf("previous votes leak a non-candidate's count: %v", v.PreviousVotes)
+	}
+	if len(v.PreviousVotes) != 2 {
+		t.Fatalf("previous votes = %v, want only the two candidates", v.PreviousVotes)
+	}
+}
