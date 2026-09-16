@@ -191,6 +191,24 @@ type bot struct {
 	// thinking guards the pause before a hint, so the snapshots that arrive
 	// while a bot composes do not start a second one.
 	thinking bool
+	// phase is the last one seen, read by the thinking goroutines: a command
+	// decided on before a pause is pointless once the game has moved past it,
+	// and the server rejects it as wrong_phase.
+	phase string
+}
+
+// stillIn reports whether the game is still in the phase the bot was thinking
+// about. Both it and the writer hold b.mu, so the read is race-free.
+func (b *bot) stillIn(phase string) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.phase == phase
+}
+
+func (b *bot) setPhase(phase string) {
+	b.mu.Lock()
+	b.phase = phase
+	b.mu.Unlock()
 }
 
 // unusedWord picks a describing word no one has played in this game yet, so
@@ -347,6 +365,7 @@ func (b *bot) act(ctx context.Context, raw json.RawMessage) {
 	if len(raw) == 0 || json.Unmarshal(raw, &g) != nil {
 		return
 	}
+	b.setPhase(g.Phase)
 	switch g.Phase {
 	case "role_reveal":
 		b.reactedTo = -1 // a new game
@@ -364,8 +383,9 @@ func (b *bot) act(ctx context.Context, raw json.RawMessage) {
 			hint := unusedWord(g)
 			go func() {
 				// Take a few seconds, the way a player does. The turn timer is
-				// 15 seconds, so this still lands in time.
-				if think(ctx) {
+				// 15 seconds, so this still lands in time — unless the turn
+				// passed while thinking, in which case there is nothing to send.
+				if think(ctx) && b.stillIn("hints") {
 					b.send(ctx, "game.submitHint", map[string]any{"gameId": g.GameID, "text": hint})
 				}
 				b.thinking = false
@@ -389,9 +409,10 @@ func (b *bot) act(ctx context.Context, raw json.RawMessage) {
 				continue
 			}
 			b.thinking = true
+			phase := g.Phase
 			go func() {
 				// Deliberating, so the votes do not all land in the same frame.
-				if think(ctx) {
+				if think(ctx) && b.stillIn(phase) {
 					b.send(ctx, "game.vote", map[string]any{"gameId": g.GameID, "targetPlayerId": id})
 				}
 				b.thinking = false
