@@ -9,124 +9,74 @@ Cloud Run, Lambda and App Runner are out. A plain VM is in.
 
 ## What this costs
 
-An `e2-micro` in `us-central1` is on GCP's Always Free tier. The external IPv4
-is not free (~$3/month), and free egress is 1 GB/month — about 500 games. Past
-that, egress is ~$0.12/GB and becomes the largest line item.
+| | |
+| --- | --- |
+| `e2-micro` VM | **$0** — Always Free tier |
+| Reserved static IPv4 | **~$3/month** |
+| Egress | 1 GB/month free (~500 games), then ~$0.12/GB at ~2 MB per game |
+| Artifact Registry | ~$0.10/GB/month for the images |
+
+So roughly **$3/month idle**, rising with egress once people play.
+`./deploy/teardown-gcp.sh` takes it back to zero.
 
 Latency from Israel is ~120–150 ms. Irrelevant for 15-second turns, but it is
 the price of the free tier: `me-west1` (Tel Aviv) is ~5–10 ms and not free.
 
+## Verified locally
+
+The compose stack was run end to end before any of this was deployed: Caddy
+terminating TLS, REST and a full game over `wss://` through the proxy, the
+game port unreachable from outside, `/metrics` reachable only on loopback and
+404 through Caddy, and the drain holding the container open until live games
+finished. What has *not* been exercised is the GCP side — the `gcloud` calls
+in `setup-gcp.sh` are written from the docs, not yet run against a project.
+
 ## One-time setup
 
-You need: a GCP project with billing enabled (the free tier still requires a
-billing account), and a hostname you control.
-
-### 1. Project and registry
-
 ```sh
-PROJECT=imposter-il           # your project id
-ZONE=us-central1-a            # a free-tier zone: us-west1, us-central1, us-east1
-REGION=us-central1
-DOMAIN=api.example.com        # a hostname you control
-
-gcloud config set project "$PROJECT"
-gcloud services enable compute.googleapis.com artifactregistry.googleapis.com iap.googleapis.com
-
-gcloud artifacts repositories create imposter \
-  --repository-format=docker --location="$REGION"
+./deploy/setup-gcp.sh
 ```
 
-### 2. The VM
+That is the whole thing: project, billing link, APIs, image registry, reserved
+address, firewall, VM, Docker, the compose stack, the first image, and a wait
+until `https://<host>/healthz` answers. It is idempotent — re-run it after a
+failure. `./deploy/teardown-gcp.sh` deletes everything it made.
 
-Ubuntu LTS, not Container-Optimized OS: COS ships Docker but not the compose
-plugin, and `provision.sh` installs both.
+Defaults are the free-tier choices; override any of them:
 
-```sh
-gcloud compute instances create imposter \
-  --zone="$ZONE" --machine-type=e2-micro \
-  --image-family=ubuntu-2404-lts-amd64 --image-project=ubuntu-os-cloud \
-  --boot-disk-size=20GB --boot-disk-type=pd-standard \
-  --tags=imposter \
-  --scopes=https://www.googleapis.com/auth/cloud-platform
-```
+| Variable | Default | |
+| --- | --- | --- |
+| `PROJECT` | `imposter-il-game` | Created if missing |
+| `REGION` / `ZONE` | `us-central1` / `us-central1-a` | A free-tier region |
+| `DOMAIN` | derived from the IP | See below |
+| `BILLING_ACCOUNT` | your first open one | |
 
-Firewall: web traffic from anywhere, SSH only through IAP (the
-`35.235.240.0/20` range is Google's IAP forwarder, so port 22 is never open to
-the internet).
+### The hostname
 
-```sh
-gcloud compute firewall-rules create imposter-web \
-  --allow=tcp:80,tcp:443 --target-tags=imposter
-gcloud compute firewall-rules create imposter-ssh-iap \
-  --allow=tcp:22 --source-ranges=35.235.240.0/20 --target-tags=imposter
-```
+With no domain, the script derives one from the VM's reserved address using
+**sslip.io**: `34-72-1-5.sslip.io` resolves to `34.72.1.5`. No registrar, no A
+record, and Let's Encrypt issues for it normally. The address is *reserved*
+rather than ephemeral precisely because the hostname is baked into app builds.
 
-Let the VM pull images:
+To use your own domain, point its A record at the VM and pass it:
 
 ```sh
-NUMBER=$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')
-gcloud projects add-iam-policy-binding "$PROJECT" \
-  --member="serviceAccount:$NUMBER-compute@developer.gserviceaccount.com" \
-  --role=roles/artifactregistry.reader
+DOMAIN=api.example.com ./deploy/setup-gcp.sh
 ```
 
-### 3. DNS
+The script waits for the certificate; if DNS has not propagated it will time
+out and tell you to read Caddy's log.
 
-Point `$DOMAIN`'s A record at the VM, and wait for it to resolve. Caddy cannot
-get a certificate before this works.
+### Then build the app against it
 
 ```sh
-gcloud compute instances describe imposter --zone="$ZONE" \
-  --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
-dig +short "$DOMAIN"    # must return that address
+flutter build apk --dart-define=IMPOSTER_SERVER=https://<the host it printed>
 ```
 
-### 4. Provision and configure the VM
+Without this the app talks to `10.0.2.2:8080` / `localhost:8080`, the local
+development server.
 
-```sh
-gcloud compute ssh imposter --zone="$ZONE" --tunnel-through-iap \
-  --command "bash -s" < deploy/provision.sh
-
-# The compose stack and its settings.
-gcloud compute ssh imposter --zone="$ZONE" --tunnel-through-iap \
-  --command "sudo chown -R \$USER /var/imposter"
-gcloud compute scp --zone="$ZONE" --tunnel-through-iap \
-  deploy/docker-compose.yml deploy/Caddyfile imposter:/var/imposter/
-
-# .env holds the domain and the image tag; compose reads it automatically.
-sed -e "s|api.example.com|$DOMAIN|" \
-    -e "s|PROJECT|$PROJECT|" deploy/env.example > /tmp/imposter.env
-gcloud compute scp --zone="$ZONE" --tunnel-through-iap \
-  /tmp/imposter.env imposter:/var/imposter/.env
-```
-
-### 5. First image, first start
-
-```sh
-gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
-docker build -t "$REGION-docker.pkg.dev/$PROJECT/imposter/server:first" server
-docker push "$REGION-docker.pkg.dev/$PROJECT/imposter/server:first"
-
-gcloud compute ssh imposter --zone="$ZONE" --tunnel-through-iap --command "
-  sudo sed -i 's|^IMPOSTER_IMAGE=.*|IMPOSTER_IMAGE=$REGION-docker.pkg.dev/$PROJECT/imposter/server:first|' /var/imposter/.env
-  sudo systemctl start imposter"
-
-curl -s "https://$DOMAIN/healthz"     # {"status":"ok"} once Caddy has a cert
-```
-
-If `healthz` does not answer, the certificate is the usual cause:
-`gcloud compute ssh imposter --zone=$ZONE --tunnel-through-iap --command 'sudo docker compose -f /var/imposter/docker-compose.yml logs caddy'`.
-
-### 6. Point the app at it
-
-```sh
-flutter build apk --dart-define=IMPOSTER_SERVER=https://$DOMAIN
-```
-
-Without this the app uses `10.0.2.2:8080` / `localhost:8080`, which is the
-local development server.
-
-### 7. CI credentials
+### CI credentials (only needed for tag-triggered deploys)
 
 ```sh
 gcloud iam service-accounts create deployer
@@ -139,8 +89,8 @@ gcloud iam service-accounts keys create key.json \
   --iam-account="deployer@$PROJECT.iam.gserviceaccount.com"
 ```
 
-Put `key.json` in the `GCP_SA_KEY` GitHub secret, then delete it locally.
-Set the repository variables `GCP_PROJECT`, `GCP_ZONE` and `IMPOSTER_DOMAIN`.
+Put `key.json` in the `GCP_SA_KEY` GitHub secret, then delete it locally. Set
+the repository variables `GCP_PROJECT`, `GCP_ZONE` and `IMPOSTER_DOMAIN`.
 
 ## Deploying
 
