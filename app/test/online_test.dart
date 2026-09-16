@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:imposter_il/data/server.dart';
+import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/screens/live_room.dart';
 import 'package:imposter_il/screens/online_flow.dart';
 
@@ -46,6 +48,29 @@ void pushSearch(FakeChannel channel, String status, int players) =>
     });
 
 void main() {
+  testWidgets('category load failure shows the server error and retries',
+      (tester) async {
+    final api = FakeApi();
+    final categories = api.responses['GET /v1/categories']!;
+    api.responses['GET /v1/categories'] = const ApiException('network_error');
+    await startAtHome(tester, api);
+
+    await tapText(tester, 'משחק ברשת');
+    expect(find.text('משהו השתבש'), findsOneWidget);
+    expect(find.text('השרת לא זמין כרגע. נסו שוב בעוד רגע.'), findsOneWidget);
+    expect(find.text('ניסיון נוסף'), findsOneWidget);
+    expect(find.text('חזרה למסך הבית'), findsOneWidget);
+
+    await tapText(tester, 'חזרה למסך הבית');
+    expect(find.byType(HomeScreen), findsOneWidget);
+
+    await tapText(tester, 'משחק ברשת');
+    api.responses['GET /v1/categories'] = categories;
+    await tapText(tester, 'ניסיון נוסף');
+    expect(find.text('אוכל'), findsOneWidget);
+    expect(find.text('משהו השתבש'), findsNothing);
+  });
+
   testWidgets('search shows found players, empty spots and the status',
       (tester) async {
     final api = FakeApi();
@@ -54,20 +79,38 @@ void main() {
     pushSearch(channel, 'searching', 2);
     await settle(tester);
     expect(find.byType(LiveRoomScreen), findsOneWidget);
-    expect(find.text('2 מתוך 8'), findsOneWidget);
-    expect(find.text('צריך לפחות 4 שחקנים כדי להתחיל'), findsOneWidget);
-    expect(find.text('מחפשים...'), findsNWidgets(6));
+    expect(find.text('נמצאו 2 מתוך 8'), findsOneWidget);
+    expect(
+      find.text('המשחק יתחיל כשיהיו לפחות 4 שחקנים.'),
+      findsOneWidget,
+    );
+    expect(find.text('מחפשים שחקן...'), findsNWidgets(6));
+
+    // Join order is shared by everyone; the current player is identified by ID.
+    channel.event('matchmaking.state', {
+      ...searchJson('searching', 2),
+      'players': [player('p_2', 'נועה'), player('p_me', 'דור')],
+      'stateVersion': ++_searchVersion,
+    });
+    await settle(tester);
+    final meLabelY = tester.getCenter(find.text('אתם')).dy;
+    expect(
+        (meLabelY - tester.getCenter(find.text('דור')).dy).abs(), lessThan(2));
+    expect((meLabelY - tester.getCenter(find.text('נועה')).dy).abs(),
+        greaterThan(20));
 
     pushSearch(channel, 'waiting_for_more', 4);
     await settle(tester);
     expect(
-        find.text('נמצאו 4! מחכים עד 30 שניות לשחקנים נוספים'), findsOneWidget);
+      find.text('מחכים עד 30 שניות לשחקנים נוספים.'),
+      findsOneWidget,
+    );
 
     pushSearch(channel, 'countdown', 6);
     await settle(tester);
-    expect(find.text('המשחק מתחיל בעוד רגע!'), findsOneWidget);
+    expect(find.text('המשחק מתחיל בעוד רגע.'), findsOneWidget);
 
-    await tapLive(tester, 'ביטול');
+    await tapLive(tester, 'ביטול חיפוש');
     expect(channel.commands('matchmaking.cancel'), hasLength(1));
     expect(find.byType(CategorySelectionScreen), findsOneWidget);
   });
@@ -84,7 +127,7 @@ void main() {
     });
     channel.event('session.state', {'playerId': 'p_me', 'activity': 'none'});
     await settle(tester);
-    expect(find.text('לא נמצא משחק מתאים'), findsWidgets);
+    expect(find.text('לא נמצא משחק בקטגוריות שבחרתם'), findsOneWidget);
 
     await tapLive(tester, 'ניסיון נוסף');
     expect(channel.commands('matchmaking.join'), hasLength(2));
@@ -95,14 +138,14 @@ void main() {
         {'playerId': 'p_me', 'activity': 'matchmaking', 'roomId': 'r_pub2'});
     pushSearch(channel, 'searching', 1);
     await settle(tester);
-    expect(find.text('1 מתוך 8'), findsOneWidget);
+    expect(find.text('נמצא שחקן אחד מתוך 8'), findsOneWidget);
 
     channel.event('matchmaking.noMatch', {
       'categoryIds': ['food'],
     });
     channel.event('session.state', {'playerId': 'p_me', 'activity': 'none'});
     await settle(tester);
-    await tapLive(tester, 'בחירת קטגוריות מחדש');
+    await tapLive(tester, 'בחירת קטגוריות אחרות');
     expect(find.byType(CategorySelectionScreen), findsOneWidget);
   });
 
@@ -124,7 +167,7 @@ void main() {
       'game': gameJson(phase: 'role_reveal'),
     });
     await settle(tester);
-    expect(find.text('המשימה שלך'), findsOneWidget);
+    expect(find.text('אתם בצוות האזרחים'), findsOneWidget);
 
     channel.event('game.state', {
       'stateVersion': 5001,
@@ -134,11 +177,15 @@ void main() {
         'impostorPlayerId': 'p_3',
         'secretWord': 'פיל',
         'voteRounds': [],
+        'abstentions': [4],
         'outcomes': {'p_me': 'win'},
       }),
     });
     await settle(tester);
     expect(find.text('האזרחים ניצחו!'), findsOneWidget);
+    expect(find.text('חלוקת הקולות'), findsOneWidget);
+    expect(find.text('נמנעו'), findsOneWidget);
+    expect(find.text('4'), findsOneWidget);
     await tapLive(tester, 'משחק נוסף');
     expect(channel.commands('game.playAgain'), hasLength(1));
 
@@ -149,7 +196,7 @@ void main() {
       'stateVersion': 5002,
     });
     await settle(tester);
-    expect(find.text('3 מתוך 8'), findsOneWidget);
+    expect(find.text('נמצאו 3 מתוך 8'), findsOneWidget);
   });
 
   testWidgets('"הכול" stands alone, and no categories blocks the search',

@@ -43,7 +43,14 @@ func (s *Server) contentReady() bool {
 
 // searching reports whether entry is a public room still forming a match.
 func (s *Server) searching(entry *roomEntry) bool {
-	return entry.public && entry.room.View().Status == room.StatusLobby
+	if !entry.public || entry.room.View().Status != room.StatusLobby {
+		return false
+	}
+	// A deadline can end the game inside tickRoom before publish has settled
+	// its members. Do not mistake that brief lobby state for a forming match
+	// and start another game with the same players.
+	g := entry.room.Game()
+	return g == nil || entry.settled == g
 }
 
 // sharedCategories is what every searcher in the room selected.
@@ -110,6 +117,9 @@ func (s *Server) joinSearch(sess *session, previous *roomEntry, categories []str
 	s.roomsByID[entry.id] = entry
 	sess.roomID, sess.searchCategories, sess.searchStarted = entry.id, categories, now
 	sess.leaveGame()
+	if !sess.bot {
+		s.rebalanceStagingBots(entry, categories, now)
+	}
 	s.lobbyChanged(entry, now)
 	s.sendSessionState(sess)
 	s.publish(entry)
@@ -120,6 +130,9 @@ func (s *Server) joinSearch(sess *session, previous *roomEntry, categories []str
 func (s *Server) leaveSearch(sess *session, entry *roomEntry, now time.Time) {
 	_ = entry.room.Leave(sess.playerID, now)
 	sess.roomID = ""
+	if !sess.bot {
+		s.rebalanceStagingBots(entry, s.sharedCategories(entry), now)
+	}
 	s.lobbyChanged(entry, now)
 }
 
@@ -204,6 +217,10 @@ func (s *Server) settleFinishedMatch(entry *roomEntry, now time.Time) {
 		_ = entry.room.Leave(m.ID, now)
 		if sess := s.players[m.ID]; sess != nil {
 			sess.roomID = ""
+			if sess.bot {
+				sess.leaveGame()
+				delete(s.players, sess.playerID)
+			}
 		}
 	}
 	s.lobbyChanged(entry, now)

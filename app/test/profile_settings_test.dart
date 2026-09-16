@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
+import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/screens/live_room.dart';
+import 'package:imposter_il/state/game_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/fake_server.dart';
@@ -28,6 +30,25 @@ void enterGame(FakeChannel channel, String gameId) =>
       'gameId': gameId,
     });
 
+Future<GameSession> openActiveGame(
+  WidgetTester tester,
+  FakeApi api,
+) async {
+  final session = await startAtHome(tester, api);
+  api.responses['POST /v1/rooms'] = {'room': roomJson()};
+  await tapText(tester, 'משחק עם חברים');
+  await tapText(tester, 'יצירת חדר');
+  await tapLive(tester, 'יצירת חדר');
+  enterGame(api.channel, 'g_1');
+  api.channel.snapshot(
+    'game.state',
+    'game',
+    gameJson(phase: 'hints', turn: 'p_me'),
+  );
+  await settle(tester);
+  return session;
+}
+
 void main() {
   testWidgets('edit nickname and avatar on the server', (tester) async {
     final api = FakeApi()
@@ -35,13 +56,16 @@ void main() {
     await startAtHome(tester, api);
     await tester.tap(find.byTooltip('פרופיל'));
     await tester.pumpAndSettle();
-    await tapText(tester, 'עריכת פרטים');
+    await tapText(tester, 'עריכת כינוי ואווטאר');
 
     api.responses['PATCH /v1/sessions/me'] =
         const ApiException('invalid_nickname', 422);
     await tester.enterText(find.byType(TextField), 'נועה');
     await tapText(tester, 'שמירה');
-    expect(find.text('צריך לבחור כינוי של לפחות 2 תווים'), findsOneWidget);
+    expect(
+      find.text('בחרו כינוי באורך 2–18 תווים, כולל ניקוד ואימוג׳י.'),
+      findsOneWidget,
+    );
 
     api.responses['PATCH /v1/sessions/me'] = {'playerId': 'p_me'};
     await tester.tap(find.bySemanticsLabel('דמות 12'));
@@ -55,6 +79,19 @@ void main() {
     expect(find.text('נועה'), findsOneWidget); // back on the profile
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('session.nickname'), 'נועה');
+  });
+
+  testWidgets('nickname length follows the server rune count', (tester) async {
+    final api = FakeApi();
+    await startApp(tester, api);
+
+    // One displayed grapheme, but two Unicode code points: the same count the
+    // Go server validates.
+    await tester.enterText(find.byType(TextField), 'א\u05B0');
+    await tapText(tester, 'ממשיכים');
+    final (_, _, body) =
+        api.requests.lastWhere((request) => request.$2 == '/v1/sessions');
+    expect(body, {'nickname': 'א\u05B0', 'avatarId': 'avatar-f01-notebook'});
   });
 
   testWidgets('wins and losses are counted once per game and kept',
@@ -98,6 +135,89 @@ void main() {
     expect(prefs.getInt('stats.losses'), 1);
   });
 
+  testWidgets('an offline leave survives another dropped connection',
+      (tester) async {
+    final api = FakeApi();
+    final session = await openActiveGame(tester, api);
+
+    api.connectError = Exception('down');
+    await api.channel.close();
+    await settle(tester);
+    await tapLive(tester, 'יציאה מהמשחק');
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(session.losses, 0); // no decision from a stale local snapshot
+
+    // First retry: the command is sent, then this socket drops before either
+    // session.state or the reply can confirm it.
+    api
+      ..channelAutoReply = false
+      ..channelEmitLeaveState = false
+      ..connectError = null;
+    await settle(tester);
+    final firstRetry = api.channel;
+    firstRetry.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    await settle(tester);
+    expect(firstRetry.commands('game.leave'), hasLength(1));
+
+    api.connectError = Exception('down');
+    await firstRetry.close();
+    await settle(tester);
+
+    // Second retry still has the pending leave and completes it.
+    api
+      ..channelAutoReply = true
+      ..channelEmitLeaveState = true
+      ..channelLeaveOutcome = 'loss'
+      ..connectError = null;
+    await settle(tester);
+    final secondRetry = api.channel;
+    secondRetry.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    await settle(tester);
+
+    expect(secondRetry.commands('game.leave'), hasLength(1));
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(session.losses, 1);
+  });
+
+  testWidgets('offline leave records the server result, not a stale loss',
+      (tester) async {
+    final api = FakeApi();
+    final session = await openActiveGame(tester, api);
+
+    api.connectError = Exception('down');
+    await api.channel.close();
+    await settle(tester);
+    await tapLive(tester, 'יציאה מהמשחק');
+    expect(session.wins, 0);
+    expect(session.losses, 0);
+
+    // The match actually finished as a win while this device was offline.
+    api
+      ..channelLeaveOutcome = 'win'
+      ..connectError = null;
+    await settle(tester);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    await settle(tester);
+
+    expect(session.wins, 1);
+    expect(session.losses, 0);
+  });
+
   testWidgets('settings are saved; hiding reactions hides the buttons',
       (tester) async {
     final vibrations = <String>[];
@@ -137,7 +257,7 @@ void main() {
           },
         ]));
     await settle(tester);
-    expect(find.text('הרמז: חדק'), findsOneWidget);
+    expect(find.text('חדק'), findsOneWidget);
     expect(find.text('זה מחשיד'), findsNothing);
     expect(vibrations, isEmpty); // vibration is off
   });
@@ -271,17 +391,23 @@ void main() {
     expect(bannerCountdown, findsNothing);
     await reconnect();
 
-    // My turn: the server holds it for 30 seconds.
+    // My turn: the server holds it for 30 seconds, on a screen of its own.
     await dropWith(turn: 'p_me', disconnects: 1);
-    expect(find.text('ניתוק 2 מתוך 3'), findsOneWidget);
+    expect(find.textContaining('ניתוק 2 מתוך 3'), findsOneWidget);
     expect(bannerCountdown, findsOneWidget);
     expect(find.descendant(of: bannerCountdown, matching: find.text('30')),
         findsOneWidget);
+    expect(
+        find.text(
+            'החיבור אבד בזמן התור שלכם. ננסה להחזיר אתכם למשחק במשך 30 שניות.'),
+        findsOneWidget);
+    expect(find.text('יציאה מהמשחק'), findsOneWidget);
     await reconnect();
 
-    // A third drop removes the player after 30 seconds, turn or not.
-    await dropWith(turn: 'p_2', disconnects: 2);
-    expect(find.text('ניתוק 3 מתוך 3'), findsOneWidget);
+    // Even a defensive out-of-range server value is clamped in the copy.
+    await dropWith(turn: 'p_2', disconnects: 7);
+    expect(find.textContaining('ניתוק 3 מתוך 3'), findsOneWidget);
+    expect(find.textContaining('ניתוק 8 מתוך 3'), findsNothing);
     expect(bannerCountdown, findsOneWidget);
     await reconnect();
   });

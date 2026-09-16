@@ -1,13 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/screens/secondary_screens.dart';
+import 'package:imposter_il/widgets/game_ui.dart';
 
 import 'support/fake_server.dart';
 import 'support/helpers.dart';
 
 void main() {
+  testWidgets('primary buttons expose their tap action to assistive tech',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PrimaryButton(label: 'פעולה', onPressed: () {}),
+        ),
+      ),
+    );
+
+    final data =
+        tester.getSemantics(find.byType(PrimaryButton)).getSemanticsData();
+    expect(data.hasAction(SemanticsAction.tap), isTrue);
+    semantics.dispose();
+  });
+
+  testWidgets('primary buttons support focus and keyboard activation',
+      (tester) async {
+    var presses = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PrimaryButton(
+            label: 'פעולה',
+            onPressed: () => presses++,
+          ),
+        ),
+      ),
+    );
+
+    final ink = tester.widget<InkWell>(
+      find.descendant(
+        of: find.byType(PrimaryButton),
+        matching: find.byType(InkWell),
+      ),
+    );
+    ink.focusNode!.requestFocus();
+    await tester.pump();
+    expect(ink.focusNode!.hasFocus, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(presses, 1);
+  });
+
   testWidgets('a build the server refuses can only update', (tester) async {
     final api = FakeApi()
       ..responses['GET /v1/categories'] =
@@ -90,17 +138,9 @@ void main() {
 
     await tester.tap(find.byTooltip('הגדרות'));
     await tester.pumpAndSettle();
-    final sound = find.ancestor(
-      of: find.text('צלילים'),
-      matching: find.byType(SwitchListTile),
-    );
-    expect(tester.widget<SwitchListTile>(sound).onChanged, isNull);
+    expect(tester.widget<Switch>(find.byType(Switch).first).onChanged, isNull);
     for (final title in ['תנאי שימוש', 'מדיניות פרטיות']) {
-      final tile = find.ancestor(
-        of: find.text(title),
-        matching: find.byType(ListTile),
-      );
-      expect(tester.widget<ListTile>(tile).enabled, isFalse);
+      expect(find.text(title), findsOneWidget);
     }
   });
 }

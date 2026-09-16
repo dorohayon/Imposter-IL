@@ -79,6 +79,22 @@ func (s *Server) gameCommand(sess *session, typ string, p commandPayload, now ti
 		if current && s.currentRoom(sess) == entry {
 			err = entry.room.Leave(id, now)
 			sess.roomID = ""
+			if entry.public && !sess.bot {
+				s.removeGameBotsWithoutHumans(entry, now)
+			}
+		}
+		// Read after Leave: it ticks expired phases first. If the game had
+		// already ended, preserve its real result; otherwise a voluntary leave
+		// (or prior removal) is a loss. This is the only source of truth used by
+		// the app for an explicit leave.
+		if v, viewErr := sess.game.View(id); viewErr == nil {
+			outcome := game.OutcomeLoss
+			if v.Result != nil {
+				if settled := v.Result.Outcomes[id]; settled != "" {
+					outcome = settled
+				}
+			}
+			sess.lastGameID, sess.lastGameOutcome = sess.gameID, outcome
 		}
 		sess.leaveGame()
 		s.sendSessionState(sess)
@@ -208,6 +224,7 @@ type resultJSON struct {
 	ImpostorPlayerID string                  `json:"impostorPlayerId"`
 	SecretWord       string                  `json:"secretWord"`
 	VoteRounds       []map[string]string     `json:"voteRounds"`
+	Abstentions      []int                   `json:"abstentions"`
 	Outcomes         map[string]game.Outcome `json:"outcomes"`
 }
 
@@ -223,6 +240,7 @@ type gameJSON struct {
 	AwaitingReconnect   bool             `json:"awaitingReconnect"`
 	Hints               []hintJSON       `json:"hints"`
 	VoteCandidates      []string         `json:"voteCandidates"`
+	PreviousVotes       map[string]int   `json:"previousVotes,omitempty"`
 	MyVote              *string          `json:"myVote"`
 	Result              *resultJSON      `json:"result"`
 }
@@ -247,6 +265,7 @@ func (s *Server) gameJSON(gameID string, v game.View) gameJSON {
 		AwaitingReconnect:   v.Reconnecting,
 		Hints:               []hintJSON{},
 		VoteCandidates:      append([]string{}, v.Candidates...),
+		PreviousVotes:       v.PreviousVotes,
 		MyVote:              optional(v.MyVote),
 	}
 	if !v.Deadline.IsZero() {
@@ -274,6 +293,7 @@ func (s *Server) gameJSON(gameID string, v game.View) gameJSON {
 			ImpostorPlayerID: r.ImpostorID,
 			SecretWord:       r.SecretWord,
 			VoteRounds:       r.VoteRounds,
+			Abstentions:      r.Abstentions,
 			Outcomes:         r.Outcomes,
 		}
 	}

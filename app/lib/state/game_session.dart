@@ -40,8 +40,16 @@ class GameSession extends ChangeNotifier {
 
   List<Category> categories = const [];
   List<ReactionOption> reactions = const [];
+  bool contentLoading = false;
+  bool contentLoaded = false;
+  String? contentError;
 
   bool connected = false;
+
+  /// A game the player chose to leave while offline. It remains pending until
+  /// the server confirms that this session is no longer in that game.
+  String? _pendingGameLeave;
+  bool _pendingGameLeaveInFlight = false;
 
   /// While disconnected: when the server stops holding this player's turn
   /// (docs/decisions.md, 30 seconds), for the reconnecting overlay.
@@ -153,31 +161,55 @@ class GameSession extends ChangeNotifier {
     try {
       await loadContent();
     } on ApiException catch (e) {
-      if (e.code == 'session_not_found') await _replaceLostSession();
+      if (e.code == 'session_not_found') {
+        try {
+          await _replaceLostSession();
+        } on ApiException {
+          // The content error state already exposes retry to the player.
+        }
+      }
     }
     unawaited(_connectLoop());
   }
 
   Future<void> loadContent() async {
-    final results = await Future.wait([
-      api.request('GET', '/v1/categories', token: token),
-      api.request('GET', '/v1/reactions', token: token),
-    ]);
-    categories = (results[0]['categories'] as List)
-        .cast<Map<String, dynamic>>()
-        .map(Category.fromJson)
-        .toList();
-    reactions = (results[1]['reactions'] as List)
-        .cast<Map<String, dynamic>>()
-        .map(ReactionOption.fromJson)
-        .toList();
+    contentLoading = true;
+    contentError = null;
     _notify();
+    try {
+      final results = await Future.wait([
+        api.request('GET', '/v1/categories', token: token),
+        api.request('GET', '/v1/reactions', token: token),
+      ]);
+      categories = (results[0]['categories'] as List)
+          .cast<Map<String, dynamic>>()
+          .map(Category.fromJson)
+          .toList();
+      reactions = (results[1]['reactions'] as List)
+          .cast<Map<String, dynamic>>()
+          .map(ReactionOption.fromJson)
+          .toList();
+      contentLoaded = true;
+    } on ApiException catch (e) {
+      contentError = e.code;
+      rethrow;
+    } on Object {
+      contentError = 'internal_error';
+      rethrow;
+    } finally {
+      contentLoading = false;
+      _notify();
+    }
   }
 
   /// The server no longer knows the token (a restart loses every session).
   /// A new session with the same nickname and avatar replaces it.
   Future<void> _replaceLostSession() async {
     if (activity != 'none') sessionLost = true;
+    // A restarted server cannot confirm an old leave and must never turn that
+    // infrastructure failure into a local loss.
+    _pendingGameLeave = null;
+    _pendingGameLeaveInFlight = false;
     _clearActivity();
     final json = await api.request(
       'POST',
@@ -259,6 +291,23 @@ class GameSession extends ChangeNotifier {
             ?.complete(error?['code'] as String?);
         return;
       case 'session.state':
+        final outcomeGameId = payload['lastGameId'] as String?;
+        final outcome = payload['lastGameOutcome'] as String?;
+        if (outcomeGameId != null && outcome != null) {
+          _record(outcomeGameId, outcome);
+        }
+        final leaving = _pendingGameLeave;
+        if (leaving != null) {
+          if (payload['gameId'] == leaving) {
+            // Keep the local UI at home while retrying. The pending id is not
+            // cleared until the command is acknowledged, so another dropped
+            // connection cannot pull the player back into this game.
+            unawaited(_retryPendingGameLeave());
+            return;
+          }
+          _pendingGameLeave = null;
+          _pendingGameLeaveInFlight = false;
+        }
         final newRoom = payload['roomId'] as String?;
         if (newRoom != roomId) _lastVersion = 0; // versions count per room
         activity = payload['activity'] as String;
@@ -372,16 +421,36 @@ class GameSession extends ChangeNotifier {
   Future<String?> leaveGame() =>
       _leave('game.leave', 'gameId', gameId ?? game?.id);
 
+  Future<void> _retryPendingGameLeave() async {
+    final id = _pendingGameLeave;
+    if (id == null || _pendingGameLeaveInFlight || !connected) return;
+    _pendingGameLeaveInFlight = true;
+    final code = await send('game.leave', {'gameId': id});
+    _pendingGameLeaveInFlight = false;
+    if (_pendingGameLeave != id) return;
+    if (code == null || code == 'room_not_found' || code == 'game_not_found') {
+      _pendingGameLeave = null;
+    }
+    // A network error deliberately leaves the id pending for the next socket.
+    _notify();
+  }
+
   Future<String?> _leave(String type, String key, String? id) async {
-    // The server clears the game with session.state before it replies.
-    final left = game;
+    if (type == 'game.leave' && id != null && !connected) {
+      // Leaving while offline is immediate locally, then retried after every
+      // reconnect until the server confirms it. The authoritative outcome is
+      // delivered in session.state, so a stale local snapshot cannot turn a
+      // completed win into a loss.
+      _pendingGameLeave = id;
+      _pendingGameLeaveInFlight = false;
+      _clearActivity();
+      _notify();
+      return null;
+    }
     final code = id == null ? null : await send(type, {key: id});
     // Not found means the server no longer has the player there.
     if (code != null && code != 'room_not_found' && code != 'game_not_found') {
       return code;
-    }
-    if (type == 'game.leave' && left != null && left.phase != 'ended') {
-      _record(left.id, 'loss'); // leaving mid-game is a loss
     }
     _clearActivity();
     _notify();

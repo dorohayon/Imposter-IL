@@ -31,14 +31,18 @@ const (
 // Run reaps idle sessions, empty rooms and spent rate-limit buckets until ctx
 // is done. Start it once, alongside the HTTP server.
 func (s *Server) Run(ctx context.Context) {
-	ticker := time.NewTicker(reapInterval)
-	defer ticker.Stop()
+	reaper := time.NewTicker(reapInterval)
+	bots := time.NewTicker(350 * time.Millisecond)
+	defer reaper.Stop()
+	defer bots.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
+		case <-reaper.C:
 			s.reap()
+		case <-bots.C:
+			s.runStagingBots()
 		}
 	}
 }

@@ -402,6 +402,23 @@ func TestAllRemainingCitizensWinEvenWithWrongVotes(t *testing.T) {
 	if len(g.result.VoteRounds) != 1 || g.result.VoteRounds[0][c[0]] != c[1] {
 		t.Fatalf("vote breakdown = %v", g.result.VoteRounds)
 	}
+	if g.result.Abstentions[0] != 0 { // everyone voted
+		t.Fatalf("abstentions = %v, want 0", g.result.Abstentions)
+	}
+}
+
+func TestAbstentionsCountActivePlayersWhoDidNotVote(t *testing.T) {
+	g := newGame(t, 4)
+	now := toVoting(t, g)
+	c := citizens(g)
+	must(t, g.Vote(c[0], g.impostor, now))
+	must(t, g.Disconnect(c[1], now)) // a disconnected vote would not count either
+	g.Tick(now.Add(20 * time.Second))
+	must(t, g.SubmitGuess(g.impostor, "wrong", now.Add(21*time.Second)))
+	// Four active players, one counted vote.
+	if got := g.result.Abstentions; len(got) != 1 || got[0] != 3 {
+		t.Fatalf("abstentions = %v, want [3]", got)
+	}
 }
 
 func TestTieGoesToRunoffAmongTiedOnly(t *testing.T) {
@@ -421,6 +438,14 @@ func TestTieGoesToRunoffAmongTiedOnly(t *testing.T) {
 	}
 	if v, _ := g.View(c[0]); v.MyVote != "" {
 		t.Fatal("runoff starts with fresh votes")
+	}
+	// The runoff shows how the tie happened.
+	if v, _ := g.View(c[0]); v.PreviousVotes[c[1]] != 1 ||
+		v.PreviousVotes[g.impostor] != 1 || len(v.PreviousVotes) != 2 {
+		t.Fatalf("previous votes = %v, want one each for the tied players", v.PreviousVotes)
+	}
+	if v, _ := g.View(c[0]); v.Phase == PhaseVoting {
+		t.Fatal("phase should be runoff")
 	}
 	wantErr(t, g.Vote(c[0], c[2], now), ErrInvalidVoteTarget)
 
@@ -691,4 +716,40 @@ func sameSet(a, b []string) bool {
 	slices.Sort(a)
 	slices.Sort(b)
 	return slices.Equal(a, b)
+}
+
+// The runoff shows how the tie happened, but only for the players in it.
+// Counting every target would tell the table how the group voted on someone
+// who is not a candidate, which docs/protocol.md reveals only in result.
+func TestRunoffPreviousVotesHideNonCandidates(t *testing.T) {
+	g := newGame(t, 6)
+	now := toVoting(t, g)
+	c := citizens(g) // five citizens
+
+	// c[1] and the impostor tie on two; c[0] draws one and misses the runoff.
+	must(t, g.Vote(c[0], c[1], now))
+	must(t, g.Vote(c[2], c[1], now))
+	must(t, g.Vote(c[1], g.impostor, now))
+	must(t, g.Vote(c[3], g.impostor, now))
+	must(t, g.Vote(c[4], c[0], now))
+
+	g.Tick(now.Add(20 * time.Second))
+	wantPhase(t, g, PhaseRunoffVoting)
+	if want := []string{c[1], g.impostor}; !sameSet(g.candidates, want) {
+		t.Fatalf("runoff candidates = %v, want %v", g.candidates, want)
+	}
+
+	v, err := g.View(c[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v.PreviousVotes[c[1]] != 2 || v.PreviousVotes[g.impostor] != 2 {
+		t.Fatalf("previous votes = %v, want two each for the tied players", v.PreviousVotes)
+	}
+	if _, leaked := v.PreviousVotes[c[0]]; leaked {
+		t.Fatalf("previous votes leak a non-candidate's count: %v", v.PreviousVotes)
+	}
+	if len(v.PreviousVotes) != 2 {
+		t.Fatalf("previous votes = %v, want only the two candidates", v.PreviousVotes)
+	}
 }

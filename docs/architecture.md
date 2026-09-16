@@ -63,6 +63,7 @@ Imposter-IL/
 
 - `lib/data/server.dart` — לקוח REST ו־WebSocket על `dart:io`, בלי ספריות רשת. כתובת השרת מ־`--dart-define=IMPOSTER_SERVER`.
 - `lib/data/models.dart` — מודלים מוקלדים ל־`Room`, `GameView`, קטגוריות ותגובות.
+- `lib/widgets/game_ui.dart` — רכיבי מערכת העיצוב: כפתורים עם מצבי לחיצה, טיימר בעיגול, כרטיס שחקן, אווטאר ובאנר מצב (`design/claude/design-system.md`).
 - `lib/state/game_session.dart` — `GameSession` (`ChangeNotifier`) שמוזרק דרך `SessionScope` (`InheritedNotifier`), בלי ספריית ניהול State. מחזיק את זהות האורח (נשמרת ב־`shared_preferences`), לולאת חיבור מחדש, תשובות לפקודות, ה־Snapshot האחרון של החדר והמשחק, התעלמות מ־`stateVersion` ישן, והיסט השעון מול `serverTime`. שם נשמרים גם ניצחונות והפסדים (במכשיר בלבד; כל משחק נספר פעם אחת לפי מזהה) והגדרות הרטט והתגובות.
 - `lib/screens/live_room.dart` — מסך אחד שמחליף לפי ה־Snapshot בין חיפוש משחק ברשת (כולל `לא נמצא משחק מתאים`), לובי של חדר פרטי ושלבי המשחק, כולל מסכי הוצאה, תקלה בשרת והודעת חיבור מחדש.
 - ניווט ב־`Navigator` הרגיל. בדיקות Widget משתמשות בשרת מדומה (`test/support/fake_server.dart`), ובדיקות ה־End-to-End (`test/e2e`) מריצות את שכבת ה־session מול השרת האמיתי, בחדר פרטי ובמשחק ברשת.

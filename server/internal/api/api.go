@@ -23,9 +23,12 @@ import (
 	"github.com/dorohayon/Imposter-IL/server/internal/room"
 )
 
-// MinNicknameRunes is the approved minimum after trimming. The maximum length
-// and allowed characters are still open decisions.
-const MinNicknameRunes = 2
+// MinNicknameRunes and MaxNicknameRunes are the approved bounds after
+// trimming (docs/decisions.md). Allowed characters are still an open decision.
+const (
+	MinNicknameRunes = 2
+	MaxNicknameRunes = 18
+)
 
 const maxBodyBytes = 64 << 10
 
@@ -54,6 +57,7 @@ type session struct {
 	// never did is reaped within minutes rather than kept for a day: that is
 	// what bounds memory against someone looping POST /v1/sessions.
 	connected bool
+	bot       bool // staging-only server actor; never has a token or WebSocket
 
 	// The categories and start time of the player's latest online search.
 	searchCategories []string
@@ -69,6 +73,12 @@ type session struct {
 	gameID   string
 	game     *game.Game
 	gameRoom *roomEntry
+
+	// The last outcome authoritatively settled by game.leave. Repeating it in
+	// session.state lets a client recover when the socket drops after the
+	// command ran but before its reply arrived. Clients deduplicate by game id.
+	lastGameID      string
+	lastGameOutcome game.Outcome
 }
 
 type roomEntry struct {
@@ -131,6 +141,12 @@ type Server struct {
 	commandLimit *limiter // WebSocket commands, per session
 
 	metrics metrics
+
+	// Optional staging-only actors. Zero is the production default. Bots are
+	// created only while at least one real player is searching or playing.
+	stagingBots int
+	botSequence uint64
+	botHint     uint64
 }
 
 // NewServer uses policy and pickWord for games started in rooms. Without
@@ -154,6 +170,21 @@ func NewServer(now func() time.Time, policy game.Policy, pickWord PickWord) *Ser
 	}
 	s.newCode = func() string { return room.NewCode(s.rng) }
 	return s
+}
+
+// EnableStagingBots lets one real online player reach the four-player minimum
+// without an external always-on worker. At most three are allowed so a match
+// can never form without a real player. Leave disabled in production.
+func (s *Server) EnableStagingBots(count int) {
+	if count < 0 {
+		count = 0
+	}
+	if count >= matchmaking.MinPlayers {
+		count = matchmaking.MinPlayers - 1
+	}
+	s.mu.Lock()
+	s.stagingBots = count
+	s.mu.Unlock()
 }
 
 // RequireClientBuild refuses clients older than build. The app sends its build
@@ -209,7 +240,7 @@ type apiError struct {
 var (
 	errInvalidMessage  = apiError{http.StatusBadRequest, "invalid_message", "invalid request body"}
 	errSessionNotFound = apiError{http.StatusUnauthorized, "session_not_found", "session not found"}
-	errInvalidNickname = apiError{http.StatusUnprocessableEntity, "invalid_nickname", "nickname must have at least 2 characters"}
+	errInvalidNickname = apiError{http.StatusUnprocessableEntity, "invalid_nickname", "nickname must have 2 to 18 characters"}
 	errInvalidAvatar   = apiError{http.StatusUnprocessableEntity, "invalid_avatar", "unknown avatar"}
 	errInvalidSettings = apiError{http.StatusUnprocessableEntity, "invalid_room_settings", "invalid room settings"}
 	errInvalidRoomCode = apiError{http.StatusUnprocessableEntity, "invalid_room_code", "room code must be six digits"}
@@ -276,7 +307,8 @@ func (s *Server) withSession(next func(http.ResponseWriter, []byte, *session)) h
 
 func validNickname(nickname string) (string, bool) {
 	nickname = strings.TrimSpace(nickname)
-	return nickname, utf8.RuneCountInString(nickname) >= MinNicknameRunes
+	runes := utf8.RuneCountInString(nickname)
+	return nickname, runes >= MinNicknameRunes && runes <= MaxNicknameRunes
 }
 
 type profileRequest struct {

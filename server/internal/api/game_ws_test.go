@@ -170,6 +170,14 @@ func TestWSGamePlaysToTheEnd(t *testing.T) {
 	}
 	host.w.roomState(func(r map[string]any) bool { return r["status"] == "lobby" })
 
+	// Leaving the result screen repeats the authoritative result in
+	// session.state, so a client can recover it after a dropped reply.
+	resultLeaver := players[1]
+	wantOK(t, resultLeaver.w.command("result-home", "game.leave", map[string]any{"gameId": gameID}))
+	if state := resultLeaver.w.sessionState(func(s map[string]any) bool { return s["activity"] == "none" }); state["lastGameId"] != gameID || state["lastGameOutcome"] != outcomes[resultLeaver.id] {
+		t.Fatalf("result leave session.state = %v", state)
+	}
+
 	wantReplyError(t, host.w.command("wrong", "game.vote", map[string]any{"gameId": "g_nope", "targetPlayerId": impostor}), "game_not_found")
 	wantOK(t, host.w.command("again", "game.playAgain", map[string]any{"gameId": gameID}))
 	host.w.sessionState(func(s map[string]any) bool { return s["activity"] == "room" && s["roomId"] == roomID })
@@ -223,7 +231,9 @@ func TestWSLeavingAGameIsALossAndLeavesTheRoom(t *testing.T) {
 	}
 
 	wantOK(t, leaver.w.command("bye", "game.leave", map[string]any{"gameId": gameID}))
-	leaver.w.sessionState(func(s map[string]any) bool { return s["activity"] == "none" })
+	if state := leaver.w.sessionState(func(s map[string]any) bool { return s["activity"] == "none" }); state["lastGameId"] != gameID || state["lastGameOutcome"] != "loss" {
+		t.Fatalf("active leave session.state = %v", state)
+	}
 	watcher.w.gameState(func(g map[string]any) bool { return gamePlayer(g, leaver.id)["status"] == "left" })
 	watcher.w.roomState(func(r map[string]any) bool { return member(r, leaver.id) == nil && r["status"] == "in_game" })
 	wantReplyError(t, leaver.w.command("late", "game.confirmRole", map[string]any{"gameId": gameID}), "game_not_found")

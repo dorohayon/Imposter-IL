@@ -214,7 +214,7 @@
 
 | `type` | `payload` |
 | --- | --- |
-| `session.state` | `{ playerId, activity: "none" \| "matchmaking" \| "room" \| "game", roomId?, gameId? }` |
+| `session.state` | `{ playerId, activity: "none" \| "matchmaking" \| "room" \| "game", roomId?, gameId?, lastGameId?, lastGameOutcome? }`. אחרי `game.leave`, שני השדות האחרונים חוזרים גם בחיבור מחדש כדי שהלקוח ירשום את תוצאת השרת פעם אחת גם אם התשובה לפקודה אבדה. |
 | `matchmaking.state` | `{ stateVersion, status: "searching" \| "waiting_for_more" \| "countdown", categoryIds, players: PlayerSummary[], targetPlayers: 6, maxPlayers: 8, deadline }` — `categoryIds` הן הקטגוריות המשותפות לכל המחפשים; `deadline` הוא מתי יוצג `לא נמצא משחק מתאים` לשחקן הזה ב־`searching`, ומתי יתחיל המשחק ב־`waiting_for_more` וב־`countdown` |
 | `matchmaking.noMatch` | `{ categoryIds }` — מסך 6 |
 | `room.state` | `{ stateVersion, room: Room }` |
@@ -270,6 +270,7 @@
   "awaitingReconnect": false,
   "hints": [ { "playerId": "p_3", "text": "חדק", "missing": false, "reactions": { "…": 3 } } ],
   "voteCandidates": [],
+  "previousVotes": { "p_2": 2, "p_4": 2 },
   "myVote": null,
   "result": null
 }
@@ -279,6 +280,7 @@
 - `secretWord` חסר אצל המתחזה עד `ended`.
 - `players` לפי סדר התורות. `status`: `active` | `left` | `removed`.
 - `myVote` הוא הקול של השחקן עצמו בלבד. קולות אחרים נחשפים רק ב־`result`.
+- `previousVotes` מופיע בהצבעה חוזרת בלבד, ומראה כמה קולות קיבל כל מועמד בסבב הקודם.
 
 `result` בסיום:
 
@@ -289,9 +291,12 @@
   "impostorPlayerId": "p_4",
   "secretWord": "…",
   "voteRounds": [ { "p_1": "p_4", "p_2": "p_4" } ],
+  "abstentions": [ 1 ],
   "outcomes": { "p_1": "win", "p_4": "loss" }
 }
 ```
+
+`abstentions` מונה לכל סבב כמה שחקנים פעילים לא הצביעו, כולל מי שהיה מנותק בסיום ההצבעה.
 
 `winner`: `citizens` | `impostor` | `null` (עבור `not_enough_players`). ערכי `reason` ב־[`architecture.md`](architecture.md#משחק-internalgame--ממומש).
 
