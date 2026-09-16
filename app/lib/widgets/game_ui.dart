@@ -76,6 +76,7 @@ class _PrimaryButtonState extends State<PrimaryButton> {
       button: true,
       enabled: enabled,
       label: widget.label,
+      onTap: enabled ? widget.onPressed : null,
       child: ExcludeSemantics(
         child: GestureDetector(
           onTapDown: enabled ? (_) => _setPressed(true) : null,

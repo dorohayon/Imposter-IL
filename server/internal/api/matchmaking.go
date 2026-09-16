@@ -75,6 +75,9 @@ func (s *Server) accepts(entry *roomEntry, categories []string) bool {
 // category with them; otherwise in a new one.
 func (s *Server) joinSearch(sess *session, previous *roomEntry, categories []string, now time.Time) string {
 	switch {
+	// One choke point for both matchmaking.join and game.playAgain online.
+	case s.draining:
+		return "server_draining"
 	case !content.ValidIDs(categories):
 		return "invalid_categories"
 	case !s.contentReady():

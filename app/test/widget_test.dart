@@ -1,10 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/screens/home_screen.dart';
+import 'package:imposter_il/screens/secondary_screens.dart';
+import 'package:imposter_il/widgets/game_ui.dart';
 
+import 'support/fake_server.dart';
 import 'support/helpers.dart';
 
 void main() {
+  testWidgets('primary buttons expose their tap action to assistive tech',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PrimaryButton(label: 'פעולה', onPressed: () {}),
+        ),
+      ),
+    );
+
+    final data =
+        tester.getSemantics(find.byType(PrimaryButton)).getSemanticsData();
+    expect(data.hasAction(SemanticsAction.tap), isTrue);
+    semantics.dispose();
+  });
+
+  testWidgets('a build the server refuses can only update', (tester) async {
+    final api = FakeApi()
+      ..responses['GET /v1/categories'] =
+          const ApiException('client_too_old', 426);
+
+    final session = await startApp(tester, api, saved: {
+      'session.token': 'token-1',
+      'session.playerId': 'p_me',
+      'session.nickname': 'דור',
+      'session.avatarId': 'avatar-m04-detective-hat',
+    });
+
+    expect(session.needsUpdate, isTrue);
+    expect(find.byType(UpdateRequiredScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
+    // No way out: an unsupported build cannot reach the rest of the app.
+    expect(find.byType(BackButton), findsNothing);
+  });
+
+  testWidgets('the update screen covers pushed routes too', (tester) async {
+    final api = FakeApi();
+    final session = await startAtHome(tester, api);
+
+    // Deep in the stack, the way a player is when the server stops serving
+    // their build mid-session.
+    await tapText(tester, 'איך משחקים?');
+    expect(find.text('איך משחקים?'), findsWidgets);
+
+    api.responses['GET /v1/categories'] =
+        const ApiException('client_too_old', 426);
+    await session.loadContent().catchError((Object _) {});
+    await tester.pumpAndSettle();
+
+    expect(find.byType(UpdateRequiredScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
+  });
+
   testWidgets('onboarding opens the Hebrew home screen', (tester) async {
     await startAtHome(tester);
 

@@ -110,6 +110,12 @@ class _StatCard extends StatelessWidget {
   }
 }
 
+/// Support address shown in settings and required by the stores alongside
+/// reporting (App Store review guideline 1.2). Empty hides the row.
+///
+/// MUST be filled in before submission — see docs/production-architecture-review.md.
+const supportEmail = '';
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -153,6 +159,22 @@ class SettingsScreen extends StatelessWidget {
             'מי המתחזה? · גרסה 1.0',
             style: TextStyle(color: AppColors.muted, fontSize: 12),
           ),
+          if (supportEmail.isNotEmpty)
+            const ListTile(
+              leading: Icon(Icons.mail_outline_rounded),
+              title: Text('יצירת קשר'),
+              subtitle: Text(supportEmail),
+            ),
+          if (session.muted.isNotEmpty)
+            ListTile(
+              leading: const Icon(Icons.flag_outlined),
+              title: const Text('שחקנים שדיווחתם עליהם'),
+              subtitle: Text('${session.muted.length} שחקנים מוסתרים'),
+              trailing: TextButton(
+                onPressed: session.clearMuted,
+                child: const Text('ניקוי'),
+              ),
+            ),
         ],
       ),
     );
@@ -291,6 +313,40 @@ class HowToPlayScreen extends StatelessWidget {
           }),
           const Illustration('assets/illustrations/how-to-play.webp',
               height: 110),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shown when the server refuses this build (`client_too_old`). Nothing else
+/// is reachable: an old install whose protocol the server dropped can only
+/// update, so this screen has no way back.
+class UpdateRequiredScreen extends StatelessWidget {
+  const UpdateRequiredScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GameScaffold(
+      title: 'צריך לעדכן',
+      showBack: false,
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          const Illustration('assets/illustrations/connection-error.webp'),
+          const SizedBox(height: 20),
+          Text(
+            'יש גרסה חדשה של המשחק',
+            style: Theme.of(context).textTheme.headlineLarge,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'הגרסה שמותקנת אצלכם כבר לא נתמכת.\n'
+            'עדכנו את האפליקציה בחנות כדי להמשיך לשחק.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.muted, height: 1.5),
+          ),
         ],
       ),
     );

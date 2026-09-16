@@ -1,0 +1,51 @@
+# Single VM: the server plus Caddy for TLS. One instance, all state in memory
+# — see docs/production-architecture-review.md, Stage 0.
+#
+# Settings come from .env beside this file (deploy/env.example is the template);
+# a deploy rewrites only IMPOSTER_IMAGE there.
+services:
+  server:
+    image: ${IMPOSTER_IMAGE:?set IMPOSTER_IMAGE in /var/imposter/.env}
+    restart: always
+    environment:
+      PORT: "8080"
+      # Only Caddy can reach the server, on the private bridge network below,
+      # so X-Forwarded-For is the real client.
+      TRUST_PROXY: "1"
+      METRICS_ADDR: "0.0.0.0:9090"
+      # A normal game is ~3 minutes (10s reveal + 8 turns + voting). The slow
+      # case is every player disconnecting at once: each turn then waits out a
+      # 30-second reconnect window, so winding down takes nearly this long.
+      DRAIN_TIMEOUT: "5m"
+      LOG_LEVEL: "info"
+      # Raise to retire old app builds; see docs/protocol.md.
+      MIN_CLIENT_BUILD: "${MIN_CLIENT_BUILD:-0}"
+    ports:
+      # Metrics on loopback only: the counters say how many games and players
+      # exist. The game port is never published — Caddy reaches it over the
+      # bridge network, so it cannot be hit directly from outside.
+      - "127.0.0.1:9090:9090"
+    # Docker's default is 10 seconds, which would kill games mid-drain.
+    # Must exceed DRAIN_TIMEOUT.
+    stop_grace_period: 6m
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    depends_on: [server]
+    environment:
+      IMPOSTER_DOMAIN: ${IMPOSTER_DOMAIN:?set IMPOSTER_DOMAIN in /var/imposter/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data # certificates survive a redeploy
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

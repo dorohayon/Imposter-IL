@@ -1,0 +1,82 @@
+name: deploy server
+
+# Tag-triggered so a deploy is always a deliberate, named thing that can be
+# rolled back to. Setup and rollback: deploy/README.md.
+on:
+  push:
+    tags: ["server-v*"]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy (a commit SHA, to roll back)"
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: us-central1-docker.pkg.dev
+  IMAGE_NAME: imposter/server
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The same checks CI runs, again: a tag can point anywhere.
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - name: test
+        working-directory: server
+        run: go test -race ./...
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: configure docker
+        run: gcloud auth configure-docker "$REGISTRY" --quiet
+
+      - name: build and push
+        id: image
+        working-directory: server
+        run: |
+          tag="${{ inputs.image_tag || github.sha }}"
+          image="$REGISTRY/${{ vars.GCP_PROJECT }}/$IMAGE_NAME:$tag"
+          if [ -n "${{ inputs.image_tag }}" ]; then
+            echo "rolling back to $image, not rebuilding"
+          else
+            docker build -t "$image" .
+            docker push "$image"
+          fi
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+      - name: deploy
+        run: |
+          # The VM's /var/imposter/.env holds the domain and the image, so a
+          # deploy only rewrites the image line. See deploy/README.md.
+          gcloud compute ssh imposter \
+            --zone="${{ vars.GCP_ZONE }}" --tunnel-through-iap --quiet \
+            --command "set -e
+              sudo sed -i 's|^IMPOSTER_IMAGE=.*|IMPOSTER_IMAGE=${{ steps.image.outputs.image }}|' /var/imposter/.env
+              cd /var/imposter
+              sudo docker compose pull
+              sudo docker compose up -d"
+
+      # The old container drains before it exits, so the new one is only
+      # really up once this answers.
+      - name: verify
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS "https://${{ vars.IMPOSTER_DOMAIN }}/healthz" | grep -q '"ok"'; then
+              curl -fsS "https://${{ vars.IMPOSTER_DOMAIN }}/readyz"
+              echo "deployed ${{ steps.image.outputs.image }}"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "server did not come back; roll back with workflow_dispatch and an older SHA"
+          exit 1

@@ -295,6 +295,8 @@ class _Reconnecting extends StatelessWidget {
     final inPlay = game != null && game.phase != 'ended' && me != null;
     final deadline = session.reconnectDeadline;
     if (inPlay && deadline != null) {
+      final disconnectedDuringMyTurn =
+          game.phase == 'hints' && game.currentTurnPlayerId == session.playerId;
       return Material(
         color: const Color(0xF20A091A),
         child: SafeArea(
@@ -309,10 +311,12 @@ class _Reconnecting extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
               const SizedBox(height: 10),
-              const Text(
-                'החיבור אבד בזמן התור שלכם. ננסה להחזיר אתכם למשחק במשך 30 שניות.',
+              Text(
+                disconnectedDuringMyTurn
+                    ? 'החיבור אבד בזמן התור שלכם. ננסה להחזיר אתכם למשחק במשך 30 שניות.'
+                    : 'החיבור אבד. ננסה להחזיר אתכם למשחק במשך 30 שניות.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                     color: AppColors.muted, fontSize: 15, height: 1.5),
               ),
               const SizedBox(height: 16),
@@ -326,7 +330,9 @@ class _Reconnecting extends StatelessWidget {
                       color: AppColors.yellow.withValues(alpha: .42)),
                 ),
                 child: Text(
-                  'ניתוק ${me.disconnects + 1} מתוך 3 במשחק הזה. אם תחזרו בזמן, תקבלו תור מלא מחדש.',
+                  disconnectedDuringMyTurn
+                      ? 'ניתוק ${me.disconnects + 1} מתוך 3 במשחק הזה. אם תחזרו בזמן, תקבלו תור מלא מחדש.'
+                      : 'ניתוק ${me.disconnects + 1} מתוך 3 במשחק הזה. אם לא תחזרו בזמן, תוצאו מהמשחק.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       color: Color(0xFFFFF0C2), fontSize: 13, height: 1.45),
@@ -405,6 +411,7 @@ class _Search extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final session = SessionScope.of(context);
     final count = search.players.length;
     final found = count == 1
         ? 'נמצא שחקן אחד מתוך ${search.maxPlayers}'
@@ -512,7 +519,7 @@ class _Search extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
-                    if (index == 0)
+                    if (player.id == session.playerId)
                       const Text(
                         'אתם',
                         style:
@@ -841,6 +848,15 @@ class _RoleReveal extends StatelessWidget {
             height: 158,
           ),
           Text(
+            'קטגוריה: ${game.category}',
+            style: const TextStyle(
+              color: AppColors.turquoise,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
             impostor ? 'אתם המתחזה' : 'אתם בצוות האזרחים',
             style: Theme.of(context).textTheme.headlineLarge,
             textAlign: TextAlign.center,
@@ -1063,12 +1079,29 @@ class _HintsState extends State<_Hints> {
               'עוד לא נשלחו רמזים.',
               style: TextStyle(color: AppColors.muted),
             ),
-          for (final h in game.hints)
+          for (final (i, h) in game.hints.indexed)
             if (game.player(h.playerId) case final p?)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: PlayerCard(
-                  player: _player(p, me, hint: h.missing ? '' : h.text),
+                child: _ReportableHint(
+                  card: PlayerCard(
+                    player: _player(
+                      p,
+                      me,
+                      hint: switch (h) {
+                        _ when h.missing => '',
+                        _ when session.muted.contains(h.playerId) => 'הוסתר',
+                        _ => h.text,
+                      },
+                    ),
+                  ),
+                  playerId: h.playerId,
+                  nickname: p.nickname,
+                  hintIndex: i,
+                  // Nobody reports themself, and a hidden hint is already dealt with.
+                  canReport: h.playerId != me &&
+                      !h.missing &&
+                      !session.muted.contains(h.playerId),
                 ),
               ),
           if (lastHint != null &&
@@ -1474,7 +1507,7 @@ class _Result extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w900),
                     ),
                   ),
-                  if (votes.isNotEmpty) ...[
+                  if (votes.isNotEmpty || abstained > 0) ...[
                     const Divider(),
                     const ListTile(title: Text('חלוקת הקולות')),
                     for (final entry
@@ -1638,6 +1671,79 @@ class _StateMessage extends StatelessWidget {
             StatusBanner(text: shown.$1, positive: shown.$2),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// A hint with the report action beside it.
+///
+/// Required of any app that shows text one player wrote to another (App Store
+/// review guideline 1.2, Google Play's UGC policy). It is a visible button
+/// rather than a long-press, so the action is not hidden behind a gesture.
+class _ReportableHint extends StatelessWidget {
+  const _ReportableHint({
+    required this.card,
+    required this.playerId,
+    required this.nickname,
+    required this.hintIndex,
+    required this.canReport,
+  });
+
+  final Widget card;
+  final String playerId;
+  final String nickname;
+  final int hintIndex;
+  final bool canReport;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!canReport) return card;
+    return Row(
+      children: [
+        Expanded(child: card),
+        IconButton(
+          tooltip: 'דיווח על הרמז',
+          icon: const Icon(Icons.flag_outlined, color: AppColors.muted),
+          onPressed: () => _confirm(context),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _confirm(BuildContext context) async {
+    final session = SessionScope.read(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('לדווח על הרמז?'),
+        content: Text(
+          'הרמז יישלח לבדיקה, ולא תראו יותר רמזים של $nickname במכשיר הזה.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('ביטול'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('דיווח'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final code = await session.reportPlayer(playerId, hintIndex: hintIndex);
+    // The hiding is local and holds either way; the report itself may not
+    // have reached the server, and saying it did would be a lie.
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          code == null
+              ? 'הדיווח נשלח. הרמזים האלה יוסתרו.'
+              : 'הרמזים האלה יוסתרו, אבל הדיווח לא נשלח. ${commandMessage(code)}',
+        ),
       ),
     );
   }

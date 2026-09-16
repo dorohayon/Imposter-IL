@@ -103,3 +103,16 @@ Future<void> tapTooltip(WidgetTester tester, String tooltip) async {
   await tester.tap(find.byTooltip(tooltip));
   await tester.pumpAndSettle();
 }
+
+/// Whether a category tile is shown as selected. A selected tile swaps its
+/// category icon for a check, which is what the player actually sees.
+///
+/// The grid is lazy, so only ask about tiles that are on screen.
+bool isSelectedTile(WidgetTester tester, String label) {
+  final tile =
+      find.ancestor(of: find.text(label), matching: find.byType(Stack)).first;
+  return find
+      .descendant(of: tile, matching: find.byIcon(Icons.check_circle_rounded))
+      .evaluate()
+      .isNotEmpty;
+}

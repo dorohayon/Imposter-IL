@@ -59,7 +59,8 @@ void main() {
     await tapText(tester, 'משחק עם חברים');
     await tapText(tester, 'יצירת חדר');
 
-    // Categories come from the server; deselect one before creating.
+    // Categories come from the server. "הכול" is the default; tapping one
+    // leaves it and picks just that one.
     expect(find.text('חפצים'), findsOneWidget);
     await tapText(tester, 'חפצים');
     await tapText(tester, '10 שניות');
@@ -69,7 +70,7 @@ void main() {
     expect(body, {
       'maxPlayers': 8,
       'hintSeconds': 10,
-      'categoryIds': ['food', 'animals', 'sports', 'professions', 'places'],
+      'categoryIds': ['objects'],
     });
     expect(find.text('482 913'), findsOneWidget); // grouped in the lobby
     expect(find.text('מנהל החדר · אתם'), findsOneWidget);
@@ -113,7 +114,15 @@ void main() {
 
     api.responses['POST /v1/rooms/join'] =
         const ApiException('room_not_found', 404);
-    await tester.enterText(find.byType(TextField), '111111');
+    final codeField = tester.widget<TextField>(find.byType(TextField));
+    expect(codeField.readOnly, isTrue);
+    expect(codeField.canRequestFocus, isFalse);
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    expect(tester.testTextInput.isVisible, isFalse);
+    for (var i = 0; i < 6; i++) {
+      await tapText(tester, '1');
+    }
     await tapText(tester, 'הצטרפות');
     expect(
       find.text('החדר לא נמצא או שאינו זמין. בדקו את הקוד עם מי שפתח את החדר.'),
@@ -127,7 +136,9 @@ void main() {
       ]),
     };
     // The code can be typed on the screen's own keypad.
-    await tester.enterText(find.byType(TextField), '');
+    for (var i = 0; i < 6; i++) {
+      await tapText(tester, 'מחיקה');
+    }
     for (final digit in ['4', '8', '2', '9', '1', '9']) {
       await tapText(tester, digit);
     }
@@ -158,6 +169,7 @@ void main() {
     });
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
+    expect(find.text('אתם בצוות האזרחים'), findsOneWidget);
     expect(find.text('המילה הסודית'), findsOneWidget);
     expect(find.text('פיל'), findsOneWidget);
     await tapLive(tester, 'הבנתי');
@@ -353,6 +365,47 @@ void main() {
     expect(find.text('מתחברים מחדש...'), findsNothing);
   });
 
+  testWidgets('a third disconnect outside the player turn uses accurate copy',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    api.channel.snapshot(
+      'game.state',
+      'game',
+      gameJson(
+        phase: 'voting',
+        candidates: ['p_me', 'p_2', 'p_3', 'p_4'],
+        players: [
+          player('p_me', 'דור', disconnects: 2),
+          player('p_2', 'נועה'),
+          player('p_3', 'יובל'),
+          player('p_4', 'מאיה'),
+        ],
+      ),
+    );
+    await settle(tester);
+
+    api.connectError = Exception('down');
+    await api.channel.close();
+    await settle(tester);
+
+    expect(find.textContaining('החיבור אבד.'), findsOneWidget);
+    expect(find.textContaining('החיבור אבד בזמן התור'), findsNothing);
+    expect(find.textContaining('תור מלא מחדש'), findsNothing);
+    expect(find.textContaining('תוצאו מהמשחק'), findsOneWidget);
+
+    api.connectError = null;
+    await tester.pump(const Duration(milliseconds: 100));
+    await settle(tester);
+  });
+
   testWidgets('a session lost mid-room shows screen 29 without a loss',
       (tester) async {
     final api = FakeApi();
@@ -454,5 +507,50 @@ void main() {
     expect(isEnabled(tester, 'אישור הצבעה'), isFalse);
     // The tie that led here.
     expect(find.text('2 קולות בסבב הקודם'), findsNWidgets(2));
+  });
+
+  testWidgets('reporting a hint sends it and hides that player',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    final channel = api.channel;
+
+    channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1'
+    });
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(
+          phase: 'hints',
+          turn: 'p_3',
+          hints: [
+            {
+              'playerId': 'p_2',
+              'text': 'גסות',
+              'missing': false,
+              'reactions': <String, dynamic>{}
+            },
+          ],
+        ));
+    await settle(tester);
+    expect(find.text('גסות'), findsOneWidget);
+
+    // A visible button, not a hidden gesture.
+    await tester.tap(find.byTooltip('דיווח על הרמז'));
+    await tester.pumpAndSettle();
+    await tapText(tester, 'דיווח');
+    await settle(tester);
+
+    expect(channel.commands('game.report').single['payload'],
+        {'gameId': 'g_1', 'playerId': 'p_2', 'hintIndex': 0});
+    // The hint is hidden on this device, and cannot be reported twice.
+    expect(find.text('גסות'), findsNothing);
+    expect(find.text('הוסתר'), findsOneWidget);
+    expect(find.byTooltip('דיווח על הרמז'), findsNothing);
   });
 }

@@ -48,6 +48,16 @@ jobs:
       - if: matrix.format
         run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
+      # The server gates old installs on X-Client-Build, so the constant the
+      # app sends has to be the build number the store actually ships.
+      - name: clientBuild matches pubspec
+        run: |
+          pubspec="$(sed -n 's/^version: .*+//p' pubspec.yaml)"
+          dart="$(sed -n 's/^const clientBuild = \([0-9]*\);/\1/p' lib/data/server.dart)"
+          if [ "$pubspec" != "$dart" ]; then
+            echo "pubspec build $pubspec != clientBuild $dart in lib/data/server.dart"
+            exit 1
+          fi
       - run: flutter test
 
   build:

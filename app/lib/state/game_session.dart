@@ -11,7 +11,13 @@ import '../data/server.dart';
 /// and the latest room and game snapshots. Screens read it through
 /// [SessionScope] and rebuild when it changes.
 class GameSession extends ChangeNotifier {
-  GameSession(this.api, {this.reconnectDelay = const Duration(seconds: 2)});
+  GameSession(this.api, {this.reconnectDelay = const Duration(seconds: 2)}) {
+    api.onClientTooOld = () {
+      if (needsUpdate) return;
+      needsUpdate = true;
+      _notify();
+    };
+  }
 
   final ApiClient api;
   final Duration reconnectDelay;
@@ -25,6 +31,7 @@ class GameSession extends ChangeNotifier {
   static const _countedKey = 'stats.countedGames';
   static const _vibrationKey = 'settings.vibration';
   static const _reactionsKey = 'settings.showReactions';
+  static const _mutedKey = 'moderation.muted';
 
   String? token;
   String? playerId;
@@ -47,9 +54,20 @@ class GameSession extends ChangeNotifier {
   bool vibrationOn = true;
   bool showReactions = true;
 
+  /// Players this device reported. Their hints are hidden here from then on.
+  ///
+  /// Kept on the device because a player id lasts only as long as a guest
+  /// session: there are no accounts, so there is nothing durable to block.
+  /// Reports still reach the server, which is what the stores require.
+  Set<String> muted = {};
+
   /// The server lost this session mid-room or mid-game (for example it
   /// restarted). No loss is recorded; screen 29 is shown until dismissed.
   bool sessionLost = false;
+
+  /// The server no longer serves this build. Nothing else works until the
+  /// player updates, so this one is not dismissible.
+  bool needsUpdate = false;
 
   String activity = 'none'; // none | matchmaking | room | game
   String? roomId;
@@ -92,6 +110,7 @@ class GameSession extends ChangeNotifier {
     _countedGames = prefs.getStringList(_countedKey) ?? [];
     vibrationOn = prefs.getBool(_vibrationKey) ?? true;
     showReactions = prefs.getBool(_reactionsKey) ?? true;
+    muted = (prefs.getStringList(_mutedKey) ?? const []).toSet();
     if (signedIn) unawaited(_start());
   }
 
@@ -408,11 +427,37 @@ class GameSession extends ChangeNotifier {
     _countedGames = [..._countedGames, gameId];
     if (_countedGames.length > 50) _countedGames.removeAt(0);
     outcome == 'win' ? wins++ : losses++;
-    unawaited(SharedPreferences.getInstance().then((prefs) async {
-      await prefs.setInt(_winsKey, wins);
-      await prefs.setInt(_lossesKey, losses);
-      await prefs.setStringList(_countedKey, _countedGames);
-    }));
+    unawaited(
+      SharedPreferences.getInstance().then((prefs) async {
+        await prefs.setInt(_winsKey, wins);
+        await prefs.setInt(_lossesKey, losses);
+        await prefs.setStringList(_countedKey, _countedGames);
+      }),
+    );
+  }
+
+  /// Reports a player for what they wrote and hides their text on this
+  /// device. Returns an error code, or null on success.
+  Future<String?> reportPlayer(String playerId, {int? hintIndex}) async {
+    final code = await send('game.report', {
+      'gameId': gameId ?? game?.id,
+      'playerId': playerId,
+      if (hintIndex != null) 'hintIndex': hintIndex,
+    });
+    // The mute is this device's own and holds even if the report did not
+    // reach the server.
+    muted = {...muted, playerId};
+    _notify();
+    await (await SharedPreferences.getInstance())
+        .setStringList(_mutedKey, muted.toList());
+    return code;
+  }
+
+  /// Forgets every report made on this device, so those hints show again.
+  Future<void> clearMuted() async {
+    muted = {};
+    _notify();
+    await (await SharedPreferences.getInstance()).remove(_mutedKey);
   }
 
   /// Changes the nickname and avatar on the server. Throws [ApiException].
