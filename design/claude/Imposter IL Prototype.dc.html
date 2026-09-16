@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{margin:0;background:#EDEBE4}a{color:#8B5CF6}a:hover{color:#14132B}input{font-family:Rubik,sans-serif;box-sizing:border-box}input:focus{outline:2px solid #8B5CF6}*::-webkit-scrollbar{width:0;height:0}</style></helmet>
+<div style="display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start;padding:36px 40px 64px;font-family:Rubik,system-ui,sans-serif">
+
+<div style="display:flex;flex-direction:column;gap:12px;flex:none">
+<div style="font:400 12px/1 ui-monospace,Menlo,monospace;color:#8B5CF6;letter-spacing:.14em">PROTOTYPE · 390×844</div>
+<div dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:38px;background:#14132B;overflow:hidden;box-shadow:0 22px 56px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;position:relative">
+
+<div style="height:50px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 5px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.7);flex:none"><span>9:41</span><span style="width:24px;height:9px;background:rgba(255,248,231,.35);border-radius:2px"></span></div>
+
+<sc-if value="{{ atOnboarding }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="onboarding" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:16px 24px 26px;gap:16px">
+<div style="text-align:center"><div style="font:400 27px/1.2 'Secular One',sans-serif;color:#FFF8E7">מי אתם במשחק?</div><div style="margin-top:6px;font:400 14px/1.5 Rubik,sans-serif;color:rgba(255,248,231,.6)">בוחרים כינוי ואווטאר. בלי הרשמה.</div></div>
+<div style="display:flex;justify-content:center"><div style="width:118px;height:118px;border-radius:50%;background:#241F45;border:4px solid #FFD447;overflow:hidden;box-shadow:0 10px 26px rgba(139,92,246,.36)"><div style="width:100%;height:100%;background-image:url({{ myAvatar }});background-size:cover;background-position:center"></div></div></div>
+<div style="display:flex;flex-direction:column;gap:7px">
+<span style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.68)">הכינוי שלך</span>
+<input value="{{ nick }}" onChange="{{ onNick }}" style="height:54px;width:100%;border-radius:16px;background:#FFF8E7;border:2px solid transparent;padding:0 16px;font:500 17px/1 Rubik,sans-serif;color:#14132B">
+<span style="font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.42)">2–12 תווים</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:9px;min-height:0">
+<span style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.68)">בחירת אווטאר</span>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+<sc-for list="{{ avatarChoices }}" as="av" hint-placeholder-count="12">
+<div onClick="{{ av.pick }}" style="aspect-ratio:1;border-radius:50%;background:#241F45;overflow:hidden;cursor:pointer;box-shadow:{{ av.ring }}"><div style="width:100%;height:100%;background-image:url({{ av.src }});background-size:cover;background-position:center"></div></div>
+</sc-for>
+</div>
+</div>
+<div style="flex:1"></div>
+<button onClick="{{ goHome }}" style="height:60px;border:none;border-radius:18px;background:#FFD447;font:400 22px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">ממשיכים</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atHome }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="home" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:6px 24px 30px;gap:14px">
+<div style="display:flex;justify-content:space-between;flex:none"><div onClick="{{ goProfile }}" style="display:flex;align-items:center;gap:9px;background:rgba(255,248,231,.08);border-radius:999px;padding:5px 13px 5px 6px;cursor:pointer"><div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:#241F45"><div style="width:100%;height:100%;background-image:url({{ myAvatar }});background-size:cover;background-position:center"></div></div><span style="font:500 14px/1 Rubik,sans-serif;color:#FFF8E7">{{ nick }}</span></div><div aria-label="הגדרות" onClick="{{ goSettings }}" style="width:44px;height:44px;border-radius:14px;background:rgba(255,248,231,.08);border:1px solid rgba(255,248,231,.14);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="rgba(255,248,231,.85)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008.4 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2a2 2 0 110-4h.09A1.65 1.65 0 004.6 8.4a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V2a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H22a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg></div></div>
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px"><img src="assets/illustrations/home-hero.webp" alt="" style="max-height:290px;max-width:90%;height:100%;object-fit:contain;display:block"><div style="text-align:center"><div style="font:400 42px/1.05 'Secular One',sans-serif;color:#FFF8E7">מי המתחזה?</div><div style="margin-top:7px;font:500 14px/1 Rubik,sans-serif;color:#FFD447">משחק חקירה חברתי</div></div></div>
+<button onClick="{{ goCategories }}" style="height:66px;border:none;border-radius:20px;background:#FFD447;font:400 24px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">משחק ברשת</button>
+<button onClick="{{ goCreateJoin }}" style="height:60px;border-radius:20px;background:transparent;border:2px solid #2DD4BF;font:400 21px/1 'Secular One',sans-serif;color:#2DD4BF;cursor:pointer;flex:none">משחק עם חברים</button>
+<button onClick="{{ goHowTo }}" style="height:48px;border:none;border-radius:15px;background:rgba(255,248,231,.07);font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.82);cursor:pointer;flex:none">איך משחקים?</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atProfile }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="profile" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 24px 26px;gap:16px">
+<div style="display:flex;align-items:center;gap:11px;flex:none"><div onClick="{{ goHome }}" style="width:42px;height:42px;border-radius:13px;background:rgba(255,248,231,.09);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#FFF8E7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></div><div style="font:400 24px/1.1 'Secular One',sans-serif;color:#FFF8E7">הפרופיל שלי</div></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:11px;flex:none">
+<div style="width:118px;height:118px;border-radius:50%;background:#241F45;border:4px solid #FFD447;overflow:hidden"><div style="width:100%;height:100%;background-image:url({{ myAvatar }});background-size:cover;background-position:center"></div></div>
+<div style="font:400 28px/1 'Secular One',sans-serif;color:#FFF8E7">{{ nick }}</div>
+<button onClick="{{ goOnboarding }}" style="height:44px;border-radius:14px;background:transparent;border:2px solid rgba(255,248,231,.3);padding:0 18px;font:500 14px/1 Rubik,sans-serif;color:#FFF8E7;cursor:pointer">עריכת כינוי ואווטאר</button>
+</div>
+<div style="display:flex;gap:11px;flex:none">
+<div style="flex:1;background:rgba(45,212,191,.14);border:1px solid rgba(45,212,191,.4);border-radius:20px;padding:16px;text-align:center"><div style="font:400 42px/1 'Secular One',sans-serif;color:#2DD4BF">14</div><div style="margin-top:5px;font:500 14px/1 Rubik,sans-serif;color:#8FF3E6">ניצחונות</div></div>
+<div style="flex:1;background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.4);border-radius:20px;padding:16px;text-align:center"><div style="font:400 42px/1 'Secular One',sans-serif;color:#FF8F8F">9</div><div style="margin-top:5px;font:500 14px/1 Rubik,sans-serif;color:#FFD9D9">הפסדים</div></div>
+</div>
+<div style="background:rgba(255,248,231,.05);border-radius:18px;padding:14px;font:400 13px/1.55 Rubik,sans-serif;color:rgba(255,248,231,.68);flex:none">אין ניקוד מספרי במשחק. נשמרים ניצחונות והפסדים בלבד.</div>
+<div style="flex:1"></div>
+<button onClick="{{ goSettings }}" style="height:54px;border:none;border-radius:16px;background:rgba(255,248,231,.08);font:500 16px/1 Rubik,sans-serif;color:#FFF8E7;cursor:pointer;flex:none">הגדרות</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atSettings }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="settings" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 24px 26px;gap:14px">
+<div style="display:flex;align-items:center;gap:11px;flex:none"><div onClick="{{ goHome }}" style="width:42px;height:42px;border-radius:13px;background:rgba(255,248,231,.09);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#FFF8E7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></div><div style="font:400 24px/1.1 'Secular One',sans-serif;color:#FFF8E7">הגדרות</div></div>
+<div style="display:flex;flex-direction:column;gap:10px;flex:none">
+<sc-for list="{{ toggles }}" as="tg" hint-placeholder-count="3">
+<div onClick="{{ tg.flip }}" style="background:rgba(255,248,231,.07);border-radius:16px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer"><span style="font:500 16px/1 Rubik,sans-serif;color:#FFF8E7">{{ tg.label }}</span><span style="width:52px;height:30px;border-radius:999px;background:{{ tg.trackBg }};display:flex;align-items:center;justify-content:{{ tg.knobSide }};padding:3px;flex:none"><span style="width:24px;height:24px;border-radius:50%;background:{{ tg.knobBg }};display:block"></span></span></div>
+</sc-for>
+<div style="background:rgba(255,248,231,.07);border-radius:16px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between"><span style="font:500 16px/1 Rubik,sans-serif;color:#FFF8E7">שפה</span><span style="font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.7)">עברית</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;flex:none">
+<div style="background:rgba(255,248,231,.04);border-radius:16px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer"><span style="font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.85)">תנאי שימוש</span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="rgba(255,248,231,.55)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+<div style="background:rgba(255,248,231,.04);border-radius:16px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer"><span style="font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.85)">מדיניות פרטיות</span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="rgba(255,248,231,.55)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+<div onClick="{{ goHowTo }}" style="background:rgba(255,248,231,.04);border-radius:16px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer"><span style="font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.85)">איך משחקים?</span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="rgba(255,248,231,.55)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+</div>
+<div style="flex:1"></div>
+<div style="text-align:center;font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.5);flex:none">גרסה 1.0 · מי המתחזה?</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ atHowTo }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="how-to-play" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 22px 26px;gap:12px">
+<div style="display:flex;align-items:center;gap:11px;flex:none"><div onClick="{{ goHome }}" style="width:42px;height:42px;border-radius:13px;background:rgba(255,248,231,.09);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#FFF8E7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></div><div style="font:400 24px/1.1 'Secular One',sans-serif;color:#FFF8E7">איך משחקים?</div></div>
+<div style="display:flex;flex-direction:column;gap:9px;flex:none">
+<div style="background:{{ cardBg }};border-radius:18px;padding:13px;display:flex;gap:12px;align-items:flex-start"><span style="width:32px;height:32px;border-radius:10px;background:#FFD447;color:#14132B;font:400 18px/32px 'Secular One',sans-serif;text-align:center;flex:none">1</span><span style="font:400 14px/1.5 Rubik,sans-serif;color:{{ cardFg }}">כולם מקבלים את אותה מילה סודית — מלבד המתחזה, שרואה רק את הקטגוריה.</span></div>
+<div style="background:{{ cardBg }};border-radius:18px;padding:13px;display:flex;gap:12px;align-items:flex-start"><span style="width:32px;height:32px;border-radius:10px;background:#FFD447;color:#14132B;font:400 18px/32px 'Secular One',sans-serif;text-align:center;flex:none">2</span><span style="font:400 14px/1.5 Rubik,sans-serif;color:{{ cardFg }}">כל שחקן כותב בתורו רמז של מילה אחת. 15 שניות לתור.</span></div>
+<div style="background:{{ cardBg }};border-radius:18px;padding:13px;display:flex;gap:12px;align-items:flex-start"><span style="width:32px;height:32px;border-radius:10px;background:#FFD447;color:#14132B;font:400 18px/32px 'Secular One',sans-serif;text-align:center;flex:none">3</span><span style="font:400 14px/1.5 Rubik,sans-serif;color:{{ cardFg }}">בסוף הסבב מצביעים מי המתחזה. 20 שניות להצבעה.</span></div>
+<div style="background:{{ cardBg }};border-radius:18px;padding:13px;display:flex;gap:12px;align-items:flex-start"><span style="width:32px;height:32px;border-radius:10px;background:#8B5CF6;color:#FFF8E7;font:400 18px/32px 'Secular One',sans-serif;text-align:center;flex:none">4</span><span style="font:400 14px/1.5 Rubik,sans-serif;color:{{ cardFg }}">אם המתחזה נתפס — יש לו 15 שניות לנחש את המילה ולנצח בכל זאת.</span></div>
+</div>
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/how-to-play.webp" alt="" style="max-height:170px;max-width:72%;height:100%;object-fit:contain;display:block"></div>
+<button onClick="{{ goHome }}" style="height:58px;border:none;border-radius:18px;background:#FFD447;font:400 21px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">הבנתי</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atCategories }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="categories" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 24px 28px;gap:13px">
+<div style="display:flex;align-items:center;gap:11px;flex:none"><div onClick="{{ goHome }}" style="width:42px;height:42px;border-radius:13px;background:rgba(255,248,231,.09);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#FFF8E7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></div><div style="font:400 24px/1.1 'Secular One',sans-serif;color:#FFF8E7">בחירת קטגוריות</div></div>
+<div style="font:400 14px/1.5 Rubik,sans-serif;color:rgba(255,248,231,.6);flex:none">אפשר לבחור כמה קטגוריות. ככל שתבחרו יותר, המשחק יימצא מהר יותר.</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;flex:none">
+<sc-for list="{{ categories }}" as="cat" hint-placeholder-count="8">
+<div onClick="{{ cat.toggle }}" style="height:86px;border-radius:18px;display:flex;flex-direction:column;justify-content:space-between;padding:11px 13px;cursor:pointer;background:{{ cat.bg }};border:2px solid {{ cat.border }}"><span style="font:600 11px/1 Rubik,sans-serif;color:{{ cat.mark }}">{{ cat.state }}</span><span style="font:400 19px/1.1 'Secular One',sans-serif;color:{{ cat.fg }}">{{ cat.name }}</span></div>
+</sc-for>
+</div>
+<div style="flex:1"></div>
+<div style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.55);text-align:center;flex:none">{{ pickedLabel }}</div>
+<button onClick="{{ goMatchmaking }}" style="height:64px;border:none;border-radius:20px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">חפש משחק</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atMatchmaking }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="matchmaking" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:10px 22px 22px;gap:11px">
+<div style="text-align:center;flex:none"><div style="font:400 25px/1.15 'Secular One',sans-serif;color:#FFF8E7">מרכיבים צוות חקירה</div><div style="margin-top:7px;display:inline-flex;align-items:center;gap:7px;background:rgba(45,212,191,.15);border:1px solid rgba(45,212,191,.45);border-radius:999px;padding:6px 13px"><span style="font:500 13px/1 Rubik,sans-serif;color:#8FF3E6">נמצאו</span><span style="font:400 17px/1 'Secular One',sans-serif;color:#2DD4BF">6 מתוך 8</span></div></div>
+<div style="display:flex;flex-direction:column;gap:6px;flex:none">
+<sc-for list="{{ foundPlayers }}" as="p" hint-placeholder-count="6">
+<div style="display:flex;align-items:center;gap:11px;background:rgba(255,248,231,.06);border-radius:13px;padding:6px 10px"><div style="width:40px;height:40px;border-radius:50%;background:#241F45;overflow:hidden;flex:none"><div style="width:100%;height:100%;background-image:url({{ p.src }});background-size:cover;background-position:center"></div></div><span style="flex:1;font:500 15px/1.2 Rubik,sans-serif;color:#FFF8E7">{{ p.name }}</span><span style="font:500 12px/1 Rubik,sans-serif;color:#2DD4BF">{{ p.tag }}</span></div>
+</sc-for>
+<div style="display:flex;align-items:center;gap:11px;border-radius:13px;padding:6px 10px;border:1px dashed rgba(255,248,231,.22)"><div style="width:40px;height:40px;border-radius:50%;background:rgba(255,248,231,.07);display:flex;align-items:center;justify-content:center;font:400 19px/1 'Secular One',sans-serif;color:rgba(255,248,231,.38);flex:none">?</div><span style="font:400 14px/1.2 Rubik,sans-serif;color:rgba(255,248,231,.45)">מחפשים שחקן…</span></div>
+<div style="display:flex;align-items:center;gap:11px;border-radius:13px;padding:6px 10px;border:1px dashed rgba(255,248,231,.22)"><div style="width:40px;height:40px;border-radius:50%;background:rgba(255,248,231,.07);display:flex;align-items:center;justify-content:center;font:400 19px/1 'Secular One',sans-serif;color:rgba(255,248,231,.38);flex:none">?</div><span style="font:400 14px/1.2 Rubik,sans-serif;color:rgba(255,248,231,.45)">מחפשים שחקן…</span></div>
+</div>
+<div style="background:rgba(255,212,71,.12);border:1px solid rgba(255,212,71,.38);border-radius:14px;padding:9px 11px;display:flex;align-items:center;gap:10px;flex:none"><div style="width:42px;height:42px;border-radius:50%;border:3px solid #FFD447;display:flex;align-items:center;justify-content:center;font:400 16px/1 'Secular One',sans-serif;color:#FFD447;flex:none">{{ timer }}</div><span style="font:500 13px/1.4 Rubik,sans-serif;color:#FFF0C2">מחכים עד 30 שניות. אם לא יצטרפו עוד שחקנים, מתחילים עם מי שיש.</span></div>
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/matchmaking-team.webp" alt="" style="max-height:150px;max-width:64%;height:100%;object-fit:contain;display:block"></div>
+<button onClick="{{ goReveal }}" style="height:58px;border:none;border-radius:18px;background:#FFD447;font:400 21px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">מתחילים עכשיו</button>
+<button onClick="{{ goCategories }}" style="height:46px;border:none;border-radius:15px;background:transparent;font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.6);cursor:pointer;flex:none">ביטול חיפוש</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atNoMatch }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="no-category-match" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:16px 26px 28px;gap:16px;align-items:center;text-align:center">
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/no-category-match.webp" alt="" style="max-height:230px;max-width:82%;height:100%;object-fit:contain;display:block"></div>
+<div style="font:400 26px/1.2 'Secular One',sans-serif;color:#FFF8E7">לא מצאנו משחק בקטגוריות שבחרתם</div>
+<div style="font:400 15px/1.6 Rubik,sans-serif;color:rgba(255,248,231,.62)">כרגע אין מספיק שחקנים בקטגוריות האלה. אפשר להוסיף קטגוריות ולנסות שוב, או לפתוח חדר פרטי ולהזמין חברים.</div>
+<div style="flex:1"></div>
+<button onClick="{{ goCategories }}" style="width:100%;height:60px;border:none;border-radius:18px;background:#FFD447;font:400 21px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">בחירת קטגוריות מחדש</button>
+<button onClick="{{ goCreateJoin }}" style="width:100%;height:56px;border-radius:18px;background:transparent;border:2px solid #2DD4BF;font:400 19px/1 'Secular One',sans-serif;color:#2DD4BF;cursor:pointer;flex:none">משחק עם חברים</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atRevealCitizen }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="role-citizen" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:14px 26px 28px;gap:14px;align-items:center;text-align:center;background:radial-gradient(120% 60% at 50% 18%,rgba(45,212,191,.22),transparent 70%)">
+<div style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.55);flex:none">התפקיד שלך בסבב הזה</div>
+<div style="font:400 40px/1.05 'Secular One',sans-serif;color:#2DD4BF;flex:none">אזרח</div>
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/role-citizen.webp" alt="" style="max-height:220px;max-width:78%;height:100%;object-fit:contain;display:block"></div>
+<div style="width:100%;background:{{ cardBg }};border-radius:22px;padding:16px;flex:none"><div style="font:500 12px/1 Rubik,sans-serif;color:{{ cardMuted }}">הקטגוריה</div><div style="margin-top:3px;font:400 19px/1.1 'Secular One',sans-serif;color:{{ cardFg }}">אוכל רחוב</div><div style="margin-top:12px;font:500 12px/1 Rubik,sans-serif;color:{{ cardMuted }}">המילה הסודית</div><div style="margin-top:3px;font:400 30px/1.05 'Secular One',sans-serif;color:{{ cardAccent }}">פלאפל</div></div>
+<div style="font:400 14px/1.5 Rubik,sans-serif;color:rgba(255,248,231,.6);flex:none">תנו רמז שיוכיח שאתם יודעים — בלי לחשוף את המילה למתחזה.</div>
+<button onClick="{{ goClues }}" style="width:100%;height:60px;border:none;border-radius:18px;background:#FFD447;font:400 21px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">הבנתי, מתחילים</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atRevealImpostor }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="role-impostor" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:14px 26px 28px;gap:14px;align-items:center;text-align:center;background:radial-gradient(120% 60% at 50% 18%,rgba(139,92,246,.3),transparent 70%)">
+<div style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.55);flex:none">התפקיד שלך בסבב הזה</div>
+<div style="font:400 40px/1.05 'Secular One',sans-serif;color:#8B5CF6;flex:none">מתחזה</div>
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/role-impostor.webp" alt="" style="max-height:220px;max-width:78%;height:100%;object-fit:contain;display:block"></div>
+<div style="width:100%;background:{{ cardBg }};border-radius:22px;padding:16px;flex:none"><div style="font:500 12px/1 Rubik,sans-serif;color:{{ cardMuted }}">הקטגוריה</div><div style="margin-top:3px;font:400 26px/1.05 'Secular One',sans-serif;color:{{ cardFg }}">אוכל רחוב</div><div style="margin-top:12px;display:flex;align-items:center;gap:8px;justify-content:center;background:{{ cardTint }};border-radius:12px;padding:9px"><span style="width:20px;height:20px;border-radius:50%;background:#8B5CF6;color:#FFF8E7;font:700 12px/20px Rubik,sans-serif;flex:none">?</span><span style="font:500 13px/1.35 Rubik,sans-serif;color:{{ cardFg }}">את המילה הסודית אתם לא מקבלים</span></div></div>
+<div style="font:400 14px/1.5 Rubik,sans-serif;color:rgba(255,248,231,.6);flex:none">הקשיבו לרמזים, התחברו לשיחה — ואם ייתפסו אתכם, תקבלו הזדמנות לנחש את המילה.</div>
+<button onClick="{{ goClues }}" style="width:100%;height:60px;border:none;border-radius:18px;background:#8B5CF6;font:400 21px/1 'Secular One',sans-serif;color:#FFF8E7;box-shadow:0 7px 0 #5B34B8;cursor:pointer;flex:none">הבנתי, מתחילים</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atClues }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="clues" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:8px 20px 22px;gap:10px">
+<div style="display:flex;align-items:center;justify-content:space-between;flex:none"><div onClick="{{ askExit }}" style="width:44px;height:44px;border-radius:14px;background:rgba(255,107,107,.14);border:1px solid rgba(255,107,107,.45);display:flex;align-items:center;justify-content:center;font:600 12px/1 Rubik,sans-serif;color:#FF9B9B;cursor:pointer">יציאה</div><div style="width:52px;height:52px;border-radius:50%;border:3px solid #FFD447;display:flex;align-items:center;justify-content:center;font:400 20px/1 'Secular One',sans-serif;color:#FFD447;background:rgba(255,212,71,.1)">{{ timer }}</div></div>
+<div style="background:{{ cardBg }};border-radius:16px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex:none"><span style="font:500 12px/1.3 Rubik,sans-serif;color:{{ cardMuted }}">{{ wordLabel }}</span><span style="font:400 20px/1 'Secular One',sans-serif;color:{{ cardAccent }}">{{ wordValue }}</span></div>
+<div style="font:500 14px/1 Rubik,sans-serif;color:rgba(255,248,231,.62);flex:none">{{ turnLabel }}</div>
+<div style="flex:1;min-height:0;overflow:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:5px">
+<sc-for list="{{ clueRows }}" as="c" hint-placeholder-count="8">
+<div style="display:flex;align-items:center;gap:10px;background:{{ c.bg }};border:1px solid {{ c.border }};border-radius:13px;padding:6px 10px;flex:none"><div style="width:38px;height:38px;border-radius:50%;background:#241F45;overflow:hidden;flex:none"><div style="width:100%;height:100%;background-image:url({{ c.src }});background-size:cover;background-position:center"></div></div><span style="font:500 14px/1.2 Rubik,sans-serif;color:#FFF8E7;flex:none;min-width:56px">{{ c.name }}</span><span style="flex:1;text-align:end;font:400 17px/1.2 'Secular One',sans-serif;color:{{ c.clueColor }}">{{ c.clue }}</span></div>
+</sc-for>
+</div>
+<sc-if value="{{ clueBlocked }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:flex-start;gap:9px;background:rgba(255,107,107,.14);border:1px solid rgba(255,107,107,.5);border-radius:14px;padding:10px 12px;flex:none"><span style="width:20px;height:20px;border-radius:50%;background:#FF6B6B;color:#3B1214;font:700 13px/20px Rubik,sans-serif;text-align:center;flex:none">!</span><span style="font:500 13px/1.45 Rubik,sans-serif;color:#FFD9D9">{{ blockedMsg }}</span></div>
+</sc-if>
+<sc-if value="{{ myTurn }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:8px;flex:none"><input value="{{ clue }}" onChange="{{ onClue }}" placeholder="הרמז שלך — מילה אחת" style="flex:1;height:56px;border-radius:16px;background:#FFF8E7;border:2px solid transparent;padding:0 14px;font:500 17px/1 Rubik,sans-serif;color:#14132B"><button onClick="{{ submitClue }}" style="width:104px;border:none;border-radius:16px;background:#FFD447;font:400 19px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 6px 0 #D9A900;cursor:pointer">שלח</button></div>
+</sc-if>
+<sc-if value="{{ cluesDone }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:10px;background:rgba(45,212,191,.14);border:1px solid rgba(45,212,191,.45);border-radius:16px;padding:12px 14px;flex:none"><span style="width:22px;height:22px;border-radius:50%;border:2px solid #2DD4BF;border-top-color:transparent;flex:none"></span><span style="font:500 14px/1.4 Rubik,sans-serif;color:#8FF3E6">כל הרמזים נשלחו — עוברים להצבעה</span></div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ atVoting }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="voting" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:8px 20px 22px;gap:10px;background:radial-gradient(110% 50% at 50% 0%,rgba(236,111,168,.18),transparent 70%)">
+<div style="display:flex;align-items:center;justify-content:space-between;flex:none"><div onClick="{{ askExit }}" style="width:44px;height:44px;border-radius:14px;background:rgba(255,107,107,.14);border:1px solid rgba(255,107,107,.45);display:flex;align-items:center;justify-content:center;font:600 12px/1 Rubik,sans-serif;color:#FF9B9B;cursor:pointer">יציאה</div><div style="width:52px;height:52px;border-radius:50%;border:3px solid #FFD447;display:flex;align-items:center;justify-content:center;font:400 20px/1 'Secular One',sans-serif;color:#FFD447;background:rgba(255,212,71,.1)">{{ timer }}</div></div>
+<div style="flex:none"><div style="font:400 25px/1.15 'Secular One',sans-serif;color:#FFF8E7">מי המתחזה?</div><div style="margin-top:4px;font:400 13px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.6)">הצבעה אחת לשחקן, 20 שניות. אי־הצבעה נחשבת הימנעות.</div></div>
+<div style="flex:1;min-height:0;overflow:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:5px">
+<sc-for list="{{ voteRows }}" as="v" hint-placeholder-count="7">
+<div onClick="{{ v.pick }}" style="display:flex;align-items:center;gap:10px;background:{{ v.bg }};border:2px solid {{ v.border }};border-radius:14px;padding:6px 10px;cursor:pointer;flex:none"><div style="width:40px;height:40px;border-radius:50%;background:#241F45;overflow:hidden;flex:none"><div style="width:100%;height:100%;background-image:url({{ v.src }});background-size:cover;background-position:center"></div></div><span style="flex:1;font:500 15px/1.2 Rubik,sans-serif;color:#FFF8E7">{{ v.name }}</span><span style="font:400 15px/1.2 'Secular One',sans-serif;color:{{ v.clueColor }}">{{ v.clue }}</span><span style="width:24px;height:24px;border-radius:50%;background:{{ v.dot }};color:#14132B;font:700 13px/24px Rubik,sans-serif;text-align:center;flex:none">{{ v.mark }}</span></div>
+</sc-for>
+</div>
+<button onClick="{{ submitVote }}" style="height:58px;border:none;border-radius:18px;background:{{ voteBtnBg }};font:400 21px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">{{ voteBtnLabel }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atCaught }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="impostor-caught" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:8px 24px 26px;gap:14px;align-items:center;text-align:center">
+<div style="width:100%;display:flex;align-items:center;justify-content:space-between;flex:none"><div style="width:44px;height:44px"></div><div style="width:52px;height:52px;border-radius:50%;border:3px solid #FFD447;display:flex;align-items:center;justify-content:center;font:400 20px/1 'Secular One',sans-serif;color:#FFD447;background:rgba(255,212,71,.1)">{{ timer }}</div></div>
+<div style="font:400 27px/1.2 'Secular One',sans-serif;color:#FFF8E7;flex:none">המתחזה נתפס</div>
+<div style="display:flex;align-items:center;gap:12px;background:rgba(139,92,246,.16);border:1px solid rgba(139,92,246,.5);border-radius:18px;padding:10px 14px;flex:none"><div style="width:52px;height:52px;border-radius:50%;overflow:hidden;background:#241F45;flex:none"><img src="assets/avatars/avatar-f03-headphones.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div><div style="text-align:start"><div style="font:400 20px/1.1 'Secular One',sans-serif;color:#FFF8E7">ליאור</div><div style="font:500 12px/1.3 Rubik,sans-serif;color:#C4A8FF">4 קולות מתוך 8</div></div></div>
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/role-impostor.webp" alt="" style="max-height:200px;max-width:70%;height:100%;object-fit:contain;display:block"></div>
+<div style="font:400 15px/1.6 Rubik,sans-serif;color:rgba(255,248,231,.66);flex:none">לליאור יש 15 שניות לנחש את המילה הסודית. אם ינחש נכון — המתחזה מנצח בכל זאת.</div>
+<button onClick="{{ resolveGuess }}" style="width:100%;height:58px;border:none;border-radius:18px;background:#FFD447;font:400 21px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">רואים את הניחוש</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atGuess }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="impostor-guess" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:8px 24px 26px;gap:14px;align-items:center;text-align:center;background:radial-gradient(120% 55% at 50% 10%,rgba(139,92,246,.28),transparent 70%)">
+<div style="width:100%;display:flex;align-items:center;justify-content:space-between;flex:none"><div style="width:44px;height:44px"></div><div style="width:52px;height:52px;border-radius:50%;border:3px solid #FFD447;display:flex;align-items:center;justify-content:center;font:400 20px/1 'Secular One',sans-serif;color:#FFD447;background:rgba(255,212,71,.1)">{{ timer }}</div></div>
+<div style="font:400 27px/1.2 'Secular One',sans-serif;color:#FFF8E7;flex:none">נתפסתם — יש לכם הזדמנות אחת</div>
+<div style="font:400 15px/1.6 Rubik,sans-serif;color:rgba(255,248,231,.66);flex:none">נחשו את המילה הסודית ב־15 שניות ותנצחו בכל זאת.</div>
+<div style="width:100%;background:{{ cardBg }};border-radius:18px;padding:13px;flex:none"><span style="font:500 12px/1 Rubik,sans-serif;color:{{ cardMuted }}">הקטגוריה</span><div style="margin-top:3px;font:400 22px/1.05 'Secular One',sans-serif;color:{{ cardFg }}">אוכל רחוב</div></div>
+<div style="width:100%;display:flex;flex-direction:column;gap:8px;flex:none"><input value="{{ guessText }}" onChange="{{ onGuess }}" placeholder="המילה הסודית" style="height:58px;width:100%;border-radius:16px;background:#FFF8E7;border:2px solid transparent;padding:0 16px;font:500 18px/1 Rubik,sans-serif;color:#14132B"><div style="font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.45);text-align:start">רמזים שנאמרו: חם · רחוב · פיתה · חומוס · מטוגן · דוכן · טעים</div></div>
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/role-impostor.webp" alt="" style="max-height:170px;max-width:64%;height:100%;object-fit:contain;display:block"></div>
+<button onClick="{{ submitGuess }}" style="width:100%;height:58px;border:none;border-radius:18px;background:#8B5CF6;font:400 21px/1 'Secular One',sans-serif;color:#FFF8E7;box-shadow:0 7px 0 #5B34B8;cursor:pointer;flex:none">שולחים ניחוש</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atResultCitizens }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="result-citizens-win" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:14px 24px 26px;gap:12px;align-items:center;text-align:center;background:radial-gradient(120% 55% at 50% 12%,rgba(45,212,191,.24),transparent 70%)">
+<div style="font:400 32px/1.1 'Secular One',sans-serif;color:#2DD4BF;flex:none">האזרחים ניצחו</div>
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/result-citizens-win.webp" alt="" style="max-height:240px;max-width:80%;height:100%;object-fit:contain;display:block"></div>
+<div style="width:100%;background:{{ cardBg }};border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px;flex:none">
+<div style="display:flex;align-items:center;gap:11px"><div style="width:46px;height:46px;border-radius:50%;overflow:hidden;background:#241F45;flex:none"><img src="assets/avatars/avatar-f03-headphones.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div><div style="text-align:start"><div style="font:500 12px/1 Rubik,sans-serif;color:{{ cardMuted }}">המתחזה היה</div><div style="font:400 20px/1.1 'Secular One',sans-serif;color:{{ cardFg }}">ליאור</div></div></div>
+<div style="display:flex;justify-content:space-between;border-top:1px solid {{ cardLine }};padding-top:9px"><span style="font:500 13px/1 Rubik,sans-serif;color:{{ cardMuted }}">המילה הסודית</span><span style="font:400 18px/1 'Secular One',sans-serif;color:{{ cardAccent }}">פלאפל</span></div>
+<div style="display:flex;justify-content:space-between"><span style="font:500 13px/1 Rubik,sans-serif;color:{{ cardMuted }}">הניחוש של המתחזה</span><span style="font:400 18px/1 'Secular One',sans-serif;color:{{ cardWrong }}">שווארמה</span></div>
+</div>
+<button onClick="{{ playAgain }}" style="width:100%;height:60px;border:none;border-radius:18px;background:#FFD447;font:400 22px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">משחק נוסף</button>
+<button onClick="{{ goHome }}" style="width:100%;height:50px;border:none;border-radius:16px;background:transparent;font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.6);cursor:pointer;flex:none">חזרה לדף הבית</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atResultImpostor }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="result-impostor-win" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:14px 24px 26px;gap:12px;align-items:center;text-align:center;background:radial-gradient(120% 55% at 50% 12%,rgba(139,92,246,.3),transparent 70%)">
+<div style="font:400 32px/1.1 'Secular One',sans-serif;color:#C4A8FF;flex:none">המתחזה ניצח</div>
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/result-impostor-win.webp" alt="" style="max-height:240px;max-width:80%;height:100%;object-fit:contain;display:block"></div>
+<div style="width:100%;background:{{ cardBg }};border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px;flex:none">
+<div style="display:flex;align-items:center;gap:11px"><div style="width:46px;height:46px;border-radius:50%;overflow:hidden;background:#241F45;flex:none"><div style="width:100%;height:100%;background-image:url({{ impostorSrc }});background-size:cover;background-position:center"></div></div><div style="text-align:start"><div style="font:500 12px/1 Rubik,sans-serif;color:{{ cardMuted }}">המתחזה היה</div><div style="font:400 20px/1.1 'Secular One',sans-serif;color:{{ cardFg }}">{{ impostorName }}</div></div></div>
+<div style="display:flex;justify-content:space-between;border-top:1px solid {{ cardLine }};padding-top:9px"><span style="font:500 13px/1 Rubik,sans-serif;color:{{ cardMuted }}">המילה הסודית</span><span style="font:400 18px/1 'Secular One',sans-serif;color:{{ cardAccent }}">פלאפל</span></div>
+<div style="display:flex;justify-content:space-between"><span style="font:500 13px/1 Rubik,sans-serif;color:{{ cardMuted }}">איך זה נגמר</span><span style="font:500 14px/1.3 Rubik,sans-serif;color:{{ cardFg }};text-align:end">{{ impostorWinReason }}</span></div>
+</div>
+<button onClick="{{ playAgain }}" style="width:100%;height:60px;border:none;border-radius:18px;background:#FFD447;font:400 22px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">משחק נוסף</button>
+<button onClick="{{ goHome }}" style="width:100%;height:50px;border:none;border-radius:16px;background:transparent;font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.6);cursor:pointer;flex:none">חזרה לדף הבית</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atCreateJoin }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="create-join-room" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 24px 26px;gap:14px">
+<div style="display:flex;align-items:center;gap:11px;flex:none"><div onClick="{{ goHome }}" style="width:42px;height:42px;border-radius:13px;background:rgba(255,248,231,.09);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#FFF8E7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></div><div style="font:400 24px/1.1 'Secular One',sans-serif;color:#FFF8E7">משחק עם חברים</div></div>
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/private-room.webp" alt="" style="max-height:190px;max-width:72%;height:100%;object-fit:contain;display:block"></div>
+<button onClick="{{ goLobbyHost }}" style="height:64px;border:none;border-radius:20px;background:#2DD4BF;font:400 22px/1 'Secular One',sans-serif;color:#0C3B37;box-shadow:0 7px 0 #1A9D8D;cursor:pointer;flex:none">פתיחת חדר</button>
+<div style="display:flex;align-items:center;gap:12px;flex:none"><span style="flex:1;height:1px;background:rgba(255,248,231,.14)"></span><span style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.45)">או</span><span style="flex:1;height:1px;background:rgba(255,248,231,.14)"></span></div>
+<div style="display:flex;flex-direction:column;gap:8px;flex:none"><span style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.68)">הצטרפות עם קוד חדר</span><input value="{{ code }}" onChange="{{ onCode }}" placeholder="6 ספרות" style="height:58px;width:100%;border-radius:16px;background:#FFF8E7;border:2px solid transparent;padding:0 16px;font:600 24px/1 Rubik,sans-serif;color:#14132B;letter-spacing:.34em;direction:ltr;text-align:center"></div>
+<sc-if value="{{ codeError }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:9px;background:rgba(255,107,107,.14);border:1px solid rgba(255,107,107,.5);border-radius:14px;padding:10px 12px;flex:none"><span style="width:20px;height:20px;border-radius:50%;background:#FF6B6B;color:#3B1214;font:700 13px/20px Rubik,sans-serif;text-align:center;flex:none">!</span><span style="font:500 13px/1.4 Rubik,sans-serif;color:#FFD9D9">הקוד לא נמצא. בדקו את שש הספרות ונסו שוב.</span></div>
+</sc-if>
+<button onClick="{{ goLobbyGuest }}" style="height:60px;border-radius:18px;background:transparent;border:2px solid #FFD447;font:400 20px/1 'Secular One',sans-serif;color:#FFD447;cursor:pointer;flex:none">מצטרפים לחדר</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atLobby }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="lobby" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:10px 22px 24px;gap:11px">
+<div style="display:flex;align-items:center;justify-content:space-between;flex:none"><div onClick="{{ goCreateJoin }}" style="width:42px;height:42px;border-radius:13px;background:rgba(255,248,231,.09);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#FFF8E7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></div><span style="font:400 22px/1.1 'Secular One',sans-serif;color:#FFF8E7">חדר פרטי</span><div style="width:42px"></div></div>
+<div style="background:{{ cardBg }};border-radius:20px;padding:13px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex:none"><div style="text-align:start"><div style="font:500 12px/1 Rubik,sans-serif;color:{{ cardMuted }}">קוד החדר</div><div style="margin-top:4px;font:600 27px/1 Rubik,sans-serif;color:{{ cardFg }};letter-spacing:.22em;direction:ltr">418 273</div></div><button onClick="{{ copyCode }}" style="height:44px;border:none;border-radius:14px;background:{{ cardBtnBg }};padding:0 16px;font:500 14px/1 Rubik,sans-serif;color:{{ cardBtnFg }};cursor:pointer">{{ copyLabel }}</button></div>
+<div style="display:flex;align-items:center;justify-content:space-between;flex:none"><span style="font:500 14px/1 Rubik,sans-serif;color:rgba(255,248,231,.68)">שחקנים בחדר</span><span style="font:500 13px/1 Rubik,sans-serif;color:#2DD4BF">{{ lobbyCount }} / 8</span></div>
+<div style="flex:1;min-height:0;overflow:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:5px">
+<sc-for list="{{ lobbyRows }}" as="p" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:9px;background:rgba(255,248,231,.06);border-radius:12px;padding:4px 9px;flex:none"><div style="width:36px;height:36px;border-radius:50%;background:#241F45;overflow:hidden;flex:none"><div style="width:100%;height:100%;background-image:url({{ p.src }});background-size:cover;background-position:center"></div></div><span style="flex:1;font:500 15px/1.2 Rubik,sans-serif;color:#FFF8E7">{{ p.name }}</span><span style="font:500 12px/1 Rubik,sans-serif;color:{{ p.tagColor }}">{{ p.tag }}</span></div>
+</sc-for>
+<div onClick="{{ addLobbyPlayer }}" style="display:flex;align-items:center;gap:9px;border-radius:12px;padding:4px 9px;border:1px dashed rgba(255,248,231,.24);cursor:pointer;flex:none"><div style="width:36px;height:36px;border-radius:50%;background:rgba(255,248,231,.07);display:flex;align-items:center;justify-content:center;font:400 19px/1 'Secular One',sans-serif;color:rgba(255,248,231,.45);flex:none">+</div><span style="font:400 14px/1.2 Rubik,sans-serif;color:rgba(255,248,231,.45)">{{ addSlotLabel }}</span></div>
+</div>
+<div style="font:400 12px/1.4 Rubik,sans-serif;color:rgba(255,248,231,.45);flex:none">{{ lobbyHint }}</div>
+<button onClick="{{ goReveal }}" style="height:60px;border:none;border-radius:18px;background:#FFD447;font:400 21px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">מתחילים את המשחק</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atReconnect }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="reconnecting" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:16px 26px 28px;gap:16px;align-items:center;text-align:center">
+<div style="width:100%;display:flex;align-items:center;justify-content:space-between;flex:none"><div style="width:44px;height:44px"></div><div style="width:52px;height:52px;border-radius:50%;border:3px solid #FF6B6B;display:flex;align-items:center;justify-content:center;font:400 20px/1 'Secular One',sans-serif;color:#FF9B9B;background:rgba(255,107,107,.1)">{{ timer }}</div></div>
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/connection-error.webp" alt="" style="max-height:220px;max-width:78%;height:100%;object-fit:contain;display:block"></div>
+<div style="font:400 26px/1.2 'Secular One',sans-serif;color:#FFF8E7;flex:none">התחברות מחדש…</div>
+<div style="font:400 15px/1.6 Rubik,sans-serif;color:rgba(255,248,231,.62);flex:none">איבדנו את החיבור. שומרים לכם את המקום במשחק עד 30 שניות. אין צורך לעשות כלום.</div>
+<div style="width:100%;height:8px;border-radius:999px;background:rgba(255,248,231,.1);overflow:hidden;flex:none"><div style="height:100%;border-radius:999px;background:#FF6B6B;width:{{ reconnectPct }}"></div></div>
+<div style="flex:1"></div>
+<button onClick="{{ backToGame }}" style="width:100%;height:58px;border:none;border-radius:18px;background:#FFD447;font:400 21px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">חזרנו — ממשיכים</button>
+<button onClick="{{ goHome }}" style="width:100%;height:48px;border:none;border-radius:16px;background:transparent;font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.55);cursor:pointer;flex:none">יציאה מהמשחק</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atDropped }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="third-disconnection" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:16px 26px 28px;gap:16px;align-items:center;text-align:center">
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/connection-error.webp" alt="" style="max-height:220px;max-width:78%;height:100%;object-fit:contain;display:block"></div>
+<div style="font:400 26px/1.2 'Secular One',sans-serif;color:#FFF8E7;flex:none">הוצאתם מהמשחק אחרי שלושה ניתוקים</div>
+<div style="font:400 15px/1.6 Rubik,sans-serif;color:rgba(255,248,231,.62);flex:none">התנתקתם שלוש פעמים בסבב הזה, ולכן המשחק ממשיך בלעדיכם. אפשר להצטרף למשחק חדש עכשיו.</div>
+<div style="width:100%;background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.4);border-radius:16px;padding:12px;display:flex;align-items:center;gap:10px;flex:none"><span style="width:22px;height:22px;border-radius:50%;background:#FF6B6B;color:#3B1214;font:700 13px/22px Rubik,sans-serif;text-align:center;flex:none">3</span><span style="font:500 13px/1.45 Rubik,sans-serif;color:#FFD9D9;text-align:start">ניתוק שלישי — חיבור חוזר לסבב הזה כבר לא אפשרי</span></div>
+<div style="flex:1"></div>
+<button onClick="{{ goCategories }}" style="width:100%;height:58px;border:none;border-radius:18px;background:#FFD447;font:400 21px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">חיפוש משחק חדש</button>
+<button onClick="{{ goHome }}" style="width:100%;height:48px;border:none;border-radius:16px;background:transparent;font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.55);cursor:pointer;flex:none">חזרה לדף הבית</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ atServerFail }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="server-failure" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:16px 26px 28px;gap:16px;align-items:center;text-align:center">
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/connection-error.webp" alt="" style="max-height:220px;max-width:78%;height:100%;object-fit:contain;display:block"></div>
+<div style="font:400 26px/1.2 'Secular One',sans-serif;color:#FFF8E7;flex:none">משהו נשבר אצלנו</div>
+<div style="font:400 15px/1.6 Rubik,sans-serif;color:rgba(255,248,231,.62);flex:none">השרת לא זמין כרגע והמשחק הנוכחי נעצר. זו תקלה בצד שלנו, לא אצלכם. נסו שוב בעוד רגע.</div>
+<div style="width:100%;background:rgba(255,248,231,.07);border-radius:14px;padding:11px;font:400 12px/1 ui-monospace,Menlo,monospace;color:rgba(255,248,231,.5);direction:ltr;flex:none">ERR_SERVER_UNAVAILABLE · 09:41</div>
+<div style="flex:1"></div>
+<button onClick="{{ retryServer }}" style="width:100%;height:58px;border:none;border-radius:18px;background:#FFD447;font:400 21px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">ניסיון נוסף</button>
+<button onClick="{{ goHome }}" style="width:100%;height:48px;border:none;border-radius:16px;background:transparent;font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.55);cursor:pointer;flex:none">חזרה לדף הבית</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ exitOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;background:rgba(10,9,26,.72);display:flex;align-items:flex-end;padding:20px">
+<div style="width:100%;background:#FFF8E7;border-radius:26px;padding:22px;display:flex;flex-direction:column;gap:12px">
+<div style="font:400 22px/1.2 'Secular One',sans-serif;color:#14132B">לצאת מהמשחק?</div>
+<div style="font:400 14px/1.55 Rubik,sans-serif;color:rgba(20,19,43,.66)">יציאה עכשיו מוציאה אתכם מהסבב הנוכחי והוא ימשיך בלעדיכם.</div>
+<button onClick="{{ goHome }}" style="height:54px;border:none;border-radius:16px;background:#FF6B6B;font:400 19px/1 'Secular One',sans-serif;color:#3B1214;cursor:pointer">יוצאים</button>
+<button onClick="{{ closeExit }}" style="height:50px;border:none;border-radius:16px;background:rgba(20,19,43,.07);font:500 16px/1 Rubik,sans-serif;color:#14132B;cursor:pointer">נשארים במשחק</button>
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+
+<div style="flex:1;min-width:260px;max-width:460px;display:flex;flex-direction:column;gap:22px">
+<div>
+<div style="font:400 21px/1.2 'Secular One',sans-serif;color:#14132B;margin-bottom:4px">מפת המסכים</div>
+<div style="font:400 13px/1.55 Rubik,sans-serif;color:rgba(20,19,43,.6)">הפרוטוטייפ לחיץ מקצה לקצה. אפשר לזרום דרך הכפתורים שבתוך המסך, או לקפוץ לכל שלב מכאן.</div>
+</div>
+<sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="font:600 11px/1 Rubik,sans-serif;color:{{ g.color }};letter-spacing:.1em">{{ g.title }}</div>
+<div style="display:flex;flex-wrap:wrap;gap:7px">
+<sc-for list="{{ g.items }}" as="it" hint-placeholder-count="8">
+<button onClick="{{ it.go }}" style="border:1px solid {{ it.border }};background:{{ it.bg }};color:{{ it.fg }};border-radius:999px;padding:8px 13px;font:500 13px/1 Rubik,sans-serif;cursor:pointer">{{ it.label }}</button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="font:600 11px/1 Rubik,sans-serif;color:#0C7268;letter-spacing:.1em">רקע הכרטיסים — בחרו אפשרות</div>
+<div style="display:flex;flex-wrap:wrap;gap:7px">
+<sc-for list="{{ cardThemes }}" as="th" hint-placeholder-count="4">
+<button onClick="{{ th.pick }}" style="display:flex;align-items:center;gap:8px;border:2px solid {{ th.border }};background:#fff;border-radius:999px;padding:6px 13px 6px 7px;font:500 13px/1 Rubik,sans-serif;color:#14132B;cursor:pointer"><span style="width:22px;height:22px;border-radius:50%;background:{{ th.swatch }};border:1px solid rgba(20,19,43,.14)"></span>{{ th.label }}</button>
+</sc-for>
+</div>
+<div style="font:400 12px/1.5 Rubik,sans-serif;color:rgba(20,19,43,.55)">משנה את כל כרטיסי המשחק יחד — המילה הסודית, הקטגוריה, סיכום התוצאה וקוד החדר. שדות הקלט והמגירות נשארים בקרם.</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="font:600 11px/1 Rubik,sans-serif;color:#8B5CF6;letter-spacing:.1em">התפקיד שלי בסבב</div>
+<div style="display:flex;gap:7px">
+<button onClick="{{ setCitizen }}" style="border:1px solid {{ citizenBorder }};background:{{ citizenBg }};color:{{ citizenFg }};border-radius:999px;padding:9px 16px;font:500 13px/1 Rubik,sans-serif;cursor:pointer">אזרח</button>
+<button onClick="{{ setImpostor }}" style="border:1px solid {{ impostorBorder }};background:{{ impostorBg }};color:{{ impostorFg }};border-radius:999px;padding:9px 16px;font:500 13px/1 Rubik,sans-serif;cursor:pointer">מתחזה</button>
+</div>
+<div style="font:400 12px/1.5 Rubik,sans-serif;color:{{ cardMuted }}">בבחירת "מתחזה" המסכים משתנים: חשיפה בלי המילה, כרטיס קטגוריה בלבד, ומסך ניחוש אינטראקטיבי אם נתפסתם בהצבעה.</div>
+</div>
+<div style="background:#fff;border:1px solid rgba(20,19,43,.1);border-radius:18px;padding:16px">
+<div style="font:400 15px/1.2 'Secular One',sans-serif;color:#14132B;margin-bottom:8px">איפה אתם עכשיו</div>
+<div style="font:500 14px/1.5 Rubik,sans-serif;color:#8B5CF6">{{ hereLabel }}</div>
+<div style="margin-top:6px;font:400 13px/1.55 Rubik,sans-serif;color:rgba(20,19,43,.6)">{{ hereHint }}</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:980,&quot;height&quot;:980},&quot;cardTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;cream&quot;,&quot;navy&quot;,&quot;purple&quot;,&quot;teal&quot;],&quot;default&quot;:&quot;navy&quot;,&quot;tsType&quot;:&quot;'cream'|'navy'|'purple'|'teal'&quot;,&quot;section&quot;:&quot;כרטיסים&quot;}}">
+class Component extends DCLogic {
+  AV = 'assets/avatars/';
+  state = {
+    screen: 'onboarding', mode: 'online', role: 'citizen',
+    nick: 'דורון', avatar: 'avatar-m04-detective-hat',
+    cats: ['אוכל רחוב', 'מקומות בארץ'],
+    clue: '', clueBlocked: '', submitted: 2,
+    vote: null, voteLocked: false, guessText: '', guessWrong: false,
+    code: '', codeError: false, copied: false, lobbyN: 5,
+    exitOpen: false, t: 30, cardTheme: 'navy', sound: true, vibrate: false, reactions: true
+  };
+
+  themes = {
+    cream: { label: 'קרם', bg: '#FFF8E7', fg: '#14132B', muted: 'rgba(20,19,43,.78)', line: 'rgba(20,19,43,.16)', accent: '#5B2FBF', tint: 'rgba(139,92,246,.12)', btnBg: '#14132B', btnFg: '#FFF8E7' },
+    navy: { label: 'נייבי כהה', bg: '#241F45', fg: '#FFF8E7', muted: 'rgba(255,248,231,.62)', line: 'rgba(255,248,231,.16)', accent: '#FFD447', tint: 'rgba(255,248,231,.09)', btnBg: '#FFD447', btnFg: '#14132B' },
+    purple: { label: 'סגול עמוק', bg: '#2E1D5C', fg: '#FFF8E7', muted: 'rgba(255,248,231,.64)', line: 'rgba(255,248,231,.18)', accent: '#FFD447', tint: 'rgba(255,248,231,.1)', btnBg: '#FFD447', btnFg: '#14132B' },
+    teal: { label: 'טורקיז כהה', bg: '#0F3A38', fg: '#FFF8E7', muted: 'rgba(255,248,231,.64)', line: 'rgba(255,248,231,.18)', accent: '#FFD447', tint: 'rgba(255,248,231,.1)', btnBg: '#2DD4BF', btnFg: '#0C3B37' }
+  };
+
+  roster = [
+    { name: 'דורון', a: 'avatar-m04-detective-hat', clue: '' },
+    { name: 'מאיה', a: 'avatar-f02-camera', clue: 'חם' },
+    { name: 'עדי', a: 'avatar-f01-notebook', clue: 'רחוב' },
+    { name: 'טל', a: 'avatar-m02-binoculars', clue: 'פיתה' },
+    { name: 'נועה', a: 'avatar-f04-map', clue: 'חומוס' },
+    { name: 'ליאור', a: 'avatar-f03-headphones', clue: 'טעים' },
+    { name: 'רועי', a: 'avatar-m05-badge', clue: 'מטוגן' },
+    { name: 'שירה', a: 'avatar-f05-fingerprint-kit', clue: 'דוכן' }
+  ];
+  allAvatars = ['avatar-m04-detective-hat','avatar-m06-magnifying-glass','avatar-f01-notebook','avatar-f02-camera','avatar-f03-headphones','avatar-m01-flashlight','avatar-f04-map','avatar-m03-evidence-bag','avatar-m02-binoculars','avatar-f05-fingerprint-kit','avatar-m05-badge','avatar-f06-laptop'];
+  allCats = ['אוכל רחוב','מקומות בארץ','סרטים','חיות','מקצועות','ספורט','חפצים בבית','מוזיקה'];
+  durations = { matchmaking: 30, clues: 15, voting: 20, caught: 15, guess: 15, reconnect: 30 };
+
+  componentDidMount() { this.tick = setInterval(() => this.setState(s => ({ t: s.t > 0 ? s.t - 1 : 0 })), 1000); }
+  componentWillUnmount() { clearInterval(this.tick); clearTimeout(this.handoff); }
+
+  go = (screen, extra) => {
+    const t = this.durations[screen];
+    this.setState(Object.assign({ screen, exitOpen: false, t: t == null ? 0 : t }, extra || {}));
+  };
+
+  src = a => this.AV + a + '.webp';
+
+  renderVals() {
+    const s = this.state;
+    const imp = s.role === 'impostor';
+    const pad = n => (n < 10 ? '0' + n : '' + n);
+
+    const avatarChoices = this.allAvatars.map(a => ({
+      src: this.src(a),
+      ring: a === s.avatar ? '0 0 0 3px #FFD447' : '0 0 0 2px rgba(255,248,231,.1)',
+      pick: () => this.setState({ avatar: a })
+    }));
+
+    const categories = this.allCats.map(name => {
+      const on = s.cats.indexOf(name) >= 0;
+      return {
+        name, state: on ? 'נבחרה' : 'לא נבחרה',
+        bg: on ? '#FFD447' : 'rgba(255,248,231,.07)',
+        border: on ? '#FFD447' : 'rgba(255,248,231,.16)',
+        fg: on ? '#14132B' : '#FFF8E7',
+        mark: on ? 'rgba(20,19,43,.55)' : 'rgba(255,248,231,.4)',
+        toggle: () => this.setState(st => ({ cats: on ? st.cats.filter(c => c !== name) : st.cats.concat([name]) }))
+      };
+    });
+
+    const foundPlayers = this.roster.slice(0, 6).map((p, i) => ({
+      name: i === 0 ? s.nick : p.name,
+      src: this.src(i === 0 ? s.avatar : p.a),
+      tag: i === 0 ? 'אתם' : 'הצטרף'
+    }));
+
+    const clueRows = this.roster.map((p, i) => {
+      const me = i === 0;
+      const given = me ? s.submitted > 2 : i <= 2 || s.submitted > 2;
+      const isTurn = !given && ((me && s.submitted === 2) || (!me && false));
+      return {
+        name: me ? s.nick : p.name,
+        src: this.src(me ? s.avatar : p.a),
+        clue: given ? (me ? s.clue : p.clue) : (isTurn ? 'התור שלך' : 'ממתין'),
+        clueColor: given ? '#FFD447' : (isTurn ? '#2DD4BF' : 'rgba(255,248,231,.62)'),
+        bg: isTurn ? 'rgba(45,212,191,.12)' : 'rgba(255,248,231,.05)',
+        border: isTurn ? 'rgba(45,212,191,.5)' : 'rgba(255,248,231,.08)'
+      };
+    });
+
+    const voteRows = this.roster.slice(1).map(p => {
+      const on = s.vote === p.name;
+      return {
+        name: p.name, src: this.src(p.a), clue: p.clue,
+        clueColor: 'rgba(255,248,231,.5)',
+        bg: on ? 'rgba(255,212,71,.16)' : 'rgba(255,248,231,.05)',
+        border: on ? '#FFD447' : 'rgba(255,248,231,.1)',
+        dot: on ? '#FFD447' : 'rgba(255,248,231,.12)',
+        mark: on ? '✓' : '',
+        pick: () => this.setState({ vote: p.name })
+      };
+    });
+
+    const lobbyRows = this.roster.slice(0, s.lobbyN).map((p, i) => ({
+      name: i === 0 ? s.nick : p.name,
+      src: this.src(i === 0 ? s.avatar : p.a),
+      tag: i === 0 ? 'מנהל החדר' : 'מוכן',
+      tagColor: i === 0 ? '#FFD447' : '#2DD4BF'
+    }));
+
+    const chip = (label, fn, tone) => ({
+      label, go: fn,
+      bg: tone === 'err' ? 'rgba(255,107,107,.1)' : '#fff',
+      border: tone === 'err' ? 'rgba(255,107,107,.45)' : 'rgba(20,19,43,.16)',
+      fg: tone === 'err' ? '#B03A3A' : '#14132B'
+    });
+
+    const navGroups = [
+      { title: 'משחק ברשת', color: '#14132B', items: [
+        chip('פתיחה', () => this.go('onboarding')),
+        chip('דף הבית', () => this.go('home', { mode: 'online' })),
+        chip('קטגוריות', () => this.go('categories', { mode: 'online' })),
+        chip('חיפוש שחקנים', () => this.go('matchmaking', { mode: 'online' })),
+        chip('חשיפת תפקיד', () => this.go('reveal')),
+        chip('רמזים', () => this.go('clues', { submitted: 2, clue: '', clueBlocked: '' })),
+        chip('הצבעה', () => this.go('voting', { vote: null })),
+        chip('ניחוש המתחזה', () => this.go(imp ? 'guess' : 'caught')),
+        chip('האזרחים ניצחו', () => this.go('resultCitizens')),
+        chip('המתחזה ניצח', () => this.go('resultImpostor')),
+        chip('איך משחקים', () => this.go('howto')),
+        chip('פרופיל', () => this.go('profile')),
+        chip('הגדרות', () => this.go('settings'))
+      ] },
+      { title: 'חדר פרטי', color: '#0C7268', items: [
+        chip('פתיחה או הצטרפות', () => this.go('createjoin', { mode: 'private' })),
+        chip('לובי', () => this.go('lobby', { mode: 'private', lobbyN: 5 })),
+        chip('לובי מלא — 8 שחקנים', () => this.go('lobby', { mode: 'private', lobbyN: 8 })),
+        chip('משחק בחדר', () => this.go('clues', { mode: 'private', submitted: 2, clue: '' })),
+        chip('תוצאה', () => this.go('resultCitizens', { mode: 'private' }))
+      ] },
+      { title: 'נתיבי שגיאה', color: '#B03A3A', items: [
+        chip('רמז נחסם', () => this.go('clues', { submitted: 2, clue: 'פלאפל חם', clueBlocked: 'הרמז חייב להיות מילה אחת, והוא לא יכול להכיל את המילה הסודית. נסו רמז אחר.' }), 'err'),
+        chip('אין התאמה בקטגוריות', () => this.go('nomatch', { mode: 'online' }), 'err'),
+        chip('התחברות מחדש', () => this.go('reconnect'), 'err'),
+        chip('ניתוק שלישי', () => this.go('dropped'), 'err'),
+        chip('קריסת שרת', () => this.go('serverfail'), 'err'),
+        chip('קוד חדר שגוי', () => this.go('createjoin', { mode: 'private', code: '000000', codeError: true }), 'err')
+      ] }
+    ];
+
+    const labels = {
+      onboarding: ['פתיחה', 'כינוי ואווטאר מתוך 12 הדמויות המאושרות.'],
+      home: ['דף הבית', 'שתי דרכים להתחיל: משחק ברשת או חדר פרטי.'],
+      howto: ['איך משחקים', 'ארבעה שלבים, בלי לשנות את חוקי המשחק.'],
+      profile: ['הפרופיל שלי', 'כינוי, אווטאר וניצחונות והפסדים בלבד — אין ניקוד.'],
+      settings: ['הגדרות', 'מתגים פעילים לצלילים, רטט ותגובות.'],
+      categories: ['בחירת קטגוריות', 'בחירה מרובה. מכאן יוצאים לחיפוש שחקנים.'],
+      matchmaking: ['חיפוש שחקנים', '6 מתוך 8, המתנה של עד 30 שניות.'],
+      nomatch: ['אין התאמה בקטגוריות', 'מסלול חזרה לבחירת קטגוריות או לחדר פרטי.'],
+      reveal: [imp ? 'חשיפת תפקיד — מתחזה' : 'חשיפת תפקיד — אזרח', imp ? 'קטגוריה בלבד, בלי המילה הסודית.' : 'קטגוריה ומילה סודית.'],
+      clues: ['סבב רמזים', 'טיימר 15 שניות בעיגול בפינה השמאלית העליונה, יציאה בימין.'],
+      voting: ['הצבעה', '20 שניות, קול אחד לשחקן.'],
+      caught: ['המתחזה נתפס', 'הניחוש של המתחזה, 15 שניות.'],
+      guess: ['ניחוש המתחזה', 'נתפסתם — הזדמנות אחת לנחש את המילה.'],
+      resultCitizens: ['האזרחים ניצחו', 'חשיפת המתחזה והמילה, ומשם משחק נוסף.'],
+      resultImpostor: ['המתחזה ניצח', 'חשיפת המתחזה והסיבה לניצחון.'],
+      createjoin: ['פתיחה או הצטרפות לחדר', 'קוד בן שש ספרות, עם מצב שגיאה.'],
+      lobby: ['לובי חדר פרטי', 'עד 8 שחקנים. המנהל מתחיל את המשחק.'],
+      reconnect: ['התחברות מחדש', 'שומרים מקום עד 30 שניות.'],
+      dropped: ['ניתוק שלישי', 'הוצאה מהסבב, עם מסלול למשחק חדש.'],
+      serverfail: ['קריסת שרת', 'ניסיון נוסף או חזרה לדף הבית.']
+    };
+    const here = labels[s.screen] || ['', ''];
+    const toggles = [['sound','צלילים'],['vibrate','רטט'],['reactions','הצגת תגובות']].map(([k, label]) => ({
+      label, trackBg: s[k] ? '#2DD4BF' : 'rgba(255,248,231,.16)',
+      knobBg: s[k] ? '#FFF8E7' : 'rgba(255,248,231,.6)',
+      knobSide: s[k] ? 'flex-start' : 'flex-end',
+      flip: () => this.setState(st => ({ [k]: !st[k] }))
+    }));
+    const th = this.themes[s.cardTheme] || this.themes.navy;
+    const cardThemes = Object.keys(this.themes).map(k => ({
+      label: this.themes[k].label, swatch: this.themes[k].bg,
+      border: k === s.cardTheme ? '#14132B' : 'rgba(20,19,43,.14)',
+      pick: () => this.setState({ cardTheme: k })
+    }));
+
+    const submitClue = () => {
+      const v = s.clue.trim();
+      if (!v) return this.setState({ clueBlocked: 'צריך לכתוב רמז לפני שליחה.' });
+      if (v.indexOf(' ') >= 0) return this.setState({ clueBlocked: 'הרמז חייב להיות מילה אחת. נסו רמז אחר.' });
+      if (v.length > 25) return this.setState({ clueBlocked: 'הרמז ארוך מדי — עד 25 תווים.' });
+      if (!imp && v.indexOf('פלאפל') >= 0) return this.setState({ clueBlocked: 'הרמז לא יכול להכיל את המילה הסודית. נסו רמז אחר.' });
+      this.setState({ submitted: 8, clueBlocked: '' });
+      clearTimeout(this.handoff);
+      this.handoff = setTimeout(() => { if (this.state.screen === 'clues') this.go('voting', { vote: null }); }, 1600);
+    };
+
+    return {
+      atOnboarding: s.screen === 'onboarding',
+      atHome: s.screen === 'home',
+      atHowTo: s.screen === 'howto',
+      atProfile: s.screen === 'profile',
+      atSettings: s.screen === 'settings',
+      atCategories: s.screen === 'categories',
+      atMatchmaking: s.screen === 'matchmaking',
+      atNoMatch: s.screen === 'nomatch',
+      atRevealCitizen: s.screen === 'reveal' && !imp,
+      atRevealImpostor: s.screen === 'reveal' && imp,
+      atClues: s.screen === 'clues',
+      atVoting: s.screen === 'voting',
+      atCaught: s.screen === 'caught',
+      atGuess: s.screen === 'guess',
+      atResultCitizens: s.screen === 'resultCitizens',
+      atResultImpostor: s.screen === 'resultImpostor',
+      atCreateJoin: s.screen === 'createjoin',
+      atLobby: s.screen === 'lobby',
+      atReconnect: s.screen === 'reconnect',
+      atDropped: s.screen === 'dropped',
+      atServerFail: s.screen === 'serverfail',
+
+      nick: s.nick, myAvatar: this.src(s.avatar), timer: pad(s.t),
+      avatarChoices, categories, foundPlayers, clueRows, voteRows, lobbyRows, navGroups, cardThemes, toggles,
+      cardBg: th.bg, cardFg: th.fg, cardMuted: th.muted, cardLine: th.line,
+      cardAccent: th.accent, cardTint: th.tint, cardBtnBg: th.btnBg, cardBtnFg: th.btnFg,
+      cardWrong: s.cardTheme === 'cream' ? '#B3302F' : '#FF8F8F',
+      pickedLabel: s.cats.length ? 'נבחרו ' + s.cats.length + ' קטגוריות' : 'בחרו לפחות קטגוריה אחת',
+      wordLabel: imp ? 'הקטגוריה — אין לכם את המילה' : 'המילה הסודית',
+      wordValue: imp ? 'אוכל רחוב' : 'פלאפל',
+      turnLabel: s.submitted > 2 ? 'כל הרמזים נשלחו' : 'התור שלך — רמז של מילה אחת',
+      myTurn: s.submitted === 2, cluesDone: s.submitted > 2,
+      clue: s.clue, clueBlocked: !!s.clueBlocked, blockedMsg: s.clueBlocked,
+      voteBtnLabel: s.vote ? 'מצביעים ל' + s.vote : 'בחרו שחקן להצבעה',
+      voteBtnBg: s.vote ? '#FFD447' : 'rgba(255,212,71,.35)',
+      guessText: s.guessText,
+      impostorSrc: imp ? this.src(s.avatar) : this.src('avatar-f03-headphones'),
+      impostorName: imp ? s.nick : 'ליאור',
+      impostorWinReason: imp && s.guessText.trim() === 'פלאפל' ? 'נתפס והצליח לנחש את המילה' : 'לא נתפס בהצבעה',
+      code: s.code, codeError: s.codeError, copyLabel: s.copied ? 'הועתק' : 'העתקה',
+      lobbyCount: s.lobbyN, addSlotLabel: s.lobbyN >= 8 ? 'החדר מלא — 8 שחקנים' : 'הזמנת שחקן נוסף',
+      lobbyHint: s.lobbyN >= 8 ? 'הגעתם למספר השחקנים המקסימלי.' : 'אפשר להתחיל מ־3 שחקנים ועד 8.',
+      reconnectPct: Math.round((s.t / 30) * 100) + '%',
+      exitOpen: s.exitOpen,
+      hereLabel: here[0], hereHint: here[1],
+      citizenBg: imp ? '#fff' : '#2DD4BF', citizenBorder: imp ? 'rgba(20,19,43,.16)' : '#2DD4BF', citizenFg: imp ? '#14132B' : '#0C3B37',
+      impostorBg: imp ? '#8B5CF6' : '#fff', impostorBorder: imp ? '#8B5CF6' : 'rgba(20,19,43,.16)', impostorFg: imp ? '#FFF8E7' : '#14132B',
+
+      onNick: e => this.setState({ nick: e.target.value }),
+      onClue: e => this.setState({ clue: e.target.value }),
+      onGuess: e => this.setState({ guessText: e.target.value }),
+      onCode: e => this.setState({ code: e.target.value, codeError: false }),
+      goHome: () => this.go('home'),
+      goHowTo: () => this.go('howto'),
+      goProfile: () => this.go('profile'),
+      goSettings: () => this.go('settings'),
+      goOnboarding: () => this.go('onboarding'),
+      goCategories: () => this.go('categories', { mode: 'online' }),
+      goMatchmaking: () => (s.cats.length ? this.go('matchmaking', { mode: 'online' }) : this.go('nomatch')),
+      goReveal: () => this.go('reveal'),
+      goClues: () => this.go('clues', { submitted: 2, clue: '', clueBlocked: '' }),
+      goVoting: () => this.go('voting', { vote: null }),
+      submitClue, submitVote: () => {
+        if (!s.vote) return;
+        if (imp) return this.go('guess');
+        this.go(s.vote === 'ליאור' ? 'caught' : 'resultImpostor');
+      },
+      resolveGuess: () => this.go('resultCitizens'),
+      submitGuess: () => this.go(s.guessText.trim() === 'פלאפל' ? 'resultImpostor' : 'resultCitizens'),
+      playAgain: () => (s.mode === 'private' ? this.go('lobby') : this.go('matchmaking')),
+      goCreateJoin: () => this.go('createjoin', { mode: 'private', codeError: false }),
+      goLobbyHost: () => this.go('lobby', { mode: 'private', lobbyN: 5 }),
+      goLobbyGuest: () => (/^\d{6}$/.test(s.code) && s.code !== '000000' ? this.go('lobby', { mode: 'private', lobbyN: 6 }) : this.setState({ codeError: true })),
+      addLobbyPlayer: () => this.setState(st => ({ lobbyN: Math.min(8, st.lobbyN + 1) })),
+      copyCode: () => this.setState({ copied: true }),
+      askExit: () => this.setState({ exitOpen: true }),
+      closeExit: () => this.setState({ exitOpen: false }),
+      backToGame: () => this.go('clues', { submitted: 2 }),
+      retryServer: () => this.go('home'),
+      setCitizen: () => this.setState({ role: 'citizen' }),
+      setImpostor: () => this.setState({ role: 'impostor' })
+    };
+  }
+}
+</script>
+</body>
+</html>
