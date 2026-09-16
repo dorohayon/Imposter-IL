@@ -143,4 +143,35 @@ void main() {
       expect(find.text(title), findsOneWidget);
     }
   });
+
+  // PrimaryButton is a GestureDetector behind an ExcludeSemantics, so the
+  // parent Semantics node has to carry the action itself. Without this the
+  // buttons stay tappable by finger and become unreachable to TalkBack and
+  // VoiceOver, which is invisible to every other test.
+  testWidgets('a screen reader can activate the main buttons', (tester) async {
+    await startAtHome(tester);
+
+    final handle = tester.ensureSemantics();
+    final button = find.byWidgetPredicate(
+      (widget) => widget is PrimaryButton && widget.label == 'משחק עם חברים',
+    );
+    expect(
+        tester.getSemantics(button),
+        matchesSemantics(
+          label: 'משחק עם חברים',
+          isButton: true,
+          isEnabled: true,
+          hasEnabledState: true,
+          hasTapAction: true,
+        ));
+
+    // Activating through the semantics tree, the way assistive tech does.
+    tester.semantics.performAction(
+      find.semantics.byLabel('משחק עם חברים'),
+      SemanticsAction.tap,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('יצירת חדר'), findsOneWidget);
+    handle.dispose();
+  });
 }
