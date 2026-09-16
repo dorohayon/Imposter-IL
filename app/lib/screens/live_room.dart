@@ -297,6 +297,7 @@ class _Reconnecting extends StatelessWidget {
     final inPlay = game != null && game.phase != 'ended' && me != null;
     final deadline = session.reconnectDeadline;
     if (inPlay && deadline != null) {
+      final disconnectNumber = (me.disconnects + 1).clamp(1, 3);
       final disconnectedDuringMyTurn =
           game.phase == 'hints' && game.currentTurnPlayerId == session.playerId;
       return Material(
@@ -333,8 +334,8 @@ class _Reconnecting extends StatelessWidget {
                 ),
                 child: Text(
                   disconnectedDuringMyTurn
-                      ? 'ניתוק ${me.disconnects + 1} מתוך 3 במשחק הזה. אם תחזרו בזמן, תקבלו תור מלא מחדש.'
-                      : 'ניתוק ${me.disconnects + 1} מתוך 3 במשחק הזה. אם לא תחזרו בזמן, תוצאו מהמשחק.',
+                      ? 'ניתוק $disconnectNumber מתוך 3 במשחק הזה. אם תחזרו בזמן, תקבלו תור מלא מחדש.'
+                      : 'ניתוק $disconnectNumber מתוך 3 במשחק הזה. אם לא תחזרו בזמן, תוצאו מהמשחק.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       color: Color(0xFFFFF0C2), fontSize: 13, height: 1.45),
@@ -355,6 +356,7 @@ class _Reconnecting extends StatelessWidget {
         ),
       );
     }
+    final disconnectNumber = me == null ? 1 : (me.disconnects + 1).clamp(1, 3);
     return Align(
       alignment: Alignment.topCenter,
       child: SafeArea(
@@ -390,7 +392,7 @@ class _Reconnecting extends StatelessWidget {
                       if (inPlay)
                         Text(
                           // The server counts this drop once it notices it.
-                          'ניתוק ${me.disconnects + 1} מתוך 3',
+                          'ניתוק $disconnectNumber מתוך 3',
                           style: const TextStyle(color: AppColors.cream),
                         ),
                     ],
@@ -604,10 +606,12 @@ class _Lobby extends StatelessWidget {
                           'קוד החדר',
                           style: TextStyle(color: AppColors.muted),
                         ),
-                        Text(
+                        LtrText(
                           // Grouped for reading aloud; copy and share
                           // still use the plain code.
                           '${room.code.substring(0, 3)} ${room.code.substring(3)}',
+                          semanticsLabel:
+                              '${room.code.substring(0, 3)} ${room.code.substring(3)}',
                           style: const TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w900,
@@ -1037,7 +1041,7 @@ class _HintsState extends State<_Hints> {
                       {required currentLength,
                       required isFocused,
                       maxLength}) =>
-                  Text(
+                  LtrText(
                 '$currentLength / $maxLength',
                 style: const TextStyle(color: AppColors.muted, fontSize: 13),
               ),

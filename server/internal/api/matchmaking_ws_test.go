@@ -2,8 +2,11 @@ package api
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/dorohayon/Imposter-IL/server/internal/game"
 )
 
 // searcher signs a player in, connects, and starts an online search.
@@ -15,6 +18,125 @@ func (c *client) searcher(name string, categories ...string) *wsPlayer {
 	wantOK(c.t, p.w.command("search", "matchmaking.join", map[string]any{"categoryIds": categories}))
 	p.w.sessionState(func(s map[string]any) bool { return s["activity"] == "matchmaking" })
 	return p
+}
+
+func TestStagingBotsFillYieldAndNeverWaitAlone(t *testing.T) {
+	c := newClient(t)
+	c.srv.EnableStagingBots(3)
+	first := c.searcher("דור", "animals")
+	state := first.w.searchState(searchPlayers(4))
+	botNames := 0
+	for _, raw := range state["players"].([]any) {
+		if name := raw.(map[string]any)["nickname"].(string); strings.HasPrefix(name, "בוט") {
+			botNames++
+		}
+	}
+	if botNames != 3 {
+		t.Fatalf("players = %v, want one human and three named bots", state["players"])
+	}
+
+	second := c.searcher("נועה", "animals")
+	first.w.searchState(func(state map[string]any) bool {
+		players := state["players"].([]any)
+		if len(players) != 4 {
+			return false
+		}
+		for _, raw := range players {
+			if raw.(map[string]any)["playerId"] == second.id {
+				return true
+			}
+		}
+		return false
+	})
+
+	c.srv.mu.Lock()
+	bots := 0
+	for _, sess := range c.srv.players {
+		if sess.bot {
+			bots++
+		}
+	}
+	c.srv.mu.Unlock()
+	if bots != 2 {
+		t.Fatalf("bots after a second human = %d, want 2", bots)
+	}
+
+	wantOK(t, first.w.command("cancel-first", "matchmaking.cancel", map[string]any{}))
+	wantOK(t, second.w.command("cancel-second", "matchmaking.cancel", map[string]any{}))
+	c.srv.mu.Lock()
+	defer c.srv.mu.Unlock()
+	for _, sess := range c.srv.players {
+		if sess.bot {
+			t.Fatal("bots remained after the last human left")
+		}
+	}
+}
+
+func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
+	c := newClient(t)
+	c.srv.EnableStagingBots(3)
+	human := c.searcher("דור", "animals")
+	human.w.searchState(searchPlayers(4))
+	c.advance(30 * time.Second)
+	c.tickAll()
+	session := human.w.sessionState(func(state map[string]any) bool { return state["activity"] == "game" })
+	gameID := session["gameId"].(string)
+	human.w.gameState(phase("role_reveal"))
+
+	wantOK(t, human.w.command("confirm", "game.confirmRole", map[string]any{"gameId": gameID}))
+	for step := 0; step < 20; step++ {
+		c.srv.runStagingBots()
+		c.srv.mu.Lock()
+		sess := c.srv.players[human.id]
+		view, err := sess.game.View(human.id)
+		c.srv.mu.Unlock()
+		if err != nil {
+			t.Fatal(err)
+		}
+		switch view.Phase {
+		case game.PhaseHints:
+			if view.CurrentTurn == human.id {
+				wantOK(t, human.w.command(fmt.Sprintf("hint-%d", step), "game.submitHint", map[string]any{
+					"gameId": gameID, "text": "אנושי",
+				}))
+			}
+		case game.PhaseVoting, game.PhaseRunoffVoting:
+			if view.MyVote == "" {
+				var target string
+				for _, candidate := range view.Candidates {
+					if candidate != human.id {
+						target = candidate
+						break
+					}
+				}
+				wantOK(t, human.w.command(fmt.Sprintf("vote-%d", step), "game.vote", map[string]any{
+					"gameId": gameID, "targetPlayerId": target,
+				}))
+			}
+			if view.Phase == game.PhaseVoting {
+				c.advance(20 * time.Second)
+			} else {
+				c.advance(15 * time.Second)
+			}
+			c.tickAll()
+		case game.PhaseImpostorGuess:
+			if view.Role == game.RoleImpostor {
+				wantOK(t, human.w.command("guess", "game.submitGuess", map[string]any{
+					"gameId": gameID, "text": "לאיודע",
+				}))
+			}
+		case game.PhaseEnded:
+			c.srv.mu.Lock()
+			defer c.srv.mu.Unlock()
+			for _, sess := range c.srv.players {
+				if sess.bot {
+					t.Fatal("finished match leaked a bot session")
+				}
+			}
+			return
+		}
+	}
+	t.Fatal("staging bots did not finish the game")
 }
 
 // searchState waits for a matchmaking.state that satisfies ok.

@@ -425,7 +425,11 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
               if (code.text.length < 6) {
                 setState(() {
                   _error = null;
-                  code.text += digit;
+                  final text = code.text + digit;
+                  code.value = TextEditingValue(
+                    text: text,
+                    selection: TextSelection.collapsed(offset: text.length),
+                  );
                 });
               }
             },
@@ -545,20 +549,24 @@ class _Keypad extends StatelessWidget {
             ),
           ),
         );
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 3,
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      childAspectRatio: 1.65,
-      children: [
-        for (final digit in ['1', '2', '3', '4', '5', '6', '7', '8', '9'])
-          key(digit, () => onDigit(digit)),
-        const SizedBox.shrink(),
-        key('0', () => onDigit('0')),
-        key('מחיקה', onDelete),
-      ],
+    return Directionality(
+      // Phone dialpads are not mirrored with the surrounding language.
+      textDirection: TextDirection.ltr,
+      child: GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: 3,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 1.65,
+        children: [
+          for (final digit in ['1', '2', '3', '4', '5', '6', '7', '8', '9'])
+            key(digit, () => onDigit(digit)),
+          const SizedBox.shrink(),
+          key('0', () => onDigit('0')),
+          key('מחיקה', onDelete),
+        ],
+      ),
     );
   }
 }

@@ -5,6 +5,15 @@ import 'package:imposter_il/data/server.dart';
 /// A WebSocket stand-in: records commands, answers each with `ok` unless a
 /// type is listed in [errors], and lets tests push server messages.
 class FakeChannel implements RealtimeChannel {
+  FakeChannel({
+    this.autoReply = true,
+    this.emitLeaveState = true,
+    this.leaveOutcome = 'loss',
+  });
+
+  final bool autoReply;
+  final bool emitLeaveState;
+  final String leaveOutcome;
   final _incoming = StreamController<Map<String, dynamic>>();
   final sent = <Map<String, dynamic>>[];
   final errors = <String, String>{};
@@ -17,11 +26,17 @@ class FakeChannel implements RealtimeChannel {
   void send(Map<String, dynamic> message) {
     sent.add(message);
     final code = errors[message['type']];
-    if (message['type'] == 'game.leave' && code == null) {
+    if (message['type'] == 'game.leave' && code == null && emitLeaveState) {
       // Like the server: the player is home before the reply arrives.
-      scheduleMicrotask(() => event('session.state',
-          {'playerId': 'p_me', 'activity': 'none', 'roomId': null}));
+      scheduleMicrotask(() => event('session.state', {
+            'playerId': 'p_me',
+            'activity': 'none',
+            'roomId': null,
+            'lastGameId': message['payload']['gameId'],
+            'lastGameOutcome': leaveOutcome,
+          }));
     }
+    if (!autoReply) return;
     scheduleMicrotask(() => push({
           'v': 1,
           'type': 'reply',
@@ -70,6 +85,9 @@ class FakeApi extends ApiClient {
   final unknownTokens = <String>{};
   final channels = <FakeChannel>[];
   Object? connectError;
+  bool channelAutoReply = true;
+  bool channelEmitLeaveState = true;
+  String channelLeaveOutcome = 'loss';
 
   final responses = <String, Object>{
     'POST /v1/sessions': {'playerId': 'p_me', 'sessionToken': 'token-1'},
@@ -117,7 +135,11 @@ class FakeApi extends ApiClient {
   @override
   Future<RealtimeChannel> connect(String token) async {
     if (connectError != null) throw connectError!;
-    final channel = FakeChannel();
+    final channel = FakeChannel(
+      autoReply: channelAutoReply,
+      emitLeaveState: channelEmitLeaveState,
+      leaveOutcome: channelLeaveOutcome,
+    );
     channels.add(channel);
     return channel;
   }

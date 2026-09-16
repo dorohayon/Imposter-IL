@@ -222,6 +222,10 @@ func reply(id, code string, now time.Time) []byte {
 
 func (s *Server) sendSessionState(sess *session) {
 	payload := map[string]any{"playerId": sess.playerID, "activity": "none"}
+	if sess.lastGameID != "" && sess.lastGameOutcome != "" {
+		payload["lastGameId"] = sess.lastGameID
+		payload["lastGameOutcome"] = sess.lastGameOutcome
+	}
 	switch {
 	case sess.gameID != "":
 		payload["activity"], payload["roomId"], payload["gameId"] = "game", sess.gameRoom.id, sess.gameID

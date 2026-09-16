@@ -111,6 +111,7 @@ cat >/tmp/imposter.env <<EOF
 IMPOSTER_DOMAIN=$DOMAIN
 IMPOSTER_IMAGE=$IMAGE
 MIN_CLIENT_BUILD=0
+STAGING_BOTS=0
 EOF
 gcloud compute scp --zone="$ZONE" --project="$PROJECT" --tunnel-through-iap --quiet \
 	"$here/docker-compose.yml" "$here/Caddyfile" /tmp/imposter.env "$INSTANCE:/var/imposter/"

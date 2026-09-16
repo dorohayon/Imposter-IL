@@ -57,6 +57,7 @@ type session struct {
 	// never did is reaped within minutes rather than kept for a day: that is
 	// what bounds memory against someone looping POST /v1/sessions.
 	connected bool
+	bot       bool // staging-only server actor; never has a token or WebSocket
 
 	// The categories and start time of the player's latest online search.
 	searchCategories []string
@@ -72,6 +73,12 @@ type session struct {
 	gameID   string
 	game     *game.Game
 	gameRoom *roomEntry
+
+	// The last outcome authoritatively settled by game.leave. Repeating it in
+	// session.state lets a client recover when the socket drops after the
+	// command ran but before its reply arrived. Clients deduplicate by game id.
+	lastGameID      string
+	lastGameOutcome game.Outcome
 }
 
 type roomEntry struct {
@@ -134,6 +141,12 @@ type Server struct {
 	commandLimit *limiter // WebSocket commands, per session
 
 	metrics metrics
+
+	// Optional staging-only actors. Zero is the production default. Bots are
+	// created only while at least one real player is searching or playing.
+	stagingBots int
+	botSequence uint64
+	botHint     uint64
 }
 
 // NewServer uses policy and pickWord for games started in rooms. Without
@@ -157,6 +170,21 @@ func NewServer(now func() time.Time, policy game.Policy, pickWord PickWord) *Ser
 	}
 	s.newCode = func() string { return room.NewCode(s.rng) }
 	return s
+}
+
+// EnableStagingBots lets one real online player reach the four-player minimum
+// without an external always-on worker. At most three are allowed so a match
+// can never form without a real player. Leave disabled in production.
+func (s *Server) EnableStagingBots(count int) {
+	if count < 0 {
+		count = 0
+	}
+	if count >= matchmaking.MinPlayers {
+		count = matchmaking.MinPlayers - 1
+	}
+	s.mu.Lock()
+	s.stagingBots = count
+	s.mu.Unlock()
 }
 
 // RequireClientBuild refuses clients older than build. The app sends its build

@@ -79,6 +79,22 @@ func (s *Server) gameCommand(sess *session, typ string, p commandPayload, now ti
 		if current && s.currentRoom(sess) == entry {
 			err = entry.room.Leave(id, now)
 			sess.roomID = ""
+			if entry.public && !sess.bot {
+				s.removeGameBotsWithoutHumans(entry, now)
+			}
+		}
+		// Read after Leave: it ticks expired phases first. If the game had
+		// already ended, preserve its real result; otherwise a voluntary leave
+		// (or prior removal) is a loss. This is the only source of truth used by
+		// the app for an explicit leave.
+		if v, viewErr := sess.game.View(id); viewErr == nil {
+			outcome := game.OutcomeLoss
+			if v.Result != nil {
+				if settled := v.Result.Outcomes[id]; settled != "" {
+					outcome = settled
+				}
+			}
+			sess.lastGameID, sess.lastGameOutcome = sess.gameID, outcome
 		}
 		sess.leaveGame()
 		s.sendSessionState(sess)

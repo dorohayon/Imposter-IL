@@ -29,6 +29,13 @@ class _PrimaryButtonState extends State<PrimaryButton> {
   static const _shadow = 8.0;
 
   bool _pressed = false;
+  final _focusNode = FocusNode(debugLabel: 'PrimaryButton');
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   void _setPressed(bool value) {
     if (_pressed != value) setState(() => _pressed = value);
@@ -78,11 +85,17 @@ class _PrimaryButtonState extends State<PrimaryButton> {
       label: widget.label,
       onTap: enabled ? widget.onPressed : null,
       child: ExcludeSemantics(
-        child: GestureDetector(
-          onTapDown: enabled ? (_) => _setPressed(true) : null,
-          onTapUp: enabled ? (_) => _setPressed(false) : null,
-          onTapCancel: enabled ? () => _setPressed(false) : null,
+        // InkWell supplies focus traversal plus Enter/Space activation for
+        // keyboards and switch-access devices. The parent Semantics node is
+        // still the single spoken button.
+        child: InkWell(
+          focusNode: _focusNode,
+          canRequestFocus: enabled,
+          onHighlightChanged: enabled ? _setPressed : null,
           onTap: widget.onPressed,
+          overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+          splashFactory: NoSplash.splashFactory,
+          borderRadius: BorderRadius.circular(18),
           child: SizedBox(
             width: double.infinity,
             height: 60 + (shadow == null ? 0 : _shadow),
@@ -145,6 +158,37 @@ class _PrimaryButtonState extends State<PrimaryButton> {
       ),
     );
   }
+}
+
+/// Text whose visual order must stay left-to-right inside the Hebrew UI.
+///
+/// Use this for codes and numeric expressions that contain neutral separators
+/// (spaces, slashes, punctuation). Without an explicit direction, Unicode
+/// bidi can reverse their visible runs in an RTL paragraph.
+class LtrText extends StatelessWidget {
+  const LtrText(
+    this.data, {
+    this.style,
+    this.textAlign,
+    this.semanticsLabel,
+    super.key,
+  });
+
+  final String data;
+  final TextStyle? style;
+  final TextAlign? textAlign;
+  final String? semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) => Directionality(
+        textDirection: TextDirection.ltr,
+        child: Text(
+          data,
+          style: style,
+          textAlign: textAlign,
+          semanticsLabel: semanticsLabel,
+        ),
+      );
 }
 
 class TimerBadge extends StatelessWidget {

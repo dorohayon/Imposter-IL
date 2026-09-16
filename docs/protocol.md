@@ -214,7 +214,7 @@
 
 | `type` | `payload` |
 | --- | --- |
-| `session.state` | `{ playerId, activity: "none" \| "matchmaking" \| "room" \| "game", roomId?, gameId? }` |
+| `session.state` | `{ playerId, activity: "none" \| "matchmaking" \| "room" \| "game", roomId?, gameId?, lastGameId?, lastGameOutcome? }`. אחרי `game.leave`, שני השדות האחרונים חוזרים גם בחיבור מחדש כדי שהלקוח ירשום את תוצאת השרת פעם אחת גם אם התשובה לפקודה אבדה. |
 | `matchmaking.state` | `{ stateVersion, status: "searching" \| "waiting_for_more" \| "countdown", categoryIds, players: PlayerSummary[], targetPlayers: 6, maxPlayers: 8, deadline }` — `categoryIds` הן הקטגוריות המשותפות לכל המחפשים; `deadline` הוא מתי יוצג `לא נמצא משחק מתאים` לשחקן הזה ב־`searching`, ומתי יתחיל המשחק ב־`waiting_for_more` וב־`countdown` |
 | `matchmaking.noMatch` | `{ categoryIds }` — מסך 6 |
 | `room.state` | `{ stateVersion, room: Room }` |

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/screens/home_screen.dart';
@@ -25,6 +26,34 @@ void main() {
         tester.getSemantics(find.byType(PrimaryButton)).getSemanticsData();
     expect(data.hasAction(SemanticsAction.tap), isTrue);
     semantics.dispose();
+  });
+
+  testWidgets('primary buttons support focus and keyboard activation',
+      (tester) async {
+    var presses = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PrimaryButton(
+            label: 'פעולה',
+            onPressed: () => presses++,
+          ),
+        ),
+      ),
+    );
+
+    final ink = tester.widget<InkWell>(
+      find.descendant(
+        of: find.byType(PrimaryButton),
+        matching: find.byType(InkWell),
+      ),
+    );
+    ink.focusNode!.requestFocus();
+    await tester.pump();
+    expect(ink.focusNode!.hasFocus, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(presses, 1);
   });
 
   testWidgets('a build the server refuses can only update', (tester) async {

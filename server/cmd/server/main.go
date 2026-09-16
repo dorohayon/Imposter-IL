@@ -29,11 +29,16 @@ import (
 //	RATE_LIMITS    "off" for load tests only; never in production
 //	DRAIN_TIMEOUT  how long to let games finish on SIGTERM (default 10m)
 //	MIN_CLIENT_BUILD  oldest app build served (default 0: every client)
+//	STAGING_BOTS   server-side online bots (0-3; default 0, never enable in prod)
 //	LOG_LEVEL      debug | info | warn | error (default info)
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel()})))
 
 	srv := api.NewServer(time.Now, content.Policy(), content.Pick)
+	if bots, err := strconv.Atoi(os.Getenv("STAGING_BOTS")); err == nil && bots > 0 {
+		srv.EnableStagingBots(bots)
+		slog.Warn("staging bots enabled", "count", min(bots, 3))
+	}
 	srv.TrustProxy(os.Getenv("TRUST_PROXY") == "1")
 	if os.Getenv("RATE_LIMITS") == "off" {
 		// For cmd/loadbot, whose simulated players all dial from one address.

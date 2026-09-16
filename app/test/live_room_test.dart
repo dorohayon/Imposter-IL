@@ -73,6 +73,17 @@ void main() {
       'categoryIds': ['objects'],
     });
     expect(find.text('482 913'), findsOneWidget); // grouped in the lobby
+    expect(
+      find.ancestor(
+        of: find.text('482 913'),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Directionality &&
+              widget.textDirection == TextDirection.ltr,
+        ),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('מנהל החדר · אתם'), findsOneWidget);
     expect(isEnabled(tester, 'התחלת משחק'), isFalse);
 
@@ -142,6 +153,18 @@ void main() {
     for (final digit in ['4', '8', '2', '9', '1', '9']) {
       await tapText(tester, digit);
     }
+    final keypad = find.byType(GridView);
+    expect(
+      tester
+          .getCenter(find.descendant(of: keypad, matching: find.text('1')))
+          .dx,
+      lessThan(tester
+          .getCenter(find.descendant(of: keypad, matching: find.text('3')))
+          .dx),
+    );
+    final codeController =
+        tester.widget<TextField>(find.byType(TextField)).controller!;
+    expect(codeController.selection.baseOffset, 6);
     expect(isEnabled(tester, 'הצטרפות'), isTrue);
     await tapText(tester, 'מחיקה');
     expect(isEnabled(tester, 'הצטרפות'), isFalse); // five digits is not a code
@@ -190,6 +213,18 @@ void main() {
     );
     channel.errors.remove('game.submitHint');
     await tester.enterText(find.byType(TextField), 'חדק');
+    await tester.pump();
+    expect(
+      find.ancestor(
+        of: find.text('3 / 25'),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Directionality &&
+              widget.textDirection == TextDirection.ltr,
+        ),
+      ),
+      findsOneWidget,
+    );
     await tapLive(tester, 'שליחת רמז');
     expect(channel.commands('game.submitHint').last['payload'],
         {'gameId': 'g_1', 'text': 'חדק'});

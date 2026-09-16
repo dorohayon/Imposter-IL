@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/server.dart';
 import '../models/player.dart';
@@ -59,6 +60,38 @@ class ProfileEditScreen extends StatelessWidget {
 /// The server's nickname bounds (docs/decisions.md).
 const maxNicknameLength = 18;
 
+const _nicknameLengthMessage =
+    'בחרו כינוי באורך 2–18 תווים, כולל ניקוד ואימוג׳י.';
+
+/// Matches the server's UTF-8 rune limit without splitting a visible
+/// grapheme (for example an emoji sequence) at the boundary.
+class _RuneLengthFormatter extends TextInputFormatter {
+  const _RuneLengthFormatter(this.maxRunes);
+
+  final int maxRunes;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.runes.length <= maxRunes) return newValue;
+    final out = StringBuffer();
+    var runes = 0;
+    for (final grapheme in newValue.text.characters) {
+      final next = grapheme.runes.length;
+      if (runes + next > maxRunes) break;
+      out.write(grapheme);
+      runes += next;
+    }
+    final text = out.toString();
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+}
+
 /// A nickname field and the 12 avatars. [onSubmit] may throw [ApiException].
 class ProfileForm extends StatefulWidget {
   const ProfileForm({
@@ -104,8 +137,9 @@ class _ProfileFormState extends State<ProfileForm> {
 
   Future<void> _submit() async {
     final value = _nickname.text.trim();
-    if (value.characters.length < 2) {
-      setState(() => _error = 'בחרו כינוי של לפחות 2 תווים.');
+    final length = value.runes.length;
+    if (length < 2 || length > maxNicknameLength) {
+      setState(() => _error = _nicknameLengthMessage);
       return;
     }
     setState(() => _busy = true);
@@ -116,7 +150,7 @@ class _ProfileFormState extends State<ProfileForm> {
       setState(() {
         _busy = false;
         _error = switch (e.code) {
-          'invalid_nickname' => 'בחרו כינוי באורך 2–18 תווים.',
+          'invalid_nickname' => _nicknameLengthMessage,
           'nickname_blocked' => 'הכינוי הזה לא מתאים למשחק. בחרו כינוי אחר.',
           _ => 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
         };
@@ -161,7 +195,7 @@ class _ProfileFormState extends State<ProfileForm> {
       const SizedBox(height: 8),
       TextField(
         controller: _nickname,
-        maxLength: maxNicknameLength,
+        inputFormatters: const [_RuneLengthFormatter(maxNicknameLength)],
         textAlign: TextAlign.start,
         style: const TextStyle(
           color: AppColors.night,

@@ -50,6 +50,10 @@ docker push "$IMAGE"
 # A token so the counters are readable: Cloud Run has no shell, so the
 # loopback metrics listener the VM uses is unreachable here.
 METRICS_TOKEN="${METRICS_TOKEN:-$(head -c 24 /dev/urandom | base64 | tr -d '/+=')}"
+# Cloud Run is the beta/staging target. Three in-process bots fill an online
+# search to four after the first real player arrives, but do not keep an idle
+# instance awake. Override with STAGING_BOTS=0 for production behavior.
+STAGING_BOTS="${STAGING_BOTS:-3}"
 
 step "deploying"
 # The flags that matter, and why:
@@ -84,7 +88,7 @@ gcloud run deploy "$SERVICE" \
 	--timeout=3600 \
 	--memory=512Mi \
 	--cpu=1 \
-	--set-env-vars="TRUST_PROXY=1,METRICS_ADDR=,METRICS_TOKEN=$METRICS_TOKEN,DRAIN_TIMEOUT=8s,LOG_LEVEL=info,MIN_CLIENT_BUILD=0"
+	--set-env-vars="TRUST_PROXY=1,METRICS_ADDR=,METRICS_TOKEN=$METRICS_TOKEN,DRAIN_TIMEOUT=8s,LOG_LEVEL=info,MIN_CLIENT_BUILD=0,STAGING_BOTS=$STAGING_BOTS"
 
 URL="$(gcloud run services describe "$SERVICE" --region="$REGION" --format='value(status.url)')"
 
