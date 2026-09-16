@@ -7,16 +7,39 @@ The one property that decides the host: **the platform must not stop the
 process on its own schedule.** Games live in RAM and need a drain window, so
 Cloud Run, Lambda and App Runner are out. A plain VM is in.
 
+## Before you pay for anything: dev-tunnel.sh
+
+```sh
+./deploy/dev-tunnel.sh
+```
+
+Runs the server on your machine and puts it on a public HTTPS address through
+ngrok, so real phones on cellular can play against it. Costs nothing, needs no
+cloud account, and is the right tool for device testing — which is what is
+actually left before launch.
+
+Deploy to GCE when the game needs to be up while your laptop is not: a closed
+beta, or the store release itself. Not before.
+
+The address changes every run, so rebuild the app against whatever it prints.
+
 ## What this costs
 
 | | |
 | --- | --- |
-| `e2-micro` VM | **$0** — Always Free tier |
-| Reserved static IPv4 | **~$3/month** |
-| Egress | 1 GB/month free (~500 games), then ~$0.12/GB at ~2 MB per game |
-| Artifact Registry | ~$0.10/GB/month for the images |
+| `e2-micro` VM in `us-central1` | **$0** — Always Free, indefinitely |
+| 20 GB standard disk | **$0** — 30 GB is Always Free |
+| Artifact Registry | **$0** — 0.5 GB free, the image is 8.4 MB |
+| First 1 GB/month egress | **$0** |
+| **External IPv4** | **~$2.90/month** |
+| Egress past 1 GB | ~$0.12/GB, at roughly 2 MB per game |
 
-So roughly **$3/month idle**, rising with egress once people play.
+The VM really is free. The address is not: since February 2024 Google bills
+every external IPv4, including one attached to a free-tier instance, and a
+server nobody can reach is not a server. There is no way around it — an
+IPv6-only VM would be free and unreachable from IPv4-only mobile networks.
+
+So **~$2.90/month idle**, rising with egress once people play.
 `./deploy/teardown-gcp.sh` takes it back to zero.
 
 Latency from Israel is ~120–150 ms. Irrelevant for 15-second turns, but it is
