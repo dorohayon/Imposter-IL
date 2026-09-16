@@ -41,7 +41,7 @@ void main() {
         const ApiException('invalid_nickname', 422);
     await tester.enterText(find.byType(TextField), 'נועה');
     await tapText(tester, 'שמירה');
-    expect(find.text('צריך לבחור כינוי של לפחות 2 תווים'), findsOneWidget);
+    expect(find.text('בחרו כינוי באורך 2–18 תווים.'), findsOneWidget);
 
     api.responses['PATCH /v1/sessions/me'] = {'playerId': 'p_me'};
     await tester.tap(find.bySemanticsLabel('דמות 12'));
@@ -137,7 +137,7 @@ void main() {
           },
         ]));
     await settle(tester);
-    expect(find.text('הרמז: חדק'), findsOneWidget);
+    expect(find.text('חדק'), findsOneWidget);
     expect(find.text('זה מחשיד'), findsNothing);
     expect(vibrations, isEmpty); // vibration is off
   });
@@ -273,20 +273,20 @@ void main() {
 
     // My turn: the server holds it for 30 seconds, on a screen of its own.
     await dropWith(turn: 'p_me', disconnects: 1);
-    expect(find.text('ניתוק 2 מתוך 3'), findsOneWidget);
+    expect(find.textContaining('ניתוק 2 מתוך 3'), findsOneWidget);
     expect(bannerCountdown, findsOneWidget);
     expect(find.descendant(of: bannerCountdown, matching: find.text('30')),
         findsOneWidget);
     expect(
         find.text(
-            'החיבור אבד בזמן התור שלכם. אנחנו מנסים לחזור למשחק במשך 30 שניות.'),
+            'החיבור אבד בזמן התור שלכם. ננסה להחזיר אתכם למשחק במשך 30 שניות.'),
         findsOneWidget);
     expect(find.text('יציאה מהמשחק'), findsOneWidget);
     await reconnect();
 
     // A third drop removes the player after 30 seconds, turn or not.
     await dropWith(turn: 'p_2', disconnects: 2);
-    expect(find.text('ניתוק 3 מתוך 3'), findsOneWidget);
+    expect(find.textContaining('ניתוק 3 מתוך 3'), findsOneWidget);
     expect(bannerCountdown, findsOneWidget);
     await reconnect();
   });

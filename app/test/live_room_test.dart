@@ -72,7 +72,7 @@ void main() {
       'categoryIds': ['food', 'animals', 'sports', 'professions', 'places'],
     });
     expect(find.text('482 913'), findsOneWidget); // grouped in the lobby
-    expect(find.text('מנהל החדר · אני'), findsOneWidget);
+    expect(find.text('מנהל החדר · אתם'), findsOneWidget);
     expect(isEnabled(tester, 'התחלת משחק'), isFalse);
 
     api.channel.snapshot(
@@ -98,7 +98,10 @@ void main() {
     api.channel.errors['room.start'] = 'content_unavailable';
     await tapLive(tester, 'התחלת משחק');
     expect(api.channel.commands('room.start'), hasLength(1));
-    expect(find.text('השרת עדיין לא מוכן להתחלת משחקים'), findsOneWidget);
+    expect(
+      find.text('אי אפשר להתחיל משחק כרגע. נסו שוב בעוד רגע.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('join errors are shown inline; a joiner cannot start',
@@ -112,7 +115,10 @@ void main() {
         const ApiException('room_not_found', 404);
     await tester.enterText(find.byType(TextField), '111111');
     await tapText(tester, 'הצטרפות');
-    expect(find.text('החדר לא נמצא. בדקו את הקוד ונסו שוב.'), findsOneWidget);
+    expect(
+      find.text('החדר לא נמצא או שאינו זמין. בדקו את הקוד עם מי שפתח את החדר.'),
+      findsOneWidget,
+    );
 
     api.responses['POST /v1/rooms/join'] = {
       'room': roomJson(host: 'p_2', players: [
@@ -166,7 +172,10 @@ void main() {
     channel.errors['game.submitHint'] = 'hint_contains_secret';
     await tester.enterText(find.byType(TextField), 'הפיל');
     await tapLive(tester, 'שליחת רמז');
-    expect(find.text('אסור לחשוף את המילה הסודית'), findsOneWidget);
+    expect(
+      find.text('הרמז מכיל את המילה הסודית. בחרו מילה אחרת. הרמז לא נשלח.'),
+      findsOneWidget,
+    );
     channel.errors.remove('game.submitHint');
     await tester.enterText(find.byType(TextField), 'חדק');
     await tapLive(tester, 'שליחת רמז');
@@ -190,8 +199,8 @@ void main() {
           ],
         ));
     await settle(tester);
-    expect(find.text('נועה כותב רמז...'), findsOneWidget);
-    expect(find.text('הרמז: חדק'), findsOneWidget);
+    expect(find.text('עכשיו התור של נועה'), findsOneWidget);
+    expect(find.text('חדק'), findsOneWidget);
     await tapLive(tester, 'זה מחשיד');
     expect(channel.commands('game.react').single['payload'],
         {'gameId': 'g_1', 'hintIndex': 0, 'reactionId': 'suspicious'});
@@ -200,7 +209,7 @@ void main() {
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'),
         version: 1);
     await settle(tester);
-    expect(find.text('נועה כותב רמז...'), findsOneWidget);
+    expect(find.text('עכשיו התור של נועה'), findsOneWidget);
 
     // Voting: I cannot pick myself; my choice is sent on confirm.
     channel.snapshot(
@@ -235,7 +244,10 @@ void main() {
         }));
     await settle(tester);
     expect(find.text('המתחזה ניצח!'), findsOneWidget);
-    expect(find.text('המתחזה נתפס אבל ניחש את המילה'), findsOneWidget);
+    expect(
+      find.text('המתחזה נתפס, אבל הצליח לנחש את המילה.'),
+      findsOneWidget,
+    );
     expect(find.text('נרשם לכם הפסד'), findsOneWidget);
     // The vote breakdown: three votes for the impostor and one abstention.
     expect(find.text('חלוקת הקולות'), findsOneWidget);
@@ -298,7 +310,7 @@ void main() {
         .event('session.state', {'playerId': 'p_me', 'activity': 'none'});
     await settle(tester);
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.text('מנהל החדר הוציא אתכם מהחדר'), findsOneWidget);
+    expect(find.text('מנהל החדר הסיר אתכם מהחדר.'), findsOneWidget);
 
     await openCreatedRoom(tester, api);
     api.channel.event('session.state', {
@@ -385,7 +397,7 @@ void main() {
     api.channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
     expect(find.byType(LiveRoomScreen), findsOneWidget);
-    expect(find.text('המשימה שלכם'), findsOneWidget);
+    expect(find.text('אתם בצוות האזרחים'), findsOneWidget);
   });
 
   testWidgets('leaving waits for the server and stays put if it fails',
@@ -395,14 +407,14 @@ void main() {
     await openCreatedRoom(tester, api);
 
     api.channel.errors['room.leave'] = 'network_error';
-    await tester.tap(find.byType(BackButton).last);
+    await tester.tap(find.byTooltip('יציאה'));
     await settle(tester);
     expect(find.byType(LiveRoomScreen), findsOneWidget);
     expect(
         find.text('אין חיבור לשרת. בדקו את החיבור ונסו שוב.'), findsOneWidget);
 
     api.channel.errors.remove('room.leave');
-    await tester.tap(find.byType(BackButton).last);
+    await tester.tap(find.byTooltip('יציאה'));
     await settle(tester);
     expect(api.channel.commands('room.leave'), hasLength(2));
     expect(find.byType(HomeScreen), findsOneWidget);
@@ -437,7 +449,8 @@ void main() {
           previousVotes: {'p_2': 2, 'p_3': 2},
         ));
     await settle(tester);
-    expect(find.text('תיקו נוסף מעניק ניצחון למתחזה'), findsOneWidget);
+    expect(
+        find.textContaining('תיקו נוסף יעניק ניצחון למתחזה'), findsOneWidget);
     expect(isEnabled(tester, 'אישור הצבעה'), isFalse);
     // The tie that led here.
     expect(find.text('2 קולות בסבב הקודם'), findsNWidgets(2));

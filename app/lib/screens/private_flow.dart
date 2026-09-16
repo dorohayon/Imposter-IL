@@ -11,7 +11,7 @@ import 'live_room.dart';
 
 String connectionMessage(String code) => switch (code) {
       'network_error' => 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
-      _ => 'משהו השתבש. נסו שוב.',
+      _ => 'משהו השתבש. נסו שוב בעוד רגע.',
     };
 
 class FriendsScreen extends StatelessWidget {
@@ -29,19 +29,96 @@ class FriendsScreen extends StatelessWidget {
         children: [
           const Illustration(
             'assets/illustrations/private-room.webp',
-            height: 270,
+            height: 180,
           ),
-          PrimaryButton(
-            label: 'יצירת חדר',
+          const SizedBox(height: 14),
+          _FriendsChoiceCard(
+            title: 'יצירת חדר',
+            description: 'בוחרים הגדרות, מקבלים קוד ומשתפים עם החברים.',
+            icon: Icons.add_home_work_rounded,
             onPressed: () => _open(context, const CreateRoomScreen()),
           ),
           const SizedBox(height: 12),
-          PrimaryButton(
-            label: 'הצטרפות לחדר',
-            variant: ButtonVariant.secondary,
+          _FriendsChoiceCard(
+            title: 'הצטרפות לחדר',
+            description: 'יש לכם קוד בן שש ספרות? מזינים ונכנסים.',
+            icon: Icons.login_rounded,
             onPressed: () => _open(context, const JoinRoomScreen()),
           ),
+          const SizedBox(height: 18),
+          const Text(
+            'המשחק מתאים ל־4 עד 8 שחקנים',
+            style: TextStyle(color: AppColors.muted, fontSize: 13),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _FriendsChoiceCard extends StatelessWidget {
+  const _FriendsChoiceCard({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String title;
+  final String description;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.cream,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.yellow,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Icon(icon, color: AppColors.night),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: AppColors.night,
+                        fontFamily: 'Secular One',
+                        fontSize: 21,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        color: AppColors.night.withValues(alpha: .68),
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_left_rounded, color: AppColors.night),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -119,47 +196,33 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Illustration(
-            'assets/illustrations/private-room.webp',
-            height: 185,
-          ),
           const Text(
             'מספר שחקנים מרבי',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          SegmentedButton<int>(
-            segments: const [
-              ButtonSegment(value: 4, label: Text('4')),
-              ButtonSegment(value: 5, label: Text('5')),
-              ButtonSegment(value: 6, label: Text('6')),
-              ButtonSegment(value: 7, label: Text('7')),
-              ButtonSegment(value: 8, label: Text('8')),
-            ],
-            selected: {players},
-            onSelectionChanged: (value) =>
-                setState(() => players = value.first),
+          _OptionRow<int>(
+            values: const [4, 5, 6, 7, 8],
+            selected: players,
+            label: (value) => '$value',
+            onSelected: (value) => setState(() => players = value),
           ),
           const SizedBox(height: 18),
           const Text(
             'זמן לרמז',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          SegmentedButton<int>(
-            segments: const [
-              ButtonSegment(value: 10, label: Text('10 שניות')),
-              ButtonSegment(value: 15, label: Text('15 שניות')),
-              ButtonSegment(value: 20, label: Text('20 שניות')),
-            ],
-            selected: {hintSeconds},
-            onSelectionChanged: (value) =>
-                setState(() => hintSeconds = value.first),
+          _OptionRow<int>(
+            values: const [10, 15, 20],
+            selected: hintSeconds,
+            label: (value) => '$value שניות',
+            onSelected: (value) => setState(() => hintSeconds = value),
           ),
           const SizedBox(height: 22),
           const Text(
             'קטגוריות',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           if (!loaded)
@@ -195,8 +258,90 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                   ),
               ],
             ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.yellow.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.yellow.withValues(alpha: .4)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.lock_clock_rounded,
+                    color: AppColors.yellow, size: 20),
+                SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    'אחרי ששחקן נוסף יצטרף, אי אפשר יהיה לשנות את ההגדרות.',
+                    style: TextStyle(color: Color(0xFFFFF0C2), fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _OptionRow<T> extends StatelessWidget {
+  const _OptionRow({
+    required this.values,
+    required this.selected,
+    required this.label,
+    required this.onSelected,
+  });
+
+  final List<T> values;
+  final T selected;
+  final String Function(T) label;
+  final ValueChanged<T> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (final value in values) ...[
+          Expanded(
+            child: Semantics(
+              selected: value == selected,
+              button: true,
+              child: InkWell(
+                onTap: () => onSelected(value),
+                borderRadius: BorderRadius.circular(14),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: value == selected
+                        ? AppColors.yellow
+                        : AppColors.cream.withValues(alpha: .07),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: value == selected
+                          ? AppColors.yellow
+                          : AppColors.cream.withValues(alpha: .14),
+                    ),
+                  ),
+                  child: Text(
+                    label(value),
+                    style: TextStyle(
+                      color:
+                          value == selected ? AppColors.night : AppColors.cream,
+                      fontWeight: FontWeight.w700,
+                      fontSize: values.length > 3 ? 16 : 13,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (value != values.last) const SizedBox(width: 7),
+        ],
+      ],
     );
   }
 }
@@ -229,9 +374,10 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
         _busy = false;
         _error = switch (e.code) {
           'invalid_room_code' => 'קוד החדר צריך להיות בן שש ספרות',
-          'room_not_found' => 'החדר לא נמצא. בדקו את הקוד ונסו שוב.',
-          'room_unavailable' => 'החדר מלא או שמשחק כבר מתנהל בו',
-          'already_in_activity' => 'אתם עדיין במשחק אחר',
+          'room_not_found' =>
+            'החדר לא נמצא או שאינו זמין. בדקו את הקוד עם מי שפתח את החדר.',
+          'room_unavailable' => 'החדר מלא או שהמשחק כבר התחיל.',
+          'already_in_activity' => 'כבר הצטרפתם למשחק אחר.',
           _ => connectionMessage(e.code),
         };
       });
@@ -249,36 +395,25 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
       ),
       child: Column(
         children: [
-          Illustration(
-            _error == null
-                ? 'assets/illustrations/private-room.webp'
-                : 'assets/illustrations/connection-error.webp',
-            height: 150,
-          ),
           const Text(
-            'הכניסו את קוד החדר שקיבלתם',
-            style: TextStyle(color: AppColors.muted, fontSize: 17),
-          ),
-          const SizedBox(height: 18),
-          TextField(
-            controller: code,
-            maxLength: 6,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            'הזינו את קוד החדר בן שש הספרות שקיבלתם.',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.night,
-              fontSize: 30,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 8,
-            ),
-            decoration: InputDecoration(hintText: '000000', errorText: _error),
-            onChanged: (_) => setState(() => _error = null),
-            onSubmitted: (_) {
+            style: TextStyle(color: AppColors.muted, fontSize: 15),
+          ),
+          const SizedBox(height: 22),
+          _CodeBoxes(
+            controller: code,
+            error: _error != null,
+            onChanged: () => setState(() => _error = null),
+            onSubmitted: () {
               if (ready) _join();
             },
           ),
-          const SizedBox(height: 6),
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            StatusBanner(text: _error!, positive: false),
+          ],
+          const SizedBox(height: 18),
           _Keypad(
             onDigit: (digit) {
               if (code.text.length < 6) {
@@ -301,6 +436,80 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
   }
 }
 
+class _CodeBoxes extends StatelessWidget {
+  const _CodeBoxes({
+    required this.controller,
+    required this.error,
+    required this.onChanged,
+    required this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final bool error;
+  final VoidCallback onChanged;
+  final VoidCallback onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    final digits = controller.text.padRight(6).characters.toList();
+    return SizedBox(
+      height: 72,
+      child: Stack(
+        children: [
+          Row(
+            textDirection: TextDirection.ltr,
+            children: [
+              for (var index = 0; index < 6; index++) ...[
+                Expanded(
+                  child: Container(
+                    height: 70,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.cream,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: error ? AppColors.coral : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                    child: Text(
+                      digits[index].trim(),
+                      style: const TextStyle(
+                        color: AppColors.night,
+                        fontFamily: 'Secular One',
+                        fontSize: 28,
+                      ),
+                    ),
+                  ),
+                ),
+                if (index < 5) const SizedBox(width: 7),
+              ],
+            ],
+          ),
+          Positioned.fill(
+            child: Opacity(
+              opacity: .01,
+              child: TextField(
+                controller: controller,
+                maxLength: 6,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  filled: false,
+                  border: InputBorder.none,
+                  counterText: '',
+                ),
+                onChanged: (_) => onChanged(),
+                onSubmitted: (_) => onSubmitted(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Digits for the six-digit room code, so the code can be typed without the
 /// system keyboard covering the screen.
 class _Keypad extends StatelessWidget {
@@ -312,7 +521,6 @@ class _Keypad extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget key(String label, VoidCallback? onTap) => SizedBox(
-          width: 84,
           height: 52,
           child: OutlinedButton(
             onPressed: onTap,
@@ -327,13 +535,18 @@ class _Keypad extends StatelessWidget {
             ),
           ),
         );
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 8,
-      runSpacing: 8,
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      childAspectRatio: 1.65,
       children: [
-        for (final digit in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'])
+        for (final digit in ['1', '2', '3', '4', '5', '6', '7', '8', '9'])
           key(digit, () => onDigit(digit)),
+        const SizedBox.shrink(),
+        key('0', () => onDigit('0')),
         key('מחיקה', onDelete),
       ],
     );

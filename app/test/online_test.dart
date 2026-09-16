@@ -57,17 +57,22 @@ void main() {
     await settle(tester);
     expect(find.byType(LiveRoomScreen), findsOneWidget);
     expect(find.text('נמצאו 2 מתוך 8'), findsOneWidget);
-    expect(find.text('צריך לפחות 4 שחקנים כדי להתחיל'), findsOneWidget);
+    expect(
+      find.text('המשחק יתחיל כשיהיו לפחות 4 שחקנים.'),
+      findsOneWidget,
+    );
     expect(find.text('מחפשים שחקן...'), findsNWidgets(6));
 
     pushSearch(channel, 'waiting_for_more', 4);
     await settle(tester);
     expect(
-        find.text('נמצאו 4! מחכים עד 30 שניות לשחקנים נוספים'), findsOneWidget);
+      find.text('מחכים עד 30 שניות לשחקנים נוספים.'),
+      findsOneWidget,
+    );
 
     pushSearch(channel, 'countdown', 6);
     await settle(tester);
-    expect(find.text('המשחק מתחיל בעוד רגע!'), findsOneWidget);
+    expect(find.text('המשחק מתחיל בעוד רגע.'), findsOneWidget);
 
     await tapLive(tester, 'ביטול חיפוש');
     expect(channel.commands('matchmaking.cancel'), hasLength(1));
@@ -86,7 +91,7 @@ void main() {
     });
     channel.event('session.state', {'playerId': 'p_me', 'activity': 'none'});
     await settle(tester);
-    expect(find.text('לא נמצא משחק מתאים'), findsWidgets);
+    expect(find.text('לא נמצא משחק בקטגוריות שבחרתם'), findsOneWidget);
 
     await tapLive(tester, 'ניסיון נוסף');
     expect(channel.commands('matchmaking.join'), hasLength(2));
@@ -97,14 +102,14 @@ void main() {
         {'playerId': 'p_me', 'activity': 'matchmaking', 'roomId': 'r_pub2'});
     pushSearch(channel, 'searching', 1);
     await settle(tester);
-    expect(find.text('נמצאו 1 מתוך 8'), findsOneWidget);
+    expect(find.text('נמצא שחקן אחד מתוך 8'), findsOneWidget);
 
     channel.event('matchmaking.noMatch', {
       'categoryIds': ['food'],
     });
     channel.event('session.state', {'playerId': 'p_me', 'activity': 'none'});
     await settle(tester);
-    await tapLive(tester, 'בחירת קטגוריות מחדש');
+    await tapLive(tester, 'בחירת קטגוריות אחרות');
     expect(find.byType(CategorySelectionScreen), findsOneWidget);
   });
 
@@ -126,7 +131,7 @@ void main() {
       'game': gameJson(phase: 'role_reveal'),
     });
     await settle(tester);
-    expect(find.text('המשימה שלכם'), findsOneWidget);
+    expect(find.text('אתם בצוות האזרחים'), findsOneWidget);
 
     channel.event('game.state', {
       'stateVersion': 5001,

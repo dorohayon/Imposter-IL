@@ -33,60 +33,75 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     SessionScope.of(context); // rebuild when the activity changes
     _returnToActivity(context);
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          children: [
-            Row(
-              textDirection: TextDirection.ltr,
-              children: [
-                IconButton.filledTonal(
-                  tooltip: 'הגדרות',
-                  onPressed: () => _open(context, const SettingsScreen()),
-                  icon: const Icon(Icons.settings_rounded),
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: RadialGradient(
+          center: Alignment(0, -1.05),
+          radius: 1.05,
+          colors: [Color(0xFF2A2455), AppColors.night],
+          stops: [0, .62],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(22, 8, 22, 26),
+            children: [
+              Row(
+                textDirection: TextDirection.ltr,
+                children: [
+                  IconButton.filledTonal(
+                    tooltip: 'הגדרות',
+                    onPressed: () => _open(context, const SettingsScreen()),
+                    icon: const Icon(Icons.settings_rounded),
+                  ),
+                  const Spacer(),
+                  IconButton.filledTonal(
+                    tooltip: 'פרופיל',
+                    onPressed: () => _open(context, const ProfileScreen()),
+                    icon: const Icon(Icons.person_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Illustration('assets/illustrations/home-hero.webp',
+                  height: 196),
+              Text(
+                'מי המתחזה?',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.displayLarge,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'משחק חקירה חברתי בעברית',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.yellow,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
-                const Spacer(),
-                IconButton.filledTonal(
-                  tooltip: 'פרופיל',
-                  onPressed: () => _open(context, const ProfileScreen()),
-                  icon: const Icon(Icons.person_rounded),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            const Illustration('assets/illustrations/home-hero.webp',
-                height: 245),
-            Text(
-              'מי המתחזה?',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.displayLarge,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'משחק חקירה חברתי בעברית',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, fontSize: 17),
-            ),
-            const SizedBox(height: 26),
-            PrimaryButton(
-              label: 'משחק ברשת',
-              onPressed: () => _open(context, const CategorySelectionScreen()),
-            ),
-            const SizedBox(height: 12),
-            PrimaryButton(
-              label: 'משחק עם חברים',
-              variant: ButtonVariant.secondary,
-              onPressed: () => _open(context, const FriendsScreen()),
-            ),
-            const SizedBox(height: 12),
-            TextButton.icon(
-              onPressed: () => _open(context, const HowToPlayScreen()),
-              icon: const Icon(Icons.help_outline_rounded),
-              label: const Text('איך משחקים?',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-            ),
-          ],
+              ),
+              const SizedBox(height: 28),
+              PrimaryButton(
+                label: 'משחק ברשת',
+                onPressed: () =>
+                    _open(context, const CategorySelectionScreen()),
+              ),
+              const SizedBox(height: 12),
+              PrimaryButton(
+                label: 'משחק עם חברים',
+                variant: ButtonVariant.secondary,
+                onPressed: () => _open(context, const FriendsScreen()),
+              ),
+              const SizedBox(height: 12),
+              PrimaryButton(
+                onPressed: () => _open(context, const HowToPlayScreen()),
+                variant: ButtonVariant.quiet,
+                label: 'איך משחקים?',
+              ),
+            ],
+          ),
         ),
       ),
     );

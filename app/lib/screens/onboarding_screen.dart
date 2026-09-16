@@ -105,7 +105,7 @@ class _ProfileFormState extends State<ProfileForm> {
   Future<void> _submit() async {
     final value = _nickname.text.trim();
     if (value.characters.length < 2) {
-      setState(() => _error = 'צריך לבחור כינוי של לפחות 2 תווים');
+      setState(() => _error = 'בחרו כינוי של לפחות 2 תווים.');
       return;
     }
     setState(() => _busy = true);
@@ -116,8 +116,8 @@ class _ProfileFormState extends State<ProfileForm> {
       setState(() {
         _busy = false;
         _error = switch (e.code) {
-          'invalid_nickname' => 'צריך לבחור כינוי של לפחות 2 תווים',
-          'nickname_blocked' => 'הכינוי הזה לא מתאים. נסו כינוי אחר.',
+          'invalid_nickname' => 'בחרו כינוי באורך 2–18 תווים.',
+          'nickname_blocked' => 'הכינוי הזה לא מתאים למשחק. בחרו כינוי אחר.',
           _ => 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
         };
       });
@@ -138,10 +138,10 @@ class _ProfileFormState extends State<ProfileForm> {
         Text(
           widget.subtitle!,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.muted, fontSize: 17),
+          style: const TextStyle(color: AppColors.muted, fontSize: 14),
         ),
       ],
-      const SizedBox(height: 24),
+      const SizedBox(height: 20),
       Center(
         child: AvatarView(
           asset: avatarAssets[_selectedAvatar],
@@ -149,7 +149,16 @@ class _ProfileFormState extends State<ProfileForm> {
           selected: true,
         ),
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 20),
+      const Text(
+        'הכינוי שלכם',
+        style: TextStyle(
+          color: AppColors.muted,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(height: 8),
       TextField(
         controller: _nickname,
         maxLength: maxNicknameLength,
@@ -160,17 +169,25 @@ class _ProfileFormState extends State<ProfileForm> {
           fontWeight: FontWeight.w700,
         ),
         decoration: InputDecoration(
-          hintText: 'הכינוי שלך',
-          helperText: 'בין 2 ל־$maxNicknameLength תווים',
+          hintText: 'למשל: דורון',
+          helperText: '2–$maxNicknameLength תווים',
           errorText: _error,
-          prefixIcon: const Icon(Icons.edit_rounded, color: AppColors.night),
         ),
         onChanged: (_) {
           if (_error != null) setState(() => _error = null);
         },
         onSubmitted: (_) => _submit(),
       ),
-      const SizedBox(height: 12),
+      const SizedBox(height: 8),
+      const Text(
+        'בחירת אווטאר',
+        style: TextStyle(
+          color: AppColors.muted,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(height: 10),
       GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -194,7 +211,7 @@ class _ProfileFormState extends State<ProfileForm> {
           ),
         ),
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 22),
       PrimaryButton(
         label: _busy ? widget.busyLabel : widget.submitLabel,
         onPressed: _busy ? null : _submit,
@@ -202,7 +219,7 @@ class _ProfileFormState extends State<ProfileForm> {
     ];
     if (!widget.scrollable) return Column(children: children);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+      padding: const EdgeInsets.fromLTRB(26, 22, 26, 28),
       children: children,
     );
   }

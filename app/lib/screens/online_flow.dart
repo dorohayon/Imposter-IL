@@ -18,8 +18,8 @@ const _categoryIcons = {
 const _allId = '';
 
 String searchErrorMessage(String code) => switch (code) {
-      'already_in_activity' => 'אתם עדיין במשחק או בחדר אחר',
-      'content_unavailable' => 'השרת עדיין לא מוכן להתחלת משחקים',
+      'already_in_activity' => 'כבר הצטרפתם למשחק או לחדר אחר.',
+      'content_unavailable' => 'אי אפשר להתחיל משחק כרגע. נסו שוב בעוד רגע.',
       _ => connectionMessage(code),
     };
 
@@ -80,110 +80,114 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
         ),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: const Text('בחירת קטגוריות'),
+    return GameScaffold(
+      title: 'בחירת קטגוריות',
+      bottom: PrimaryButton(
+        label: _busy ? 'מחפשים משחק...' : 'חפש משחק',
+        onPressed: categories.isEmpty || _busy
+            ? null
+            : () => _search([
+                  for (final id in allIds)
+                    if (selected.contains(id)) id,
+                ]),
       ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-        child: PrimaryButton(
-          label: _busy ? 'מתחילים חיפוש...' : 'חפש משחק',
-          onPressed: categories.isEmpty || _busy
-              ? null
-              : () => _search([
-                    for (final id in allIds)
-                      if (selected.contains(id)) id,
-                  ]),
-        ),
-      ),
-      body: SafeArea(
-        child: categories.isEmpty
-            ? const Center(
-                child: Text(
-                  'טוענים קטגוריות...',
-                  style: TextStyle(color: AppColors.muted),
+      child: categories.isEmpty
+          ? const Padding(
+              padding: EdgeInsets.only(top: 180),
+              child: Center(
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(color: AppColors.yellow),
+                    SizedBox(height: 18),
+                    Text(
+                      'טוענים את הקטגוריות...',
+                      style: TextStyle(color: AppColors.muted),
+                    ),
+                  ],
                 ),
-              )
-            : GridView.builder(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                itemCount: tiles.length + 1,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisExtent: 178,
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 14,
+              ),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'אפשר לבחור כמה קטגוריות',
+                  style: TextStyle(color: AppColors.muted, fontSize: 14),
                 ),
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return const Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Text(
-                        'אפשר לבחור כמה קטגוריות',
-                        style: TextStyle(color: AppColors.muted, fontSize: 17),
-                      ),
-                    );
-                  }
-                  final tile = tiles[index - 1];
-                  final isSelected = tile.id == _allId
-                      ? selected.length == allIds.length
-                      : selected.contains(tile.id);
-                  return Semantics(
-                    selected: isSelected,
-                    button: true,
-                    child: InkWell(
-                      onTap: () => toggle(tile.id),
-                      borderRadius: BorderRadius.circular(26),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.yellow
-                              : AppColors.nightSoft,
-                          borderRadius: BorderRadius.circular(26),
-                          border: Border.all(
+                const SizedBox(height: 14),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: tiles.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisExtent: 92,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                  ),
+                  itemBuilder: (context, index) {
+                    final tile = tiles[index];
+                    final isSelected = tile.id == _allId
+                        ? selected.length == allIds.length
+                        : selected.contains(tile.id);
+                    return Semantics(
+                      selected: isSelected,
+                      button: true,
+                      child: InkWell(
+                        onTap: () => toggle(tile.id),
+                        borderRadius: BorderRadius.circular(18),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.all(13),
+                          decoration: BoxDecoration(
                             color: isSelected
                                 ? AppColors.yellow
-                                : const Color(0xFF4A4860),
-                            width: 2,
-                          ),
-                        ),
-                        child: Stack(
-                          children: [
-                            Align(
-                              alignment: AlignmentDirectional.topEnd,
-                              child: Icon(
-                                isSelected
-                                    ? Icons.check_circle_rounded
-                                    : tile.icon,
-                                color: isSelected
-                                    ? AppColors.night
-                                    : AppColors.turquoise,
-                                size: 36,
-                              ),
+                                : AppColors.nightSoft,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.yellow
+                                  : const Color(0xFF4A4860),
+                              width: 2,
                             ),
-                            Align(
-                              alignment: AlignmentDirectional.bottomStart,
-                              child: Text(
-                                tile.name,
-                                style: TextStyle(
+                          ),
+                          child: Stack(
+                            children: [
+                              Align(
+                                alignment: AlignmentDirectional.topEnd,
+                                child: Icon(
+                                  isSelected
+                                      ? Icons.check_circle_rounded
+                                      : tile.icon,
                                   color: isSelected
                                       ? AppColors.night
-                                      : AppColors.cream,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w900,
+                                      : AppColors.turquoise,
+                                  size: 24,
                                 ),
                               ),
-                            ),
-                          ],
+                              Align(
+                                alignment: AlignmentDirectional.bottomStart,
+                                child: Text(
+                                  tile.name,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? AppColors.night
+                                        : AppColors.cream,
+                                    fontFamily: 'Secular One',
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-      ),
+                    );
+                  },
+                ),
+              ],
+            ),
     );
   }
 }

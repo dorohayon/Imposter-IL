@@ -1,10 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../models/player.dart';
 import '../theme/app_theme.dart';
 
 /// The button styles of the design system (design/claude/design-system.md).
-enum ButtonVariant { primary, secondary, confirm, danger }
+enum ButtonVariant { primary, secondary, confirm, danger, quiet }
 
 class PrimaryButton extends StatefulWidget {
   const PrimaryButton({
@@ -62,6 +64,12 @@ class _PrimaryButtonState extends State<PrimaryButton> {
           null,
           AppColors.coral.withValues(alpha: 0.7),
         ),
+      ButtonVariant.quiet => (
+          AppColors.cream.withValues(alpha: .08),
+          AppColors.cream,
+          null,
+          null,
+        ),
     };
     final drop = shadow != null && _pressed ? _sink : 0.0;
     return Semantics(
@@ -76,18 +84,20 @@ class _PrimaryButtonState extends State<PrimaryButton> {
           onTap: widget.onPressed,
           child: SizedBox(
             width: double.infinity,
-            height: 58 + (shadow == null ? 0 : _shadow),
+            height: 60 + (shadow == null ? 0 : _shadow),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 70),
-              height: 58,
+              height: 60,
               margin: EdgeInsets.only(top: drop),
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: enabled
                     ? background
-                    : (shadow == null
-                        ? Colors.transparent
-                        : const Color(0xFF3A3850)),
+                    : widget.variant == ButtonVariant.primary
+                        ? AppColors.yellow.withValues(alpha: .30)
+                        : widget.variant == ButtonVariant.confirm
+                            ? AppColors.turquoise.withValues(alpha: .26)
+                            : AppColors.cream.withValues(alpha: .05),
                 borderRadius: BorderRadius.circular(18),
                 border: border == null
                     ? null
@@ -109,9 +119,23 @@ class _PrimaryButtonState extends State<PrimaryButton> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   // Readable disabled text (WCAG AA on the disabled background).
-                  color: enabled ? foreground : AppColors.muted,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
+                  color: enabled
+                      ? foreground
+                      : widget.variant == ButtonVariant.primary
+                          ? AppColors.night.withValues(alpha: .45)
+                          : AppColors.muted,
+                  fontFamily: widget.variant == ButtonVariant.danger ||
+                          widget.variant == ButtonVariant.quiet
+                      ? 'Rubik'
+                      : 'Secular One',
+                  fontSize: widget.variant == ButtonVariant.danger ||
+                          widget.variant == ButtonVariant.quiet
+                      ? 16
+                      : 22,
+                  fontWeight: widget.variant == ButtonVariant.danger ||
+                          widget.variant == ButtonVariant.quiet
+                      ? FontWeight.w600
+                      : FontWeight.w400,
                 ),
               ),
             ),
@@ -136,8 +160,8 @@ class TimerBadge extends StatelessWidget {
     return Semantics(
       label: '$seconds שניות',
       child: Container(
-        width: 54,
-        height: 54,
+        width: 52,
+        height: 52,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
@@ -204,6 +228,9 @@ class GameScaffold extends StatelessWidget {
     this.bottom,
     this.showBack = true,
     this.onBack,
+    this.accent,
+    this.contentPadding = const EdgeInsets.fromLTRB(24, 12, 24, 28),
+    this.showHeader = true,
     super.key,
   });
 
@@ -218,6 +245,9 @@ class GameScaffold extends StatelessWidget {
   final VoidCallback? onExit;
   final Widget? bottom;
   final bool showBack;
+  final Color? accent;
+  final EdgeInsetsGeometry contentPadding;
+  final bool showHeader;
 
   /// Replaces the default pop, for screens that must tell the server first.
   final VoidCallback? onBack;
@@ -225,54 +255,68 @@ class GameScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
-    return Scaffold(
+    final scaffold = Scaffold(
+      backgroundColor: Colors.transparent,
       bottomNavigationBar: bottom == null
           ? null
           : SafeArea(
-              minimum: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              minimum: const EdgeInsets.fromLTRB(24, 8, 24, 22),
               child: bottom!,
             ),
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-              child: Row(
-                textDirection: TextDirection.ltr,
-                children: [
-                  SizedBox(width: 54, height: 54, child: timer),
-                  Expanded(
-                    child: Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleLarge,
+            if (showHeader)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 10, 22, 8),
+                child: Row(
+                  textDirection: TextDirection.ltr,
+                  children: [
+                    SizedBox(width: 54, height: 54, child: timer),
+                    Expanded(
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                     ),
-                  ),
-                  SizedBox(
-                    width: 54,
-                    height: 54,
-                    child: onExit != null
-                        ? IconButton.filledTonal(
-                            tooltip: 'יציאה',
-                            onPressed: onExit,
-                            icon: const Icon(Icons.close_rounded),
-                          )
-                        : showBack && canPop
-                            ? BackButton(onPressed: onBack)
-                            : null,
-                  ),
-                ],
+                    SizedBox(
+                      width: 54,
+                      height: 54,
+                      child: onExit != null
+                          ? IconButton.filledTonal(
+                              tooltip: 'יציאה',
+                              onPressed: onExit,
+                              icon: const Icon(Icons.close_rounded, size: 22),
+                            )
+                          : showBack && canPop
+                              ? BackButton(onPressed: onBack)
+                              : null,
+                    ),
+                  ],
+                ),
               ),
-            ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+                padding: contentPadding,
                 child: child,
               ),
             ),
           ],
         ),
       ),
+    );
+    if (accent == null) return scaffold;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: RadialGradient(
+          center: const Alignment(0, -1.05),
+          radius: 1.05,
+          colors: [accent!, AppColors.night],
+          stops: const [0, .62],
+        ),
+      ),
+      child: scaffold,
     );
   }
 }
@@ -283,6 +327,7 @@ class AvatarView extends StatelessWidget {
     this.size = 64,
     this.selected = false,
     this.disconnected = false,
+    this.eliminated = false,
     super.key,
   });
 
@@ -290,27 +335,109 @@ class AvatarView extends StatelessWidget {
   final double size;
   final bool selected;
   final bool disconnected;
+  final bool eliminated;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 180),
-      opacity: disconnected ? .45 : 1,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.cream,
-          border: Border.all(
-            color: selected ? AppColors.yellow : const Color(0xFF555169),
-            width: selected ? 4 : 2,
+    final dimmed = disconnected || eliminated;
+    return SizedBox.square(
+      dimension: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          AnimatedOpacity(
+            duration: const Duration(milliseconds: 180),
+            opacity: dimmed ? .45 : 1,
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.nightSoft,
+                border: Border.all(
+                  color: selected ? AppColors.yellow : Colors.transparent,
+                  width: selected ? 4 : 0,
+                ),
+              ),
+              child: ClipOval(
+                child: eliminated
+                    ? ColorFiltered(
+                        colorFilter: const ColorFilter.mode(
+                          Colors.grey,
+                          BlendMode.saturation,
+                        ),
+                        child: Image.asset(asset, fit: BoxFit.cover),
+                      )
+                    : Image.asset(asset, fit: BoxFit.cover),
+              ),
+            ),
           ),
-        ),
-        child: ClipOval(child: Image.asset(asset, fit: BoxFit.cover)),
+          if (disconnected)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(painter: _DashedCirclePainter()),
+              ),
+            ),
+          if (selected)
+            PositionedDirectional(
+              end: -2,
+              bottom: -2,
+              child: Container(
+                width: size * .34,
+                height: size * .34,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.yellow,
+                ),
+                child: Icon(
+                  Icons.check_rounded,
+                  size: size * .22,
+                  color: AppColors.night,
+                ),
+              ),
+            ),
+          if (disconnected && !selected)
+            PositionedDirectional(
+              end: -2,
+              bottom: -2,
+              child: Container(
+                width: size * .36,
+                height: size * .36,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.coral,
+                ),
+                child: Icon(
+                  Icons.wifi_off_rounded,
+                  size: size * .21,
+                  color: AppColors.night,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
+}
+
+class _DashedCirclePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.coral
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+    final rect = Offset.zero & size;
+    const dash = .22;
+    const gap = .12;
+    for (var angle = 0.0; angle < math.pi * 2; angle += dash + gap) {
+      canvas.drawArc(rect.deflate(2), angle, dash, false, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class PlayerCard extends StatelessWidget {
@@ -334,36 +461,41 @@ class PlayerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: selected ? AppColors.yellow.withValues(alpha: .14) : null,
+      color: selected ? AppColors.yellow.withValues(alpha: .12) : null,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
           child: Row(
             children: [
               AvatarView(
                 asset: player.avatar,
+                size: 48,
                 selected: selected,
                 disconnected: player.isDisconnected,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(player.nickname,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w800)),
+                    Text(
+                      player.nickname,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     if (player.hint != null)
                       Text(
-                        player.hint!.isEmpty
-                            ? 'לא נשלח רמז'
-                            : 'הרמז: ${player.hint}',
+                        player.hint!.isEmpty ? 'לא נשלח רמז' : player.hint!,
                         style: TextStyle(
                           color: player.hint!.isEmpty
                               ? AppColors.coral
-                              : AppColors.muted,
+                              : AppColors.cream,
+                          fontFamily: 'Secular One',
+                          fontSize: 19,
                         ),
                       ),
                     if (note != null)
@@ -378,7 +510,7 @@ class PlayerCard extends StatelessWidget {
                 ),
               ),
               if (player.isMe)
-                const Chip(label: Text('אני'))
+                const Chip(label: Text('אתם'))
               else if (!enabled)
                 const Icon(Icons.block_rounded, color: AppColors.muted)
               else if (selected)
@@ -400,5 +532,109 @@ class Illustration extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(asset, height: height, fit: BoxFit.contain);
+  }
+}
+
+/// A compact label/value surface used throughout the Claude design.
+class InfoCard extends StatelessWidget {
+  const InfoCard({
+    required this.label,
+    required this.child,
+    this.light = false,
+    this.padding = const EdgeInsets.all(16),
+    super.key,
+  });
+
+  final String label;
+  final Widget child;
+  final bool light;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = light ? AppColors.night : AppColors.cream;
+    return Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: light ? AppColors.cream : AppColors.cream.withValues(alpha: .07),
+        borderRadius: BorderRadius.circular(20),
+        border: light
+            ? null
+            : Border.all(color: AppColors.cream.withValues(alpha: .10)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: foreground.withValues(alpha: .62),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          DefaultTextStyle.merge(
+              style: TextStyle(color: foreground), child: child),
+        ],
+      ),
+    );
+  }
+}
+
+class StepCard extends StatelessWidget {
+  const StepCard(
+      {required this.number,
+      required this.text,
+      this.purple = false,
+      super.key});
+
+  final int number;
+  final String text;
+  final bool purple;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.cream,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: purple ? AppColors.purple : AppColors.yellow,
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Text(
+              '$number',
+              style: TextStyle(
+                color: purple ? AppColors.cream : AppColors.night,
+                fontFamily: 'Secular One',
+                fontSize: 18,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: AppColors.night,
+                fontSize: 14,
+                height: 1.45,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
