@@ -57,7 +57,7 @@ Imposter-IL/
 | `internal/room` | חדר פרטי: קוד, רשימת שחקנים, מנהל, הסרה, נעילת הגדרות, העברת ניהול ומשחק נוסף. |
 | `internal/content` | הקטגוריות, המילים והתגובות שאושרו, בחירת מילה, בדיקת מזהים ורשימת המילים החסומות לרמזים ולכינויים. |
 | `internal/api` | REST ו־WebSocket: sessions אורח (כינוי ואווטאר), קטגוריות ותגובות, יצירת חדר עם קוד ייחודי והצטרפות לפי קוד, חיבור אחד לכל session, idempotency, ping, פקודות חדר ומשחק, טיימרים ושליחת `session.state`, `room.state`, `game.state` ו־`game.reaction`. מחזיק הכול בזיכרון מאחורי מנעול אחד. |
-| `internal/matchmaking` | כללי ההתחלה של משחק ברשת (30 שניות מ־4, 5 שניות מ־6, 2 דקות ל־`לא נמצא משחק מתאים`) וחיתוך קטגוריות. `internal/api` מחזיק את קבוצות החיפוש. |
+| `internal/matchmaking` | כללי ההתחלה של משחק ברשת (30 שניות מ־4, 20 שניות מ־6, 2 דקות ל־`לא נמצא משחק מתאים`) וחיתוך קטגוריות. `internal/api` מחזיק את קבוצות החיפוש. |
 
 ### ארכיטקטורת Flutter
 
@@ -148,7 +148,7 @@ stateDiagram-v2
 stateDiagram-v2
     [*] --> searching: חפש משחק
     searching --> waiting_for_more: נמצא הרביעי — עד 30 שניות
-    waiting_for_more --> countdown: נמצא השישי — 5 שניות
+    waiting_for_more --> countdown: נמצא השישי — 20 שניות
     waiting_for_more --> game: 30 השניות נגמרו
     countdown --> game: הספירה נגמרה (או 30 השניות, אם קודם)
     waiting_for_more --> searching: פחות מ־4

@@ -235,7 +235,8 @@ func TestMatchmakingSixthPlayerStartsCountdownThatSurvivesACancel(t *testing.T) 
 	c.advance(5 * time.Second)
 	players = append(players, c.searcher("חמישי", "animals"), c.searcher("שישי", "animals"))
 	s := players[0].w.searchState(searchPlayers(6))
-	if s["status"] != "countdown" || s["deadline"] != "2026-09-15T12:00:10Z" {
+	// Five seconds in, the 20-second countdown ends at +25s.
+	if s["status"] != "countdown" || s["deadline"] != "2026-09-15T12:00:25Z" {
 		t.Fatalf("countdown state = %v", s)
 	}
 
@@ -245,7 +246,7 @@ func TestMatchmakingSixthPlayerStartsCountdownThatSurvivesACancel(t *testing.T) 
 		t.Fatalf("after a cancel = %v", s)
 	}
 
-	c.advance(5 * time.Second)
+	c.advance(20 * time.Second)
 	c.tickAll()
 	wantGameStarted(t, players[:5]...)
 }

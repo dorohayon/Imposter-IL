@@ -242,8 +242,10 @@ class TimerBadge extends StatelessWidget {
   }
 }
 
-/// The timer circle: a ring, and inside it a wedge that drains clockwise from
-/// the top as the phase runs out.
+/// The timer circle. The coloured ring itself is what drains: it runs
+/// clockwise from the top and shortens as the phase runs out, leaving a faint
+/// track behind it, so the time left reads as a shrinking arc rather than a
+/// number to be parsed.
 class _TimerDial extends CustomPainter {
   const _TimerDial({
     required this.ring,
@@ -257,25 +259,29 @@ class _TimerDial extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final centre = rect.center;
+    final centre = (Offset.zero & size).center;
     final radius = size.width / 2 - stroke / 2;
+    final circle = Rect.fromCircle(center: centre, radius: radius);
 
-    if (remaining > 0) {
-      canvas.drawArc(
-        Rect.fromCircle(center: centre, radius: radius - stroke / 2),
-        -math.pi / 2,
-        2 * math.pi * remaining,
-        true,
-        Paint()..color = ring.withValues(alpha: .22),
-      );
-    }
+    // The track the ring leaves behind, so the circle keeps its shape.
     canvas.drawCircle(
       centre,
       radius,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
+        ..color = ring.withValues(alpha: .16),
+    );
+    if (remaining <= 0) return;
+    canvas.drawArc(
+      circle,
+      -math.pi / 2,
+      2 * math.pi * remaining,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..strokeCap = StrokeCap.round
         ..color = ring,
     );
   }

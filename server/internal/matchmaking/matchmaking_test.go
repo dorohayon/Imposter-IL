@@ -25,17 +25,18 @@ func TestStartRules(t *testing.T) {
 	timers.Update(4, at(40))
 	check("4th player starts a 30-second wait", StatusWaitingForMore, at(70))
 
-	timers.Update(5, at(45))
+	timers.Update(5, at(42))
 	check("a 5th player keeps the wait", StatusWaitingForMore, at(70))
 
-	timers.Update(6, at(50))
-	check("6th player starts a 5-second countdown", StatusCountdown, at(55))
+	// The 6th arrives early enough that 20 seconds still beats the wait's 70.
+	timers.Update(6, at(45))
+	check("6th player starts a 20-second countdown", StatusCountdown, at(65))
 
 	timers.Update(5, at(52))
-	check("a cancel keeps the countdown while 4 remain", StatusCountdown, at(55))
+	check("a cancel keeps the countdown while 4 remain", StatusCountdown, at(65))
 
 	timers.Update(8, at(53))
-	check("8 players still wait for the countdown", StatusCountdown, at(55))
+	check("8 players still wait for the countdown", StatusCountdown, at(65))
 
 	timers.Update(3, at(54))
 	check("below 4 stops everything", StatusSearching, time.Time{})
@@ -47,7 +48,7 @@ func TestStartRules(t *testing.T) {
 func TestCountdownNeverDelaysAnEarlierWaitEnd(t *testing.T) {
 	var timers Timers
 	timers.Update(4, at(0))
-	timers.Update(6, at(28)) // the wait ends at 30, before the countdown at 33
+	timers.Update(6, at(28)) // the wait ends at 30, before the countdown at 48
 	if !timers.StartAt().Equal(at(30)) {
 		t.Fatalf("start %v, want %v", timers.StartAt(), at(30))
 	}
