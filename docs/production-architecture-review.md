@@ -316,7 +316,12 @@ So: **Cloud Run for beta and soft launch**, where free and zero-maintenance beat
 occasional game to a deploy. **Move to the VM when losing games to a deploy stops being
 acceptable** — same container image, a different deploy script, no code change.
 
-Two Cloud Run specifics that decide whether it works at all:
+Measured on the deployed service (`imposter-il-game`, us-central1), 16 simulated players from
+Israel: **16 games played to completion, p50 158 ms, p99 320 ms, 0 panics, 0 aborts, 1.6 MB
+heap.** The latency is the Israel↔Iowa round trip, not the server — it spent 0.42 s of lock time
+across 780 publishes (538 µs each including TLS and the proxy hop).
+
+Three Cloud Run specifics that decide whether it works at all:
 
 - `--max-instances=1` is **mandatory**. Every session, room and game is in one process's memory
   and matchmaking is a slice in it, so a second instance means two players searching at the same
@@ -325,6 +330,14 @@ Two Cloud Run specifics that decide whether it works at all:
 - CPU throttling outside request handling would freeze the game's `time.AfterFunc` timers.
   **Open WebSockets count as in-flight requests**, so CPU stays allocated whenever any player is
   connected, which is the only time the timers matter.
+- Google's frontend **intercepts the path `/healthz`** and answers 404 before the container sees
+  it. Health checks there must use `/readyz`.
+
+**Cost shape is the opposite of the VM's**, and this is the real reason to move later: Cloud Run
+bills instance time, and every connected player holds a WebSocket that keeps the instance alive.
+Intermittent play is free; an instance up around the clock is ~$61/month against the VM's flat
+$2.90. Break-even is about **50 instance-hours per month** — that, or the first deploy that kills
+games you cannot afford to lose, is the trigger to run `deploy/setup-gcp.sh` instead.
 
 Lambda and App Runner remain unsuitable: neither holds long-lived WebSockets the way this needs.
 

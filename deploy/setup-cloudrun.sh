@@ -88,8 +88,35 @@ gcloud run deploy "$SERVICE" \
 
 URL="$(gcloud run services describe "$SERVICE" --region="$REGION" --format='value(status.url)')"
 
+step "budget alert"
+# Cloud Run bills instance time, and every connected player holds a WebSocket
+# open, which keeps the instance alive. Intermittent play stays inside the free
+# tier; an instance up 24/7 is about $61/month, twenty times the VM. This is
+# the tripwire for that, and for anything else unexpected.
+BUDGET="${BUDGET_AMOUNT:-20}"
+account="$(gcloud billing projects describe "$PROJECT" --format='value(billingAccountName)')"
+if gcloud billing budgets list --billing-account="${account#billingAccounts/}" \
+	--filter="displayName=imposter-$PROJECT" --format='value(name)' 2>/dev/null | grep -q .; then
+	echo "already set"
+elif gcloud billing budgets create \
+	--billing-account="${account#billingAccounts/}" \
+	--display-name="imposter-$PROJECT" \
+	--budget-amount="${BUDGET}ILS" \
+	--filter-projects="projects/$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')" \
+	--threshold-rule=percent=0.5 \
+	--threshold-rule=percent=0.9 \
+	--threshold-rule=percent=1.0 2>/dev/null; then
+	echo "alerts at 50%, 90% and 100% of ${BUDGET} ILS"
+else
+	echo "could not create one (needs billing.budgets.create on the billing account)." >&2
+	echo "Set it by hand: https://console.cloud.google.com/billing/budgets" >&2
+fi
+
 step "checking"
-curl -fsS "$URL/healthz" >/dev/null && echo "healthy"
+# /readyz, not /healthz: Google's frontend intercepts the path /healthz on
+# Cloud Run and answers 404 itself, so the container never sees it. /readyz is
+# the better check anyway — it reports whether the server will take new games.
+curl -fsS "$URL/readyz" >/dev/null && echo "ready"
 
 cat <<EOF
 
@@ -103,6 +130,11 @@ cat <<EOF
 
   logs are already structured JSON in Cloud Logging:
     gcloud run services logs read $SERVICE --region=$REGION --limit=50
+
+  watch the cost trigger — Cloud Run bills instance time, so once players keep
+  it alive around the clock the VM (deploy/setup-gcp.sh) is both cheaper and
+  better. Break-even is ~50 instance-hours/month:
+    gcloud monitoring dashboards list  # or the Cloud Run console's "Instance time"
 
   redeploy: re-run this script. Games in flight end cleanly (no loss recorded).
   delete:   gcloud run services delete $SERVICE --region=$REGION

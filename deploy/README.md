@@ -7,6 +7,15 @@ The one property that decides the host: **the platform must not stop the
 process on its own schedule.** Games live in RAM and need a drain window, so
 Cloud Run, Lambda and App Runner are out. A plain VM is in.
 
+## A Cloud Run quirk worth knowing
+
+Google's frontend intercepts the path **`/healthz`** on Cloud Run and answers
+404 itself; the container never sees the request. Everything else works
+normally. Use `/readyz` there — it is the better check anyway, since it reports
+whether the server is willing to take new games rather than merely alive.
+
+On the VM there is no such interception and `/healthz` is what Caddy polls.
+
 ## Which of the three
 
 | | When | Cost |
