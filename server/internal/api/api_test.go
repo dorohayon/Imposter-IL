@@ -34,6 +34,10 @@ func newClient(t *testing.T) *client {
 	c.clock.Store(t0.UnixNano())
 	pick := func([]string, *rand.Rand) (string, string, bool) { return "חיות", "פיל", true }
 	c.srv = NewServer(func() time.Time { return time.Unix(0, c.clock.Load()).UTC() }, policy, pick)
+	// Every test dials from 127.0.0.1 on a clock that only moves when it says
+	// so, so the per-IP limits would fire on the players, not on abuse.
+	// TestRateLimits turns them back on.
+	c.srv.sessionLimit, c.srv.joinLimit = newLimiter(0, 0), newLimiter(0, 0)
 	c.srv.Routes(c.mux)
 	c.ts = httptest.NewServer(c.mux)
 	t.Cleanup(c.ts.Close)

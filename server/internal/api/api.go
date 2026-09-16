@@ -38,9 +38,17 @@ var AvatarIDs = []string{
 
 type session struct {
 	playerID string
+	token    string // key in Server.sessions, so the reaper can delete it
 	nickname string
 	avatarID string
 	roomID   string // current room: a private room or a forming online match
+
+	// lastSeen is refreshed by every request, command and connection change;
+	// the reaper drops a session idle for SessionTTL.
+	lastSeen time.Time
+	// ip is the caller's address as of the last request, for per-IP limits in
+	// handlers that only receive the session.
+	ip string
 
 	// The categories and start time of the player's latest online search.
 	searchCategories []string
@@ -60,9 +68,13 @@ type session struct {
 
 type roomEntry struct {
 	id     string
+	code   string // kept here so a room can be dropped without asking it
 	room   *room.Room
 	timer  *time.Timer // fires at room.Deadline()
 	gameID string      // id of room.Game(), if one was started
+
+	// emptySince is when the last member left, for the reaper.
+	emptySince time.Time
 
 	// Online matches (public rooms, see matchmaking.go).
 	public       bool
@@ -104,6 +116,15 @@ type Server struct {
 	roomsByID   map[string]*roomEntry
 	roomsCode   map[string]*roomEntry
 	publicRooms []*roomEntry // online matches, oldest first
+
+	draining   bool // no new rooms, searches or games; see ops.go
+	trustProxy bool // read the client address from X-Forwarded-For
+
+	sessionLimit *limiter // guest creation, per IP
+	joinLimit    *limiter // room-code attempts, per IP
+	commandLimit *limiter // WebSocket commands, per session
+
+	metrics metrics
 }
 
 // NewServer uses policy and pickWord for games started in rooms. Without
@@ -121,6 +142,9 @@ func NewServer(now func() time.Time, policy game.Policy, pickWord PickWord) *Ser
 		players:      map[string]*session{},
 		roomsByID:    map[string]*roomEntry{},
 		roomsCode:    map[string]*roomEntry{},
+		sessionLimit: newLimiter(sessionsPerMinute, sessionsBurst),
+		joinLimit:    newLimiter(joinsPerMinute, joinsBurst),
+		commandLimit: newLimiter(commandsPerMinute, commandsBurst),
 	}
 	s.newCode = func() string { return room.NewCode(s.rng) }
 	return s
@@ -153,6 +177,8 @@ var (
 	errRoomUnavailable = apiError{http.StatusConflict, "room_unavailable", "room is full or in a game"}
 	errAlreadyInGame   = apiError{http.StatusConflict, "already_in_activity", "leave the current game first"}
 	errInternal        = apiError{http.StatusInternalServerError, "internal_error", "internal error"}
+	errDraining        = apiError{http.StatusServiceUnavailable, "server_draining", "server is restarting, try again in a moment"}
+	errNicknameBlocked = apiError{http.StatusUnprocessableEntity, "nickname_blocked", "nickname is not allowed"}
 )
 
 func writeJSON(w http.ResponseWriter, status int, body any) {
@@ -198,6 +224,10 @@ func (s *Server) withSession(next func(http.ResponseWriter, []byte, *session)) h
 			writeError(w, errSessionNotFound)
 			return
 		}
+		// A panic here would leave the player's room half-changed; abort that
+		// room rather than serve from state nobody has checked.
+		defer s.recoverRoom(s.roomsByID[sess.roomID], "rest "+r.Pattern)
+		sess.lastSeen, sess.ip = s.now(), s.clientIP(r)
 		next(w, body, sess)
 		s.syncSession(sess)
 	}
@@ -247,12 +277,23 @@ func (s *Server) createSession(w http.ResponseWriter, r *http.Request) {
 		writeError(w, errInvalidAvatar)
 		return
 	}
-	sess := &session{playerID: "p_" + crand.Text()}
+	s.mu.Lock()
+	now := s.now()
+	if !s.sessionLimit.allow(s.clientIP(r), now) {
+		s.metrics.rateLimited++
+		s.mu.Unlock()
+		writeError(w, errRateLimited)
+		return
+	}
+	s.mu.Unlock()
+
+	sess := &session{playerID: "p_" + crand.Text(), lastSeen: now, ip: s.clientIP(r)}
 	if err := applyProfile(sess, req); err != nil {
 		writeError(w, *err)
 		return
 	}
 	token := crand.Text()
+	sess.token = token
 	s.mu.Lock()
 	s.sessions[token], s.players[sess.playerID] = sess, sess
 	s.mu.Unlock()
@@ -301,6 +342,10 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 	if !decode(w, body, &req) {
 		return
 	}
+	if s.draining {
+		writeError(w, errDraining)
+		return
+	}
 	now := s.now()
 	previous, apiErr := s.roomToLeave(sess, "", now)
 	if apiErr != nil {
@@ -318,7 +363,7 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 		return
 	}
 	s.leave(previous, sess, now)
-	entry := &roomEntry{id: "r_" + crand.Text(), room: rm}
+	entry := &roomEntry{id: "r_" + crand.Text(), code: code, room: rm}
 	s.roomsByID[entry.id], s.roomsCode[code] = entry, entry
 	sess.roomID = entry.id
 	sess.leaveGame()
@@ -332,6 +377,16 @@ func (s *Server) joinRoom(w http.ResponseWriter, body []byte, sess *session) {
 		Code string `json:"code"`
 	}
 	if !decode(w, body, &req) {
+		return
+	}
+	if s.draining {
+		writeError(w, errDraining)
+		return
+	}
+	// Rate limited before the lookup: this is the room-code enumeration path.
+	if !s.joinLimit.allow(sess.ip, s.now()) {
+		s.metrics.rateLimited++
+		writeError(w, errRateLimited)
 		return
 	}
 	if !room.ValidCode(req.Code) {
