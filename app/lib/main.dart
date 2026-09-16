@@ -25,7 +25,9 @@ class ImposterApp extends StatelessWidget {
     return SessionScope(
       session: session,
       child: MaterialApp(
-        title: 'מי המתחזה?',
+        // The trailing "?" is a neutral character, so in the LTR context of the
+        // task switcher it would sit on the wrong side. \u200f (RLM) pins it.
+        title: 'מי המתחזה?\u200f',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.dark,
         // Hebrew everywhere: RTL layout and Hebrew text in built-in widgets.

@@ -683,11 +683,20 @@ class _RoleReveal extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            impostor ? 'אתה המתחזה' : 'המילה שלך',
+            impostor ? 'אתם המתחזה' : 'אתם אזרחים',
             style: Theme.of(context).textTheme.headlineLarge,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
+          const Text(
+            'המילה הסודית',
+            style: TextStyle(
+              color: AppColors.muted,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(22),
@@ -696,7 +705,7 @@ class _RoleReveal extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
             ),
             child: Text(
-              impostor ? 'המילה נשארת סודית' : game.secretWord ?? '',
+              impostor ? 'לא מוצגת לכם' : game.secretWord ?? '',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: impostor ? AppColors.cream : AppColors.night,
@@ -708,8 +717,8 @@ class _RoleReveal extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             impostor
-                ? 'נסה להשתלב, להבין את הרמזים ולגלות את המילה.'
-                : 'תן רמז של מילה אחת בלי לחשוף את המילה הסודית.',
+                ? 'המילה לא מוצגת לכם — רק הקטגוריה.'
+                : 'אף אחד מלבדכם לא יודע מי המתחזה. שמרו על המילה בסוד.',
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: AppColors.muted,

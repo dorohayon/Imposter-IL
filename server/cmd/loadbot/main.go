@@ -45,7 +45,40 @@ var (
 	// joining a human's search have to share at least one with them.
 	categories = flag.String("categories", "food,animals,sports,professions,places,objects",
 		"comma-separated category ids to search with; the default matches anyone")
+	// Bots that answer in microseconds make a game with a human in it feel
+	// broken: hints appear before the turn is readable. Thinking time makes a
+	// bot-filled match look like a real one. Set 0 for capacity tests, where
+	// the point is to push the server as hard as possible.
+	thinkMin = flag.Duration("think-min", 2*time.Second, "shortest pause before a bot acts")
+	thinkMax = flag.Duration("think-max", 7*time.Second, "longest pause before a bot acts")
 )
+
+// hintWords are ordinary describing words. They are deliberately not drawn
+// from the game's own categories, so a bot can never accidentally submit the
+// secret word and be refused.
+var hintWords = []string{
+	"גדול", "קטן", "צהוב", "מהיר", "אדום", "חם", "קר", "עגול",
+	"רועש", "מתוק", "כבד", "ישן", "חדש", "רך", "חזק", "יפה",
+	"מוזר", "כחול", "ארוך", "קצר", "שקט", "חלק", "כתום", "מבריק",
+}
+
+// think pauses for a human-looking moment, or returns early if the game moves
+// on without this bot.
+func think(ctx context.Context) bool {
+	if *thinkMax <= 0 {
+		return true
+	}
+	d := *thinkMin
+	if *thinkMax > *thinkMin {
+		d += time.Duration(rand.Int64N(int64(*thinkMax - *thinkMin)))
+	}
+	select {
+	case <-time.After(d):
+		return true
+	case <-ctx.Done():
+		return false
+	}
+}
 
 func main() {
 	flag.Parse()
@@ -155,6 +188,25 @@ type bot struct {
 	// instead would be a feedback loop: a reaction publishes a snapshot, which
 	// prompts another reaction.
 	reactedTo int
+	// thinking guards the pause before a hint, so the snapshots that arrive
+	// while a bot composes do not start a second one.
+	thinking bool
+}
+
+// unusedWord picks a describing word no one has played in this game yet, so
+// the server never refuses it as a duplicate.
+func unusedWord(g gameView) string {
+	used := map[string]bool{}
+	for _, h := range g.Hints {
+		used[h.Text] = true
+	}
+	start := int(hintCounter.Add(1)) % len(hintWords)
+	for i := range hintWords {
+		if w := hintWords[(start+i)%len(hintWords)]; !used[w] {
+			return w
+		}
+	}
+	return hintWords[start]
 }
 
 func (b *bot) play(ctx context.Context) error {
@@ -270,6 +322,7 @@ type gameView struct {
 	Candidates  []string `json:"voteCandidates"`
 	Hints       []struct {
 		PlayerID string `json:"playerId"`
+		Text     string `json:"text"`
 	} `json:"hints"`
 	Players []struct {
 		PlayerID      string `json:"playerId"`
@@ -304,10 +357,19 @@ func (b *bot) act(ctx context.Context, raw json.RawMessage) {
 		}
 	case "hints":
 		if g.CurrentTurn == b.playerID {
-			// Latin and a counter: one word, short, never the secret, never a
-			// duplicate of another bot's hint.
-			hint := fmt.Sprintf("w%d", hintCounter.Add(1))
-			b.send(ctx, "game.submitHint", map[string]any{"gameId": g.GameID, "text": hint})
+			if b.thinking {
+				return // already composing this turn
+			}
+			b.thinking = true
+			hint := unusedWord(g)
+			go func() {
+				// Take a few seconds, the way a player does. The turn timer is
+				// 15 seconds, so this still lands in time.
+				if think(ctx) {
+					b.send(ctx, "game.submitHint", map[string]any{"gameId": g.GameID, "text": hint})
+				}
+				b.thinking = false
+			}()
 		} else if last := len(g.Hints) - 1; last > b.reactedTo {
 			// Once per new hint, the way a player reacts. Reactions are the
 			// heaviest path: each one fans a full snapshot out to everyone.
@@ -319,14 +381,22 @@ func (b *bot) act(ctx context.Context, raw json.RawMessage) {
 			}
 		}
 	case "voting", "runoff_voting":
-		if g.MyVote != "" {
+		if g.MyVote != "" || b.thinking {
 			return
 		}
 		for _, id := range candidates(g) {
-			if id != b.playerID {
-				b.send(ctx, "game.vote", map[string]any{"gameId": g.GameID, "targetPlayerId": id})
-				return
+			if id == b.playerID {
+				continue
 			}
+			b.thinking = true
+			go func() {
+				// Deliberating, so the votes do not all land in the same frame.
+				if think(ctx) {
+					b.send(ctx, "game.vote", map[string]any{"gameId": g.GameID, "targetPlayerId": id})
+				}
+				b.thinking = false
+			}()
+			return
 		}
 	case "impostor_guess":
 		if g.MyRole == "impostor" {

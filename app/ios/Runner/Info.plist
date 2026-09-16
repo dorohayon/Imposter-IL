@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>מי המתחזה?</string>
+	<string>מי המתחזה?‏</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- Development builds talk to a local server over plain http/ws. -->

@@ -59,7 +59,8 @@ void main() {
     await tapText(tester, 'משחק עם חברים');
     await tapText(tester, 'יצירת חדר');
 
-    // Categories come from the server; deselect one before creating.
+    // Categories come from the server. "הכול" is the default; tapping one
+    // leaves it and picks just that one.
     expect(find.text('חפצים'), findsOneWidget);
     await tapText(tester, 'חפצים');
     await tapText(tester, '10 שניות');
@@ -69,7 +70,7 @@ void main() {
     expect(body, {
       'maxPlayers': 8,
       'hintSeconds': 10,
-      'categoryIds': ['food', 'animals', 'sports', 'professions', 'places'],
+      'categoryIds': ['objects'],
     });
     expect(find.text('482913'), findsOneWidget);
     expect(find.text('מנהל החדר · אני'), findsOneWidget);
@@ -142,7 +143,8 @@ void main() {
     });
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
-    expect(find.text('המילה שלך'), findsOneWidget);
+    expect(find.text('אתם אזרחים'), findsOneWidget);
+    expect(find.text('המילה הסודית'), findsOneWidget);
     expect(find.text('פיל'), findsOneWidget);
     await tapLive(tester, 'הבנתי');
     expect(channel.commands('game.confirmRole').single['payload'],

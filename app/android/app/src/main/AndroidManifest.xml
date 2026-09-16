@@ -2,7 +2,7 @@
     <!-- REST and WebSocket connections to the game server. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="מי המתחזה?"
+        android:label="מי המתחזה?&#x200F;"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
