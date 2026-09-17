@@ -31,6 +31,7 @@ func TestPageCarriesTheInvitation(t *testing.T) {
 	body := rec.Body.String()
 	for _, want := range []string{
 		"הוזמנתם למשחק",
+		"מי המתחזה?",
 		"כולם יודעים את המילה. חוץ מאחד.",
 		"/join/hero.webp",
 		">123456<",
