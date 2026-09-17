@@ -79,7 +79,7 @@ void main() {
     pushSearch(channel, 'searching', 2);
     await settle(tester);
     expect(find.byType(LiveRoomScreen), findsOneWidget);
-    expect(find.text('נמצאו 2 מתוך 8'), findsOneWidget);
+    expect(find.text('נמצאו 2 מתוך 8 שחקנים'), findsOneWidget);
     expect(
       find.text('המשחק יתחיל כשיהיו לפחות 4 שחקנים.'),
       findsOneWidget,
@@ -197,7 +197,7 @@ void main() {
       'stateVersion': 5002,
     });
     await settle(tester);
-    expect(find.text('נמצאו 3 מתוך 8'), findsOneWidget);
+    expect(find.text('נמצאו 3 מתוך 8 שחקנים'), findsOneWidget);
   });
 
   testWidgets('"הכול" stands alone, and no categories blocks the search',

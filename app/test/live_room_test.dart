@@ -635,4 +635,48 @@ void main() {
     expect(find.text('עוברים להצבעה'), findsNothing);
     expect(find.text('אישור הצבעה'), findsWidgets);
   });
+
+  testWidgets('the last hint stays readable before my turn takes the screen',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    final channel = api.channel;
+
+    channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    channel.snapshot(
+        'game.state', 'game', gameJson(phase: 'hints', turn: 'p_2'));
+    await settle(tester);
+    expect(find.text('התור של נועה'), findsOneWidget);
+
+    // נועה's hint lands and the turn passes to me in the same snapshot.
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(phase: 'hints', turn: 'p_me', hints: [
+          {
+            'playerId': 'p_2',
+            'text': 'גבינה',
+            'missing': false,
+            'reactions': <String, dynamic>{}
+          },
+        ]));
+    await settle(tester);
+
+    // Her hint is readable first; the input has not taken over yet.
+    expect(find.text('הרמז של נועה'), findsOneWidget);
+    expect(find.text('התור שלכם'), findsNothing);
+    expect(find.text('גבינה'), findsWidgets);
+
+    // A moment later the turn is mine.
+    await tester.pump(const Duration(seconds: 3));
+    await settle(tester);
+    expect(find.text('התור שלכם'), findsOneWidget);
+    expect(find.text('הרמז של נועה'), findsNothing);
+  });
 }
