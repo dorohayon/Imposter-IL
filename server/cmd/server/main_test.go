@@ -123,3 +123,33 @@ func TestLegalPagesAreServed(t *testing.T) {
 			rec.Code, rec.Header().Get("Location"))
 	}
 }
+
+// A shared room link has to open for a friend with a browser and no app, so it
+// sits outside the version gate like the legal pages.
+func TestInvitePageIsServed(t *testing.T) {
+	srv := api.NewServer(time.Now, content.Policy(), content.Pick)
+	srv.RequireClientBuild(999)
+	mux := newMuxFor(srv)
+
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/join/123456", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /join/123456 = %d, want 200", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, ">123456<") {
+		t.Error("the page does not show the room code")
+	}
+	if !strings.Contains(body, "imposteril://join/123456") {
+		t.Error("the page does not hand the code to the app")
+	}
+
+	// Anything that is not a room code is not a room.
+	for _, code := range []string{"12345", "1234567", "abcdef", "12345a"} {
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/join/"+code, nil))
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("GET /join/%s = %d, want 404", code, rec.Code)
+		}
+	}
+}

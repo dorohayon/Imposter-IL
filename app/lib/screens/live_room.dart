@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../data/invite.dart';
 import '../data/models.dart';
 import '../models/player.dart';
 import '../state/game_session.dart';
@@ -427,7 +428,7 @@ class _Search extends StatelessWidget {
     final missing = search.maxPlayers - count;
     final status = switch (search.status) {
       'waiting_for_more' when missing > 0 =>
-        'מחכים עד 30 שניות ל$missing שחקנים נוספים. ב־${search.maxPlayers} שחקנים מתחילים מיד.',
+        'מחכים עד 30 שניות ל$missing שחקנים נוספים. ב${search.maxPlayers} שחקנים נתחיל מיד.',
       'waiting_for_more' => 'מחכים עד 30 שניות לשחקנים נוספים.',
       'countdown' => 'המשחק מתחיל בעוד רגע.',
       _ => 'המשחק יתחיל כשיהיו לפחות 4 שחקנים.',
@@ -646,7 +647,8 @@ class _Lobby extends StatelessWidget {
                   IconButton.filledTonal(
                     tooltip: 'שיתוף הקוד',
                     onPressed: () => shareText(
-                      'בואו לשחק איתי ב״מי המתחזה?״. קוד החדר: ${room.code}',
+                      'בואו לשחק איתי ב״מי המתחזה?״\nקוד החדר: ${room.code}\n'
+                      '${inviteLink(room.code)}',
                     ),
                     icon: const Icon(Icons.share_rounded),
                   ),
@@ -898,30 +900,59 @@ class _RoleReveal extends StatelessWidget {
           InfoCard(
             label: 'המילה הסודית',
             light: !impostor,
-            child: Text(
-              impostor ? 'רק הקטגוריה מוצגת לכם.' : game.secretWord ?? '',
+            child: impostor
+                ? Column(
+                    children: [
+                      // Screen 08 stands the hidden word in as four masked
+                      // tiles. Saying "the word is not shown to you" in the
+                      // card and again underneath it said it twice.
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          for (var i = 0; i < 4; i++)
+                            Container(
+                              width: 34,
+                              height: 44,
+                              margin: EdgeInsets.only(right: i == 3 ? 0 : 10),
+                              decoration: BoxDecoration(
+                                color: AppColors.night.withValues(alpha: .45),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'המילה לא מוצגת לכם — רק הקטגוריה.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 15, height: 1.45),
+                      ),
+                    ],
+                  )
+                : Text(
+                    game.secretWord ?? '',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.night,
+                      fontFamily: 'Secular One',
+                      fontSize: 38,
+                    ),
+                  ),
+          ),
+          if (!impostor) ...[
+            const SizedBox(height: 12),
+            // Screen 07 carries this line under the word card, before the
+            // numbered tips.
+            const Text(
+              'המתחזה לא יודע את המילה הסודית. שמרו עליה בסוד.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: impostor ? AppColors.cream : AppColors.night,
-                fontFamily: 'Secular One',
-                fontSize: impostor ? 18 : 38,
+                color: AppColors.muted,
+                fontSize: 15,
+                height: 1.45,
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          // Screens 07 and 08 carry this line under the word card, before the
-          // numbered tips.
-          Text(
-            impostor
-                ? 'המילה לא מוצגת לכם — רק הקטגוריה.'
-                : 'אף אחד מלבדכם לא יודע מי המתחזה. שמרו על המילה בסוד.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 15,
-              height: 1.45,
-            ),
-          ),
+          ],
           const SizedBox(height: 16),
           for (final (index, tip) in (impostor
                   ? const [
@@ -930,7 +961,7 @@ class _RoleReveal extends StatelessWidget {
                     ]
                   : const [
                       'בתורכם, כתבו רמז של מילה אחת שמתאים למילה הסודית.',
-                      'רמז ברור מדי יעזור למתחזה. רמז מרומז מדי יעורר חשד.',
+                      'רמז ברור מדי יעזור למתחזה. רמז דק מדי יעורר חשד.',
                     ])
               .indexed)
             Padding(
@@ -1211,7 +1242,7 @@ class _HintsState extends State<_Hints> {
               ),
             ],
           ] else if (held != null && game.player(held.playerId) != null) ...[
-            // The same card as "כותב רמז", with the written word in place of
+            // The same card as "כותב/ת רמז", with the written word in place of
             // the typing line, so nothing changes shape between the two.
             TurnCard(
               title: 'הרמז של ${game.player(held.playerId)!.nickname}',
@@ -1257,7 +1288,7 @@ class _HintsState extends State<_Hints> {
                 children: [
                   Flexible(
                     child: Text(
-                      game.awaitingReconnect ? 'מחכים לחזרה' : 'כותב רמז',
+                      game.awaitingReconnect ? 'מחכים לחזרה' : 'כותב/ת רמז',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -1506,15 +1537,6 @@ class _VotingState extends State<_Voting> {
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Color(0xFFFFD9D9), height: 1.4),
                 ),
-              ),
-            ),
-          if (game.myVote != null)
-            const Padding(
-              padding: EdgeInsets.only(bottom: 12),
-              child: Text(
-                'אפשר לשנות את הבחירה עד שהזמן נגמר',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.muted),
               ),
             ),
           for (final id in game.voteCandidates)

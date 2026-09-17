@@ -90,7 +90,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'משחק חקירה חברתי בעברית',
+                        'כולם יודעים את המילה. חוץ מאחד.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: AppColors.yellow,

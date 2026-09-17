@@ -27,6 +27,13 @@ const (
 	stagingBotSilence = 3
 )
 
+// botWriteTime is how long this bot appears to spend writing. Varying it is
+// the difference between players thinking and a machine answering on a timer.
+func (s *Server) botWriteTime() time.Duration {
+	spread := stagingBotWriteSeconds * time.Second / 2
+	return stagingBotWriteSeconds*time.Second - spread + time.Duration(s.rng.Int64N(int64(2*spread)))
+}
+
 // botStillThinking reports whether the bot has not finished its pause yet,
 // starting one if it has none pending.
 func (s *Server) botStillThinking(bot *session, now time.Time, d time.Duration) bool {
@@ -40,9 +47,22 @@ func (s *Server) botStillThinking(bot *session, now time.Time, d time.Duration) 
 	return false
 }
 
+// The fallback pool, for a category content has no hints for.
 var stagingBotHints = []string{
 	"מיוחד", "מוכר", "צבעוני", "נפוץ", "מעניין", "גדול", "קטן",
 	"מהיר", "ישן", "חדש", "עגול", "חזק", "נדיר", "שימושי",
+}
+
+// botHintPool is what a bot has to work with this round. Drawing from the
+// category is what a human impostor does, and close enough to what a citizen
+// does that one real player at a table of bots stops reading the same
+// adjectives every game. The engine refuses a hint that repeats another or
+// gives the secret word away, so the caller tries the next one.
+func botHintPool(category string) []string {
+	if pool := content.BotHints(category); len(pool) > 0 {
+		return pool
+	}
+	return stagingBotHints
 }
 
 // rebalanceStagingBots fills a forming online match to four players, then
@@ -200,14 +220,15 @@ func (s *Server) runStagingBotsInGame(entry *roomEntry, now time.Time) {
 		case game.PhaseHints:
 			if view.CurrentTurn != id || view.Reconnecting {
 				bot.botActAt = time.Time{}
-			} else if s.botStillThinking(bot, now, stagingBotWriteSeconds*time.Second) {
+			} else if s.botStillThinking(bot, now, s.botWriteTime()) {
 				// Writing takes a human a moment. Without this the hint lands
 				// in the same frame as the turn, and nobody can follow the
 				// round; the other players see "כותב רמז..." meanwhile.
 			} else {
 				acted = true
-				for range stagingBotHints {
-					hint := stagingBotHints[s.botHint%uint64(len(stagingBotHints))]
+				pool := botHintPool(view.Category)
+				for range pool {
+					hint := pool[s.botHint%uint64(len(pool))]
 					s.botHint++
 					actionErr = entry.room.WithGame(now, func(g *game.Game) error {
 						return g.SubmitHint(id, hint, now)

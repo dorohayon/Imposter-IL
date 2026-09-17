@@ -103,7 +103,7 @@ void main() {
     await settle(tester);
     // Screen 05 names how many are still missing, beside the timer.
     expect(
-      find.text('מחכים עד 30 שניות ל4 שחקנים נוספים. ב־8 שחקנים מתחילים מיד.'),
+      find.text('מחכים עד 30 שניות ל4 שחקנים נוספים. ב8 שחקנים נתחיל מיד.'),
       findsOneWidget,
     );
 

@@ -55,19 +55,6 @@ class ProfileScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.cream.withValues(alpha: .06),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Text(
-              'אין במשחק ניקוד. רק מספר הניצחונות וההפסדים נשמר במכשיר הזה.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, height: 1.4),
-            ),
-          ),
         ],
       ),
     );
@@ -282,7 +269,7 @@ class _LinkRow extends StatelessWidget {
               ),
               Text(value, style: const TextStyle(color: AppColors.muted)),
               const SizedBox(width: 6),
-              const Icon(Icons.chevron_left_rounded, color: AppColors.muted),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
             ],
           ),
         ),
@@ -297,6 +284,7 @@ class HowToPlayScreen extends StatelessWidget {
   static const steps = [
     'כולם מקבלים את אותה מילה סודית — חוץ מהמתחזה, שרואה רק את הקטגוריה.',
     'כל שחקן כותב בתורו רמז של מילה אחת. לכל תור יש 60 שניות.',
+    'רמז ברור מדי יעזור למתחזה. רמז דק מדי יעורר חשד.',
     'אפשר להגיב לרמזים באמצעות אימוג׳ים והודעות מוכנות.',
     'בסוף הסבב מצביעים מי המתחזה. יש 20 שניות להצביע.',
     'אם המתחזה נתפס, יש לו 60 שניות לנחש את המילה ולנצח בכל זאת.',
