@@ -13,6 +13,12 @@
 # drains properly.
 set -euo pipefail
 
+# gcloud asks questions — "API not enabled, enable and retry? (y/N)" is the
+# common one — and a script run from anything but a terminal has nobody to
+# answer them. Once the deploy itself has succeeded, a prompt on a follow-up
+# step is not a reason to sit forever, so answer no to all of them.
+export CLOUDSDK_CORE_DISABLE_PROMPTS=1
+
 PROJECT="${PROJECT:-imposter-il-game}"
 REGION="${REGION:-us-central1}"
 SERVICE="${SERVICE:-imposter}"
@@ -99,9 +105,18 @@ step "budget alert"
 # the tripwire for that, and for anything else unexpected.
 BUDGET="${BUDGET_AMOUNT:-20}"
 account="$(gcloud billing projects describe "$PROJECT" --format='value(billingAccountName)')"
+# Why the reason is kept: swallowing stderr here hid a prompt the script then
+# waited on, which looked exactly like a slow deploy.
+budget_error="$(mktemp)"
+trap 'rm -f "$budget_error"' EXIT
 if gcloud billing budgets list --billing-account="${account#billingAccounts/}" \
-	--filter="displayName=imposter-$PROJECT" --format='value(name)' 2>/dev/null | grep -q .; then
+	--filter="displayName=imposter-$PROJECT" --format='value(name)' 2>"$budget_error" | grep -q .; then
 	echo "already set"
+elif grep -q 'billingbudgets.googleapis.com' "$budget_error"; then
+	# The tripwire may well exist already, set by hand in the console; the CLI
+	# just cannot see it from here. Never a reason to fail a good deploy.
+	echo "cannot check from here: the Cloud Billing Budget API is off for this project." >&2
+	echo "Check or set it at https://console.cloud.google.com/billing/budgets" >&2
 elif gcloud billing budgets create \
 	--billing-account="${account#billingAccounts/}" \
 	--display-name="imposter-$PROJECT" \
