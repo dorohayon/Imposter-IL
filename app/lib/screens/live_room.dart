@@ -1110,22 +1110,9 @@ class _HintsState extends State<_Hints> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            // The hint that just landed, under the turn card and above the
-            // field, so it is read on the way to typing rather than replaced
-            // by it.
-            if (lastHint != null && !lastHint.missing)
-              if (game.player(lastHint.playerId) case final p?) ...[
-                LastHintCard(
-                  nickname: p.nickname,
-                  avatar: p.avatarAsset,
-                  hint: session.muted.contains(lastHint.playerId)
-                      ? 'הוסתר'
-                      : lastHint.text,
-                  highlight: true,
-                ),
-                const SizedBox(height: 12),
-              ],
+            const SizedBox(height: 14),
+            // No previous hint here: the hold before this turn already showed
+            // it, and the field should be what the screen is about.
             TextField(
               controller: _controller,
               maxLength: 25,

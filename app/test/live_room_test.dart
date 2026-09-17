@@ -688,7 +688,8 @@ void main() {
     // One clock: the header circle steps aside for the inline countdown.
     expect(find.byType(TimerBadge), findsOneWidget);
 
-    // Then the turn opens, with her hint still above the field.
+    // Then the turn opens, and the screen is about writing: the hold already
+    // showed her hint, so it is not repeated above the field.
     channel.snapshot(
         'game.state',
         'game',
@@ -701,9 +702,9 @@ void main() {
           },
         ]));
     await settle(tester);
+    expect(find.text('הרמז הקודם · נועה'), findsNothing);
     expect(find.text('התור שלכם'), findsOneWidget);
-    expect(find.text('הרמז הקודם · נועה'), findsOneWidget);
-    expect(find.text('גבינה'), findsWidgets);
+    expect(find.text('גבינה'), findsWidgets); // still listed under the field
 
     // The pre-vote screen does not repeat the clue: the hold already showed
     // it, and this screen is about the vote that is opening.
