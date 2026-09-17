@@ -17,6 +17,7 @@ import (
 
 	"github.com/dorohayon/Imposter-IL/server/internal/api"
 	"github.com/dorohayon/Imposter-IL/server/internal/content"
+	"github.com/dorohayon/Imposter-IL/server/internal/invite"
 	"github.com/dorohayon/Imposter-IL/server/internal/legal"
 )
 
@@ -172,6 +173,7 @@ func newMuxFor(srv *api.Server) *http.ServeMux {
 		_, _ = w.Write([]byte(`{"status":"ready"}`))
 	})
 	legal.Routes(mux)
+	invite.Routes(mux)
 	srv.Routes(mux)
 	return mux
 }

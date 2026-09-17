@@ -94,3 +94,28 @@ func Policy() game.Policy {
 func ValidReaction(id string) bool {
 	return slices.ContainsFunc(Reactions, func(r Reaction) bool { return r.ID == id })
 }
+
+// BotHints are plausible one-word hints per category, for the staging bots.
+//
+// They are not a game rule and no player ever sees this list: it exists so
+// that one real player at a table of bots reads hints that belong to the round
+// instead of the same handful of adjectives every game. A bot that draws from
+// the category — which is all the impostor can do anyway — looks like someone
+// thinking.
+var botHints = map[string][]string{
+	"אוכל": {"טעים", "חם", "מתוק", "מלוח", "ארוחה", "מסעדה", "רעב", "קינוח",
+		"בישול", "מנה", "חגיגי", "ילדים", "שישי", "פופולרי"},
+	"חיות": {"פרווה", "יער", "בר", "מסוכן", "חמוד", "זנב", "טורף", "אפריקה",
+		"מים", "שקט", "מהיר", "כלוב", "ביות", "צעיר"},
+	"ספורט": {"כדור", "אולם", "אליפות", "אימון", "נעליים", "קבוצה", "מדליה",
+		"מגרש", "זיעה", "שופט", "תחרות", "מהירות", "ריכוז", "אולימפיאדה"},
+	"מקצועות": {"עבודה", "מדים", "שירות", "אחריות", "משרד", "תעודה", "שכר",
+		"אנשים", "ידיים", "ניסיון", "שליחות", "בוקר", "לימודים", "מקצוע"},
+	"מקומות": {"ביקור", "נסיעה", "כרטיס", "רחב", "חופשה", "קיץ", "כניסה",
+		"בניין", "טיול", "נוף", "המולה", "שקט", "אנשים", "מקום"},
+	"חפצים": {"שימושי", "בית", "כיס", "פלסטיק", "קטן", "יומיומי", "מתנה",
+		"עץ", "חשמל", "תיק", "שולחן", "נשכח", "חפץ", "כבד"},
+}
+
+// BotHints returns the pool for a category name, or nil if there is none.
+func BotHints(category string) []string { return botHints[category] }

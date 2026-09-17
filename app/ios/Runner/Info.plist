@@ -28,6 +28,19 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>il.imposter.invite</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>imposteril</string>
+			</array>
+		</dict>
+	</array>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>

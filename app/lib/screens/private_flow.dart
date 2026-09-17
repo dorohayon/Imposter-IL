@@ -115,7 +115,7 @@ class _FriendsChoiceCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_left_rounded, color: AppColors.night),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.night),
             ],
           ),
         ),
@@ -353,14 +353,18 @@ class _OptionRow<T> extends StatelessWidget {
 }
 
 class JoinRoomScreen extends StatefulWidget {
-  const JoinRoomScreen({super.key});
+  /// Filled in when the player arrived from an invitation link, so the only
+  /// thing left to do is confirm.
+  const JoinRoomScreen({this.code, super.key});
+
+  final String? code;
 
   @override
   State<JoinRoomScreen> createState() => _JoinRoomScreenState();
 }
 
 class _JoinRoomScreenState extends State<JoinRoomScreen> {
-  final code = TextEditingController();
+  late final code = TextEditingController(text: widget.code ?? '');
   String? _error;
   bool _busy = false;
 
