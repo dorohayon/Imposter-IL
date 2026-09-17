@@ -461,7 +461,28 @@ class _Search extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
+          // Above the list, not below it: at the foot of a full roster it sat
+          // past the fold and had to be scrolled to.
+          Row(
+            children: [
+              if (search.deadline != null) ...[
+                LiveCountdown(deadline: search.deadline!),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Text(
+                  status,
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -534,25 +555,6 @@ class _Search extends StatelessWidget {
                 ),
               );
             },
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              if (search.deadline != null) ...[
-                LiveCountdown(deadline: search.deadline!),
-                const SizedBox(width: 12),
-              ],
-              Expanded(
-                child: Text(
-                  status,
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 15,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -980,41 +982,6 @@ class _HintsState extends State<_Hints> {
     });
   }
 
-  void _showSecretWord(String word) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.cream,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'המילה שלכם',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.night,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                word,
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.night,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
@@ -1041,10 +1008,7 @@ class _HintsState extends State<_Hints> {
         children: [
           // The impostor never receives the word, so there is nothing to show.
           if (!game.isImpostor && word != null) ...[
-            _SecretWordPill(
-              word: word,
-              onShow: () => _showSecretWord(word),
-            ),
+            _SecretWordPill(word: word),
             const SizedBox(height: 14),
           ],
           if (myTurn) ...[
@@ -1102,10 +1066,28 @@ class _HintsState extends State<_Hints> {
             const SizedBox(height: 10),
             Text(
               game.awaitingReconnect
-                  ? 'אין כרגע חיבור ל־${current.nickname}. מחכים לחזרה...'
-                  : 'עכשיו התור של ${current.nickname}',
+                  ? 'אין כרגע חיבור ל־${current.nickname}'
+                  : 'התור של ${current.nickname}',
               style: Theme.of(context).textTheme.headlineMedium,
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            // Screen 09: the turn has to look like someone writing, not like a
+            // stalled screen.
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  game.awaitingReconnect ? 'מחכים לחזרה' : 'כותב רמז',
+                  style: const TextStyle(
+                    color: AppColors.turquoise,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                const TypingDots(),
+              ],
             ),
           ],
           const SizedBox(height: 22),
@@ -1189,10 +1171,9 @@ class _HintsState extends State<_Hints> {
 }
 
 class _SecretWordPill extends StatelessWidget {
-  const _SecretWordPill({required this.word, required this.onShow});
+  const _SecretWordPill({required this.word});
 
   final String word;
-  final VoidCallback onShow;
 
   @override
   Widget build(BuildContext context) {
@@ -1226,12 +1207,6 @@ class _SecretWordPill extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-          TextButton.icon(
-            onPressed: onShow,
-            style: TextButton.styleFrom(foregroundColor: AppColors.purple),
-            icon: const Icon(Icons.visibility_outlined, size: 19),
-            label: const Text('הצגה'),
           ),
         ],
       ),

@@ -246,7 +246,7 @@ void main() {
           ],
         ));
     await settle(tester);
-    expect(find.text('עכשיו התור של נועה'), findsOneWidget);
+    expect(find.text('התור של נועה'), findsOneWidget);
     expect(find.text('חדק'), findsOneWidget);
     await tapLive(tester, 'זה מחשיד');
     expect(channel.commands('game.react').single['payload'],
@@ -256,7 +256,7 @@ void main() {
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'),
         version: 1);
     await settle(tester);
-    expect(find.text('עכשיו התור של נועה'), findsOneWidget);
+    expect(find.text('התור של נועה'), findsOneWidget);
 
     // Voting: I cannot pick myself; my choice is sent on confirm.
     channel.snapshot(
@@ -589,10 +589,11 @@ void main() {
     await settle(tester);
     expect(find.text('גסות'), findsOneWidget);
 
-    // A visible button, not a hidden gesture.
+    // A visible button, not a hidden gesture. The typing dots animate
+    // continuously, so this screen never settles: pump a fixed time instead.
     await tester.tap(find.byTooltip('דיווח על הרמז'));
-    await tester.pumpAndSettle();
-    await tapText(tester, 'דיווח');
+    await settle(tester);
+    await tapLive(tester, 'דיווח');
     await settle(tester);
 
     expect(channel.commands('game.report').single['payload'],

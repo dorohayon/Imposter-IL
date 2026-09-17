@@ -752,3 +752,62 @@ class StepCard extends StatelessWidget {
     );
   }
 }
+
+/// Three dots that rise in turn, next to "כותב רמז...". The turn belongs to
+/// someone else for up to a minute, and without this the screen looks frozen
+/// rather than waiting.
+class TypingDots extends StatefulWidget {
+  const TypingDots(
+      {this.color = AppColors.turquoise, this.size = 7, super.key});
+
+  final Color color;
+  final double size;
+
+  @override
+  State<TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<TypingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < 3; i++)
+            Padding(
+              padding: EdgeInsets.only(left: i == 2 ? 0 : widget.size * .6),
+              child: Opacity(
+                // Each dot leads the next by a third of the cycle.
+                opacity: .35 +
+                    .65 *
+                        (1 - ((_controller.value * 3 - i) % 3).clamp(0, 1))
+                            .clamp(0, 1),
+                child: Container(
+                  width: widget.size,
+                  height: widget.size,
+                  decoration: BoxDecoration(
+                    color: widget.color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
