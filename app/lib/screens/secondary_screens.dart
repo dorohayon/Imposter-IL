@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
+import 'legal_screens.dart';
 import 'onboarding_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -147,12 +148,20 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 10),
           const _LinkRow(title: 'שפה', value: 'עברית'),
           const SizedBox(height: 20),
-          const _LinkRow(title: 'תנאי שימוש', value: 'בקרוב', enabled: false),
+          _LinkRow(
+            title: 'תנאי שימוש',
+            value: 'גרסה $legalVersion',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const TermsScreen()),
+            ),
+          ),
           const SizedBox(height: 10),
-          const _LinkRow(
+          _LinkRow(
             title: 'מדיניות פרטיות',
-            value: 'בקרוב',
-            enabled: false,
+            value: 'גרסה $legalVersion',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const PrivacyScreen()),
+            ),
           ),
           const SizedBox(height: 36),
           const Text(
@@ -244,36 +253,45 @@ class _SettingsRow extends StatelessWidget {
 }
 
 class _LinkRow extends StatelessWidget {
-  const _LinkRow(
-      {required this.title, required this.value, this.enabled = true});
+  const _LinkRow({
+    required this.title,
+    required this.value,
+    this.enabled = true,
+    this.onTap,
+  });
 
   final String title;
   final String value;
   final bool enabled;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: AppColors.cream.withValues(alpha: enabled ? .06 : .035),
+    return Material(
+      color: AppColors.cream.withValues(alpha: enabled ? .06 : .035),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                color: enabled ? AppColors.cream : AppColors.muted,
-                fontWeight: FontWeight.w600,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: enabled ? AppColors.cream : AppColors.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
+              Text(value, style: const TextStyle(color: AppColors.muted)),
+              const SizedBox(width: 6),
+              const Icon(Icons.chevron_left_rounded, color: AppColors.muted),
+            ],
           ),
-          Text(value, style: const TextStyle(color: AppColors.muted)),
-          const SizedBox(width: 6),
-          const Icon(Icons.chevron_left_rounded, color: AppColors.muted),
-        ],
+        ),
       ),
     );
   }
@@ -284,10 +302,10 @@ class HowToPlayScreen extends StatelessWidget {
 
   static const steps = [
     'כולם מקבלים את אותה מילה סודית — חוץ מהמתחזה, שרואה רק את הקטגוריה.',
-    'כל שחקן כותב בתורו רמז של מילה אחת. לכל תור יש 15 שניות.',
+    'כל שחקן כותב בתורו רמז של מילה אחת. לכל תור יש 60 שניות.',
     'אפשר להגיב לרמזים באמצעות אימוג׳ים והודעות מוכנות.',
     'בסוף הסבב מצביעים מי המתחזה. יש 20 שניות להצביע.',
-    'אם המתחזה נתפס, יש לו 15 שניות לנחש את המילה ולנצח בכל זאת.',
+    'אם המתחזה נתפס, יש לו 60 שניות לנחש את המילה ולנצח בכל זאת.',
   ];
 
   @override
@@ -311,8 +329,10 @@ class HowToPlayScreen extends StatelessWidget {
               ),
             );
           }),
-          const Illustration('assets/illustrations/how-to-play.webp',
-              height: 110),
+          const Illustration(
+            'assets/illustrations/how-to-play.webp',
+            height: 110,
+          ),
         ],
       ),
     );
