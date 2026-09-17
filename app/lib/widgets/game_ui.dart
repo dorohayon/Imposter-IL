@@ -887,3 +887,63 @@ class LastHintCard extends StatelessWidget {
     );
   }
 }
+
+/// The purple card on the hints screen: whose turn it is, and what they are
+/// doing — writing, or the word they just wrote.
+///
+/// One card for both so it does not change shape or style mid-round: only its
+/// second line swaps.
+class TurnCard extends StatelessWidget {
+  const TurnCard({
+    required this.title,
+    required this.avatar,
+    required this.subtitle,
+    this.disconnected = false,
+    super.key,
+  });
+
+  final String title;
+  final String avatar;
+
+  /// The second line: the typing indicator, or the hint just written.
+  final Widget subtitle;
+  final bool disconnected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.purple.withValues(alpha: .26),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.purple.withValues(alpha: .55)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.cream,
+                    fontFamily: 'Secular One',
+                    fontSize: 22,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                subtitle,
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          AvatarView(asset: avatar, size: 56, disconnected: disconnected),
+        ],
+      ),
+    );
+  }
+}

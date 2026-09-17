@@ -682,7 +682,9 @@ void main() {
           },
         ]));
     await settle(tester);
-    expect(find.text('הרמז הקודם · נועה'), findsOneWidget);
+    // The same purple card as "כותב רמז", now carrying the word itself.
+    expect(find.byType(TurnCard), findsOneWidget);
+    expect(find.text('הרמז של נועה'), findsOneWidget);
     expect(find.text('התור הבא מתחיל'), findsOneWidget);
     expect(find.text('התור שלכם'), findsNothing);
     // One clock: the header circle steps aside for the inline countdown.
@@ -702,7 +704,8 @@ void main() {
           },
         ]));
     await settle(tester);
-    expect(find.text('הרמז הקודם · נועה'), findsNothing);
+    // Her hint stays in view beside the field while I write.
+    expect(find.text('הרמז הקודם · נועה'), findsOneWidget);
     expect(find.text('התור שלכם'), findsOneWidget);
     expect(find.text('גבינה'), findsWidgets); // still listed under the field
 
