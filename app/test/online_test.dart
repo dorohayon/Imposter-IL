@@ -79,7 +79,7 @@ void main() {
     pushSearch(channel, 'searching', 2);
     await settle(tester);
     expect(find.byType(LiveRoomScreen), findsOneWidget);
-    expect(find.text('נמצאו 2 מתוך 8'), findsOneWidget);
+    expect(find.text('נמצאו 2 מתוך 8 שחקנים'), findsOneWidget);
     expect(
       find.text('המשחק יתחיל כשיהיו לפחות 4 שחקנים.'),
       findsOneWidget,
@@ -101,8 +101,9 @@ void main() {
 
     pushSearch(channel, 'waiting_for_more', 4);
     await settle(tester);
+    // Screen 05 names how many are still missing, beside the timer.
     expect(
-      find.text('מחכים עד 30 שניות לשחקנים נוספים.'),
+      find.text('מחכים עד 30 שניות ל4 שחקנים נוספים. ב־8 שחקנים מתחילים מיד.'),
       findsOneWidget,
     );
 
@@ -167,7 +168,7 @@ void main() {
       'game': gameJson(phase: 'role_reveal'),
     });
     await settle(tester);
-    expect(find.text('אתם בצוות האזרחים'), findsOneWidget);
+    expect(find.text('אתם אזרחים'), findsOneWidget);
 
     channel.event('game.state', {
       'stateVersion': 5001,
@@ -196,7 +197,7 @@ void main() {
       'stateVersion': 5002,
     });
     await settle(tester);
-    expect(find.text('נמצאו 3 מתוך 8'), findsOneWidget);
+    expect(find.text('נמצאו 3 מתוך 8 שחקנים'), findsOneWidget);
   });
 
   testWidgets('"הכול" stands alone, and no categories blocks the search',

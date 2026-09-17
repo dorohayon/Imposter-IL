@@ -99,7 +99,19 @@ func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
 				wantOK(t, human.w.command(fmt.Sprintf("hint-%d", step), "game.submitHint", map[string]any{
 					"gameId": gameID, "text": "אנושי",
 				}))
+			} else {
+				// A bot spends stagingBotWriteSeconds appearing to write.
+				c.advance(stagingBotWriteSeconds * time.Second)
+				c.tickAll()
 			}
+		case game.PhaseHintBreak:
+			// Each hint is held so the table can read it.
+			c.advance(3 * time.Second)
+			c.tickAll()
+		case game.PhasePreVoting:
+			// The board is held for a beat before the vote opens.
+			c.advance(5 * time.Second)
+			c.tickAll()
 		case game.PhaseVoting, game.PhaseRunoffVoting:
 			if view.MyVote == "" {
 				var target string
@@ -113,6 +125,10 @@ func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
 					"gameId": gameID, "targetPlayerId": target,
 				}))
 			}
+			// Long enough for the bots to finish deliberating, then for the
+			// round itself to close.
+			c.advance(stagingBotVoteSeconds * time.Second)
+			c.srv.runStagingBots()
 			if view.Phase == game.PhaseVoting {
 				c.advance(20 * time.Second)
 			} else {

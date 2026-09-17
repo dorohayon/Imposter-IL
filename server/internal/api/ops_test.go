@@ -58,7 +58,7 @@ func TestReaperDropsEmptyRoomsAndIdleSessions(t *testing.T) {
 	code := room["code"].(string)
 
 	if status, got := c.do("POST", "/v1/rooms", token, map[string]any{
-		"maxPlayers": 4, "hintSeconds": 15, "categoryIds": []string{"animals"},
+		"maxPlayers": 4, "hintSeconds": 60, "categoryIds": []string{"animals"},
 	}); status != http.StatusCreated {
 		t.Fatalf("second room: %d %v", status, got) // leaves the first one empty
 	}
@@ -94,7 +94,7 @@ func TestDrainRefusesNewActivityButNotLiveGames(t *testing.T) {
 	}
 
 	status, got := c.do("POST", "/v1/rooms", token, map[string]any{
-		"maxPlayers": 4, "hintSeconds": 15, "categoryIds": []string{"animals"},
+		"maxPlayers": 4, "hintSeconds": 60, "categoryIds": []string{"animals"},
 	})
 	c.wantError(http.StatusServiceUnavailable, "server_draining", status, got)
 

@@ -71,10 +71,24 @@ class LiveCountdown extends StatefulWidget {
 class _LiveCountdownState extends State<LiveCountdown> {
   Timer? _timer;
 
+  /// How long this phase had left when the countdown first appeared, so the
+  /// dial can drain against it. The server sends a deadline, not a duration.
+  Duration? _total;
+
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
+    // Four ticks a second: the digits still change once a second, but the
+    // draining wedge moves smoothly instead of jumping.
+    _timer = Timer.periodic(
+        const Duration(milliseconds: 250), (_) => setState(() {}));
+  }
+
+  @override
+  void didUpdateWidget(LiveCountdown old) {
+    super.didUpdateWidget(old);
+    // A new deadline is a new phase or a restarted turn, so the dial refills.
+    if (old.deadline != widget.deadline) _total = null;
   }
 
   @override
@@ -87,27 +101,17 @@ class _LiveCountdownState extends State<LiveCountdown> {
   Widget build(BuildContext context) {
     final left =
         widget.deadline.difference(SessionScope.read(context).serverNow);
+    _total ??= left > Duration.zero ? left : null;
     final seconds = (left.inMilliseconds / 1000).ceil();
     final shown = seconds < 0 ? 0 : seconds;
-    if (!widget.large) return TimerBadge(seconds: shown);
-    return Container(
-      width: 120,
-      height: 120,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.yellow.withValues(alpha: .08),
-        border: Border.all(color: AppColors.yellow, width: 6),
-      ),
-      child: Text(
-        '$shown',
-        style: const TextStyle(
-          color: AppColors.yellow,
-          fontFamily: 'Secular One',
-          fontSize: 38,
-        ),
-      ),
-    );
+    final total = _total;
+    final remaining = total == null || total.inMilliseconds <= 0
+        ? null
+        : left.inMilliseconds / total.inMilliseconds;
+    if (!widget.large) {
+      return TimerBadge(seconds: shown, remaining: remaining);
+    }
+    return TimerBadge(seconds: shown, remaining: remaining, size: 120);
   }
 }
 
@@ -419,17 +423,20 @@ class _Search extends StatelessWidget {
     final count = search.players.length;
     final found = count == 1
         ? 'נמצא שחקן אחד מתוך ${search.maxPlayers}'
-        : 'נמצאו $count מתוך ${search.maxPlayers}';
+        : 'נמצאו $count מתוך ${search.maxPlayers} שחקנים';
+    final missing = search.maxPlayers - count;
     final status = switch (search.status) {
+      'waiting_for_more' when missing > 0 =>
+        'מחכים עד 30 שניות ל$missing שחקנים נוספים. ב־${search.maxPlayers} שחקנים מתחילים מיד.',
       'waiting_for_more' => 'מחכים עד 30 שניות לשחקנים נוספים.',
       'countdown' => 'המשחק מתחיל בעוד רגע.',
       _ => 'המשחק יתחיל כשיהיו לפחות 4 שחקנים.',
     };
     return GameScaffold(
+      // Screen 05 keeps the timer at the foot of the screen beside the line
+      // that explains it, rather than in the header circle: here the wait is
+      // the message, not a deadline to race.
       title: 'מרכיבים צוות חקירה',
-      timer: search.deadline == null
-          ? null
-          : LiveCountdown(deadline: search.deadline!),
       onExit: onCancel,
       bottom: PrimaryButton(
           label: 'ביטול חיפוש',
@@ -454,13 +461,28 @@ class _Search extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            status,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, fontSize: 16),
+          const SizedBox(height: 14),
+          // Above the list, not below it: at the foot of a full roster it sat
+          // past the fold and had to be scrolled to.
+          Row(
+            children: [
+              if (search.deadline != null) ...[
+                LiveCountdown(deadline: search.deadline!),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Text(
+                  status,
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -809,7 +831,8 @@ class _LiveGame extends StatelessWidget {
     if (me?.status == 'removed') return _Removed(onHome: onLeave);
     return switch (game.phase) {
       'role_reveal' => _RoleReveal(game: game, onLeave: onLeave),
-      'hints' => _Hints(game: game, onLeave: onLeave),
+      'hints' || 'hint_break' => _Hints(game: game, onLeave: onLeave),
+      'pre_voting' => _ToVoting(game: game, onLeave: onLeave),
       'voting' || 'runoff_voting' => _Voting(game: game, onLeave: onLeave),
       'impostor_guess' => _Guess(game: game, onLeave: onLeave),
       _ => _Result(game: game, onHome: onLeave),
@@ -817,8 +840,12 @@ class _LiveGame extends StatelessWidget {
   }
 }
 
-Widget? _timer(GameView game) =>
-    game.deadline == null ? null : LiveCountdown(deadline: game.deadline!);
+Widget? _timer(GameView game) {
+  // During the hold the header would count the same three seconds as the
+  // inline countdown beside "התור הבא מתחיל". One clock at a time.
+  if (game.deadline == null || game.phase == 'hint_break') return null;
+  return LiveCountdown(deadline: game.deadline!);
+}
 
 class _RoleReveal extends StatelessWidget {
   const _RoleReveal({required this.game, required this.onLeave});
@@ -863,7 +890,7 @@ class _RoleReveal extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            impostor ? 'אתם המתחזה' : 'אתם בצוות האזרחים',
+            impostor ? 'אתם המתחזה' : 'אתם אזרחים',
             style: Theme.of(context).textTheme.headlineLarge,
             textAlign: TextAlign.center,
           ),
@@ -881,6 +908,20 @@ class _RoleReveal extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          // Screens 07 and 08 carry this line under the word card, before the
+          // numbered tips.
+          Text(
+            impostor
+                ? 'המילה לא מוצגת לכם — רק הקטגוריה.'
+                : 'אף אחד מלבדכם לא יודע מי המתחזה. שמרו על המילה בסוד.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 15,
+              height: 1.45,
+            ),
+          ),
           const SizedBox(height: 16),
           for (final (index, tip) in (impostor
                   ? const [
@@ -896,6 +937,63 @@ class _RoleReveal extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 9),
               child: StepCard(number: index + 1, text: tip),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Screen 11א: every hint is in, and the vote opens on its own in a moment.
+/// The countdown is the whole screen here, not a badge in the corner.
+class _ToVoting extends StatelessWidget {
+  const _ToVoting({required this.game, required this.onLeave});
+
+  final GameView game;
+  final VoidCallback onLeave;
+
+  @override
+  Widget build(BuildContext context) {
+    return GameScaffold(
+      title: '',
+      showHeader: true,
+      onExit: onLeave,
+      child: Column(
+        children: [
+          const SizedBox(height: 4),
+          const Illustration(
+            'assets/illustrations/pre-vote-transition.webp',
+            height: 190,
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'כל הרמזים נשלחו',
+            style: TextStyle(
+              color: AppColors.muted,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'עוברים להצבעה',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.displayLarge,
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'זה הזמן להחליט מי המתחזה',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.muted, fontSize: 15, height: 1.4),
+          ),
+          const SizedBox(height: 26),
+          if (game.deadline case final deadline?)
+            LiveCountdown(deadline: deadline, large: true),
+          const SizedBox(height: 14),
+          const Text(
+            'מסך ההצבעה נפתח אוטומטית',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.muted, fontSize: 13),
+          ),
         ],
       ),
     );
@@ -946,48 +1044,17 @@ class _HintsState extends State<_Hints> {
     });
   }
 
-  void _showSecretWord(String word) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.cream,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'המילה שלכם',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.night,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                word,
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.night,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
     final game = widget.game;
     final me = session.playerId;
+    // The server holds each hint for a moment so it can be read; nobody has
+    // the turn during it.
+    final holding = game.phase == 'hint_break';
     final myTurn = game.currentTurnPlayerId == me;
     final current = game.player(game.currentTurnPlayerId);
+    final held = holding && game.hints.isNotEmpty ? game.hints.last : null;
     final word = game.secretWord;
     final lastHint = game.hints.isEmpty ? null : game.hints.last;
 
@@ -1007,25 +1074,45 @@ class _HintsState extends State<_Hints> {
         children: [
           // The impostor never receives the word, so there is nothing to show.
           if (!game.isImpostor && word != null) ...[
-            _SecretWordPill(
-              word: word,
-              onShow: () => _showSecretWord(word),
-            ),
+            _SecretWordPill(word: word),
             const SizedBox(height: 14),
           ],
           if (myTurn) ...[
-            Text(
-              'התור שלכם',
-              style: Theme.of(context).textTheme.headlineLarge,
-              textAlign: TextAlign.center,
+            // Screen 10: the turn is a filled yellow card, not a line of text.
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+              decoration: BoxDecoration(
+                color: AppColors.yellow,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'התור שלכם',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.night,
+                      fontFamily: 'Secular One',
+                      fontSize: 30,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'מילה אחת, עד 25 תווים',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.night.withValues(alpha: .72),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 6),
-            const Text(
-              'מילה אחת, עד 25 תווים',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+            // No previous hint here: the hold before this turn already showed
+            // it, and the field should be what the screen is about.
             TextField(
               controller: _controller,
               maxLength: 25,
@@ -1057,21 +1144,93 @@ class _HintsState extends State<_Hints> {
                 positive: false,
               ),
             ],
-          ] else if (current != null) ...[
-            Center(
-              child: AvatarView(
-                asset: current.avatarAsset,
-                size: 92,
-                disconnected: !current.connected,
-              ),
+          ] else if (held != null && game.player(held.playerId) != null) ...[
+            // Screen shows the hint just written, with the wait until the next
+            // turn, so it is read before the board moves on.
+            LastHintCard(
+              nickname: game.player(held.playerId)!.nickname,
+              avatar: game.player(held.playerId)!.avatarAsset,
+              hint: session.muted.contains(held.playerId) ? 'הוסתר' : held.text,
+              highlight: true,
             ),
             const SizedBox(height: 10),
-            Text(
-              game.awaitingReconnect
-                  ? 'אין כרגע חיבור ל־${current.nickname}. מחכים לחזרה...'
-                  : 'עכשיו התור של ${current.nickname}',
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Flexible(
+                  child: Text(
+                    'התור הבא מתחיל',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: AppColors.muted, fontSize: 15),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (game.deadline case final deadline?)
+                  LiveCountdown(deadline: deadline),
+              ],
+            ),
+          ] else if (current != null) ...[
+            // Screen 09: one purple card carrying the avatar, whose turn it is
+            // and that they are writing — not a centred portrait.
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.purple.withValues(alpha: .26),
+                borderRadius: BorderRadius.circular(22),
+                border:
+                    Border.all(color: AppColors.purple.withValues(alpha: .55)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          game.awaitingReconnect
+                              ? 'אין חיבור ל־${current.nickname}'
+                              : 'התור של ${current.nickname}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.cream,
+                            fontFamily: 'Secular One',
+                            fontSize: 22,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                game.awaitingReconnect
+                                    ? 'מחכים לחזרה'
+                                    : 'כותב רמז',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: AppColors.muted,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const TypingDots(color: AppColors.muted, size: 5),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  AvatarView(
+                    asset: current.avatarAsset,
+                    size: 56,
+                    disconnected: !current.connected,
+                  ),
+                ],
+              ),
             ),
           ],
           const SizedBox(height: 22),
@@ -1113,39 +1272,78 @@ class _HintsState extends State<_Hints> {
           if (lastHint != null &&
               !lastHint.missing &&
               session.showReactions) ...[
-            const SizedBox(height: 10),
-            Text(
-              'תגובות לרמז של ${game.player(lastHint.playerId)?.nickname ?? ''}',
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final r in session.reactions)
-                  ActionChip(
-                    onPressed: () => runCommand(
-                      context,
-                      session.send('game.react', {
-                        'gameId': game.id,
-                        'hintIndex': game.hints.length - 1,
-                        'reactionId': r.id,
-                      }),
-                    ),
-                    avatar: (lastHint.reactions[r.id] ?? 0) == 0
-                        ? null
-                        : CircleAvatar(
-                            child: Text('${lastHint.reactions[r.id]}'),
+            const SizedBox(height: 12),
+            // Screen 09 groups the reactions in a card headed by the hint they
+            // belong to, rather than a loose heading over bare chips.
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.cream.withValues(alpha: .05),
+                borderRadius: BorderRadius.circular(20),
+                border:
+                    Border.all(color: AppColors.cream.withValues(alpha: .10)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'תגובות לרמז האחרון',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
                           ),
-                    backgroundColor: AppColors.cream.withValues(alpha: .08),
-                    side: BorderSide(
-                        color: AppColors.cream.withValues(alpha: .12)),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    label: Text(r.text),
+                        ),
+                      ),
+                      Text(
+                        // A reported hint is hidden in its row, so it must be
+                        // hidden here too or the label leaks it back.
+                        session.muted.contains(lastHint.playerId)
+                            ? 'הוסתר'
+                            : lastHint.text,
+                        style: const TextStyle(
+                          color: AppColors.yellow,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
                   ),
-              ],
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final r in session.reactions)
+                        ActionChip(
+                          onPressed: () => runCommand(
+                            context,
+                            session.send('game.react', {
+                              'gameId': game.id,
+                              'hintIndex': game.hints.length - 1,
+                              'reactionId': r.id,
+                            }),
+                          ),
+                          avatar: (lastHint.reactions[r.id] ?? 0) == 0
+                              ? null
+                              : CircleAvatar(
+                                  child: Text('${lastHint.reactions[r.id]}'),
+                                ),
+                          backgroundColor:
+                              AppColors.cream.withValues(alpha: .08),
+                          side: BorderSide(
+                              color: AppColors.cream.withValues(alpha: .12)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          label: Text(r.text),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ],
@@ -1155,10 +1353,9 @@ class _HintsState extends State<_Hints> {
 }
 
 class _SecretWordPill extends StatelessWidget {
-  const _SecretWordPill({required this.word, required this.onShow});
+  const _SecretWordPill({required this.word});
 
   final String word;
-  final VoidCallback onShow;
 
   @override
   Widget build(BuildContext context) {
@@ -1192,12 +1389,6 @@ class _SecretWordPill extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-          TextButton.icon(
-            onPressed: onShow,
-            style: TextButton.styleFrom(foregroundColor: AppColors.purple),
-            icon: const Icon(Icons.visibility_outlined, size: 19),
-            label: const Text('הצגה'),
           ),
         ],
       ),
@@ -1389,6 +1580,20 @@ class _GuessState extends State<_Guess> {
                 fontWeight: FontWeight.w800,
               ),
               decoration: const InputDecoration(hintText: 'מה המילה?'),
+            ),
+            const SizedBox(height: 8),
+            // Screen 14 reassures the impostor that typing is private, and
+            // spells out what losing the clock costs.
+            const Text(
+              'הניחוש לא מוצג לשחקנים בזמן ההקלדה',
+              style: TextStyle(color: AppColors.muted, fontSize: 13),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'אם הזמן ייגמר או שהניחוש יהיה שגוי — האזרחים מנצחים.',
+              textAlign: TextAlign.center,
+              style:
+                  TextStyle(color: AppColors.muted, fontSize: 14, height: 1.4),
             ),
           ] else
             const Text(

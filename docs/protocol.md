@@ -105,7 +105,7 @@
 { "maxPlayers": 8, "hintSeconds": 15, "categoryIds": ["…"] }
 ```
 
-`maxPlayers` בין 4 ל־8. `hintSeconds` אחד מ־10, 15, 20. `categoryIds` אינו ריק ומכיל רק מזהים מ־`GET /v1/categories`. תשובה `201` עם `{ "room": Room }`, והשחקן הוא המנהל. שגיאות: `422 invalid_room_settings`, `409 already_in_activity`.
+`maxPlayers` בין 4 ל־8. `hintSeconds` אחד מ־30, 60, 90. `categoryIds` אינו ריק ומכיל רק מזהים מ־`GET /v1/categories`. תשובה `201` עם `{ "room": Room }`, והשחקן הוא המנהל. שגיאות: `422 invalid_room_settings`, `409 already_in_activity`.
 
 ### `POST /v1/rooms/join`
 
@@ -276,7 +276,7 @@
 }
 ```
 
-- `phase`: `role_reveal` | `hints` | `voting` | `runoff_voting` | `impostor_guess` | `ended`.
+- `phase`: `role_reveal` | `hints` | `hint_break` | `pre_voting` | `voting` | `runoff_voting` | `impostor_guess` | `ended`.
 - `secretWord` חסר אצל המתחזה עד `ended`.
 - `players` לפי סדר התורות. `status`: `active` | `left` | `removed`.
 - `myVote` הוא הקול של השחקן עצמו בלבד. קולות אחרים נחשפים רק ב־`result`.
@@ -310,6 +310,8 @@
 | 7–8 חשיפת תפקיד | `game.state` עם `phase: role_reveal` ו־`myRole` |
 | 9–10 רמזים | `game.state` עם `phase: hints`; `currentTurnPlayerId` קובע אם זה התור שלי |
 | 11 רמז חסום | `reply` עם קוד `hint_*` |
+| המתנה בין תורות | `phase: hint_break` — 3 שניות עם הרמז שנשלח, לפני שהתור הבא נפתח |
+| 11א עוברים להצבעה | `phase: pre_voting` — 5 שניות עם הלוח המלא לפני שההצבעה נפתחת |
 | 12–13 הצבעה | `phase: voting` / `runoff_voting` |
 | 14 ניחוש | `phase: impostor_guess` |
 | 15–17 תוצאה | `phase: ended` ו־`result.reason` |

@@ -109,13 +109,19 @@ func TestWSGamePlaysToTheEnd(t *testing.T) {
 	for _, p := range g["players"].([]any) {
 		order = append(order, p.(map[string]any)["playerId"].(string))
 	}
-	if g["currentTurnPlayerId"] != order[0] || g["deadline"] != "2026-09-15T12:00:15Z" {
+	if g["currentTurnPlayerId"] != order[0] || g["deadline"] != "2026-09-15T12:01:00Z" {
 		t.Fatalf("first turn = %v", g)
 	}
 
 	hints := []string{"חדק", "אפור", "גדול", "זיכרון"}
 	for i, id := range order {
 		p := byID[id]
+		if i > 0 {
+			// Each hint is held so the table can read it; the next turn opens
+			// when that ends.
+			c.advance(3 * time.Second)
+			c.tick(roomID)
+		}
 		if i == 0 {
 			wantReplyError(t, byID[order[1]].w.command("early", "game.submitHint", map[string]any{"gameId": gameID, "text": "מוקדם"}), "not_your_turn")
 			if id != impostor {
@@ -138,6 +144,13 @@ func TestWSGamePlaysToTheEnd(t *testing.T) {
 		}
 	}
 
+	// The last hint is held like the rest, then the board before the vote.
+	host.w.gameState(phase("hint_break"))
+	c.advance(3 * time.Second)
+	c.tick(roomID)
+	host.w.gameState(phase("pre_voting"))
+	c.advance(5 * time.Second)
+	c.tick(roomID)
 	host.w.gameState(phase("voting"))
 	for _, p := range players {
 		target := impostor
@@ -195,7 +208,7 @@ func TestWSRoleRevealAdvancesOnTheTimer(t *testing.T) {
 		t.Fatal("no timer for the role reveal deadline")
 	}
 
-	c.advance(9 * time.Second)
+	c.advance(19 * time.Second)
 	c.tick(roomID) // not due yet: nothing is published
 	c.advance(time.Second)
 	c.tick(roomID)
@@ -283,7 +296,7 @@ func TestWSCommandAfterADeadlinePublishesTheAdvanceEvenWhenItFails(t *testing.T)
 
 	// The first turn expires. The timer has not run, and the next command
 	// comes from a player whose turn it still is not.
-	c.advance(15 * time.Second)
+	c.advance(60 * time.Second)
 	wantReplyError(t, byID[order[2]].w.command("late", "game.submitHint", map[string]any{"gameId": gameID, "text": "מאוחר"}), "not_your_turn")
 	byID[order[3]].w.gameState(func(g map[string]any) bool { return g["currentTurnPlayerId"] == order[1] })
 }

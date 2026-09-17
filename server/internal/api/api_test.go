@@ -88,7 +88,7 @@ func (c *client) session(nickname string) (string, string) {
 
 func (c *client) createRoom(token string, maxPlayers int) map[string]any {
 	c.t.Helper()
-	status, body := c.do("POST", "/v1/rooms", token, map[string]any{"maxPlayers": maxPlayers, "hintSeconds": 15, "categoryIds": []string{"animals"}})
+	status, body := c.do("POST", "/v1/rooms", token, map[string]any{"maxPlayers": maxPlayers, "hintSeconds": 60, "categoryIds": []string{"animals"}})
 	if status != http.StatusCreated {
 		c.t.Fatalf("create room: %d %v", status, body)
 	}
@@ -165,13 +165,13 @@ func TestCreateRoom(t *testing.T) {
 	c := newClient(t)
 	token, id := c.session("דור")
 
-	status, body := c.do("POST", "/v1/rooms", "", map[string]any{"maxPlayers": 8, "hintSeconds": 15, "categoryIds": []string{"food"}})
+	status, body := c.do("POST", "/v1/rooms", "", map[string]any{"maxPlayers": 8, "hintSeconds": 60, "categoryIds": []string{"food"}})
 	c.wantError(401, "session_not_found", status, body)
 	for _, bad := range []map[string]any{
-		{"maxPlayers": 9, "hintSeconds": 15, "categoryIds": []string{"food"}},
+		{"maxPlayers": 9, "hintSeconds": 60, "categoryIds": []string{"food"}},
 		{"maxPlayers": 8, "hintSeconds": 12, "categoryIds": []string{"food"}},
-		{"maxPlayers": 8, "hintSeconds": 15},
-		{"maxPlayers": 8, "hintSeconds": 15, "categoryIds": []string{"food", "cars"}},
+		{"maxPlayers": 8, "hintSeconds": 60},
+		{"maxPlayers": 8, "hintSeconds": 60, "categoryIds": []string{"food", "cars"}},
 	} {
 		status, body := c.do("POST", "/v1/rooms", token, bad)
 		c.wantError(422, "invalid_room_settings", status, body)
@@ -328,7 +328,7 @@ func TestCannotMoveRoomsDuringAGame(t *testing.T) {
 	otherCode := c.createRoom(other, 8)["code"].(string)
 	status, body := c.join(host, otherCode)
 	c.wantError(409, "already_in_activity", status, body)
-	status, body = c.do("POST", "/v1/rooms", host, map[string]any{"maxPlayers": 8, "hintSeconds": 15, "categoryIds": []string{"food"}})
+	status, body = c.do("POST", "/v1/rooms", host, map[string]any{"maxPlayers": 8, "hintSeconds": 60, "categoryIds": []string{"food"}})
 	c.wantError(409, "already_in_activity", status, body)
 	if len(entry.room.View().Members) != 4 {
 		t.Fatal("a refused move changed the room")

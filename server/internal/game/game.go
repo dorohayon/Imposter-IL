@@ -30,8 +30,15 @@ const (
 type Phase string
 
 const (
-	PhaseRoleReveal    Phase = "role_reveal"
-	PhaseHints         Phase = "hints"
+	PhaseRoleReveal Phase = "role_reveal"
+	PhaseHints      Phase = "hints"
+	// PhaseHintBreak holds on a hint that was just written, so the table can
+	// read it before the next player's turn takes the screen. Only after a
+	// hint that was actually submitted: a skipped turn has nothing to read.
+	PhaseHintBreak Phase = "hint_break"
+	// PhasePreVoting is the beat between the last hint and the vote, so the
+	// table can read the board before choosing (screen "עוברים להצבעה").
+	PhasePreVoting     Phase = "pre_voting"
 	PhaseVoting        Phase = "voting"
 	PhaseRunoffVoting  Phase = "runoff_voting"
 	PhaseImpostorGuess Phase = "impostor_guess"
@@ -104,7 +111,11 @@ type Config struct {
 	VoteDuration       time.Duration
 	RunoffVoteDuration time.Duration
 	GuessDuration      time.Duration
-	ReconnectDuration  time.Duration
+	// PreVotingDuration is how long the board is shown before voting opens.
+	PreVotingDuration time.Duration
+	// HintBreakDuration is how long a new hint is held before the next turn.
+	HintBreakDuration time.Duration
+	ReconnectDuration time.Duration
 	// RoleRevealTimeout moves the game to hints even if some players have not
 	// confirmed; it ends earlier once every connected player confirmed.
 	RoleRevealTimeout time.Duration
@@ -113,11 +124,13 @@ type Config struct {
 // DefaultConfig returns the approved durations. Private rooms override HintDuration.
 func DefaultConfig() Config {
 	return Config{
-		RoleRevealTimeout:  10 * time.Second,
-		HintDuration:       15 * time.Second,
+		RoleRevealTimeout:  20 * time.Second,
+		HintDuration:       60 * time.Second,
 		VoteDuration:       20 * time.Second,
 		RunoffVoteDuration: 15 * time.Second,
-		GuessDuration:      15 * time.Second,
+		GuessDuration:      60 * time.Second,
+		PreVotingDuration:  5 * time.Second,
+		HintBreakDuration:  3 * time.Second,
 		ReconnectDuration:  30 * time.Second,
 	}
 }
@@ -222,7 +235,7 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 		return nil, fmt.Errorf("%w: category and secret word are required", ErrInvalidSetup)
 	case rng == nil || policy.HintInappropriate == nil || policy.ValidReaction == nil:
 		return nil, fmt.Errorf("%w: rng and every policy function are required", ErrInvalidSetup)
-	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0:
+	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0 || cfg.PreVotingDuration <= 0 || cfg.HintBreakDuration <= 0:
 		return nil, fmt.Errorf("%w: invalid durations", ErrInvalidSetup)
 	}
 	g := &Game{
@@ -372,7 +385,9 @@ func (g *Game) SubmitHint(playerID, text string, now time.Time) error {
 		}
 	}
 	g.hints = append(g.hints, Hint{PlayerID: playerID, Text: text})
-	g.startTurn(g.turn+1, now)
+	// Every submitted hint is held, the last one included: it is the one the
+	// table votes on, so it needs reading most.
+	g.setPhase(PhaseHintBreak, now, g.cfg.HintBreakDuration)
 	g.version++
 	return nil
 }
@@ -572,6 +587,10 @@ func (g *Game) expire(at time.Time) {
 	case PhaseHints:
 		g.hints = append(g.hints, Hint{PlayerID: g.order[g.turn], Missing: true})
 		g.startTurn(g.turn+1, at)
+	case PhaseHintBreak:
+		g.startTurn(g.turn+1, at)
+	case PhasePreVoting:
+		g.startVoting(PhaseVoting, g.activeIDs(), at, g.cfg.VoteDuration)
 	case PhaseVoting, PhaseRunoffVoting:
 		g.tally(at)
 	case PhaseImpostorGuess:
@@ -590,12 +609,20 @@ func (g *Game) maybeFinishRoleReveal(at time.Time) {
 
 // startTurn gives the turn to the next active player at or after index i, or
 // opens voting once every turn is done.
-func (g *Game) startTurn(i int, at time.Time) {
+// nextActive is the first index from i whose player is still in the game, or
+// len(order) when every remaining turn is gone.
+func (g *Game) nextActive(i int) int {
 	for i < len(g.order) && g.players[g.order[i]].status != StatusActive {
 		i++
 	}
+	return i
+}
+
+func (g *Game) startTurn(i int, at time.Time) {
+	i = g.nextActive(i)
 	if i == len(g.order) {
-		g.startVoting(PhaseVoting, g.activeIDs(), at, g.cfg.VoteDuration)
+		// Every turn is done: hold on the finished board, then open the vote.
+		g.setPhase(PhasePreVoting, at, g.cfg.PreVotingDuration)
 		return
 	}
 	g.turn = i

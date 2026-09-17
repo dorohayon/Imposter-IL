@@ -45,62 +45,83 @@ class HomeScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(22, 8, 22, 26),
-            children: [
-              Row(
-                textDirection: TextDirection.ltr,
-                children: [
-                  IconButton.filledTonal(
-                    tooltip: 'הגדרות',
-                    onPressed: () => _open(context, const SettingsScreen()),
-                    icon: const Icon(Icons.settings_rounded),
+          // The design frame is a fixed 390x844 whose content reaches the
+          // bottom. On a taller phone a plain list stacks everything at the
+          // top and leaves the slack below, so the height is filled instead:
+          // the header stays up, the buttons stay down, and the slack goes
+          // around the hero. It still scrolls if the content does not fit.
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(22, 8, 22, 26),
+              child: ConstrainedBox(
+                constraints:
+                    BoxConstraints(minHeight: constraints.maxHeight - 34),
+                // Spacer needs a definite height, which a scroll view alone
+                // does not give.
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        textDirection: TextDirection.ltr,
+                        children: [
+                          IconButton.filledTonal(
+                            tooltip: 'הגדרות',
+                            onPressed: () =>
+                                _open(context, const SettingsScreen()),
+                            icon: const Icon(Icons.settings_rounded),
+                          ),
+                          const Spacer(),
+                          IconButton.filledTonal(
+                            tooltip: 'פרופיל',
+                            onPressed: () =>
+                                _open(context, const ProfileScreen()),
+                            icon: const Icon(Icons.person_rounded),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      const Illustration('assets/illustrations/home-hero.webp',
+                          height: 196),
+                      Text(
+                        'מי המתחזה?',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.displayLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'משחק חקירה חברתי בעברית',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.yellow,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      PrimaryButton(
+                        label: 'משחק ברשת',
+                        onPressed: () =>
+                            _open(context, const CategorySelectionScreen()),
+                      ),
+                      const SizedBox(height: 12),
+                      PrimaryButton(
+                        label: 'משחק עם חברים',
+                        variant: ButtonVariant.secondary,
+                        onPressed: () => _open(context, const FriendsScreen()),
+                      ),
+                      const SizedBox(height: 12),
+                      PrimaryButton(
+                        onPressed: () =>
+                            _open(context, const HowToPlayScreen()),
+                        variant: ButtonVariant.quiet,
+                        label: 'איך משחקים?',
+                      ),
+                    ],
                   ),
-                  const Spacer(),
-                  IconButton.filledTonal(
-                    tooltip: 'פרופיל',
-                    onPressed: () => _open(context, const ProfileScreen()),
-                    icon: const Icon(Icons.person_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Illustration('assets/illustrations/home-hero.webp',
-                  height: 196),
-              Text(
-                'מי המתחזה?',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.displayLarge,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'משחק חקירה חברתי בעברית',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.yellow,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 28),
-              PrimaryButton(
-                label: 'משחק ברשת',
-                onPressed: () =>
-                    _open(context, const CategorySelectionScreen()),
-              ),
-              const SizedBox(height: 12),
-              PrimaryButton(
-                label: 'משחק עם חברים',
-                variant: ButtonVariant.secondary,
-                onPressed: () => _open(context, const FriendsScreen()),
-              ),
-              const SizedBox(height: 12),
-              PrimaryButton(
-                onPressed: () => _open(context, const HowToPlayScreen()),
-                variant: ButtonVariant.quiet,
-                label: 'איך משחקים?',
-              ),
-            ],
+            ),
           ),
         ),
       ),

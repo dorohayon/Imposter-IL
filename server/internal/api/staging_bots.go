@@ -17,6 +17,25 @@ var stagingBotProfiles = []struct {
 	{"בוט חשוד", "avatar-m02-binoculars"},
 }
 
+const (
+	// How long a bot appears to spend writing a hint, and deciding a vote.
+	stagingBotWriteSeconds = 10
+	stagingBotVoteSeconds  = 4
+)
+
+// botStillThinking reports whether the bot has not finished its pause yet,
+// starting one if it has none pending.
+func (s *Server) botStillThinking(bot *session, now time.Time, d time.Duration) bool {
+	if bot.botActAt.IsZero() {
+		bot.botActAt = now.Add(d)
+	}
+	if now.Before(bot.botActAt) {
+		return true
+	}
+	bot.botActAt = time.Time{}
+	return false
+}
+
 var stagingBotHints = []string{
 	"מיוחד", "מוכר", "צבעוני", "נפוץ", "מעניין", "גדול", "קטן",
 	"מהיר", "ישן", "חדש", "עגול", "חזק", "נדיר", "שימושי",
@@ -138,7 +157,13 @@ func (s *Server) runStagingBotsInGame(entry *roomEntry, now time.Time) {
 				}
 			}
 		case game.PhaseHints:
-			if view.CurrentTurn == id && !view.Reconnecting {
+			if view.CurrentTurn != id || view.Reconnecting {
+				bot.botActAt = time.Time{}
+			} else if s.botStillThinking(bot, now, stagingBotWriteSeconds*time.Second) {
+				// Writing takes a human a moment. Without this the hint lands
+				// in the same frame as the turn, and nobody can follow the
+				// round; the other players see "כותב רמז..." meanwhile.
+			} else {
 				acted = true
 				for range stagingBotHints {
 					hint := stagingBotHints[s.botHint%uint64(len(stagingBotHints))]
@@ -152,7 +177,11 @@ func (s *Server) runStagingBotsInGame(entry *roomEntry, now time.Time) {
 				}
 			}
 		case game.PhaseVoting, game.PhaseRunoffVoting:
-			if view.MyVote == "" {
+			if view.MyVote != "" {
+				bot.botActAt = time.Time{}
+			} else if s.botStillThinking(bot, now, stagingBotVoteSeconds*time.Second) {
+				// Deliberating, so the votes do not all land at once.
+			} else if view.MyVote == "" {
 				candidates := slices.DeleteFunc(slices.Clone(view.Candidates), func(candidate string) bool {
 					return candidate == id
 				})

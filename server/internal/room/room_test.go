@@ -20,7 +20,7 @@ func testPolicy() game.Policy {
 }
 
 func settings() Settings {
-	return Settings{MaxPlayers: 8, HintSeconds: 15, CategoryIDs: []string{"animals"}}
+	return Settings{MaxPlayers: 8, HintSeconds: 60, CategoryIDs: []string{"animals"}}
 }
 
 func must(t *testing.T, err error) {
@@ -75,7 +75,7 @@ func TestNewValidatesCodeAndSettings(t *testing.T) {
 			wantErr(t, err, c.want)
 		})
 	}
-	for _, s := range []Settings{{4, 10, []string{"a"}}, {8, 20, []string{"a", "b"}}} {
+	for _, s := range []Settings{{4, 30, []string{"a"}}, {8, 90, []string{"a", "b"}}} {
 		if _, err := New("000000", "host", s, testPolicy(), rng, t0); err != nil {
 			t.Fatalf("%+v: %v", s, err)
 		}
@@ -92,8 +92,8 @@ func TestNewCodeIsSixDigits(t *testing.T) {
 }
 
 func TestJoinLocksSettingsAndRespectsCapacity(t *testing.T) {
-	r := newRoom(t, Settings{MaxPlayers: 4, HintSeconds: 15, CategoryIDs: []string{"a"}})
-	must(t, r.UpdateSettings("host", Settings{MaxPlayers: 5, HintSeconds: 10, CategoryIDs: []string{"b"}}, t0))
+	r := newRoom(t, Settings{MaxPlayers: 4, HintSeconds: 60, CategoryIDs: []string{"a"}})
+	must(t, r.UpdateSettings("host", Settings{MaxPlayers: 5, HintSeconds: 30, CategoryIDs: []string{"b"}}, t0))
 
 	must(t, r.Join("p1", t0))
 	wantErr(t, r.UpdateSettings("host", settings(), t0), ErrSettingsLocked)
@@ -116,7 +116,7 @@ func TestJoinLocksSettingsAndRespectsCapacity(t *testing.T) {
 	for _, id := range []string{"p1", "p2", "p3", "p4"} {
 		must(t, r.Leave(id, t0))
 	}
-	if v := r.View(); !v.SettingsLocked || v.Settings.HintSeconds != 10 {
+	if v := r.View(); !v.SettingsLocked || v.Settings.HintSeconds != 30 {
 		t.Fatalf("view = %+v", v)
 	}
 }
@@ -136,7 +136,7 @@ func TestOnlyHostKicksOtherPlayersFromLobby(t *testing.T) {
 
 func TestStartIncludesOfflineMembersAndUsesHintSeconds(t *testing.T) {
 	s := settings()
-	s.HintSeconds = 10
+	s.HintSeconds = 30
 	r := newRoom(t, s, "p1", "p2")
 	wantErr(t, r.Start("p1", "animals", "פיל", t0), ErrNotHost)
 	wantErr(t, r.Start("host", "animals", "פיל", t0), ErrNotEnoughPlayers)
@@ -165,7 +165,7 @@ func TestStartIncludesOfflineMembersAndUsesHintSeconds(t *testing.T) {
 	wantInGame(true)
 
 	confirmAll(t, r, t0)
-	if want := t0.Add(10 * time.Second); !r.Deadline().Equal(want) {
+	if want := t0.Add(30 * time.Second); !r.Deadline().Equal(want) {
 		t.Fatalf("first hint deadline = %v, want %v", r.Deadline(), want)
 	}
 }

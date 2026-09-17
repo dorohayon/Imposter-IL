@@ -58,7 +58,7 @@ void main() {
       final host = players.first;
 
       await host
-          .createRoom(maxPlayers: 8, hintSeconds: 15, categoryIds: ['animals']);
+          .createRoom(maxPlayers: 8, hintSeconds: 30, categoryIds: ['animals']);
       final code = host.room!.code;
       for (final p in players.skip(1)) {
         await p.joinRoom(code);
@@ -89,6 +89,11 @@ void main() {
         }));
         await until(
             host, () => host.game!.hints.length == hints.indexOf(hint) + 1);
+        // Every hint is held for three seconds so the table can read it. What
+        // follows is the next turn, or — after the last one — the pre-vote
+        // screen, so wait for the hold to end rather than for a named phase.
+        await until(host, () => host.game!.phase != 'hint_break',
+            timeout: const Duration(seconds: 15));
       }
       await ok(players[1].send('game.react', {
         'gameId': host.game!.id,
@@ -98,7 +103,10 @@ void main() {
       await until(
           host, () => host.game!.hints.first.reactions['suspicious'] == 1);
 
-      await until(host, () => host.game!.phase == 'voting');
+      // The finished board is held for five seconds before the vote opens.
+      await until(host, () => host.game!.phase == 'pre_voting');
+      await until(host, () => host.game!.phase == 'voting',
+          timeout: const Duration(seconds: 20));
       for (final p in players) {
         final target = p == impostor
             ? players.firstWhere((other) => other != impostor).playerId

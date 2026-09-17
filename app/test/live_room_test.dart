@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/screens/home_screen.dart';
+import 'package:imposter_il/widgets/game_ui.dart';
 import 'package:imposter_il/screens/live_room.dart';
 import 'package:imposter_il/screens/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -63,13 +64,13 @@ void main() {
     // leaves it and picks just that one.
     expect(find.text('חפצים'), findsOneWidget);
     await tapText(tester, 'חפצים');
-    await tapText(tester, '10 שניות');
+    await tapText(tester, '30 שניות');
     await tapLive(tester, 'יצירת חדר');
 
     final (_, _, body) = api.requests.firstWhere((r) => r.$2 == '/v1/rooms');
     expect(body, {
       'maxPlayers': 8,
-      'hintSeconds': 10,
+      'hintSeconds': 30,
       'categoryIds': ['objects'],
     });
     expect(find.text('482 913'), findsOneWidget); // grouped in the lobby
@@ -192,7 +193,7 @@ void main() {
     });
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
-    expect(find.text('אתם בצוות האזרחים'), findsOneWidget);
+    expect(find.text('אתם אזרחים'), findsOneWidget);
     expect(find.text('המילה הסודית'), findsOneWidget);
     expect(find.text('פיל'), findsOneWidget);
     await tapLive(tester, 'הבנתי');
@@ -246,8 +247,9 @@ void main() {
           ],
         ));
     await settle(tester);
-    expect(find.text('עכשיו התור של נועה'), findsOneWidget);
-    expect(find.text('חדק'), findsOneWidget);
+    expect(find.text('התור של נועה'), findsOneWidget);
+    // Once in its own row, once as the label on the reactions card (screen 09).
+    expect(find.text('חדק'), findsNWidgets(2));
     await tapLive(tester, 'זה מחשיד');
     expect(channel.commands('game.react').single['payload'],
         {'gameId': 'g_1', 'hintIndex': 0, 'reactionId': 'suspicious'});
@@ -256,7 +258,7 @@ void main() {
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'),
         version: 1);
     await settle(tester);
-    expect(find.text('עכשיו התור של נועה'), findsOneWidget);
+    expect(find.text('התור של נועה'), findsOneWidget);
 
     // Voting: I cannot pick myself; my choice is sent on confirm.
     channel.snapshot(
@@ -485,7 +487,7 @@ void main() {
     api.channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
     expect(find.byType(LiveRoomScreen), findsOneWidget);
-    expect(find.text('אתם בצוות האזרחים'), findsOneWidget);
+    expect(find.text('אתם אזרחים'), findsOneWidget);
   });
 
   testWidgets('leaving waits for the server and stays put if it fails',
@@ -587,19 +589,138 @@ void main() {
           ],
         ));
     await settle(tester);
-    expect(find.text('גסות'), findsOneWidget);
+    // In its row, and again as the reactions card's label.
+    expect(find.text('גסות'), findsNWidgets(2));
 
-    // A visible button, not a hidden gesture.
+    // A visible button, not a hidden gesture. The typing dots animate
+    // continuously, so this screen never settles: pump a fixed time instead.
     await tester.tap(find.byTooltip('דיווח על הרמז'));
-    await tester.pumpAndSettle();
-    await tapText(tester, 'דיווח');
+    await settle(tester);
+    await tapLive(tester, 'דיווח');
     await settle(tester);
 
     expect(channel.commands('game.report').single['payload'],
         {'gameId': 'g_1', 'playerId': 'p_2', 'hintIndex': 0});
     // The hint is hidden on this device, and cannot be reported twice.
+    // Hidden in its row and on the reactions card: the label must not leak it.
     expect(find.text('גסות'), findsNothing);
-    expect(find.text('הוסתר'), findsOneWidget);
+    expect(find.text('הוסתר'), findsNWidgets(2));
     expect(find.byTooltip('דיווח על הרמז'), findsNothing);
+  });
+
+  testWidgets('the board is held before voting opens', (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    final channel = api.channel;
+
+    channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    channel.snapshot('game.state', 'game', gameJson(phase: 'pre_voting'));
+    await settle(tester);
+
+    expect(find.text('עוברים להצבעה'), findsOneWidget);
+    expect(find.text('כל הרמזים נשלחו'), findsOneWidget);
+    expect(find.text('מסך ההצבעה נפתח אוטומטית'), findsOneWidget);
+    // Nothing to vote on yet.
+    expect(find.text('אישור הצבעה'), findsNothing);
+
+    // The server opens the vote; the app follows.
+    channel.snapshot('game.state', 'game',
+        gameJson(phase: 'voting', candidates: ['p_me', 'p_2', 'p_3', 'p_4']));
+    await settle(tester);
+    expect(find.text('עוברים להצבעה'), findsNothing);
+    expect(find.text('אישור הצבעה'), findsWidgets);
+  });
+
+  testWidgets('a hint is held for reading, then the turn opens',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    final channel = api.channel;
+
+    channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    channel.snapshot(
+        'game.state', 'game', gameJson(phase: 'hints', turn: 'p_2'));
+    await settle(tester);
+    expect(find.text('התור של נועה'), findsOneWidget);
+
+    // נועה's hint lands and the turn passes to me in the same snapshot.
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(phase: 'hints', turn: 'p_me', hints: [
+          {
+            'playerId': 'p_2',
+            'text': 'גבינה',
+            'missing': false,
+            'reactions': <String, dynamic>{}
+          },
+        ]));
+    await settle(tester);
+
+    // Before any of that, the server holds her hint so it can be read.
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(phase: 'hint_break', hints: [
+          {
+            'playerId': 'p_2',
+            'text': 'גבינה',
+            'missing': false,
+            'reactions': <String, dynamic>{}
+          },
+        ]));
+    await settle(tester);
+    expect(find.text('הרמז הקודם · נועה'), findsOneWidget);
+    expect(find.text('התור הבא מתחיל'), findsOneWidget);
+    expect(find.text('התור שלכם'), findsNothing);
+    // One clock: the header circle steps aside for the inline countdown.
+    expect(find.byType(TimerBadge), findsOneWidget);
+
+    // Then the turn opens, and the screen is about writing: the hold already
+    // showed her hint, so it is not repeated above the field.
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(phase: 'hints', turn: 'p_me', hints: [
+          {
+            'playerId': 'p_2',
+            'text': 'גבינה',
+            'missing': false,
+            'reactions': <String, dynamic>{}
+          },
+        ]));
+    await settle(tester);
+    expect(find.text('הרמז הקודם · נועה'), findsNothing);
+    expect(find.text('התור שלכם'), findsOneWidget);
+    expect(find.text('גבינה'), findsWidgets); // still listed under the field
+
+    // The pre-vote screen does not repeat the clue: the hold already showed
+    // it, and this screen is about the vote that is opening.
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(phase: 'pre_voting', hints: [
+          {
+            'playerId': 'p_2',
+            'text': 'גבינה',
+            'missing': false,
+            'reactions': <String, dynamic>{}
+          },
+        ]));
+    await settle(tester);
+    expect(find.text('עוברים להצבעה'), findsOneWidget);
+    expect(find.text('הרמז הקודם · נועה'), findsNothing);
   });
 }

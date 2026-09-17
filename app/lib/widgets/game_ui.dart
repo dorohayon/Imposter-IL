@@ -192,38 +192,103 @@ class LtrText extends StatelessWidget {
 }
 
 class TimerBadge extends StatelessWidget {
-  const TimerBadge({required this.seconds, this.color, super.key});
+  const TimerBadge({
+    required this.seconds,
+    this.color,
+    this.remaining,
+    this.size = 52,
+    super.key,
+  });
 
   final int seconds;
 
   /// Defaults to yellow, and to coral in the last seconds.
   final Color? color;
 
+  /// Fraction of the phase still to run, 1 at the start and 0 at the deadline.
+  /// The filled wedge drains with it, so the time left reads at a glance
+  /// without counting digits. Null keeps the circle evenly filled.
+  final double? remaining;
+
+  final double size;
+
   @override
   Widget build(BuildContext context) {
     final ring = color ?? (seconds <= 5 ? AppColors.coral : AppColors.yellow);
     return Semantics(
       label: '$seconds שניות',
-      child: Container(
-        width: 52,
-        height: 52,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: ring.withValues(alpha: 0.14),
-          border: Border.all(color: ring, width: 4),
-        ),
-        child: Text(
-          '$seconds',
-          style: TextStyle(
-            color: ring,
-            fontSize: 20,
-            fontWeight: FontWeight.w900,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: CustomPaint(
+          painter: _TimerDial(
+            ring: ring,
+            remaining: remaining?.clamp(0.0, 1.0) ?? 1,
+            stroke: size / 13,
+          ),
+          child: Center(
+            child: Text(
+              '$seconds',
+              style: TextStyle(
+                color: ring,
+                fontSize: size * .38,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+/// The timer circle. The coloured ring itself is what drains: it runs
+/// clockwise from the top and shortens as the phase runs out, leaving a faint
+/// track behind it, so the time left reads as a shrinking arc rather than a
+/// number to be parsed.
+class _TimerDial extends CustomPainter {
+  const _TimerDial({
+    required this.ring,
+    required this.remaining,
+    required this.stroke,
+  });
+
+  final Color ring;
+  final double remaining;
+  final double stroke;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final centre = (Offset.zero & size).center;
+    final radius = size.width / 2 - stroke / 2;
+    final circle = Rect.fromCircle(center: centre, radius: radius);
+
+    // The track the ring leaves behind, so the circle keeps its shape.
+    canvas.drawCircle(
+      centre,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..color = ring.withValues(alpha: .16),
+    );
+    if (remaining <= 0) return;
+    canvas.drawArc(
+      circle,
+      -math.pi / 2,
+      2 * math.pi * remaining,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..strokeCap = StrokeCap.round
+        ..color = ring,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TimerDial old) =>
+      old.remaining != remaining || old.ring != ring || old.stroke != stroke;
 }
 
 /// A short status line with an icon, in one of the system banner colors.
@@ -301,7 +366,11 @@ class GameScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     final scaffold = Scaffold(
-      backgroundColor: Colors.transparent,
+      // Transparent only when the DecoratedBox below paints the accent
+      // gradient. Without that, nothing paints behind the scaffold and the
+      // screen goes black as soon as the route transition disposes whatever
+      // was underneath.
+      backgroundColor: accent == null ? AppColors.night : Colors.transparent,
       bottomNavigationBar: bottom == null
           ? null
           : SafeArea(
@@ -678,6 +747,141 @@ class StepCard extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Three dots that rise in turn, next to "כותב רמז...". The turn belongs to
+/// someone else for up to a minute, and without this the screen looks frozen
+/// rather than waiting.
+class TypingDots extends StatefulWidget {
+  const TypingDots(
+      {this.color = AppColors.turquoise, this.size = 7, super.key});
+
+  final Color color;
+  final double size;
+
+  @override
+  State<TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<TypingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < 3; i++)
+            Padding(
+              padding: EdgeInsets.only(left: i == 2 ? 0 : widget.size * .6),
+              child: Opacity(
+                // Each dot leads the next by a third of the cycle.
+                opacity: .35 +
+                    .65 *
+                        (1 - ((_controller.value * 3 - i) % 3).clamp(0, 1))
+                            .clamp(0, 1),
+                child: Container(
+                  width: widget.size,
+                  height: widget.size,
+                  decoration: BoxDecoration(
+                    color: widget.color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The hint that just landed, shown where the eye already is and lit for a
+/// moment so it is noticed.
+///
+/// This replaces an earlier attempt that froze the screen for three seconds
+/// before a turn: a pause costs the player time and still hides the hint the
+/// instant it ends. Showing it, unmissably, costs nothing.
+class LastHintCard extends StatelessWidget {
+  const LastHintCard({
+    required this.nickname,
+    required this.avatar,
+    required this.hint,
+    required this.highlight,
+    super.key,
+  });
+
+  final String nickname;
+  final String avatar;
+  final String hint;
+
+  /// Fades from lit to resting. Keyed on the hint so a new one lights again.
+  final bool highlight;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(hint),
+      tween: Tween(begin: highlight ? 1 : 0, end: 0),
+      duration: const Duration(milliseconds: 2600),
+      curve: Curves.easeOut,
+      builder: (context, lit, child) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
+          color: Color.lerp(AppColors.cream.withValues(alpha: .05),
+              AppColors.turquoise.withValues(alpha: .18), lit),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Color.lerp(AppColors.cream.withValues(alpha: .10),
+                AppColors.turquoise, lit)!,
+          ),
+        ),
+        child: child,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'הרמז הקודם · $nickname',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  hint,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.cream,
+                    fontFamily: 'Secular One',
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          AvatarView(asset: avatar, size: 40),
         ],
       ),
     );
