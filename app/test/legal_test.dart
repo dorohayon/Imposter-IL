@@ -102,7 +102,8 @@ void main() {
     ('תנאי שימוש', 'terms', 'תנאי שימוש'),
   ]) {
     testWidgets('$document matches the published copy', (tester) async {
-      final html = File('../legal/site/$page/index.html').readAsStringSync();
+      final html = File('../server/internal/legal/site/$page/index.html')
+          .readAsStringSync();
       final published = RegExp(r'<h2[^>]*>(.*?)</h2>', dotAll: true)
           .allMatches(html)
           .map((m) => m.group(1)!.trim())

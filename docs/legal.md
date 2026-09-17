@@ -3,7 +3,7 @@
 The legal surface has three parts and they must stay aligned:
 
 1. `app/lib/screens/legal_screens.dart` — the copies players can read in the app and the consent gate.
-2. `legal/site/` — public HTML copies for App Store Connect, Google Play and people without the app.
+2. `server/internal/legal/site/` — public HTML copies for App Store Connect, Google Play and people without the app. `app/test/legal_test.dart` reads the section headings out of these files and fails if the app is missing one, so the alignment is checked rather than promised.
 3. `legalVersion` / `legal.acceptedVersion` — the device-local acknowledgement version.
 
 Current document version: **1.0**, effective **17 September 2026**.
@@ -18,14 +18,17 @@ Terms and Privacy remain readable from Settings after acceptance.
 
 ## Public URLs
 
-`.github/workflows/pages.yml` publishes `legal/site/` from `main` to GitHub Pages:
+The game server serves the documents. GitHub Pages cannot publish a private repository without a paid plan, and the server already has a public HTTPS hostname and certificate, so the pages ride on it — no second host to pay for, deploy or forget to update:
 
-- `https://dorohayon.github.io/Imposter-IL/privacy/`
-- `https://dorohayon.github.io/Imposter-IL/terms/`
+- `https://imposter-eegbs6v5uq-uc.a.run.app/privacy/`
+- `https://imposter-eegbs6v5uq-uc.a.run.app/terms/`
+- `https://imposter-eegbs6v5uq-uc.a.run.app/legal/` links to both.
 
-The repository owner must select **GitHub Actions** as the Pages source once in repository Settings if Pages has not previously been enabled. The first `main` deployment then owns the URLs above.
+The files are compiled into the binary with `go:embed` (`server/internal/legal`), so publishing a change is the same deploy as any server change and there is no state to configure. The routes sit outside the API's gate: a browser sends no `X-Client-Build` header, and a store reviewer is not a player to rate-limit.
 
-If a first-party domain is added later, keep these URLs working or update both the app constants and both store listings in the same release.
+The app builds these URLs from whichever server it is pointed at (`--dart-define=IMPOSTER_SERVER`), so a development build shows the development server's copies rather than production's.
+
+**The consequence to accept:** the store listings then depend on the game server staying at this address. Moving the server means updating both store listings in the same release. A custom domain in front of Cloud Run would remove that coupling and is the natural next step if the URL ever needs to outlive the host.
 
 ## What the documents describe
 
@@ -49,7 +52,7 @@ If any of those facts changes, review both documents and the App Store Privacy /
 
 1. create a real support/privacy mailbox;
 2. put it in `supportEmail`;
-3. replace the pending-contact notice in both public HTML pages with that address and the operator/developer identity that should appear publicly;
+3. replace the pending-contact notice in both public HTML pages (`server/internal/legal/site/`) and in the matching in-app sections with that address and the operator/developer identity that should appear publicly;
 4. make the same contact information available in the store listing;
 5. verify the two public URLs while signed out/incognito.
 
@@ -62,7 +65,7 @@ Do not invent an address or publish a personal address accidentally. This is an 
 - Verify Settings opens both documents.
 - Verify a clean install cannot continue without checking consent.
 - Verify an old `legal.acceptedVersion` is gated again after a version bump.
-- Verify GitHub Pages deployment succeeds from `main`.
+- Deploy the server, then verify `/privacy/`, `/terms/` and `/legal/` answer on it.
 - Verify the public pages on mobile and desktop without authentication.
 - Fill App Store Connect App Privacy and Google Play Data Safety from the implemented behavior, not from assumptions.
 - Have the final legal text reviewed by a qualified professional if legal advice is required for the launch jurisdictions.

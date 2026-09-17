@@ -17,6 +17,7 @@ import (
 
 	"github.com/dorohayon/Imposter-IL/server/internal/api"
 	"github.com/dorohayon/Imposter-IL/server/internal/content"
+	"github.com/dorohayon/Imposter-IL/server/internal/legal"
 )
 
 // Environment:
@@ -170,6 +171,7 @@ func newMuxFor(srv *api.Server) *http.ServeMux {
 		}
 		_, _ = w.Write([]byte(`{"status":"ready"}`))
 	})
+	legal.Routes(mux)
 	srv.Routes(mux)
 	return mux
 }

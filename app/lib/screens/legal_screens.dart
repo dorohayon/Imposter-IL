@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/server.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 
@@ -11,11 +12,16 @@ const legalVersion = '1.0';
 const legalDate = '17 בספטמבר 2026';
 const legalAcceptedVersionKey = 'legal.acceptedVersion';
 
-/// Public copies for App Store Connect / Google Play and for people who want
-/// to read the documents without installing the app. GitHub Pages publishes
-/// the contents of /legal after this feature reaches main.
-const privacyPolicyUrl = 'https://dorohayon.github.io/Imposter-IL/privacy/';
-const termsOfUseUrl = 'https://dorohayon.github.io/Imposter-IL/terms/';
+/// Public copies for App Store Connect / Google Play and for anyone who wants
+/// to read the documents without installing the app. The game server serves
+/// them from the host it already has a certificate for: GitHub Pages cannot
+/// publish a private repository without a paid plan, and a second host would
+/// be one more thing to keep in step with these screens.
+const privacyPath = '/privacy/';
+const termsPath = '/terms/';
+
+/// The public address of a document on whichever server this build talks to.
+Uri publicLegalUrl(String path) => defaultServerUrl().resolve(path);
 
 class LegalGate extends StatefulWidget {
   const LegalGate({required this.child, super.key});
@@ -223,7 +229,7 @@ class TermsScreen extends StatelessWidget {
           'כתובת התמיכה של מפעיל השירות תפורסם כאן ובמסך ההגדרות לפני פרסום בחנויות.',
         ),
       ],
-      publicUrl: termsOfUseUrl,
+      publicPath: termsPath,
     );
   }
 }
@@ -283,7 +289,7 @@ class PrivacyScreen extends StatelessWidget {
           'כתובת התמיכה והפרטיות של מפעיל השירות תפורסם כאן ובמסך ההגדרות לפני פרסום בחנויות.',
         ),
       ],
-      publicUrl: privacyPolicyUrl,
+      publicPath: privacyPath,
     );
   }
 }
@@ -319,13 +325,13 @@ class _LegalDocument extends StatelessWidget {
     required this.title,
     required this.intro,
     required this.sections,
-    required this.publicUrl,
+    required this.publicPath,
   });
 
   final String title;
   final String intro;
   final List<_LegalSection> sections;
-  final String publicUrl;
+  final String publicPath;
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +361,7 @@ class _LegalDocument extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
             ),
             child: SelectableText(
-              'עותק ציבורי: $publicUrl',
+              'עותק ציבורי: ${publicLegalUrl(publicPath)}',
               textDirection: TextDirection.ltr,
               style: const TextStyle(color: AppColors.muted, fontSize: 12),
             ),
