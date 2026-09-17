@@ -16,12 +16,20 @@ import (
 //go:embed join.html
 var page string
 
+//go:embed home-hero.webp
+var hero []byte
+
 // CodeLength matches the room codes rooms actually get.
 const CodeLength = 6
 
 // Routes serves /join/{code}. It is registered outside the API's gate: the
 // friend following the link has a browser, not a build number.
 func Routes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /join/hero.webp", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "image/webp")
+		w.Header().Set("Cache-Control", "public, max-age=86400")
+		_, _ = w.Write(hero)
+	})
 	mux.HandleFunc("GET /join/{code}", func(w http.ResponseWriter, r *http.Request) {
 		code := r.PathValue("code")
 		if !validCode(code) {
