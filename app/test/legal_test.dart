@@ -36,7 +36,7 @@ void main() {
 
     await tapText(tester, 'מדיניות פרטיות');
     expect(find.byType(PrivacyScreen), findsOneWidget);
-    expect(find.text('מידע שנשמר במכשיר'), findsOneWidget);
+    expect(find.text('1. מידע שנשמר במכשיר'), findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
 
