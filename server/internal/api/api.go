@@ -84,6 +84,8 @@ type session struct {
 	lastGameOutcome game.Outcome
 }
 
+type playerProfile struct{ nickname, avatarID string }
+
 type roomEntry struct {
 	id     string
 	code   string // kept here so a room can be dropped without asking it
@@ -93,6 +95,12 @@ type roomEntry struct {
 
 	// emptySince is when the last member left, for the reaper.
 	emptySince time.Time
+
+	// profiles are the nickname and avatar of everyone dealt into the room's
+	// game, captured when it started. A finished game still has to name its
+	// players on the result screen, and by then a session may be gone — a
+	// staging bot's is deleted the moment the match settles.
+	profiles map[string]playerProfile
 
 	// Online matches (public rooms, see matchmaking.go).
 	public       bool

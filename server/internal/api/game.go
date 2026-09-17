@@ -197,7 +197,7 @@ func (s *Server) sendGameState(player *session, stateVersion uint64, now time.Ti
 		return
 	}
 	if v, err := player.game.View(player.playerID); err == nil {
-		s.queue(player.conn, message("game.state", now, map[string]any{"stateVersion": stateVersion, "game": s.gameJSON(player.gameID, v)}))
+		s.queue(player.conn, message("game.state", now, map[string]any{"stateVersion": stateVersion, "game": s.gameJSON(player.gameID, v, player.gameRoom.profiles)}))
 	}
 }
 
@@ -253,7 +253,7 @@ func optional[T comparable](v T) *T {
 	return &v
 }
 
-func (s *Server) gameJSON(gameID string, v game.View) gameJSON {
+func (s *Server) gameJSON(gameID string, v game.View, profiles map[string]playerProfile) gameJSON {
 	out := gameJSON{
 		GameID:              gameID,
 		Phase:               v.Phase,
@@ -274,8 +274,13 @@ func (s *Server) gameJSON(gameID string, v game.View) gameJSON {
 	}
 	for _, p := range v.Players {
 		player := gamePlayerJSON{PlayerID: p.ID, Status: p.Status, Connected: p.Connected, Disconnects: p.Disconnects, RoleConfirmed: p.RoleConfirmed}
+		// Live session first, so a nickname changed mid-game shows; the
+		// snapshot taken at the start covers players whose session has since
+		// gone, which is every staging bot by the time the result is shown.
 		if sess := s.players[p.ID]; sess != nil {
 			player.Nickname, player.AvatarID = sess.nickname, sess.avatarID
+		} else if profile, ok := profiles[p.ID]; ok {
+			player.Nickname, player.AvatarID = profile.nickname, profile.avatarID
 		}
 		out.Players = append(out.Players, player)
 	}
