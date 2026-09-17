@@ -254,6 +254,33 @@ void main() {
     expect(channel.commands('game.react').single['payload'],
         {'gameId': 'g_1', 'hintIndex': 0, 'reactionId': 'suspicious'});
 
+    // Once the server counts it, the reaction floats up the screen as a
+    // bubble (the design's om-bubble), and clears itself up on the way.
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(
+          phase: 'hints',
+          turn: 'p_2',
+          hints: [
+            {
+              'playerId': 'p_me',
+              'text': 'חדק',
+              'missing': false,
+              'reactions': {'laugh': 2, 'suspicious': 1}
+            },
+          ],
+        ));
+    await tester.pump();
+    await tester.pump();
+    // The chip, and the bubble now rising from the hint it belongs to.
+    expect(find.text('זה מחשיד'), findsNWidgets(2));
+    // An unchanged count floats nothing.
+    expect(find.text('😂'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 7));
+    await tester.pump();
+    expect(find.text('זה מחשיד'), findsOneWidget);
+
     // A stale snapshot is ignored.
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'),
         version: 1);

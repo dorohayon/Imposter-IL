@@ -1012,8 +1012,10 @@ class _Hints extends StatefulWidget {
 
 class _HintsState extends State<_Hints> {
   final _controller = TextEditingController();
+  final _lastHintKey = GlobalKey();
   String? _error;
   bool _busy = false;
+  int _seed = 0;
 
   @override
   void didUpdateWidget(_Hints old) {
@@ -1021,6 +1023,33 @@ class _HintsState extends State<_Hints> {
     if (old.game.currentTurnPlayerId != widget.game.currentTurnPlayerId) {
       _error = null;
       _controller.clear();
+    }
+    _floatNewReactions(old.game);
+  }
+
+  /// A snapshot carries reaction counts, not events, so a bubble is a count
+  /// that went up since the last one — including your own, which comes back
+  /// the same way as everyone else's. Capped, so a reconnect's fresh counts
+  /// or someone leaning on a button cannot flood the screen.
+  void _floatNewReactions(GameView old) {
+    final session = SessionScope.read(context);
+    final hints = widget.game.hints;
+    if (old.id != widget.game.id ||
+        !session.showReactions ||
+        hints.isEmpty ||
+        // A new hint resets which counts we are comparing against.
+        hints.length != old.hints.length) {
+      return;
+    }
+    final before = old.hints.last.reactions;
+    var budget = 6;
+    for (final r in session.reactions) {
+      var added = (hints.last.reactions[r.id] ?? 0) - (before[r.id] ?? 0);
+      while (added > 0 && budget > 0) {
+        floatReaction(context, r.text, anchor: _lastHintKey, seed: _seed++);
+        added--;
+        budget--;
+      }
     }
   }
 
@@ -1231,6 +1260,9 @@ class _HintsState extends State<_Hints> {
           for (final (i, h) in game.hints.indexed)
             if (game.player(h.playerId) case final p?)
               Padding(
+                // Reactions are always to the last hint, so its card is where
+                // their bubbles rise from.
+                key: i == game.hints.length - 1 ? _lastHintKey : null,
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _ReportableHint(
                   card: PlayerCard(

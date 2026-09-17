@@ -947,3 +947,158 @@ class TurnCard extends StatelessWidget {
     );
   }
 }
+
+/// Floats a reaction off the top of the screen from [anchor], the way the
+/// design's `om-bubble` keyframes do: it pops at the card it belongs to,
+/// drifts sideways as it climbs, and fades out on the way up. It goes into the
+/// root overlay so nothing on the screen clips it.
+///
+/// [seed] varies the drift, so a burst of reactions fans out instead of rising
+/// in one column.
+void floatReaction(
+  BuildContext context,
+  String text, {
+  required GlobalKey anchor,
+  int seed = 0,
+}) {
+  final box = anchor.currentContext?.findRenderObject() as RenderBox?;
+  final overlay = Overlay.maybeOf(context);
+  if (overlay == null || box == null || !box.hasSize) return;
+  final origin = box.localToGlobal(Offset(box.size.width / 2, 0));
+  late final OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (_) => _ReactionBubble(
+      text: text,
+      origin: origin,
+      drift: (seed.isEven ? 1 : -1) * (30 + (seed % 3) * 16),
+      onDone: entry.remove,
+    ),
+  );
+  // The caller is usually a snapshot landing mid-build, and inserting into the
+  // overlay marks it dirty, so wait for the frame to finish.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (overlay.mounted) overlay.insert(entry);
+  });
+}
+
+class _ReactionBubble extends StatefulWidget {
+  const _ReactionBubble({
+    required this.text,
+    required this.origin,
+    required this.drift,
+    required this.onDone,
+  });
+
+  final String text;
+  final Offset origin; // Global, the top centre of the card it rises from.
+  final double drift;
+  final VoidCallback onDone;
+
+  @override
+  State<_ReactionBubble> createState() => _ReactionBubbleState();
+}
+
+class _ReactionBubbleState extends State<_ReactionBubble>
+    with SingleTickerProviderStateMixin {
+  // The om-bubble keyframes, read straight off the prototype: the stops as
+  // fractions of the six seconds, and what each channel is worth at each one.
+  static const _stops = [0.0, .06, .12, .30, .50, .70, .88, 1.0];
+  static const _rise = [
+    4.0,
+    -14.0,
+    -40.0,
+    -150.0,
+    -270.0,
+    -380.0,
+    -470.0,
+    -530.0
+  ];
+  static const _fade = [0.0, 1.0, 1.0, .95, .8, .55, .22, 0.0];
+  static const _scale = [.6, 1.04, 1.0, 1.0, .99, .97, .94, .9];
+  static const _sway = [0.0, 0.0, 0.0, .7, -.4, .8, .2, .5];
+
+  late final _run = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 6),
+  )
+    ..addStatusListener((status) {
+      // Removing the entry tears this widget down, so leave the frame first.
+      if (status == AnimationStatus.completed) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => widget.onDone());
+      }
+    })
+    ..forward();
+
+  static double _at(List<double> channel, double t) {
+    for (var i = 1; i < _stops.length; i++) {
+      if (t <= _stops[i]) {
+        final progress = (t - _stops[i - 1]) / (_stops[i] - _stops[i - 1]);
+        return channel[i - 1] + (channel[i] - channel[i - 1]) * progress;
+      }
+    }
+    return channel.last;
+  }
+
+  @override
+  void dispose() {
+    _run.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Emoji get the bigger, tighter pill; the structured messages are text.
+    final emoji = !RegExp(r'[֐-׿]').hasMatch(widget.text);
+    return Positioned(
+      left: widget.origin.dx,
+      top: widget.origin.dy,
+      child: IgnorePointer(
+        child: FractionalTranslation(
+          translation: const Offset(-.5, 0),
+          child: AnimatedBuilder(
+            animation: _run,
+            builder: (context, child) => Transform.translate(
+              offset: Offset(
+                widget.drift * _at(_sway, _run.value),
+                _at(_rise, _run.value),
+              ),
+              child: Transform.scale(
+                scale: _at(_scale, _run.value),
+                child: Opacity(
+                  opacity: _at(_fade, _run.value).clamp(0.0, 1.0),
+                  child: child,
+                ),
+              ),
+            ),
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: emoji ? 14 : 15,
+                vertical: emoji ? 7 : 9,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.cream,
+                borderRadius: BorderRadius.circular(999),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x660A081E),
+                    blurRadius: 22,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Text(
+                widget.text,
+                softWrap: false,
+                style: TextStyle(
+                  color: AppColors.night,
+                  fontSize: emoji ? 24 : 14,
+                  fontWeight: emoji ? FontWeight.w400 : FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
