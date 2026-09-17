@@ -71,7 +71,7 @@ func toVoting(t *testing.T, g *Game) time.Time {
 	for i, id := range g.order {
 		now = now.Add(time.Second)
 		must(t, g.SubmitHint(id, "hint"+string(rune('a'+i)), now))
-		// Each hint but the last is held before the next turn.
+		// Every hint is held before the board moves on.
 		if g.phase == PhaseHintBreak {
 			now = now.Add(DefaultConfig().HintBreakDuration)
 			g.Tick(now)
@@ -795,8 +795,7 @@ func TestLastHintHoldsTheBoardBeforeVoting(t *testing.T) {
 		}
 	}
 
-	// The last hint goes straight to the pre-vote screen, which shows it —
-	// there is no point holding it twice.
+	// The last hint is held like the rest, and then the pre-vote screen opens.
 	wantPhase(t, g, PhasePreVoting)
 	if want := now.Add(5 * time.Second); !g.Deadline().Equal(want) {
 		t.Fatalf("pre-voting deadline = %v, want %v", g.Deadline(), want)

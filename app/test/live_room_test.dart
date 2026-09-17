@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/screens/home_screen.dart';
+import 'package:imposter_il/widgets/game_ui.dart';
 import 'package:imposter_il/screens/live_room.dart';
 import 'package:imposter_il/screens/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -636,7 +637,7 @@ void main() {
     expect(find.text('אישור הצבעה'), findsWidgets);
   });
 
-  testWidgets('the last hint is readable on my turn and on the way to voting',
+  testWidgets('a hint is held for reading, then the turn opens',
       (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);
@@ -684,6 +685,8 @@ void main() {
     expect(find.text('הרמז הקודם · נועה'), findsOneWidget);
     expect(find.text('התור הבא מתחיל'), findsOneWidget);
     expect(find.text('התור שלכם'), findsNothing);
+    // One clock: the header circle steps aside for the inline countdown.
+    expect(find.byType(TimerBadge), findsOneWidget);
 
     // Then the turn opens, with her hint still above the field.
     channel.snapshot(
@@ -702,7 +705,8 @@ void main() {
     expect(find.text('הרמז הקודם · נועה'), findsOneWidget);
     expect(find.text('גבינה'), findsWidgets);
 
-    // The same hint carries onto the screen before the vote opens.
+    // The pre-vote screen does not repeat the clue: the hold already showed
+    // it, and this screen is about the vote that is opening.
     channel.snapshot(
         'game.state',
         'game',
@@ -716,6 +720,6 @@ void main() {
         ]));
     await settle(tester);
     expect(find.text('עוברים להצבעה'), findsOneWidget);
-    expect(find.text('הרמז הקודם · נועה'), findsOneWidget);
+    expect(find.text('הרמז הקודם · נועה'), findsNothing);
   });
 }

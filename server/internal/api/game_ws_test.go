@@ -144,7 +144,10 @@ func TestWSGamePlaysToTheEnd(t *testing.T) {
 		}
 	}
 
-	// The board is held for a beat before the vote opens.
+	// The last hint is held like the rest, then the board before the vote.
+	host.w.gameState(phase("hint_break"))
+	c.advance(3 * time.Second)
+	c.tick(roomID)
 	host.w.gameState(phase("pre_voting"))
 	c.advance(5 * time.Second)
 	c.tick(roomID)

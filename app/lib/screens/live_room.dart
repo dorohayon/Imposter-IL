@@ -840,8 +840,12 @@ class _LiveGame extends StatelessWidget {
   }
 }
 
-Widget? _timer(GameView game) =>
-    game.deadline == null ? null : LiveCountdown(deadline: game.deadline!);
+Widget? _timer(GameView game) {
+  // During the hold the header would count the same three seconds as the
+  // inline countdown beside "התור הבא מתחיל". One clock at a time.
+  if (game.deadline == null || game.phase == 'hint_break') return null;
+  return LiveCountdown(deadline: game.deadline!);
+}
 
 class _RoleReveal extends StatelessWidget {
   const _RoleReveal({required this.game, required this.onLeave});
@@ -981,17 +985,7 @@ class _ToVoting extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, fontSize: 15, height: 1.4),
           ),
-          if (game.hints.where((h) => !h.missing).lastOrNull case final last?)
-            if (game.player(last.playerId) case final p?) ...[
-              const SizedBox(height: 18),
-              LastHintCard(
-                nickname: p.nickname,
-                avatar: p.avatarAsset,
-                hint: last.text,
-                highlight: true,
-              ),
-            ],
-          const SizedBox(height: 22),
+          const SizedBox(height: 26),
           if (game.deadline case final deadline?)
             LiveCountdown(deadline: deadline, large: true),
           const SizedBox(height: 14),

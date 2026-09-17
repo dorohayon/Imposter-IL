@@ -89,12 +89,11 @@ void main() {
         }));
         await until(
             host, () => host.game!.hints.length == hints.indexOf(hint) + 1);
-        // Each hint is held for three seconds so the table can read it; the
-        // next turn opens only when that ends.
-        if (host.game!.phase == 'hint_break') {
-          await until(host, () => host.game!.phase == 'hints',
-              timeout: const Duration(seconds: 15));
-        }
+        // Every hint is held for three seconds so the table can read it. What
+        // follows is the next turn, or — after the last one — the pre-vote
+        // screen, so wait for the hold to end rather than for a named phase.
+        await until(host, () => host.game!.phase != 'hint_break',
+            timeout: const Duration(seconds: 15));
       }
       await ok(players[1].send('game.react', {
         'gameId': host.game!.id,

@@ -385,12 +385,9 @@ func (g *Game) SubmitHint(playerID, text string, now time.Time) error {
 		}
 	}
 	g.hints = append(g.hints, Hint{PlayerID: playerID, Text: text})
-	if g.nextActive(g.turn+1) < len(g.order) {
-		g.setPhase(PhaseHintBreak, now, g.cfg.HintBreakDuration)
-	} else {
-		// No turn follows, and the pre-vote screen shows this hint anyway.
-		g.startTurn(g.turn+1, now)
-	}
+	// Every submitted hint is held, the last one included: it is the one the
+	// table votes on, so it needs reading most.
+	g.setPhase(PhaseHintBreak, now, g.cfg.HintBreakDuration)
 	g.version++
 	return nil
 }
