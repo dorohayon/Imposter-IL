@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -85,5 +86,40 @@ func TestMetricsNotPublicByDefault(t *testing.T) {
 	newMux().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/metrics", nil))
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("got %d, want 404", rec.Code)
+	}
+}
+
+// The stores need the privacy policy to be reachable by a browser, which sends
+// no X-Client-Build header, so the documents must sit outside the version gate
+// as well as answer at all.
+func TestLegalPagesAreServed(t *testing.T) {
+	srv := api.NewServer(time.Now, content.Policy(), content.Pick)
+	srv.RequireClientBuild(999)
+	mux := newMuxFor(srv)
+
+	for path, want := range map[string]string{
+		"/privacy/":  "מדיניות פרטיות",
+		"/terms/":    "תנאי שימוש",
+		"/legal/":    "מידע משפטי",
+		"/style.css": "font-family",
+	} {
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusOK {
+			t.Errorf("GET %s = %d, want 200", path, rec.Code)
+			continue
+		}
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Errorf("GET %s does not contain %q", path, want)
+		}
+	}
+
+	// The pretty URL without the trailing slash has to land somewhere, so a
+	// store listing can carry either form.
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/privacy", nil))
+	if rec.Code/100 != 3 || rec.Header().Get("Location") != "/privacy/" {
+		t.Errorf("GET /privacy = %d %q, want a redirect to /privacy/",
+			rec.Code, rec.Header().Get("Location"))
 	}
 }

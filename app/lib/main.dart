@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'data/server.dart';
 import 'screens/home_screen.dart';
+import 'screens/legal_screens.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/secondary_screens.dart';
 import 'state/game_session.dart';
@@ -40,7 +41,10 @@ class ImposterApp extends StatelessWidget {
         builder: (context, child) => SessionScope.of(context).needsUpdate
             ? const UpdateRequiredScreen()
             : child!,
-        home: const _Start(),
+        // Legal acknowledgement is outside onboarding: no guest session and no
+        // user-written nickname reaches the server before the current Terms are
+        // accepted. Bumping legalVersion gates returning installs as well.
+        home: const LegalGate(child: _Start()),
       ),
     );
   }
