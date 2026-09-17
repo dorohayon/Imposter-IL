@@ -109,9 +109,13 @@ func (s *Server) gameCommand(sess *session, typ string, p commandPayload, now ti
 			return "invalid_message"
 		}
 		s.metrics.reports++
+		// Ids and the hint index only. The app sends no reason, and logging a
+		// free-text field no client fills is an open door: any client could
+		// write anything, at any length, straight into the operational logs
+		// that the privacy policy describes as report metadata.
 		slog.Warn("player reported",
 			"gameId", sess.gameID, "byPlayerId", id, "playerId", p.PlayerID,
-			"hintIndex", p.HintIndex, "reason", p.Text)
+			"hintIndex", p.HintIndex)
 		return "" // nothing in the game changed, so nothing to publish
 
 	case "game.playAgain":

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/screens/home_screen.dart';
@@ -73,9 +75,46 @@ void main() {
     expect(find.byType(PrivacyScreen), findsOneWidget);
   });
 
-  testWidgets('legal gate fits the narrow supported viewport', (tester) async {
+  testWidgets('the consent control is on screen on the narrowest phone',
+      (tester) async {
     await startApp(tester, FakeApi(), saved: {legalAcceptedVersionKey: ''});
     expect(tester.takeException(), isNull);
-    expect(find.byType(PrimaryButton), findsOneWidget);
+
+    // The checkbox is the only thing that enables the button, so it has to be
+    // visible without scrolling. It used to sit in the scrolling body, below
+    // the fold at 320x640, leaving a disabled button and no reason for it.
+    final screen = tester.getRect(find.byType(LegalConsentScreen));
+    for (final (name, finder) in [
+      ('the checkbox', find.byType(CheckboxListTile)),
+      ('the button', find.byType(PrimaryButton)),
+    ]) {
+      expect(finder, findsOneWidget);
+      expect(screen.contains(tester.getCenter(finder)), isTrue,
+          reason: '$name is off screen');
+    }
   });
+
+  // docs/legal.md says the in-app copies and the published ones must stay
+  // aligned. They drifted once already — the app was missing whole sections
+  // the public policy had — so the alignment is checked rather than promised.
+  for (final (document, page, open) in [
+    ('מדיניות פרטיות', 'privacy', 'מדיניות פרטיות'),
+    ('תנאי שימוש', 'terms', 'תנאי שימוש'),
+  ]) {
+    testWidgets('$document matches the published copy', (tester) async {
+      final html = File('../legal/site/$page/index.html').readAsStringSync();
+      final published = RegExp(r'<h2[^>]*>(.*?)</h2>', dotAll: true)
+          .allMatches(html)
+          .map((m) => m.group(1)!.trim())
+          .toList();
+      expect(published, isNotEmpty, reason: 'no sections found in $page');
+
+      await startApp(tester, FakeApi(), saved: {legalAcceptedVersionKey: ''});
+      await tapText(tester, open);
+      for (final section in published) {
+        expect(find.text(section), findsOneWidget,
+            reason: '$section is published but not in the app');
+      }
+    });
+  }
 }

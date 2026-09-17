@@ -8,13 +8,13 @@ import '../widgets/game_ui.dart';
 /// acknowledgement. The acknowledgement is deliberately device-local: the
 /// product has no account system and no legal-consent profile on the server.
 const legalVersion = '1.0';
+const legalDate = '17 בספטמבר 2026';
 const legalAcceptedVersionKey = 'legal.acceptedVersion';
 
 /// Public copies for App Store Connect / Google Play and for people who want
 /// to read the documents without installing the app. GitHub Pages publishes
 /// the contents of /legal after this feature reaches main.
-const privacyPolicyUrl =
-    'https://dorohayon.github.io/Imposter-IL/privacy/';
+const privacyPolicyUrl = 'https://dorohayon.github.io/Imposter-IL/privacy/';
 const termsOfUseUrl = 'https://dorohayon.github.io/Imposter-IL/terms/';
 
 class LegalGate extends StatefulWidget {
@@ -78,7 +78,13 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
   Future<void> _submit() async {
     if (!_checked || _busy) return;
     setState(() => _busy = true);
-    await widget.onAccepted();
+    try {
+      await widget.onAccepted();
+    } finally {
+      // The gate is the way into the app. If saving failed, the button has to
+      // come back rather than leave the player stuck on "שומרים...".
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -86,9 +92,36 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
     return GameScaffold(
       title: 'לפני שמתחילים',
       showBack: false,
-      bottom: PrimaryButton(
-        label: _busy ? 'שומרים...' : 'אישור והמשך',
-        onPressed: _checked && !_busy ? _submit : null,
+      bottom: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Pinned with the button it enables: in the scrolling body it fell
+          // below the fold on a small phone, leaving a disabled button with
+          // nothing on screen to explain it.
+          Material(
+            color: AppColors.cream.withValues(alpha: .07),
+            borderRadius: BorderRadius.circular(16),
+            child: CheckboxListTile(
+              value: _checked,
+              onChanged: _busy
+                  ? null
+                  : (value) => setState(() => _checked = value ?? false),
+              controlAffinity: ListTileControlAffinity.leading,
+              activeColor: AppColors.turquoise,
+              checkColor: AppColors.night,
+              title: const Text(
+                'קראתי ואני מסכים/ה לתנאי השימוש ומאשר/ת שקראתי את מדיניות '
+                'הפרטיות.',
+                style: TextStyle(fontWeight: FontWeight.w700, height: 1.35),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          PrimaryButton(
+            label: _busy ? 'שומרים...' : 'אישור והמשך',
+            onPressed: _checked && !_busy ? _submit : null,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -128,26 +161,8 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
             ),
           ),
           const SizedBox(height: 18),
-          Material(
-            color: AppColors.cream.withValues(alpha: .07),
-            borderRadius: BorderRadius.circular(16),
-            child: CheckboxListTile(
-              value: _checked,
-              onChanged: _busy
-                  ? null
-                  : (value) => setState(() => _checked = value ?? false),
-              controlAffinity: ListTileControlAffinity.leading,
-              activeColor: AppColors.turquoise,
-              checkColor: AppColors.night,
-              title: const Text(
-                'קראתי ואני מסכים/ה לתנאי השימוש ומאשר/ת שקראתי את מדיניות הפרטיות.',
-                style: TextStyle(fontWeight: FontWeight.w700, height: 1.4),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
           const Text(
-            'גרסת מסמכים 1.0 · 17.09.2026',
+            'גרסת מסמכים $legalVersion · $legalDate',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, fontSize: 12),
           ),
@@ -165,7 +180,7 @@ class TermsScreen extends StatelessWidget {
     return const _LegalDocument(
       title: 'תנאי שימוש',
       intro:
-          'גרסה 1.0 · בתוקף מ־17 בספטמבר 2026\n\nהשימוש ב״מי המתחזה?״ כפוף לתנאים הבאים. אם אינכם בגיל שמאפשר לכם להסכים לתנאים במקום מגוריכם, השתמשו במשחק רק באישור ובהשגחת הורה או אפוטרופוס.',
+          'גרסה $legalVersion · בתוקף מ־$legalDate\n\nהשימוש ב״מי המתחזה?״ כפוף לתנאים הבאים. אם אינכם בגיל שמאפשר לכם להסכים לתנאים במקום מגוריכם, השתמשו במשחק רק באישור ובהשגחת הורה או אפוטרופוס.',
       sections: [
         _LegalSection(
           '1. השירות',
@@ -185,7 +200,7 @@ class TermsScreen extends StatelessWidget {
         ),
         _LegalSection(
           '5. זמינות ושינויים',
-          'השירות ניתן כפי שהוא ובהתאם לזמינות. אנחנו רשאים לתקן באגים, לשנות כללים ותוכן, להגביל גרסאות ישנות או להפסיק חלקים מהשירות. כששינוי מהותי בתנאים דורש הסכמה מחודשת, האפליקציה תציג את הגרסה החדשה לפני המשך המשחק.',
+          'השירות ניתן כפי שהוא ובהתאם לזמינות. מפעיל השירות רשאי לתקן באגים, לשנות כללים ותוכן, להגביל גרסאות ישנות או להפסיק חלקים מהשירות. כששינוי מהותי בתנאים דורש הסכמה מחודשת, האפליקציה תציג את הגרסה החדשה לפני המשך המשחק.',
         ),
         _LegalSection(
           '6. קניין רוחני',
@@ -196,8 +211,16 @@ class TermsScreen extends StatelessWidget {
           'במידה המרבית המותרת לפי דין, אין התחייבות שהשירות יהיה רציף או נטול שגיאות. אין בתנאים כדי לגרוע מזכויות צרכניות שלא ניתן לוותר עליהן לפי הדין החל.',
         ),
         _LegalSection(
-          '8. פרטיות ויצירת קשר',
-          'מדיניות הפרטיות היא חלק מהשימוש בשירות ומתארת את עיבוד המידע. כתובת תמיכה ייעודית תפורסם באפליקציה ובדף הציבורי לפני הגשה לחנויות.',
+          '8. פרטיות',
+          'מדיניות הפרטיות מתארת את המידע שבו השירות משתמש ואת תקופות השמירה והיא חלק מהשימוש בשירות.',
+        ),
+        _LegalSection(
+          '9. שינויים בתנאים',
+          'שינוי מהותי יקבל גרסת מסמכים חדשה. האפליקציה שומרת במכשיר את גרסת התנאים שאושרה ויכולה לדרוש אישור מחדש לגרסה חדשה.',
+        ),
+        _LegalSection(
+          '10. יצירת קשר',
+          'כתובת התמיכה של מפעיל השירות תפורסם כאן ובמסך ההגדרות לפני פרסום בחנויות.',
         ),
       ],
       publicUrl: termsOfUseUrl,
@@ -213,7 +236,7 @@ class PrivacyScreen extends StatelessWidget {
     return const _LegalDocument(
       title: 'מדיניות פרטיות',
       intro:
-          'גרסה 1.0 · בתוקף מ־17 בספטמבר 2026\n\nהמדיניות מתארת את המידע שבו ״מי המתחזה?״ משתמש כדי להפעיל משחקים, לשמור העדפות ולהגן על שחקנים.',
+          'גרסה $legalVersion · בתוקף מ־$legalDate\n\nהמדיניות מתארת את המידע שבו ״מי המתחזה?״ משתמש כדי להפעיל משחקים, לשמור העדפות ולהגן על שחקנים.',
       sections: [
         _LegalSection(
           '1. מידע שנשמר במכשיר',
@@ -224,7 +247,7 @@ class PrivacyScreen extends StatelessWidget {
           'כדי להפעיל משחקים השרת מקבל מזהה שחקן ו־session, כינוי, אווטאר, כתובת IP לצורכי אבטחה והגבלת קצב, חברות בחדרים ובמשחקים, קטגוריות שנבחרו, רמזים, תגובות, הצבעות, ניחושים ודיווחים. אין צורך בשם אמיתי, מספר טלפון או כתובת דוא״ל כדי לשחק.',
         ),
         _LegalSection(
-          '3. איך משתמשים במידע',
+          '3. מטרות השימוש',
           'המידע משמש להפעלת matchmaking וחדרים, סנכרון המשחק בזמן אמת, חיבור מחדש, אכיפת כללי המשחק, מניעת abuse, טיפול בדיווחים, אבטחה, איתור תקלות ומדידת בריאות השרת.',
         ),
         _LegalSection(
@@ -248,8 +271,16 @@ class PrivacyScreen extends StatelessWidget {
           'אפשר לשנות כינוי ואווטאר, לכבות רטט או תגובות, לדווח על שחקן ולנקות את רשימת השחקנים שהוסתרו. מחיקת נתוני האפליקציה מסירה את המידע המקומי. מאחר שאין חשבון קבוע, אין מנגנון שחזור של נתונים מקומיים.',
         ),
         _LegalSection(
-          '9. יצירת קשר ושינויים',
-          'כתובת תמיכה ופרטיות ייעודית תפורסם כאן ובאפליקציה לפני הגשה לחנויות. שינוי מהותי במדיניות יקבל גרסה חדשה; אם נדרשת הסכמה מחודשת, האפליקציה תציג אותה לפני המשך המשחק.',
+          '9. אבטחה',
+          'התעבורה בגרסאות הפצה נועדה לעבור בחיבור מוצפן. השרת מפעיל מגבלות קצב, מגבלות גודל הודעה וסינון תוכן כדי להפחית שימוש לרעה. אין מערכת שיכולה להבטיח אבטחה מוחלטת.',
+        ),
+        _LegalSection(
+          '10. שינויים במדיניות',
+          'שינוי מהותי במדיניות יקבל גרסה חדשה. כאשר נדרשת הסכמה מחודשת, האפליקציה תציג את הגרסה החדשה לפני המשך המשחק.',
+        ),
+        _LegalSection(
+          '11. יצירת קשר',
+          'כתובת התמיכה והפרטיות של מפעיל השירות תפורסם כאן ובמסך ההגדרות לפני פרסום בחנויות.',
         ),
       ],
       publicUrl: privacyPolicyUrl,

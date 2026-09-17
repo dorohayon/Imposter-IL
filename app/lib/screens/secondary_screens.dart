@@ -253,25 +253,19 @@ class _SettingsRow extends StatelessWidget {
 }
 
 class _LinkRow extends StatelessWidget {
-  const _LinkRow({
-    required this.title,
-    required this.value,
-    this.enabled = true,
-    this.onTap,
-  });
+  const _LinkRow({required this.title, required this.value, this.onTap});
 
   final String title;
   final String value;
-  final bool enabled;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.cream.withValues(alpha: enabled ? .06 : .035),
+      color: AppColors.cream.withValues(alpha: .06),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        onTap: enabled ? onTap : null,
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -280,8 +274,8 @@ class _LinkRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
-                    color: enabled ? AppColors.cream : AppColors.muted,
+                  style: const TextStyle(
+                    color: AppColors.cream,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
