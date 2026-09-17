@@ -981,7 +981,17 @@ class _ToVoting extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, fontSize: 15, height: 1.4),
           ),
-          const SizedBox(height: 26),
+          if (game.hints.where((h) => !h.missing).lastOrNull case final last?)
+            if (game.player(last.playerId) case final p?) ...[
+              const SizedBox(height: 18),
+              LastHintCard(
+                nickname: p.nickname,
+                avatar: p.avatarAsset,
+                hint: last.text,
+                highlight: true,
+              ),
+            ],
+          const SizedBox(height: 22),
           if (game.deadline case final deadline?)
             LiveCountdown(deadline: deadline, large: true),
           const SizedBox(height: 14),
@@ -1011,44 +1021,17 @@ class _HintsState extends State<_Hints> {
   String? _error;
   bool _busy = false;
 
-  /// How long the previous player's hint stays on screen before this player's
-  /// own turn replaces it.
-  static const _readLastHint = Duration(seconds: 3);
-
-  /// Set while that pause runs. The turn has already started on the server —
-  /// the clock is running — so this only delays the swap, never the deadline.
-  Timer? _holdTimer;
-  bool _holding = false;
-
   @override
   void didUpdateWidget(_Hints old) {
     super.didUpdateWidget(old);
     if (old.game.currentTurnPlayerId != widget.game.currentTurnPlayerId) {
       _error = null;
       _controller.clear();
-      _startHoldIfMyTurnFollowsAHint(old.game);
     }
-  }
-
-  /// Taking the turn straight from someone else swaps the whole screen for the
-  /// input the instant their hint lands, so it is never readable. Hold on the
-  /// board for a moment first — but only when a hint actually arrived, not on
-  /// a skipped turn or the first turn of the game.
-  void _startHoldIfMyTurnFollowsAHint(GameView previous) {
-    final me = SessionScope.read(context).playerId;
-    final becameMyTurn = widget.game.currentTurnPlayerId == me;
-    final aHintArrived = widget.game.hints.length > previous.hints.length;
-    if (!becameMyTurn || !aHintArrived) return;
-    _holdTimer?.cancel();
-    setState(() => _holding = true);
-    _holdTimer = Timer(_readLastHint, () {
-      if (mounted) setState(() => _holding = false);
-    });
   }
 
   @override
   void dispose() {
-    _holdTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -1072,12 +1055,8 @@ class _HintsState extends State<_Hints> {
     final session = SessionScope.of(context);
     final game = widget.game;
     final me = session.playerId;
-    // While holding, the board stays up so the hint that just landed can be
-    // read; the input appears a moment later.
-    final myTurn = game.currentTurnPlayerId == me && !_holding;
-    final current = game.player(
-      _holding ? game.hints.last.playerId : game.currentTurnPlayerId,
-    );
+    final myTurn = game.currentTurnPlayerId == me;
+    final current = game.player(game.currentTurnPlayerId);
     final word = game.secretWord;
     final lastHint = game.hints.isEmpty ? null : game.hints.last;
 
@@ -1133,7 +1112,22 @@ class _HintsState extends State<_Hints> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
+            // The hint that just landed, under the turn card and above the
+            // field, so it is read on the way to typing rather than replaced
+            // by it.
+            if (lastHint != null && !lastHint.missing)
+              if (game.player(lastHint.playerId) case final p?) ...[
+                LastHintCard(
+                  nickname: p.nickname,
+                  avatar: p.avatarAsset,
+                  hint: session.muted.contains(lastHint.playerId)
+                      ? 'הוסתר'
+                      : lastHint.text,
+                  highlight: true,
+                ),
+                const SizedBox(height: 12),
+              ],
             TextField(
               controller: _controller,
               maxLength: 25,
@@ -1184,12 +1178,9 @@ class _HintsState extends State<_Hints> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          switch (true) {
-                            _ when _holding => 'הרמז של ${current.nickname}',
-                            _ when game.awaitingReconnect =>
-                              'אין חיבור ל־${current.nickname}',
-                            _ => 'התור של ${current.nickname}',
-                          },
+                          game.awaitingReconnect
+                              ? 'אין חיבור ל־${current.nickname}'
+                              : 'התור של ${current.nickname}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -1203,12 +1194,9 @@ class _HintsState extends State<_Hints> {
                           children: [
                             Flexible(
                               child: Text(
-                                switch (true) {
-                                  _ when _holding => 'התור שלכם מתחיל',
-                                  _ when game.awaitingReconnect =>
-                                    'מחכים לחזרה',
-                                  _ => 'כותב רמז',
-                                },
+                                game.awaitingReconnect
+                                    ? 'מחכים לחזרה'
+                                    : 'כותב רמז',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(

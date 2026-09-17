@@ -636,7 +636,7 @@ void main() {
     expect(find.text('אישור הצבעה'), findsWidgets);
   });
 
-  testWidgets('the last hint stays readable before my turn takes the screen',
+  testWidgets('the last hint is readable on my turn and on the way to voting',
       (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);
@@ -668,15 +668,26 @@ void main() {
         ]));
     await settle(tester);
 
-    // Her hint is readable first; the input has not taken over yet.
-    expect(find.text('הרמז של נועה'), findsOneWidget);
-    expect(find.text('התור שלכם'), findsNothing);
+    // My turn starts at once — nothing is delayed — and her hint is right
+    // there above the field instead of being replaced by it.
+    expect(find.text('התור שלכם'), findsOneWidget);
+    expect(find.text('הרמז הקודם · נועה'), findsOneWidget);
     expect(find.text('גבינה'), findsWidgets);
 
-    // A moment later the turn is mine.
-    await tester.pump(const Duration(seconds: 3));
+    // The same hint carries onto the screen before the vote opens.
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(phase: 'pre_voting', hints: [
+          {
+            'playerId': 'p_2',
+            'text': 'גבינה',
+            'missing': false,
+            'reactions': <String, dynamic>{}
+          },
+        ]));
     await settle(tester);
-    expect(find.text('התור שלכם'), findsOneWidget);
-    expect(find.text('הרמז של נועה'), findsNothing);
+    expect(find.text('עוברים להצבעה'), findsOneWidget);
+    expect(find.text('הרמז הקודם · נועה'), findsOneWidget);
   });
 }

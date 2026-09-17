@@ -811,3 +811,79 @@ class _TypingDotsState extends State<TypingDots>
     );
   }
 }
+
+/// The hint that just landed, shown where the eye already is and lit for a
+/// moment so it is noticed.
+///
+/// This replaces an earlier attempt that froze the screen for three seconds
+/// before a turn: a pause costs the player time and still hides the hint the
+/// instant it ends. Showing it, unmissably, costs nothing.
+class LastHintCard extends StatelessWidget {
+  const LastHintCard({
+    required this.nickname,
+    required this.avatar,
+    required this.hint,
+    required this.highlight,
+    super.key,
+  });
+
+  final String nickname;
+  final String avatar;
+  final String hint;
+
+  /// Fades from lit to resting. Keyed on the hint so a new one lights again.
+  final bool highlight;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(hint),
+      tween: Tween(begin: highlight ? 1 : 0, end: 0),
+      duration: const Duration(milliseconds: 2600),
+      curve: Curves.easeOut,
+      builder: (context, lit, child) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
+          color: Color.lerp(AppColors.cream.withValues(alpha: .05),
+              AppColors.turquoise.withValues(alpha: .18), lit),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Color.lerp(AppColors.cream.withValues(alpha: .10),
+                AppColors.turquoise, lit)!,
+          ),
+        ),
+        child: child,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'הרמז הקודם · $nickname',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  hint,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.cream,
+                    fontFamily: 'Secular One',
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          AvatarView(asset: avatar, size: 40),
+        ],
+      ),
+    );
+  }
+}
