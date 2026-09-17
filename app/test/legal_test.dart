@@ -38,13 +38,15 @@ void main() {
 
     await tapText(tester, 'מדיניות פרטיות');
     expect(find.byType(PrivacyScreen), findsOneWidget);
-    expect(find.text('1. מידע שנשמר במכשיר'), findsOneWidget);
+    // Section numbers move when a document gains one; the copy that names the
+    // operator does not, and the stores require it to be there.
+    expect(find.textContaining('imposteril36@gmail.com'), findsWidgets);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
 
     await tapText(tester, 'תנאי שימוש');
     expect(find.byType(TermsScreen), findsOneWidget);
-    expect(find.text('2. כללי התנהגות ותוכן'), findsOneWidget);
+    expect(find.textContaining('imposteril36@gmail.com'), findsWidgets);
   });
 
   testWidgets('an old accepted version is gated again', (tester) async {

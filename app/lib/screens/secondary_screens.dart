@@ -115,7 +115,7 @@ class _StatCard extends StatelessWidget {
 /// reporting (App Store review guideline 1.2). Empty hides the row.
 ///
 /// MUST be filled in before submission — see docs/production-architecture-review.md.
-const supportEmail = '';
+const supportEmail = 'imposteril36@gmail.com';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});

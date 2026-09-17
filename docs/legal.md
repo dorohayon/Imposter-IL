@@ -46,17 +46,23 @@ The v1 documents are intentionally product-specific. They reflect the current im
 
 If any of those facts changes, review both documents and the App Store Privacy / Google Play Data Safety declarations before release.
 
-## Required owner input before store submission
+## Operator identity
 
-**Still blocked:** `supportEmail` in `app/lib/screens/secondary_screens.dart` is empty. Before a store build:
+Dor Ohayon, independent developer · `imposteril36@gmail.com`.
 
-1. create a real support/privacy mailbox;
-2. put it in `supportEmail`;
-3. replace the pending-contact notice in both public HTML pages (`server/internal/legal/site/`) and in the matching in-app sections with that address and the operator/developer identity that should appear publicly;
-4. make the same contact information available in the store listing;
-5. verify the two public URLs while signed out/incognito.
+The same address is the support, privacy and abuse-report contact. It appears in both public pages, in the matching in-app sections, and as `supportEmail` in `app/lib/screens/secondary_screens.dart`, which shows the contact row in Settings. Google Play requires the policy to name the entity it pertains to; Apple requires developer contact details reachable from the app.
 
-Do not invent an address or publish a personal address accidentally. This is an owner/legal identity decision, not a code default.
+## Store submission notes
+
+**Apple: do not paste these Terms into the EULA field.** A custom EULA in App Store Connect must carry Apple's own minimum terms — scope of licence, Apple's non-liability, Apple as a third-party beneficiary, maintenance responsibility, export compliance. These Terms carry none of them, by choice. Leave the field empty so Apple's standard EULA applies, and let these Terms stand as the in-app house rules. Filling that field turns a working setup into a rejection.
+
+**Age.** Both documents state 13 as the minimum. The App Store age rating and the Play target-audience declaration must agree with that, and with the UGC answers.
+
+**Data safety / App Privacy.** Declare what section 3 of the privacy policy lists, and nothing else: guest identifiers, nickname, avatar, IP for abuse prevention, and the game content players write. No account, so Apple's account-deletion requirement (5.1.1(v)) does not apply. No advertising identifier, no analytics SDK, no crash-reporting SDK.
+
+**The crash-reporting coupling.** Section 7 promises no third-party analytics or crash-reporting SDK. Adding Crashlytics or anything like it means editing that section, the Data Safety form and the App Privacy card in the same release — not afterwards.
+
+**Distribution.** The rights section names Israeli law and the GDPR. If Play distribution stays worldwide, that stays accurate; restricting countries later does not require a change, but widening the data practices does.
 
 ## Release checklist
 
@@ -65,7 +71,8 @@ Do not invent an address or publish a personal address accidentally. This is an 
 - Verify Settings opens both documents.
 - Verify a clean install cannot continue without checking consent.
 - Verify an old `legal.acceptedVersion` is gated again after a version bump.
-- Deploy the server, then verify `/privacy/`, `/terms/` and `/legal/` answer on it.
+- Deploy the server, then verify `/privacy/`, `/terms/` and `/legal/` answer on it, signed out.
+- Confirm the App Store Connect EULA field is empty.
 - Verify the public pages on mobile and desktop without authentication.
 - Fill App Store Connect App Privacy and Google Play Data Safety from the implemented behavior, not from assumptions.
 - Have the final legal text reviewed by a qualified professional if legal advice is required for the launch jurisdictions.
