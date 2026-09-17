@@ -831,7 +831,7 @@ class _LiveGame extends StatelessWidget {
     if (me?.status == 'removed') return _Removed(onHome: onLeave);
     return switch (game.phase) {
       'role_reveal' => _RoleReveal(game: game, onLeave: onLeave),
-      'hints' => _Hints(game: game, onLeave: onLeave),
+      'hints' || 'hint_break' => _Hints(game: game, onLeave: onLeave),
       'pre_voting' => _ToVoting(game: game, onLeave: onLeave),
       'voting' || 'runoff_voting' => _Voting(game: game, onLeave: onLeave),
       'impostor_guess' => _Guess(game: game, onLeave: onLeave),
@@ -1055,8 +1055,12 @@ class _HintsState extends State<_Hints> {
     final session = SessionScope.of(context);
     final game = widget.game;
     final me = session.playerId;
+    // The server holds each hint for a moment so it can be read; nobody has
+    // the turn during it.
+    final holding = game.phase == 'hint_break';
     final myTurn = game.currentTurnPlayerId == me;
     final current = game.player(game.currentTurnPlayerId);
+    final held = holding && game.hints.isNotEmpty ? game.hints.last : null;
     final word = game.secretWord;
     final lastHint = game.hints.isEmpty ? null : game.hints.last;
 
@@ -1159,6 +1163,32 @@ class _HintsState extends State<_Hints> {
                 positive: false,
               ),
             ],
+          ] else if (held != null && game.player(held.playerId) != null) ...[
+            // Screen shows the hint just written, with the wait until the next
+            // turn, so it is read before the board moves on.
+            LastHintCard(
+              nickname: game.player(held.playerId)!.nickname,
+              avatar: game.player(held.playerId)!.avatarAsset,
+              hint: session.muted.contains(held.playerId) ? 'הוסתר' : held.text,
+              highlight: true,
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Flexible(
+                  child: Text(
+                    'התור הבא מתחיל',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: AppColors.muted, fontSize: 15),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (game.deadline case final deadline?)
+                  LiveCountdown(deadline: deadline),
+              ],
+            ),
           ] else if (current != null) ...[
             // Screen 09: one purple card carrying the avatar, whose turn it is
             // and that they are writing — not a centred portrait.

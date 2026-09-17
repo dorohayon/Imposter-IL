@@ -668,8 +668,36 @@ void main() {
         ]));
     await settle(tester);
 
-    // My turn starts at once — nothing is delayed — and her hint is right
-    // there above the field instead of being replaced by it.
+    // Before any of that, the server holds her hint so it can be read.
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(phase: 'hint_break', hints: [
+          {
+            'playerId': 'p_2',
+            'text': 'גבינה',
+            'missing': false,
+            'reactions': <String, dynamic>{}
+          },
+        ]));
+    await settle(tester);
+    expect(find.text('הרמז הקודם · נועה'), findsOneWidget);
+    expect(find.text('התור הבא מתחיל'), findsOneWidget);
+    expect(find.text('התור שלכם'), findsNothing);
+
+    // Then the turn opens, with her hint still above the field.
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(phase: 'hints', turn: 'p_me', hints: [
+          {
+            'playerId': 'p_2',
+            'text': 'גבינה',
+            'missing': false,
+            'reactions': <String, dynamic>{}
+          },
+        ]));
+    await settle(tester);
     expect(find.text('התור שלכם'), findsOneWidget);
     expect(find.text('הרמז הקודם · נועה'), findsOneWidget);
     expect(find.text('גבינה'), findsWidgets);

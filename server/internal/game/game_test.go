@@ -71,6 +71,11 @@ func toVoting(t *testing.T, g *Game) time.Time {
 	for i, id := range g.order {
 		now = now.Add(time.Second)
 		must(t, g.SubmitHint(id, "hint"+string(rune('a'+i)), now))
+		// Each hint but the last is held before the next turn.
+		if g.phase == PhaseHintBreak {
+			now = now.Add(DefaultConfig().HintBreakDuration)
+			g.Tick(now)
+		}
 	}
 	// The finished board is held for a beat before the vote opens.
 	wantPhase(t, g, PhasePreVoting)
@@ -227,11 +232,22 @@ func TestHintTurnsFollowOrderWithSixtySeconds(t *testing.T) {
 	wantErr(t, g.SubmitHint(g.order[1], "early", t0), ErrNotYourTurn)
 	must(t, g.SubmitHint(g.order[0], "גדול", t0.Add(3*time.Second)))
 
+	// The hint shows at once, and is held so the table can read it before the
+	// next turn takes the screen.
 	v, _ := g.View(g.order[2])
-	if v.CurrentTurn != g.order[1] || len(v.Hints) != 1 || v.Hints[0].Text != "גדול" {
-		t.Fatalf("hint not shown immediately: %+v", v)
+	if v.Phase != PhaseHintBreak || len(v.Hints) != 1 || v.Hints[0].Text != "גדול" {
+		t.Fatalf("hint not held for reading: %+v", v)
 	}
-	if want := t0.Add(63 * time.Second); !g.Deadline().Equal(want) {
+	if want := t0.Add(6 * time.Second); !g.Deadline().Equal(want) {
+		t.Fatalf("hint break deadline = %v, want %v", g.Deadline(), want)
+	}
+
+	g.Tick(t0.Add(6 * time.Second))
+	v, _ = g.View(g.order[2])
+	if v.CurrentTurn != g.order[1] {
+		t.Fatalf("next turn did not start: %+v", v)
+	}
+	if want := t0.Add(66 * time.Second); !g.Deadline().Equal(want) {
 		t.Fatalf("next turn deadline = %v, want %v", g.Deadline(), want)
 	}
 }
@@ -255,6 +271,7 @@ func TestHintValidation(t *testing.T) {
 	g.order = append([]string{g.impostor}, citizens(g)...)
 	confirmAll(t, g)
 	must(t, g.SubmitHint(g.order[0], "חדק", t0))
+	g.Tick(t0.Add(3 * time.Second)) // past the hold on that hint
 	cur := g.order[1]
 	cases := []struct {
 		hint string
@@ -283,8 +300,10 @@ func TestImpostorHintIsNotCheckedAgainstTheSecret(t *testing.T) {
 	g.order = append([]string{g.impostor}, citizens(g)...)
 	confirmAll(t, g)
 	must(t, g.SubmitHint(g.impostor, "הפיל", t0))
+	g.Tick(t0.Add(3 * time.Second)) // past the hold on that hint
 	// a citizen using the word is still blocked
-	wantErr(t, g.SubmitHint(g.order[1], secret, t0), ErrHintContainsSecret)
+	wantErr(t, g.SubmitHint(g.order[1], secret, t0.Add(3*time.Second)),
+		ErrHintContainsSecret)
 }
 
 func TestReactionsAreUnlimitedDuringNextTurn(t *testing.T) {
@@ -292,9 +311,11 @@ func TestReactionsAreUnlimitedDuringNextTurn(t *testing.T) {
 	confirmAll(t, g)
 	wantErr(t, g.React(g.order[1], 0, "suspicious", t0), ErrInvalidHint)
 	must(t, g.SubmitHint(g.order[0], "גדול", t0))
+	// Reacting works while the hint is held, and after the next turn opens.
 	for range 5 {
 		must(t, g.React(g.order[2], 0, "suspicious", t0))
 	}
+	g.Tick(t0.Add(3 * time.Second))
 	wantErr(t, g.React(g.order[2], 0, "free text", t0), ErrInvalidReaction)
 	if n := g.hints[0].Reactions["suspicious"]; n != 5 {
 		t.Fatalf("reactions = %d, want 5", n)
@@ -496,6 +517,7 @@ func TestTurnStartingWhileDisconnectedWaitsForReconnect(t *testing.T) {
 	must(t, g.Disconnect(g.order[1], t0))
 	confirmAll(t, g)
 	must(t, g.SubmitHint(g.order[0], "גדול", t0.Add(time.Second)))
+	g.Tick(t0.Add(4 * time.Second)) // past the hold on that hint
 	if !g.reconnecting || g.players[g.order[1]].disconnects != 1 {
 		t.Fatal("turn of a disconnected player must wait for reconnect")
 	}
@@ -767,8 +789,14 @@ func TestLastHintHoldsTheBoardBeforeVoting(t *testing.T) {
 	for i, id := range g.order {
 		now = now.Add(time.Second)
 		must(t, g.SubmitHint(id, "hint"+string(rune('a'+i)), now))
+		if g.phase == PhaseHintBreak {
+			now = now.Add(3 * time.Second)
+			g.Tick(now)
+		}
 	}
 
+	// The last hint goes straight to the pre-vote screen, which shows it —
+	// there is no point holding it twice.
 	wantPhase(t, g, PhasePreVoting)
 	if want := now.Add(5 * time.Second); !g.Deadline().Equal(want) {
 		t.Fatalf("pre-voting deadline = %v, want %v", g.Deadline(), want)
@@ -785,4 +813,42 @@ func TestLastHintHoldsTheBoardBeforeVoting(t *testing.T) {
 	g.Tick(now.Add(5 * time.Second))
 	wantPhase(t, g, PhaseVoting)
 	must(t, g.Vote(g.order[0], g.order[1], now.Add(5*time.Second)))
+}
+
+// A hint is held so the table can read it before the next turn takes the
+// screen, and the clock for that next turn only starts afterwards.
+func TestHintIsHeldBeforeTheNextTurn(t *testing.T) {
+	g := newGame(t, 4)
+	confirmAll(t, g)
+	must(t, g.SubmitHint(g.order[0], "גדול", t0))
+
+	wantPhase(t, g, PhaseHintBreak)
+	if want := t0.Add(3 * time.Second); !g.Deadline().Equal(want) {
+		t.Fatalf("hold deadline = %v, want %v", g.Deadline(), want)
+	}
+	// The hint is on the board, and nobody is on the clock.
+	v, _ := g.View(g.order[1])
+	if len(v.Hints) != 1 || v.Hints[0].Text != "גדול" || v.CurrentTurn != "" {
+		t.Fatalf("view during the hold = %+v", v)
+	}
+	wantErr(t, g.SubmitHint(g.order[1], "מוקדם", t0), ErrWrongPhase)
+
+	// The next player's full turn begins only when the hold ends.
+	g.Tick(t0.Add(3 * time.Second))
+	wantPhase(t, g, PhaseHints)
+	if want := t0.Add(63 * time.Second); !g.Deadline().Equal(want) {
+		t.Fatalf("next turn deadline = %v, want %v", g.Deadline(), want)
+	}
+	must(t, g.SubmitHint(g.order[1], "אפור", t0.Add(4*time.Second)))
+}
+
+// A turn nobody wrote in has nothing to read, so it is not held.
+func TestSkippedTurnIsNotHeld(t *testing.T) {
+	g := newGame(t, 4)
+	confirmAll(t, g)
+	g.Tick(t0.Add(60 * time.Second)) // the first turn runs out
+	wantPhase(t, g, PhaseHints)
+	if g.order[g.turn] != g.order[1] {
+		t.Fatal("a skipped turn should move straight on")
+	}
 }

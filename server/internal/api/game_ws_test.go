@@ -116,6 +116,12 @@ func TestWSGamePlaysToTheEnd(t *testing.T) {
 	hints := []string{"חדק", "אפור", "גדול", "זיכרון"}
 	for i, id := range order {
 		p := byID[id]
+		if i > 0 {
+			// Each hint is held so the table can read it; the next turn opens
+			// when that ends.
+			c.advance(3 * time.Second)
+			c.tick(roomID)
+		}
 		if i == 0 {
 			wantReplyError(t, byID[order[1]].w.command("early", "game.submitHint", map[string]any{"gameId": gameID, "text": "מוקדם"}), "not_your_turn")
 			if id != impostor {
