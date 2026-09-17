@@ -66,7 +66,11 @@ Declaring an audience that includes under-13s has consequences a blocklist does 
 - **COPPA** treats an IP address as personal information, so collecting one from a child needs verifiable parental consent — a checkbox on the child's own device is not that.
 - Apple's age-rating questionnaire raises the rating for user-generated content regardless of what the documents say.
 
-Two honest ways forward: declare the audience as 13+ in both consoles while the documents stay welcoming to younger players with a parent, or commit to the Families requirements and build the moderation to match. Decide this before submission, not after a rejection.
+**Decided: declare the target audience as 13+ in both consoles.** The documents stay as they are — the content suits 6 and up, and a younger child plays with a parent. The console field is the target audience, not who is allowed to play, so the two do not conflict.
+
+The reasoning, so it is not re-argued: promising a child audience would mean promising moderation of player-written text that we do not operate, and verifiable parental consent for the IP addresses we rate-limit on — a credit card or ID check, not a checkbox on the child's own phone. A 13+ rating costs a badge and stops nobody from installing or playing. Declaring 6 and being wrong costs removal from Play and a strike on the developer account.
+
+Revisit only if moderation and verifiable parental consent are actually built.
 
 **Data safety / App Privacy.** Declare what section 3 of the privacy policy lists, and nothing else: guest identifiers, nickname, avatar, IP for abuse prevention, and the game content players write. No account, so Apple's account-deletion requirement (5.1.1(v)) does not apply. No advertising identifier, no analytics SDK, no crash-reporting SDK.
 
