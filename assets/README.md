@@ -51,6 +51,7 @@
 | `role-citizen.webp` | חשיפת תפקיד אזרח |
 | `role-impostor.webp` | חשיפת תפקיד מתחזה |
 | `voting.webp` | הצבעה והצבעה חוזרת |
+| `pre-vote-transition.webp` | מעבר של 5 שניות מסיום הרמזים להצבעה |
 | `result-citizens-win.webp` | ניצחון אזרחים |
 | `result-impostor-win.webp` | ניצחון מתחזה |
 | `connection-error.webp` | ניתוק, חיבור מחדש או תקלה בשרת |
