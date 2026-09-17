@@ -3,35 +3,53 @@ package content
 import "testing"
 
 func TestBlocked(t *testing.T) {
-	cases := map[string]bool{
-		"":         false,
-		"פיל":      false,
-		"כלב":      false,
-		"מחשב":     false,
-		"שרמוטה":   true,
-		"והשרמוטה": true, // prefix letters, like the game's own word rules
-		"זונה":     true,
-		"הזונה":    true,
-		"בןזונה":   true, // the space is dropped by normalisation
-		"חרא":      true,
-		"היטלר":    true,
-		// A short entry matches as a whole word or with Hebrew prefix letters,
-		// but not any word that merely ends the same way.
-		"תחת":   true,
-		"התחת":  true,
-		"לתחת":  true,
-		"מתחתן": false,
-		"מאזין": false, // "מא" is not a run of prefix letters
-		"אוזן":  false,
-		// Known over-block: "מזין" is מ + a blocked stem, which no rule can
-		// tell from a genuine prefixed form. Refusing one ordinary word beats
-		// letting the prefixed insult through. If it matters, the fix is to
-		// revisit the list, which is the owner's (docs/open-decisions.md).
-		"מזין": true,
+	blocked := []string{
+		// Plain entries, and the forms people actually type.
+		"זונה", "הזונה", "שרמוטה", "והשרמוטה", "חרא", "מניאק",
+		"בן זונה", "בן-זונה", "בןזונה", // spaces and punctuation are stripped
+		"כוסאמא", "כוס אמא",
+		"היטלר", "נאצי", "ניגר",
+		"מוות לערבים", "אני אהרוג אותך",
+		"fuck", "FUCK", "f.u.c.k", "Motherfucker",
+		"nigger", "retard", "kill yourself", "killyourself",
+		"פדופיל", "סקס", "אונס",
 	}
-	for input, want := range cases {
-		if got := Blocked(input); got != want {
-			t.Errorf("Blocked(%q) = %v, want %v", input, got, want)
+	for _, word := range blocked {
+		if !Blocked(word) {
+			t.Errorf("Blocked(%q) = false, want true", word)
+		}
+	}
+
+	// The other half of the job: ordinary words must get through. Blocking a
+	// legitimate hint is a bug too, and a more likely one — every entry here
+	// was refused by an earlier version of the matching rules.
+	allowed := []string{
+		// Ordinary words that the approved list deliberately leaves out.
+		"כוס", "תחת", "יהודי", "ערבי", "הומו", "לסבית", "מוסלמי", "נוצרי",
+		// Hebrew words a prefix rule once swallowed.
+		"מזין", "מאזין", "אוזן", "אפסים", "זבלן",
+		// English words a substring rule once swallowed.
+		"cocktail", "peacock", "cockpit", "grape", "scrape", "dickens",
+		"basement", "assassin", "shiitake", "classic", "analysis",
+		// And the game's own content.
+		"פיצה", "כלב", "מחשב", "אריה", "שוקולד", "ריצה", "מורה", "מטרייה",
+	}
+	for _, word := range allowed {
+		if Blocked(word) {
+			t.Errorf("Blocked(%q) = true, want false", word)
+		}
+	}
+}
+
+// Known over-blocks, recorded rather than hidden. Hebrew prefix letters are
+// allowed in front of a four-letter entry so that הזונה is caught, and that
+// same rule refuses a few ordinary words built the same way. Tightening it
+// further would let the forms that matter through, so the trade is
+// deliberate; revisit it if a real hint is ever refused.
+func TestKnownOverBlocks(t *testing.T) {
+	for _, word := range []string{"מסתום"} {
+		if !Blocked(word) {
+			t.Errorf("%q is no longer over-blocked — tighten this test", word)
 		}
 	}
 }
