@@ -259,9 +259,11 @@ func (s *Server) publishSearch(entry *roomEntry, now time.Time) {
 func (s *Server) beginGame(entry *roomEntry) {
 	entry.gameID = "g_" + crand.Text()
 	g := entry.room.Game()
+	entry.profiles = map[string]playerProfile{}
 	for _, id := range g.PlayerIDs() {
 		if player := s.players[id]; player != nil {
 			player.gameID, player.game, player.gameRoom = entry.gameID, g, entry
+			entry.profiles[id] = playerProfile{player.nickname, player.avatarID}
 			s.sendSessionState(player)
 		}
 	}

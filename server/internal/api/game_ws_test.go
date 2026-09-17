@@ -387,3 +387,29 @@ func TestWSSnapshotVersionsKeepRisingAcrossTypes(t *testing.T) {
 		t.Fatalf("only %d snapshots seen", seen)
 	}
 }
+
+// The result screen names everyone who played. Nicknames used to be read from
+// live sessions, so a player whose session had gone by then — every staging
+// bot, whose session is deleted the moment the match settles — showed blank.
+func TestFinishedGameStillNamesPlayersWhoseSessionIsGone(t *testing.T) {
+	c := newClient(t)
+	roomID, players := c.roomWithPlayers(4)
+	c.startGame(roomID, players)
+	host, gone := players[0], players[3]
+
+	// The session disappears while the game is still on screen.
+	c.srv.mu.Lock()
+	delete(c.srv.players, gone.id)
+	delete(c.srv.sessions, gone.token)
+	c.srv.mu.Unlock()
+
+	// Any publish re-renders the view for everyone still watching.
+	wantOK(t, host.w.command("confirm", "game.confirmRole", map[string]any{"gameId": c.srv.players[host.id].gameID}))
+	g := host.w.gameState(func(map[string]any) bool { return true })
+	if p := gamePlayer(g, gone.id); p == nil || p["nickname"] == "" {
+		t.Fatalf("player with no session lost their name: %v", p)
+	}
+	if p := gamePlayer(g, gone.id); p["avatarId"] == "" {
+		t.Fatalf("player with no session lost their avatar: %v", p)
+	}
+}
