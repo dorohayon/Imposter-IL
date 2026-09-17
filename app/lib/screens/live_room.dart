@@ -1110,9 +1110,20 @@ class _HintsState extends State<_Hints> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
-            // No previous hint here: the hold before this turn already showed
-            // it, and the field should be what the screen is about.
+            const SizedBox(height: 12),
+            // The hint before yours, kept in view while you write.
+            if (lastHint != null && !lastHint.missing)
+              if (game.player(lastHint.playerId) case final p?) ...[
+                LastHintCard(
+                  nickname: p.nickname,
+                  avatar: p.avatarAsset,
+                  hint: session.muted.contains(lastHint.playerId)
+                      ? 'הוסתר'
+                      : lastHint.text,
+                  highlight: false,
+                ),
+                const SizedBox(height: 12),
+              ],
             TextField(
               controller: _controller,
               maxLength: 25,
@@ -1145,13 +1156,21 @@ class _HintsState extends State<_Hints> {
               ),
             ],
           ] else if (held != null && game.player(held.playerId) != null) ...[
-            // Screen shows the hint just written, with the wait until the next
-            // turn, so it is read before the board moves on.
-            LastHintCard(
-              nickname: game.player(held.playerId)!.nickname,
+            // The same card as "כותב רמז", with the written word in place of
+            // the typing line, so nothing changes shape between the two.
+            TurnCard(
+              title: 'הרמז של ${game.player(held.playerId)!.nickname}',
               avatar: game.player(held.playerId)!.avatarAsset,
-              hint: session.muted.contains(held.playerId) ? 'הוסתר' : held.text,
-              highlight: true,
+              subtitle: Text(
+                session.muted.contains(held.playerId) ? 'הוסתר' : held.text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.yellow,
+                  fontFamily: 'Secular One',
+                  fontSize: 20,
+                ),
+              ),
             ),
             const SizedBox(height: 10),
             Row(
@@ -1172,63 +1191,28 @@ class _HintsState extends State<_Hints> {
             ),
           ] else if (current != null) ...[
             // Screen 09: one purple card carrying the avatar, whose turn it is
-            // and that they are writing — not a centred portrait.
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: AppColors.purple.withValues(alpha: .26),
-                borderRadius: BorderRadius.circular(22),
-                border:
-                    Border.all(color: AppColors.purple.withValues(alpha: .55)),
-              ),
-              child: Row(
+            // and that they are writing.
+            TurnCard(
+              title: game.awaitingReconnect
+                  ? 'אין חיבור ל־${current.nickname}'
+                  : 'התור של ${current.nickname}',
+              avatar: current.avatarAsset,
+              disconnected: !current.connected,
+              subtitle: Row(
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          game.awaitingReconnect
-                              ? 'אין חיבור ל־${current.nickname}'
-                              : 'התור של ${current.nickname}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.cream,
-                            fontFamily: 'Secular One',
-                            fontSize: 22,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                game.awaitingReconnect
-                                    ? 'מחכים לחזרה'
-                                    : 'כותב רמז',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.muted,
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            const TypingDots(color: AppColors.muted, size: 5),
-                          ],
-                        ),
-                      ],
+                  Flexible(
+                    child: Text(
+                      game.awaitingReconnect ? 'מחכים לחזרה' : 'כותב רמז',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 15,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  AvatarView(
-                    asset: current.avatarAsset,
-                    size: 56,
-                    disconnected: !current.connected,
-                  ),
+                  const SizedBox(width: 6),
+                  const TypingDots(color: AppColors.muted, size: 5),
                 ],
               ),
             ),
