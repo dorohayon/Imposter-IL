@@ -956,9 +956,10 @@ class _ToVoting extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 4),
-          // TODO: swap for assets/illustrations/to-voting.webp once the asset
-          // from the design project is in the repo.
-          const Illustration('assets/illustrations/voting.webp', height: 190),
+          const Illustration(
+            'assets/illustrations/pre-vote-transition.webp',
+            height: 190,
+          ),
           const SizedBox(height: 18),
           const Text(
             'כל הרמזים נשלחו',

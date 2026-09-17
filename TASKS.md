@@ -88,7 +88,7 @@
 - [x] המסך עוצב ב־Claude Design: `11א · עוברים להצבעה`.
 - [x] מומש בשרת (`PhasePreVoting`, 5 שניות) ובאפליקציה, ונוסף ל־`docs/protocol.md`.
 - [x] עודכנו `docs/game-rules.md`, `docs/decisions.md` ו־`docs/architecture.md`.
-- [ ] האיור `to-voting.png` עדיין חסר במאגר — `DesignSync` מחזיר אותו קטוע (מגבלת 256KB), ובינתיים המסך משתמש ב־`voting.webp`.
+- [x] האיור `pre-vote-transition.webp` נוסף למאגר ומחובר למסך.
 
 ## P0 — עדכון העיצוב להחלטות מאוחרות
 
