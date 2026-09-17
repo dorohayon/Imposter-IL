@@ -1012,8 +1012,12 @@ class _Hints extends StatefulWidget {
 
 class _HintsState extends State<_Hints> {
   final _controller = TextEditingController();
+  final _lastHintKey = GlobalKey();
+  // Reactions of yours already on screen, waiting for the snapshot to catch up.
+  final _shown = <String, int>{};
   String? _error;
   bool _busy = false;
+  int _seed = 0;
 
   @override
   void didUpdateWidget(_Hints old) {
@@ -1021,6 +1025,57 @@ class _HintsState extends State<_Hints> {
     if (old.game.currentTurnPlayerId != widget.game.currentTurnPlayerId) {
       _error = null;
       _controller.clear();
+    }
+    _floatNewReactions(old.game);
+  }
+
+  /// Your own reaction pops on touch, so the bubble does not wait for the
+  /// server. Its echo in the next snapshot would double it, so the reaction is
+  /// booked as already shown — and the booking is given back if the command
+  /// failed, because then no count is coming.
+  Future<void> _react(ReactionOption r) async {
+    final session = SessionScope.read(context);
+    final messenger = ScaffoldMessenger.of(context);
+    floatReaction(context, r.text, anchor: _lastHintKey, seed: _seed++);
+    _shown[r.id] = (_shown[r.id] ?? 0) + 1;
+    final code = await session.send('game.react', {
+      'gameId': widget.game.id,
+      'hintIndex': widget.game.hints.length - 1,
+      'reactionId': r.id,
+    });
+    if (code == null) return;
+    _shown[r.id] = (_shown[r.id] ?? 1) - 1;
+    messenger.showSnackBar(SnackBar(content: Text(commandMessage(code))));
+  }
+
+  /// Everyone else's reactions arrive as counts, not events, so a bubble is a
+  /// count that went up since the last snapshot, minus the ones already shown
+  /// on touch. Capped, so a reconnect's fresh counts or someone leaning on a
+  /// button cannot flood the screen.
+  void _floatNewReactions(GameView old) {
+    final session = SessionScope.read(context);
+    final hints = widget.game.hints;
+    // A new hint, or a new game, starts the comparison over.
+    if (old.id != widget.game.id || hints.length != old.hints.length) {
+      _shown.clear();
+      return;
+    }
+    if (!session.showReactions || hints.isEmpty) return;
+    final before = old.hints.last.reactions;
+    var budget = 6;
+    for (final r in session.reactions) {
+      var added = (hints.last.reactions[r.id] ?? 0) - (before[r.id] ?? 0);
+      final mine = _shown[r.id] ?? 0;
+      if (mine > 0) {
+        final skip = added < mine ? added : mine;
+        _shown[r.id] = mine - skip;
+        added -= skip;
+      }
+      while (added > 0 && budget > 0) {
+        floatReaction(context, r.text, anchor: _lastHintKey, seed: _seed++);
+        added--;
+        budget--;
+      }
     }
   }
 
@@ -1231,6 +1286,9 @@ class _HintsState extends State<_Hints> {
           for (final (i, h) in game.hints.indexed)
             if (game.player(h.playerId) case final p?)
               Padding(
+                // Reactions are always to the last hint, so its card is where
+                // their bubbles rise from.
+                key: i == game.hints.length - 1 ? _lastHintKey : null,
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _ReportableHint(
                   card: PlayerCard(
@@ -1303,14 +1361,7 @@ class _HintsState extends State<_Hints> {
                     children: [
                       for (final r in session.reactions)
                         ActionChip(
-                          onPressed: () => runCommand(
-                            context,
-                            session.send('game.react', {
-                              'gameId': game.id,
-                              'hintIndex': game.hints.length - 1,
-                              'reactionId': r.id,
-                            }),
-                          ),
+                          onPressed: () => _react(r),
                           avatar: (lastHint.reactions[r.id] ?? 0) == 0
                               ? null
                               : CircleAvatar(

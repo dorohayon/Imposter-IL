@@ -5,6 +5,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/dorohayon/Imposter-IL/server/internal/content"
 	"github.com/dorohayon/Imposter-IL/server/internal/game"
 	"github.com/dorohayon/Imposter-IL/server/internal/matchmaking"
 )
@@ -21,6 +22,9 @@ const (
 	// How long a bot appears to spend writing a hint, and deciding a vote.
 	stagingBotWriteSeconds = 10
 	stagingBotVoteSeconds  = 4
+	// One hint in stagingBotSilence gets no reaction from a given bot, so the
+	// board is not identical every turn.
+	stagingBotSilence = 3
 )
 
 // botStillThinking reports whether the bot has not finished its pause yet,
@@ -112,6 +116,42 @@ func (s *Server) removeGameBotsWithoutHumans(entry *roomEntry, now time.Time) {
 	}
 }
 
+// botReact reacts to the newest hint, after a pause, so one real player can
+// see reactions arrive without a second person to send them. Reporting whether
+// it reacted, for the caller's publish.
+func (s *Server) botReact(entry *roomEntry, bot *session, view game.View, now time.Time) bool {
+	hints := len(view.Hints)
+	if hints < bot.botReacted {
+		bot.botReacted = 0 // a second game in the same room
+	}
+	last := hints - 1
+	// Nobody reacts to their own hint, and a missing one has nothing to react
+	// to. One chance per hint, taken or not.
+	if hints == 0 || bot.botReacted == hints ||
+		view.Hints[last].Missing || view.Hints[last].PlayerID == bot.playerID {
+		return false
+	}
+	if bot.botReactAt.IsZero() {
+		if s.rng.IntN(stagingBotSilence) == 0 {
+			bot.botReacted = hints
+			return false
+		}
+		// Reading the hint, then reaching for a reaction. Spread out, so the
+		// bots do not all answer in the same frame.
+		bot.botReactAt = now.Add(time.Duration(600+s.rng.IntN(2600)) * time.Millisecond)
+		return false
+	}
+	if now.Before(bot.botReactAt) {
+		return false
+	}
+	bot.botReactAt = time.Time{}
+	bot.botReacted = hints
+	reaction := content.Reactions[s.rng.IntN(len(content.Reactions))]
+	return entry.room.WithGame(now, func(g *game.Game) error {
+		return g.React(bot.playerID, last, reaction.ID, now)
+	}) == nil
+}
+
 // runStagingBots advances only bot turns. It is intentionally in-process:
 // Cloud Run can still scale to zero, and the first real WebSocket request
 // wakes the instance and creates its companions.
@@ -145,6 +185,7 @@ func (s *Server) runStagingBotsInGame(entry *roomEntry, now time.Time) {
 			continue
 		}
 		var actionErr error
+		reacted := s.botReact(entry, bot, view, now)
 		acted := false
 		switch view.Phase {
 		case game.PhaseRoleReveal:
@@ -201,7 +242,7 @@ func (s *Server) runStagingBotsInGame(entry *roomEntry, now time.Time) {
 				})
 			}
 		}
-		changed = changed || (acted && actionErr == nil)
+		changed = changed || reacted || (acted && actionErr == nil)
 	}
 	if changed {
 		s.publish(entry)

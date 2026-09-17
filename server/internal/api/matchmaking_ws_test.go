@@ -421,3 +421,55 @@ func TestMatchmakingPlayAgainStaysTogetherEvenWithDifferentCategories(t *testing
 		}
 	}
 }
+
+// Bots react so that a single real player can see reactions arrive.
+func TestStagingBotsReactToTheHintOnTheBoard(t *testing.T) {
+	c := newClient(t)
+	c.srv.EnableStagingBots(3)
+	human := c.searcher("דור", "animals")
+	human.w.searchState(searchPlayers(4))
+	c.advance(30 * time.Second)
+	c.tickAll()
+	session := human.w.sessionState(func(state map[string]any) bool { return state["activity"] == "game" })
+	gameID := session["gameId"].(string)
+	human.w.gameState(phase("role_reveal"))
+	wantOK(t, human.w.command("confirm", "game.confirmRole", map[string]any{"gameId": gameID}))
+
+	view := func() (game.View, bool) {
+		c.srv.mu.Lock()
+		defer c.srv.mu.Unlock()
+		sess := c.srv.players[human.id]
+		if sess == nil || sess.game == nil {
+			return game.View{}, false
+		}
+		v, err := sess.game.View(human.id)
+		return v, err == nil
+	}
+
+	reactions := 0
+	for step := 0; step < 40 && reactions == 0; step++ {
+		c.srv.runStagingBots()
+		v, ok := view()
+		if !ok || v.Phase == game.PhaseEnded {
+			break
+		}
+		if v.Phase == game.PhaseHints && v.CurrentTurn == human.id {
+			wantOK(t, human.w.command(fmt.Sprintf("hint-%d", step), "game.submitHint", map[string]any{
+				"gameId": gameID, "text": "אנושי",
+			}))
+		}
+		// Long enough for a bot to finish reading and reach for a reaction.
+		c.advance(3 * time.Second)
+		c.tickAll()
+		if v, ok := view(); ok {
+			for _, h := range v.Hints {
+				for _, n := range h.Reactions {
+					reactions += n
+				}
+			}
+		}
+	}
+	if reactions == 0 {
+		t.Fatal("no bot reacted to any hint")
+	}
+}
