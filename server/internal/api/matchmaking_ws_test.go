@@ -104,6 +104,10 @@ func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
 				c.advance(stagingBotWriteSeconds * time.Second)
 				c.tickAll()
 			}
+		case game.PhasePreVoting:
+			// The board is held for a beat before the vote opens.
+			c.advance(5 * time.Second)
+			c.tickAll()
 		case game.PhaseVoting, game.PhaseRunoffVoting:
 			if view.MyVote == "" {
 				var target string

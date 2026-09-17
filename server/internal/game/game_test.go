@@ -72,6 +72,10 @@ func toVoting(t *testing.T, g *Game) time.Time {
 		now = now.Add(time.Second)
 		must(t, g.SubmitHint(id, "hint"+string(rune('a'+i)), now))
 	}
+	// The finished board is held for a beat before the vote opens.
+	wantPhase(t, g, PhasePreVoting)
+	now = now.Add(DefaultConfig().PreVotingDuration)
+	g.Tick(now)
 	wantPhase(t, g, PhaseVoting)
 	return now
 }
@@ -752,4 +756,33 @@ func TestRunoffPreviousVotesHideNonCandidates(t *testing.T) {
 	if len(v.PreviousVotes) != 2 {
 		t.Fatalf("previous votes = %v, want only the two candidates", v.PreviousVotes)
 	}
+}
+
+// The last hint does not open the vote: the table gets a moment on the
+// finished board first (screen "עוברים להצבעה").
+func TestLastHintHoldsTheBoardBeforeVoting(t *testing.T) {
+	g := newGame(t, 4)
+	confirmAll(t, g)
+	now := t0
+	for i, id := range g.order {
+		now = now.Add(time.Second)
+		must(t, g.SubmitHint(id, "hint"+string(rune('a'+i)), now))
+	}
+
+	wantPhase(t, g, PhasePreVoting)
+	if want := now.Add(5 * time.Second); !g.Deadline().Equal(want) {
+		t.Fatalf("pre-voting deadline = %v, want %v", g.Deadline(), want)
+	}
+	// Every hint is on the board, and nobody can vote yet.
+	v, _ := g.View(g.order[0])
+	if len(v.Hints) != 4 || len(v.Candidates) != 0 {
+		t.Fatalf("view = %d hints, %d candidates", len(v.Hints), len(v.Candidates))
+	}
+	wantErr(t, g.Vote(g.order[0], g.order[1], now), ErrWrongPhase)
+
+	g.Tick(now.Add(4 * time.Second))
+	wantPhase(t, g, PhasePreVoting)
+	g.Tick(now.Add(5 * time.Second))
+	wantPhase(t, g, PhaseVoting)
+	must(t, g.Vote(g.order[0], g.order[1], now.Add(5*time.Second)))
 }

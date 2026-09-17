@@ -276,7 +276,7 @@
 }
 ```
 
-- `phase`: `role_reveal` | `hints` | `voting` | `runoff_voting` | `impostor_guess` | `ended`.
+- `phase`: `role_reveal` | `hints` | `pre_voting` | `voting` | `runoff_voting` | `impostor_guess` | `ended`.
 - `secretWord` חסר אצל המתחזה עד `ended`.
 - `players` לפי סדר התורות. `status`: `active` | `left` | `removed`.
 - `myVote` הוא הקול של השחקן עצמו בלבד. קולות אחרים נחשפים רק ב־`result`.
@@ -310,6 +310,7 @@
 | 7–8 חשיפת תפקיד | `game.state` עם `phase: role_reveal` ו־`myRole` |
 | 9–10 רמזים | `game.state` עם `phase: hints`; `currentTurnPlayerId` קובע אם זה התור שלי |
 | 11 רמז חסום | `reply` עם קוד `hint_*` |
+| 11א עוברים להצבעה | `phase: pre_voting` — 5 שניות עם הלוח המלא לפני שההצבעה נפתחת |
 | 12–13 הצבעה | `phase: voting` / `runoff_voting` |
 | 14 ניחוש | `phase: impostor_guess` |
 | 15–17 תוצאה | `phase: ended` ו־`result.reason` |

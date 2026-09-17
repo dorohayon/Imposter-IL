@@ -30,8 +30,11 @@ const (
 type Phase string
 
 const (
-	PhaseRoleReveal    Phase = "role_reveal"
-	PhaseHints         Phase = "hints"
+	PhaseRoleReveal Phase = "role_reveal"
+	PhaseHints      Phase = "hints"
+	// PhasePreVoting is the beat between the last hint and the vote, so the
+	// table can read the board before choosing (screen "עוברים להצבעה").
+	PhasePreVoting     Phase = "pre_voting"
 	PhaseVoting        Phase = "voting"
 	PhaseRunoffVoting  Phase = "runoff_voting"
 	PhaseImpostorGuess Phase = "impostor_guess"
@@ -104,7 +107,9 @@ type Config struct {
 	VoteDuration       time.Duration
 	RunoffVoteDuration time.Duration
 	GuessDuration      time.Duration
-	ReconnectDuration  time.Duration
+	// PreVotingDuration is how long the board is shown before voting opens.
+	PreVotingDuration time.Duration
+	ReconnectDuration time.Duration
 	// RoleRevealTimeout moves the game to hints even if some players have not
 	// confirmed; it ends earlier once every connected player confirmed.
 	RoleRevealTimeout time.Duration
@@ -118,6 +123,7 @@ func DefaultConfig() Config {
 		VoteDuration:       20 * time.Second,
 		RunoffVoteDuration: 15 * time.Second,
 		GuessDuration:      60 * time.Second,
+		PreVotingDuration:  5 * time.Second,
 		ReconnectDuration:  30 * time.Second,
 	}
 }
@@ -222,7 +228,7 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 		return nil, fmt.Errorf("%w: category and secret word are required", ErrInvalidSetup)
 	case rng == nil || policy.HintInappropriate == nil || policy.ValidReaction == nil:
 		return nil, fmt.Errorf("%w: rng and every policy function are required", ErrInvalidSetup)
-	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0:
+	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0 || cfg.PreVotingDuration <= 0:
 		return nil, fmt.Errorf("%w: invalid durations", ErrInvalidSetup)
 	}
 	g := &Game{
@@ -572,6 +578,8 @@ func (g *Game) expire(at time.Time) {
 	case PhaseHints:
 		g.hints = append(g.hints, Hint{PlayerID: g.order[g.turn], Missing: true})
 		g.startTurn(g.turn+1, at)
+	case PhasePreVoting:
+		g.startVoting(PhaseVoting, g.activeIDs(), at, g.cfg.VoteDuration)
 	case PhaseVoting, PhaseRunoffVoting:
 		g.tally(at)
 	case PhaseImpostorGuess:
@@ -595,7 +603,8 @@ func (g *Game) startTurn(i int, at time.Time) {
 		i++
 	}
 	if i == len(g.order) {
-		g.startVoting(PhaseVoting, g.activeIDs(), at, g.cfg.VoteDuration)
+		// Every turn is done: hold on the finished board, then open the vote.
+		g.setPhase(PhasePreVoting, at, g.cfg.PreVotingDuration)
 		return
 	}
 	g.turn = i

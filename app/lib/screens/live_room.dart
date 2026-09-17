@@ -832,6 +832,7 @@ class _LiveGame extends StatelessWidget {
     return switch (game.phase) {
       'role_reveal' => _RoleReveal(game: game, onLeave: onLeave),
       'hints' => _Hints(game: game, onLeave: onLeave),
+      'pre_voting' => _ToVoting(game: game, onLeave: onLeave),
       'voting' || 'runoff_voting' => _Voting(game: game, onLeave: onLeave),
       'impostor_guess' => _Guess(game: game, onLeave: onLeave),
       _ => _Result(game: game, onHome: onLeave),
@@ -932,6 +933,62 @@ class _RoleReveal extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 9),
               child: StepCard(number: index + 1, text: tip),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Screen 11א: every hint is in, and the vote opens on its own in a moment.
+/// The countdown is the whole screen here, not a badge in the corner.
+class _ToVoting extends StatelessWidget {
+  const _ToVoting({required this.game, required this.onLeave});
+
+  final GameView game;
+  final VoidCallback onLeave;
+
+  @override
+  Widget build(BuildContext context) {
+    return GameScaffold(
+      title: '',
+      showHeader: true,
+      onExit: onLeave,
+      child: Column(
+        children: [
+          const SizedBox(height: 4),
+          // TODO: swap for assets/illustrations/to-voting.webp once the asset
+          // from the design project is in the repo.
+          const Illustration('assets/illustrations/voting.webp', height: 190),
+          const SizedBox(height: 18),
+          const Text(
+            'כל הרמזים נשלחו',
+            style: TextStyle(
+              color: AppColors.muted,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'עוברים להצבעה',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.displayLarge,
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'זה הזמן להחליט מי המתחזה',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.muted, fontSize: 15, height: 1.4),
+          ),
+          const SizedBox(height: 26),
+          if (game.deadline case final deadline?)
+            LiveCountdown(deadline: deadline, large: true),
+          const SizedBox(height: 14),
+          const Text(
+            'מסך ההצבעה נפתח אוטומטית',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.muted, fontSize: 13),
+          ),
         ],
       ),
     );

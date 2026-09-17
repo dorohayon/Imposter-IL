@@ -606,4 +606,33 @@ void main() {
     expect(find.text('הוסתר'), findsNWidgets(2));
     expect(find.byTooltip('דיווח על הרמז'), findsNothing);
   });
+
+  testWidgets('the board is held before voting opens', (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    final channel = api.channel;
+
+    channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    channel.snapshot('game.state', 'game', gameJson(phase: 'pre_voting'));
+    await settle(tester);
+
+    expect(find.text('עוברים להצבעה'), findsOneWidget);
+    expect(find.text('כל הרמזים נשלחו'), findsOneWidget);
+    expect(find.text('מסך ההצבעה נפתח אוטומטית'), findsOneWidget);
+    // Nothing to vote on yet.
+    expect(find.text('אישור הצבעה'), findsNothing);
+
+    // The server opens the vote; the app follows.
+    channel.snapshot('game.state', 'game',
+        gameJson(phase: 'voting', candidates: ['p_me', 'p_2', 'p_3', 'p_4']));
+    await settle(tester);
+    expect(find.text('עוברים להצבעה'), findsNothing);
+    expect(find.text('אישור הצבעה'), findsWidgets);
+  });
 }

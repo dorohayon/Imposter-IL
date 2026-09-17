@@ -138,6 +138,10 @@ func TestWSGamePlaysToTheEnd(t *testing.T) {
 		}
 	}
 
+	// The board is held for a beat before the vote opens.
+	host.w.gameState(phase("pre_voting"))
+	c.advance(5 * time.Second)
+	c.tick(roomID)
 	host.w.gameState(phase("voting"))
 	for _, p := range players {
 		target := impostor
