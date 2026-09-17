@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/main.dart';
 import 'package:imposter_il/screens/home_screen.dart';
+import 'package:imposter_il/screens/legal_screens.dart';
 import 'package:imposter_il/widgets/game_ui.dart';
 import 'package:imposter_il/state/game_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,7 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'fake_server.dart';
 
 /// Starts the real app against [api] on the narrowest supported phone
-/// (320px), so layout overflows fail the tests too.
+/// (320px), so layout overflows fail the tests too. Existing tests are about
+/// post-consent product flows, so they start with the current legal version
+/// accepted; legal-gate tests can override the key explicitly.
 Future<GameSession> startApp(
   WidgetTester tester,
   FakeApi api, {
@@ -18,7 +21,10 @@ Future<GameSession> startApp(
   tester.view.physicalSize = const Size(320, 640);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  SharedPreferences.setMockInitialValues(saved);
+  SharedPreferences.setMockInitialValues({
+    legalAcceptedVersionKey: legalVersion,
+    ...saved,
+  });
 
   final session =
       GameSession(api, reconnectDelay: const Duration(milliseconds: 50));
