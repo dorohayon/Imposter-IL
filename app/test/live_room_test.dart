@@ -247,7 +247,8 @@ void main() {
         ));
     await settle(tester);
     expect(find.text('התור של נועה'), findsOneWidget);
-    expect(find.text('חדק'), findsOneWidget);
+    // Once in its own row, once as the label on the reactions card (screen 09).
+    expect(find.text('חדק'), findsNWidgets(2));
     await tapLive(tester, 'זה מחשיד');
     expect(channel.commands('game.react').single['payload'],
         {'gameId': 'g_1', 'hintIndex': 0, 'reactionId': 'suspicious'});
@@ -587,7 +588,8 @@ void main() {
           ],
         ));
     await settle(tester);
-    expect(find.text('גסות'), findsOneWidget);
+    // In its row, and again as the reactions card's label.
+    expect(find.text('גסות'), findsNWidgets(2));
 
     // A visible button, not a hidden gesture. The typing dots animate
     // continuously, so this screen never settles: pump a fixed time instead.
@@ -599,8 +601,9 @@ void main() {
     expect(channel.commands('game.report').single['payload'],
         {'gameId': 'g_1', 'playerId': 'p_2', 'hintIndex': 0});
     // The hint is hidden on this device, and cannot be reported twice.
+    // Hidden in its row and on the reactions card: the label must not leak it.
     expect(find.text('גסות'), findsNothing);
-    expect(find.text('הוסתר'), findsOneWidget);
+    expect(find.text('הוסתר'), findsNWidgets(2));
     expect(find.byTooltip('דיווח על הרמז'), findsNothing);
   });
 }

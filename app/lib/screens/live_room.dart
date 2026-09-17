@@ -1012,18 +1012,39 @@ class _HintsState extends State<_Hints> {
             const SizedBox(height: 14),
           ],
           if (myTurn) ...[
-            Text(
-              'התור שלכם',
-              style: Theme.of(context).textTheme.headlineLarge,
-              textAlign: TextAlign.center,
+            // Screen 10: the turn is a filled yellow card, not a line of text.
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+              decoration: BoxDecoration(
+                color: AppColors.yellow,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'התור שלכם',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.night,
+                      fontFamily: 'Secular One',
+                      fontSize: 30,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'מילה אחת, עד 25 תווים',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.night.withValues(alpha: .72),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 6),
-            const Text(
-              'מילה אחת, עד 25 תווים',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             TextField(
               controller: _controller,
               maxLength: 25,
@@ -1056,38 +1077,60 @@ class _HintsState extends State<_Hints> {
               ),
             ],
           ] else if (current != null) ...[
-            Center(
-              child: AvatarView(
-                asset: current.avatarAsset,
-                size: 92,
-                disconnected: !current.connected,
+            // Screen 09: one purple card carrying the avatar, whose turn it is
+            // and that they are writing — not a centred portrait.
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.purple.withValues(alpha: .26),
+                borderRadius: BorderRadius.circular(22),
+                border:
+                    Border.all(color: AppColors.purple.withValues(alpha: .55)),
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              game.awaitingReconnect
-                  ? 'אין כרגע חיבור ל־${current.nickname}'
-                  : 'התור של ${current.nickname}',
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            // Screen 09: the turn has to look like someone writing, not like a
-            // stalled screen.
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  game.awaitingReconnect ? 'מחכים לחזרה' : 'כותב רמז',
-                  style: const TextStyle(
-                    color: AppColors.turquoise,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          game.awaitingReconnect
+                              ? 'אין חיבור ל־${current.nickname}'
+                              : 'התור של ${current.nickname}',
+                          style: const TextStyle(
+                            color: AppColors.cream,
+                            fontFamily: 'Secular One',
+                            fontSize: 22,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text(
+                              game.awaitingReconnect
+                                  ? 'מחכים לחזרה'
+                                  : 'כותב רמז',
+                              style: const TextStyle(
+                                color: AppColors.muted,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const TypingDots(color: AppColors.muted, size: 5),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 7),
-                const TypingDots(),
-              ],
+                  const SizedBox(width: 12),
+                  AvatarView(
+                    asset: current.avatarAsset,
+                    size: 56,
+                    disconnected: !current.connected,
+                  ),
+                ],
+              ),
             ),
           ],
           const SizedBox(height: 22),
@@ -1129,39 +1172,78 @@ class _HintsState extends State<_Hints> {
           if (lastHint != null &&
               !lastHint.missing &&
               session.showReactions) ...[
-            const SizedBox(height: 10),
-            Text(
-              'תגובות לרמז של ${game.player(lastHint.playerId)?.nickname ?? ''}',
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final r in session.reactions)
-                  ActionChip(
-                    onPressed: () => runCommand(
-                      context,
-                      session.send('game.react', {
-                        'gameId': game.id,
-                        'hintIndex': game.hints.length - 1,
-                        'reactionId': r.id,
-                      }),
-                    ),
-                    avatar: (lastHint.reactions[r.id] ?? 0) == 0
-                        ? null
-                        : CircleAvatar(
-                            child: Text('${lastHint.reactions[r.id]}'),
+            const SizedBox(height: 12),
+            // Screen 09 groups the reactions in a card headed by the hint they
+            // belong to, rather than a loose heading over bare chips.
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.cream.withValues(alpha: .05),
+                borderRadius: BorderRadius.circular(20),
+                border:
+                    Border.all(color: AppColors.cream.withValues(alpha: .10)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'תגובות לרמז האחרון',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
                           ),
-                    backgroundColor: AppColors.cream.withValues(alpha: .08),
-                    side: BorderSide(
-                        color: AppColors.cream.withValues(alpha: .12)),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    label: Text(r.text),
+                        ),
+                      ),
+                      Text(
+                        // A reported hint is hidden in its row, so it must be
+                        // hidden here too or the label leaks it back.
+                        session.muted.contains(lastHint.playerId)
+                            ? 'הוסתר'
+                            : lastHint.text,
+                        style: const TextStyle(
+                          color: AppColors.yellow,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
                   ),
-              ],
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final r in session.reactions)
+                        ActionChip(
+                          onPressed: () => runCommand(
+                            context,
+                            session.send('game.react', {
+                              'gameId': game.id,
+                              'hintIndex': game.hints.length - 1,
+                              'reactionId': r.id,
+                            }),
+                          ),
+                          avatar: (lastHint.reactions[r.id] ?? 0) == 0
+                              ? null
+                              : CircleAvatar(
+                                  child: Text('${lastHint.reactions[r.id]}'),
+                                ),
+                          backgroundColor:
+                              AppColors.cream.withValues(alpha: .08),
+                          side: BorderSide(
+                              color: AppColors.cream.withValues(alpha: .12)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          label: Text(r.text),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ],
