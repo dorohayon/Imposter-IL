@@ -48,7 +48,9 @@ If any of those facts changes, review both documents and the App Store Privacy /
 
 ## Operator identity
 
-Dor Ohayon, independent developer · `imposteril36@gmail.com`.
+`Imposter IL` · `imposteril36@gmail.com`.
+
+The documents name the service, not a person. Play's User Data policy asks the policy to name the entity it pertains to, and this matches the Play developer display name. **It does not keep the owner's legal name private:** on an individual developer account both stores publish the verified legal name as the seller on the store listing, and Play's EU trader disclosure shows name, address and email there. Registering a business is the only thing that changes that, and if one is registered later its legal name replaces `Imposter IL` in both documents.
 
 The same address is the support, privacy and abuse-report contact. It appears in both public pages, in the matching in-app sections, and as `supportEmail` in `app/lib/screens/secondary_screens.dart`, which shows the contact row in Settings. Google Play requires the policy to name the entity it pertains to; Apple requires developer contact details reachable from the app.
 
@@ -56,7 +58,15 @@ The same address is the support, privacy and abuse-report contact. It appears in
 
 **Apple: do not paste these Terms into the EULA field.** A custom EULA in App Store Connect must carry Apple's own minimum terms — scope of licence, Apple's non-liability, Apple as a third-party beneficiary, maintenance responsibility, export compliance. These Terms carry none of them, by choice. Leave the field empty so Apple's standard EULA applies, and let these Terms stand as the in-app house rules. Filling that field turns a working setup into a rejection.
 
-**Age.** Both documents state 13 as the minimum. The App Store age rating and the Play target-audience declaration must agree with that, and with the UGC answers.
+**Age — read this before filling the console forms.** The documents say the content suits ages 6 and up, and that under-13s may play only with a parent's permission and supervision, the parent accepting on their behalf.
+
+Declaring an audience that includes under-13s has consequences a blocklist does not satisfy on its own:
+
+- Google Play's **Families policy** applies. It expects apps with player-written content aimed at children to moderate it, and it restricts what may be collected from a child.
+- **COPPA** treats an IP address as personal information, so collecting one from a child needs verifiable parental consent — a checkbox on the child's own device is not that.
+- Apple's age-rating questionnaire raises the rating for user-generated content regardless of what the documents say.
+
+Two honest ways forward: declare the audience as 13+ in both consoles while the documents stay welcoming to younger players with a parent, or commit to the Families requirements and build the moderation to match. Decide this before submission, not after a rejection.
 
 **Data safety / App Privacy.** Declare what section 3 of the privacy policy lists, and nothing else: guest identifiers, nickname, avatar, IP for abuse prevention, and the game content players write. No account, so Apple's account-deletion requirement (5.1.1(v)) does not apply. No advertising identifier, no analytics SDK, no crash-reporting SDK.
 
