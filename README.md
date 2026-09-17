@@ -17,7 +17,7 @@
 - [כיוון עיצובי](docs/design-direction.md)
 - [Wireframes וכל מצבי המסכים](docs/wireframes.md)
 - [הנחיות עיצוב לקלוד](CLAUDE.md)
-- [נכסי איור — 12 אווטארים ו־11 אילוסטרציות](assets/README.md)
+- [נכסי איור — 12 אווטארים ו־12 אילוסטרציות](assets/README.md)
 - [ארכיטקטורה ו־State Machines](docs/architecture.md)
 - [חוזי REST ו־WebSocket](docs/protocol.md)
 - [סקירת ארכיטקטורה לקראת ייצור](docs/production-architecture-review.md)
@@ -30,7 +30,7 @@
 - Wireframe: גרסה מעודכנת עם 29 מסכים ומצבי מערכת
 - עיצוב: 29 מסכים, מערכת עיצוב ו־Prototype תחת [`design/claude/`](design/claude/); האפליקציה מותאמת למסכים, למעט בדיקה על מכשיר
 - מצב שאלה: מחוץ ל־MVP ויתוכנן בהמשך
-- כיוון עיצובי: נקבע; 12 אווטארים ו־11 אילוסטרציות בגרסת v1 נמצאים תחת `assets/`
+- כיוון עיצובי: נקבע; 12 אווטארים ו־12 אילוסטרציות בגרסת v1 נמצאים תחת `assets/`
 - שרת Go: מנוע משחק, חדרים פרטיים, Matchmaking, REST ו־WebSocket, 6 קטגוריות תוכן ורשימת תגובות
 - חוסן ייצור: כיבוי מסודר, הכלת `panic`, ניקוי sessions וחדרים, הגבלות קצב, `/metrics` ולוגים ב־JSON
 - Hosting: מכונה אחת ב־GCE (`e2-micro`, Free Tier) עם Caddy; הנוהל ב־[`deploy/`](deploy/)
