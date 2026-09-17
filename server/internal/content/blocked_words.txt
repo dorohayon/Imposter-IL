@@ -1,23 +1,151 @@
-# Words refused in hints and nicknames, one per line. Blank lines and lines
-# starting with # are ignored. Matching is case- and spelling-normalised
-# (internal/content/blocklist.go), so only the base form is needed here.
+# Imposter-IL blocked words — approved V1 (docs/decisions.md).
+# Used for player nicknames and hints.
+# Matching is normalized by internal/content/blocklist.go: punctuation and
+# spaces are stripped, case is folded, final letters are regularised, and
+# Hebrew prefix letters are allowed in front.
 #
-# THIS LIST IS NOT APPROVED PRODUCT CONTENT. docs/open-decisions.md owns it.
-# It is a starter set so the filter that the app stores require is not empty;
-# the product owner reviews and extends it before submission.
+# Keep this list conservative: block clearly abusive, sexual or hateful
+# content, but not ordinary words that have legitimate meanings. Identity
+# terms are deliberately absent — someone can use them as an insult, but that
+# does not make the word itself forbidden.
+
+# --------------------------------
+# Hebrew — sexual / explicit
+# --------------------------------
 
 זין
 זיין
-כוס
 כוסית
-תחת
-חרא
 שרמוטה
 זונה
+מציצה
+למצוץ
+אונס
+לאנוס
+אנס
+פדופיל
+פדופילה
+פדופיליה
+חרמן
+חרמנית
+סקס
+פורנו
+פורנוגרפיה
+
+# --------------------------------
+# Hebrew — insults / abusive
+# --------------------------------
+
 מניאק
-בן זונה
-לזיין
-דפוק
+מטומטם
+מטומטמת
 מפגר
+מפגרת
+דפוק
+דפוקה
+אידיוט
+אידיוטית
+סתום
+סתומה
+חרא
+חראי
+אפס
+זבל
+
+# --------------------------------
+# Hebrew — common abusive phrases
+# --------------------------------
+
+בן זונה
+בת זונה
+בן של זונה
+בת של זונה
+בן שרמוטה
+בת שרמוטה
+כוסאמא
+כוס אמא
+כוסאמכ
+כוס אמכ
+לך תזדיין
+לכי תזדייני
+
+# --------------------------------
+# Hebrew — hate / slurs
+# --------------------------------
+
 נאצי
+נאצית
 היטלר
+ניגר
+ניגה
+כושי
+כושית
+ערבוש
+ערבושים
+יהודון
+יהודונים
+קוקסינל
+קוקסינלית
+
+# --------------------------------
+# Hebrew — severe threats / violence
+# --------------------------------
+
+אני אהרוג אותך
+אני ארצח אותך
+מוות ליהודים
+מוות לערבים
+מוות למוסלמים
+מוות לנוצרים
+
+# --------------------------------
+# English — sexual / explicit
+# --------------------------------
+
+fuck
+fucker
+motherfucker
+motherfucking
+bitch
+cunt
+whore
+slut
+dick
+cock
+pussy
+porn
+porno
+pornography
+rape
+rapist
+pedophile
+paedophile
+
+# --------------------------------
+# English — abusive
+# --------------------------------
+
+asshole
+retard
+retarded
+bastard
+
+# --------------------------------
+# English — hate / slurs
+# --------------------------------
+
+nigger
+nigga
+faggot
+kike
+nazi
+hitler
+
+# --------------------------------
+# English — severe threats
+# --------------------------------
+
+kill yourself
+killyourself
+kill you
+killyou

@@ -19,10 +19,18 @@ import (
 //go:embed blocked_words.txt
 var blockedWordsFile string
 
-// minSubstringRunes is the shortest entry matched inside a longer word. Short
-// entries match only as whole words, so an innocent word that happens to
-// contain two or three of the same letters is not refused.
-const minSubstringRunes = 4
+const (
+	// minSubstringRunes is the shortest entry matched inside a longer word.
+	// Four was too short: "cock" refused peacock and cocktail, "rape" refused
+	// grape and scrape, "dick" refused dickens. Six is long enough that
+	// accidental containment is implausible, and still catches the entries
+	// people run together, like שרמוטה or motherfucker.
+	minSubstringRunes = 6
+	// minPrefixStemRunes is the shortest entry that Hebrew prefix letters may
+	// precede. With three, מ + זין refused מזין — an ordinary word, and a
+	// plausible hint in the food category.
+	minPrefixStemRunes = 4
+)
 
 var blockedWords = parseBlocked(blockedWordsFile)
 
@@ -56,9 +64,10 @@ func Blocked(text string) bool {
 			return true
 		}
 		// Shorter entries still match with Hebrew prefix letters in front —
-		// but only those. A plain "ends with" would refuse ordinary words that
-		// happen to end in the same letters, such as מאזין or מזין.
-		if game.IsPrefixedForm(normalized, word) {
+		// but only those, and only when the stem is long enough that the
+		// combination is not an ordinary word in its own right.
+		if len([]rune(word)) >= minPrefixStemRunes &&
+			game.IsPrefixedForm(normalized, word) {
 			return true
 		}
 	}
