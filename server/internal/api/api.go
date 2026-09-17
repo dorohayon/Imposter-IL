@@ -61,6 +61,10 @@ type session struct {
 	// botActAt is when a staging bot has finished "thinking" and may act.
 	// Zero when it has nothing pending.
 	botActAt time.Time
+	// botReactAt and botReacted drive reactions, which a bot sends while
+	// another player has the turn, so they cannot share botActAt.
+	botReactAt time.Time
+	botReacted int // hints the bot has already had its chance to react to
 
 	// The categories and start time of the player's latest online search.
 	searchCategories []string
