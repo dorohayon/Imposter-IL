@@ -52,8 +52,11 @@ one with the same code that runs in a game (`game.NormalizeWord`,
 `game.IsPrefixedForm`, `content.Blocked`), so a hint that breaks one is a bot
 that stays silent on its turn.
 
-1. **One word.** No spaces. Avoid hyphens and apostrophes too: whether they
-   count as one word is still open in `docs/open-decisions.md`.
+1. **One word.** No spaces. A geresh is fine and belongs in words that are
+   spelled with one — `צ'יפס`, `ג'ונגל`, `דוג'ו` — because normalisation drops
+   it and only whitespace breaks the one-word rule. Dropping it to be safe just
+   produces a misspelling players can see. Avoid hyphens, though: whether a
+   hyphenated word counts as one is still open in `docs/open-decisions.md`.
 2. **At most 25 characters.**
 3. **Not on the blocklist** (`server/internal/content/blocked_words.txt`).
 4. **Must not contain the secret word.** The check is on the normalised form,
