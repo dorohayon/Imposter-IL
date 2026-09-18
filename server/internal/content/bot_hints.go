@@ -64,8 +64,13 @@ func loadHintTables(raw []byte) hintTables {
 			t.citizen[word] = hints
 			for _, hint := range hints {
 				appearances[c.Name][hint]++
-				if t.together[hint] == nil {
-					t.together[hint] = map[string]int{}
+				// Keyed the way the game reads a word, so that a player typing
+				// גונגל reaches the curated ג'ונגל. The engine drops geresh,
+				// maqaf and punctuation and folds final letters; a graph keyed
+				// on raw spelling would answer only to the exact one curated.
+				key := game.NormalizeWord(hint)
+				if t.together[key] == nil {
+					t.together[key] = map[string]int{}
 				}
 				// Hints that share a word's pool describe the same thing. This
 				// is what lets an impostor read the board: knowledge about the
@@ -73,7 +78,7 @@ func loadHintTables(raw []byte) hintTables {
 				// play.
 				for _, other := range hints {
 					if other != hint {
-						t.together[hint][other]++
+						t.together[key][game.NormalizeWord(other)]++
 					}
 				}
 			}
@@ -92,6 +97,17 @@ func loadHintTables(raw []byte) hintTables {
 		sort.Strings(t.shared[category])
 	}
 	return t
+}
+
+// linked reports whether the graph pairs these two hints, however either of
+// them happens to be spelled.
+func (t hintTables) linked(a, b string) bool {
+	return t.together[game.NormalizeWord(a)][game.NormalizeWord(b)] > 0
+}
+
+// known reports whether the graph has anything at all to say about a hint.
+func (t hintTables) known(hint string) bool {
+	return len(t.together[game.NormalizeWord(hint)]) > 0
 }
 
 // CitizenHints are the hints for a secret word, in file order. Empty for a
@@ -133,7 +149,9 @@ func (t hintTables) impostorHints(category string, seen []string) []string {
 		}
 		score := 0
 		for _, said := range seen {
-			score += t.together[hint][said]
+			if t.linked(hint, said) {
+				score += t.together[game.NormalizeWord(hint)][game.NormalizeWord(said)]
+			}
 		}
 		if score > 0 {
 			ranked = append(ranked, scored{hint, score})
@@ -186,79 +204,6 @@ func UsableHint(hint, secret string) bool {
 func containsWord(hint, secret string) bool {
 	s := game.NormalizeWord(secret)
 	return s != "" && strings.Contains(game.NormalizeWord(hint), s)
-}
-
-// CitizenSuspicion scores how badly a hint sits next to the secret word, for a
-// bot that knows the word.
-//
-// Zero means "fits, or cannot be judged", and the second half matters more
-// than the first: the dataset holds the words bots write, never the words
-// players write. A hint nobody curated is a hint with no opinion attached, and
-// reading that silence as guilt would set the bots hunting every human at the
-// table. Only a hint that is positively recognised, and recognised as
-// belonging somewhere else, counts against its author.
-func CitizenSuspicion(hint, word string) int {
-	return tables.citizenSuspicion(hint, word)
-}
-
-func (t hintTables) citizenSuspicion(hint, word string) int {
-	pool := t.citizen[word]
-	if len(pool) == 0 || len(t.together[hint]) == 0 {
-		return 0 // Nothing to judge it against, or nothing known about it.
-	}
-	// How much of the word does this hint touch. A citizen writing about the
-	// word lands near most of it; an impostor aiming at the board from outside
-	// tends to catch an edge of it, which is the difference a table can feel
-	// without being able to name.
-	links := 0
-	for _, fits := range pool {
-		if sameWord(hint, fits) {
-			return 0 // One of the word's own hints.
-		}
-		if t.together[hint][fits] > 0 {
-			links++
-		}
-	}
-	switch links {
-	case 0:
-		return 2
-	case 1:
-		return 1
-	default:
-		return 0
-	}
-}
-
-// BoardSuspicion scores how badly a hint sits next to the rest of the board,
-// for a bot with no secret word — which is every impostor bot, because the
-// game never hands one out. Unknown words are neutral here for the same
-// reason they are neutral above.
-func BoardSuspicion(hint string, board []string) int {
-	return tables.boardSuspicion(hint, board)
-}
-
-func (t hintTables) boardSuspicion(hint string, board []string) int {
-	if len(t.together[hint]) == 0 {
-		return 0
-	}
-	judged, links := 0, 0
-	for _, other := range board {
-		if sameWord(hint, other) || len(t.together[other]) == 0 {
-			continue // Itself, or a word the dataset has no opinion about.
-		}
-		judged++
-		if t.together[hint][other] > 0 {
-			links++
-		}
-	}
-	switch {
-	case judged == 0 || links > 1:
-		return 0
-	case links == 1:
-		return 1
-	default:
-		return 2
-	}
 }
 
 func sameWord(a, b string) bool { return game.NormalizeWord(a) == game.NormalizeWord(b) }
