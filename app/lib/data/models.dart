@@ -267,6 +267,14 @@ class GameView {
     }
     return null;
   }
+
+  /// Everything this player has said, in the order they said it. A match runs
+  /// several rounds, and the vote is about all of it rather than the last
+  /// thing anybody happened to write.
+  List<HintView> hintsOf(String playerId) => [
+        for (final h in hints)
+          if (h.playerId == playerId) h
+      ];
 }
 
 class MatchmakingView {

@@ -172,6 +172,79 @@ void main() {
         {'gameId': 'g_1', 'targetPlayerId': 'p_2'});
   });
 
+  testWidgets('the board reads newest first', (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1'
+    });
+    api.channel.snapshot(
+        'game.state', 'game', laterRound(phase: 'hints', turn: 'p_2'));
+    await settle(tester);
+
+    // חדק came first in the match and אפריקה last, so אפריקה is on top and
+    // nobody has to scroll to the bottom to read what the table is discussing.
+    final newest = tester.getTopLeft(find.text('אפריקה').first).dy;
+    final oldest = tester.getTopLeft(find.text('חדק').first).dy;
+    expect(newest, lessThan(oldest),
+        reason: 'the newest hint should be above the oldest');
+    // And the round labels follow the same order.
+    expect(tester.getTopLeft(find.text('סבב 2')).dy,
+        lessThan(tester.getTopLeft(find.text('סבב 1')).dy));
+  });
+
+  testWidgets('the vote shows everything each player has said', (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1'
+    });
+    api.channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(
+          phase: 'voting',
+          round: 3,
+          candidates: ['p_2', 'p_4'],
+          hints: [
+            {
+              'playerId': 'p_2',
+              'text': 'אפור',
+              'round': 1,
+              'missing': false,
+              'reactions': <String, int>{}
+            },
+            {
+              'playerId': 'p_4',
+              'text': 'גדול',
+              'round': 1,
+              'missing': false,
+              'reactions': <String, int>{}
+            },
+            {
+              'playerId': 'p_2',
+              'text': 'חדק',
+              'round': 2,
+              'missing': false,
+              'reactions': <String, int>{}
+            },
+          ],
+        ));
+    await settle(tester);
+
+    // Both of p_2's rounds are on their card, not only the latest.
+    expect(find.text('אפור · חדק'), findsOneWidget);
+    expect(find.text('גדול'), findsOneWidget);
+  });
+
   testWidgets('a match called off is not recorded as a win or a loss',
       (tester) async {
     final api = FakeApi();

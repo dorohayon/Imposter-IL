@@ -1145,6 +1145,11 @@ class _HintsState extends State<_Hints> {
     final word = game.secretWord;
     final lastHint = game.hints.isEmpty ? null : game.hints.last;
     final watching = game.isEliminated(me);
+    // Newest first, keeping each hint's own index: reporting and reacting
+    // address a hint by where it sits in the match, not on the screen.
+    final board = [
+      for (var i = game.hints.length - 1; i >= 0; i--) (i, game.hints[i]),
+    ];
 
     return GameScaffold(
       title: game.category,
@@ -1324,21 +1329,23 @@ class _HintsState extends State<_Hints> {
               'עוד לא נשלחו רמזים.',
               style: TextStyle(color: AppColors.muted),
             ),
-          for (final (i, h) in game.hints.indexed) ...[
-            // The board keeps every round. A line between them says which
-            // hints belong together, so a long board reads as a match rather
-            // than one very long round.
+          // Newest first. The board keeps every round, so oldest-first meant
+          // scrolling to the bottom to read the hint the table is actually
+          // talking about.
+          for (final (position, (i, h)) in board.indexed) ...[
+            // A line where the round changes, so a long board reads as a match
+            // rather than one very long round.
             if (game.round > 1 &&
-                (i == 0 || game.hints[i - 1].round != h.round))
+                (position == 0 || board[position - 1].$2.round != h.round))
               Padding(
-                padding: EdgeInsets.only(top: i == 0 ? 0 : 6, bottom: 8),
+                padding: EdgeInsets.only(top: position == 0 ? 0 : 6, bottom: 8),
                 child: RoundDivider(round: h.round),
               ),
             if (game.player(h.playerId) case final p?)
               Padding(
-                // Reactions are always to the last hint, so its card is where
-                // their bubbles rise from.
-                key: i == game.hints.length - 1 ? _lastHintKey : null,
+                // Reactions are always to the newest hint, which is now the
+                // first card, and its bubbles rise from there.
+                key: position == 0 ? _lastHintKey : null,
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _ReportableHint(
                   card: PlayerCard(
@@ -1492,6 +1499,20 @@ class _Voting extends StatefulWidget {
   State<_Voting> createState() => _VotingState();
 }
 
+/// What a player has said across the whole match, for the vote to weigh. An
+/// empty string is a turn that passed without a hint; null is a player who has
+/// not spoken at all.
+String? _saidSoFar(GameView game, GameSession session, String id) {
+  final said = game.hintsOf(id);
+  if (said.isEmpty) return null;
+  if (session.muted.contains(id)) return 'הוסתר';
+  final words = [
+    for (final h in said)
+      if (!h.missing) h.text,
+  ];
+  return words.join(' · ');
+}
+
 class _VotingState extends State<_Voting> {
   String? _selected;
 
@@ -1578,10 +1599,10 @@ class _VotingState extends State<_Voting> {
                   player: _player(
                     p,
                     me,
-                    hint: switch (game.hintOf(id)) {
-                      null => null,
-                      final h => h.missing ? '' : h.text,
-                    },
+                    // Everything they have said this match, not just the last
+                    // of it: by the third round the earlier rounds are most of
+                    // what there is to go on.
+                    hint: _saidSoFar(game, session, id),
                   ),
                   note: id == me
                       ? 'אי אפשר להצביע לעצמכם'
