@@ -1,0 +1,362 @@
+<style>
+  #local-game-wireframes {
+    --page: light-dark(#f4f4f2, #191919);
+    --phone: light-dark(#fff, #242424);
+    --ink: light-dark(#202020, #f1f1ef);
+    --muted: light-dark(#666662, #aaa9a4);
+    --line: light-dark(#c9c9c4, #555550);
+    --fill: light-dark(#ececea, #343432);
+    --strong: light-dark(#2e2e2c, #e8e8e5);
+    --strong-ink: light-dark(#fff, #202020);
+    --danger: light-dark(#9f2f2f, #ffaaaa);
+    direction: rtl;
+    width: 100%;
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  }
+
+  #local-game-wireframes * { box-sizing: border-box; }
+  #local-game-wireframes button,
+  #local-game-wireframes input,
+  #local-game-wireframes select { font: inherit; }
+
+  #local-game-wireframes .toolbar {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 auto 12px;
+  }
+
+  #local-game-wireframes .toolbar label { display: grid; gap: 4px; min-width: min(100%, 280px); }
+  #local-game-wireframes .toolbar button,
+  #local-game-wireframes .toolbar select {
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--phone);
+    color: var(--ink);
+  }
+
+  #local-game-wireframes .stage { display: grid; place-items: center; width: 100%; }
+  #local-game-wireframes .meta {
+    width: min(100%, 390px);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+    color: var(--muted);
+  }
+
+  #local-game-wireframes .phone {
+    width: min(100%, 390px);
+    min-height: 760px;
+    padding: 18px;
+    border: 2px solid var(--line);
+    border-radius: 28px;
+    background: var(--phone);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  #local-game-wireframes .header {
+    min-height: 44px;
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #local-game-wireframes .header-title { text-align: center; font-weight: 650; }
+  #local-game-wireframes .icon {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--ink);
+  }
+
+  #local-game-wireframes .body { display: flex; flex: 1; flex-direction: column; gap: 14px; }
+  #local-game-wireframes .center { align-items: center; justify-content: center; text-align: center; }
+  #local-game-wireframes h1 { margin: 0; font-size: 28px; line-height: 1.15; }
+  #local-game-wireframes h2 { margin: 0; font-size: 20px; }
+  #local-game-wireframes p { margin: 0; }
+  #local-game-wireframes .muted { color: var(--muted); }
+  #local-game-wireframes .danger { color: var(--danger); }
+
+  #local-game-wireframes .illustration {
+    width: 174px;
+    min-height: 130px;
+    padding: 12px;
+    border: 2px dashed var(--line);
+    border-radius: 24px;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  #local-game-wireframes .actions { display: grid; gap: 10px; margin-top: auto; width: 100%; }
+  #local-game-wireframes .button {
+    width: 100%;
+    min-height: 52px;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    background: var(--fill);
+    color: var(--ink);
+    font-weight: 650;
+  }
+  #local-game-wireframes .primary { border-color: var(--strong); background: var(--strong); color: var(--strong-ink); }
+  #local-game-wireframes .ghost { background: transparent; }
+  #local-game-wireframes .button[disabled] { opacity: .45; }
+
+  #local-game-wireframes .card {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    display: grid;
+    gap: 8px;
+  }
+  #local-game-wireframes .card.selected { border: 2px solid var(--strong); background: var(--fill); }
+  #local-game-wireframes .card-button { text-align: right; background: transparent; color: var(--ink); }
+  #local-game-wireframes .option-title { font-size: 18px; font-weight: 700; }
+
+  #local-game-wireframes .row {
+    min-height: 52px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  #local-game-wireframes .player { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  #local-game-wireframes .avatar {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--fill);
+    display: grid;
+    place-items: center;
+  }
+  #local-game-wireframes .avatar.large { width: 74px; height: 74px; font-size: 24px; }
+  #local-game-wireframes .spectator { opacity: .5; }
+
+  #local-game-wireframes .field { display: grid; gap: 6px; text-align: right; width: 100%; }
+  #local-game-wireframes .input {
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ink);
+  }
+  #local-game-wireframes .name-grid { display: grid; gap: 8px; }
+  #local-game-wireframes .name-row { display: grid; grid-template-columns: 44px 1fr; gap: 10px; align-items: center; }
+
+  #local-game-wireframes .stepper { display: grid; grid-template-columns: 48px 1fr 48px; gap: 8px; align-items: center; }
+  #local-game-wireframes .stepper strong { text-align: center; font-size: 24px; }
+  #local-game-wireframes .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  #local-game-wireframes .chip {
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 21px;
+    background: transparent;
+    color: var(--ink);
+  }
+  #local-game-wireframes .chip.selected { border: 2px solid var(--strong); background: var(--fill); font-weight: 650; }
+
+  #local-game-wireframes .timer {
+    width: 50px;
+    height: 50px;
+    border: 3px solid var(--strong);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+  }
+  #local-game-wireframes .timer.big { width: 116px; height: 116px; font-size: 38px; }
+  #local-game-wireframes .progress { display: flex; justify-content: center; gap: 7px; }
+  #local-game-wireframes .dot { width: 10px; height: 10px; border: 1px solid var(--line); border-radius: 50%; }
+  #local-game-wireframes .dot.done { background: var(--strong); }
+
+  #local-game-wireframes .secret {
+    width: 100%;
+    padding: 20px;
+    border: 2px solid var(--strong);
+    border-radius: 16px;
+    font-size: 30px;
+    font-weight: 750;
+  }
+  #local-game-wireframes .error { padding: 10px; border: 1px solid var(--danger); border-radius: 10px; color: var(--danger); }
+  #local-game-wireframes .overlay { margin: auto 0; padding: 20px; border: 2px solid var(--strong); border-radius: 16px; display: grid; gap: 12px; text-align: center; }
+
+  @media (max-width: 410px) {
+    #local-game-wireframes .phone { min-height: 700px; padding: 14px; border-radius: 20px; }
+    #local-game-wireframes .toolbar { align-items: stretch; }
+    #local-game-wireframes .toolbar label { min-width: 100%; }
+  }
+</style>
+
+<div id="local-game-wireframes">
+  <div class="toolbar">
+    <button id="local-prev" type="button">הקודם</button>
+    <label>מסך<select id="local-screen"></select></label>
+    <button id="local-next" type="button">הבא</button>
+  </div>
+  <div class="stage">
+    <div class="meta"><span id="local-counter"></span><span id="local-route"></span></div>
+    <section class="phone" id="local-phone" aria-live="polite"></section>
+  </div>
+</div>
+
+<script>
+(() => {
+  const screens = [
+    {
+      name: 'מסך הבית — שני מצבי משחק', route: '/home',
+      html: `<header class="header"><button class="icon">פרופיל</button><span></span><button class="icon">הגדרות</button></header>
+      <div class="body center"><div class="illustration">home-hero.webp</div><h1>מי המתחזה?</h1><p class="muted">כולם יודעים את המילה. חוץ מאחד.</p>
+      <div class="actions"><button class="button primary">משחק ברשת</button><button class="button">משחק במכשיר אחד</button><button class="button ghost">איך משחקים?</button></div></div>`
+    },
+    {
+      name: 'בחירת משחק ברשת', route: '/online',
+      html: `<header class="header"><button class="icon">חזרה</button><div class="header-title">משחק ברשת</div><span></span></header>
+      <div class="body"><button class="card card-button selected"><div class="option-title">משחק מהיר</div><p class="muted">מצטרפים לשחקנים אחרים</p><small>matchmaking-team.webp</small></button>
+      <button class="card card-button"><div class="option-title">חדר פרטי</div><p class="muted">יוצרים חדר או מצטרפים עם קוד</p><small>private-room.webp</small></button></div>`
+    },
+    {
+      name: 'משחק מקומי — שחקנים', route: '/local/setup/players',
+      html: `<header class="header"><button class="icon">חזרה</button><div class="header-title">משחק במכשיר אחד</div><span></span></header>
+      <div class="body"><div class="illustration" style="margin:auto">local-one-device.webp</div><h2>מי משחק?</h2>
+      <div class="stepper"><button class="icon">−</button><strong>4 שחקנים</strong><button class="icon">+</button></div>
+      <div class="name-grid"><label class="name-row"><span class="avatar">1</span><input class="input" value="דור"></label><label class="name-row"><span class="avatar">2</span><input class="input" value="נועה"></label><label class="name-row"><span class="avatar">3</span><input class="input" value="יואב"></label><label class="name-row"><span class="avatar">4</span><input class="input" value="מאיה"></label></div>
+      <div class="actions"><button class="button primary">המשך להגדרות</button></div></div>`
+    },
+    {
+      name: 'שחקנים — שגיאת שם', route: '/local/setup/players/error',
+      html: `<header class="header"><button class="icon">חזרה</button><div class="header-title">מי משחק?</div><span></span></header>
+      <div class="body"><div class="stepper"><button class="icon">−</button><strong>4 שחקנים</strong><button class="icon">+</button></div>
+      <div class="name-grid"><label class="name-row"><span class="avatar">1</span><input class="input" value="דור"></label><label class="name-row"><span class="avatar">2</span><input class="input" value="דור" aria-invalid="true"></label><div class="error">לכל שחקן צריך להיות שם שונה</div><label class="name-row"><span class="avatar">3</span><input class="input" value="יואב"></label><label class="name-row"><span class="avatar">4</span><input class="input" value="מאיה"></label></div>
+      <div class="actions"><button class="button primary" disabled>המשך להגדרות</button></div></div>`
+    },
+    {
+      name: 'משחק מקומי — חוקים', route: '/local/setup/rules',
+      html: `<header class="header"><button class="icon">חזרה</button><div class="header-title">הגדרות המשחק</div><span></span></header>
+      <div class="body"><div class="field"><strong>קטגוריות</strong><div class="chips"><button class="chip selected">הכול</button><button class="chip">אוכל</button><button class="chip">חיות</button><button class="chip">ספורט</button><button class="chip">מקצועות</button><button class="chip">מקומות</button><button class="chip">חפצים</button></div></div>
+      <div class="field"><strong>זמן לכל רמז</strong><div class="chips"><button class="chip">20</button><button class="chip selected">30</button><button class="chip">45</button><button class="chip">60</button><button class="chip">ללא טיימר</button></div></div>
+      <div class="card"><div class="row"><span>שחקנים</span><strong>4</strong></div><div class="row"><span>מתחזים</span><strong>1</strong></div><div class="row"><span>הצבעה</span><strong>פרטית במכשיר</strong></div></div>
+      <div class="actions"><button class="button primary">מתחילים</button></div></div>`
+    },
+    {
+      name: 'המשך משחק מקומי', route: '/home/local-resume',
+      html: `<header class="header"><button class="icon">פרופיל</button><span></span><button class="icon">הגדרות</button></header><div class="body"><div class="overlay"><h1>להמשיך את המשחק?</h1><p class="muted">סיבוב 2 נשמר במכשיר</p><button class="button primary">המשך משחק</button><button class="button ghost danger">מחיקת המשחק</button></div></div>`
+    },
+    {
+      name: 'העברת מכשיר — תפקיד', route: '/local/roles/pass',
+      html: `<div class="body center"><div class="progress"><span class="dot done"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><div class="illustration">pass-the-device.webp</div><h1>העבירו את המכשיר לדור</h1><p class="muted">רק דור מסתכל על המסך</p><div class="actions"><button class="button primary">אני דור — הציגו לי</button></div></div>`
+    },
+    {
+      name: 'חשיפת תפקיד — אזרח', route: '/local/roles/citizen',
+      html: `<div class="body center"><p class="muted">קטגוריה: אוכל</p><div class="illustration">role-citizen.webp</div><h1>אתה אזרח</h1><div class="secret">פיצה</div><p class="muted">זכרו את המילה ואל תראו אותה לאחרים</p><div class="actions"><button class="button primary">הבנתי — הסתירו</button></div></div>`
+    },
+    {
+      name: 'חשיפת תפקיד — מתחזה', route: '/local/roles/impostor',
+      html: `<div class="body center"><p class="muted">קטגוריה: אוכל</p><div class="illustration">role-impostor.webp</div><h1>אתה המתחזה</h1><div class="card selected">לא קיבלת את המילה</div><p class="muted">הקשיבו לרמזים, השתלבו ונסו לגלות אותה</p><div class="actions"><button class="button primary">הבנתי — הסתירו</button></div></div>`
+    },
+    {
+      name: 'כולם מוכנים', route: '/local/round/ready',
+      html: `<div class="body center"><div class="illustration">local-one-device.webp</div><h1>כולם יודעים מי הם</h1><p class="muted">מניחים את המכשיר במקום שכולם רואים</p><div class="card"><strong>נועה מתחילה</strong><span class="muted">ממשיכים לפי הסדר שמופיע במסך</span></div><div class="actions"><button class="button primary">מתחילים סיבוב 1</button></div></div>`
+    },
+    {
+      name: 'סבב רמזים', route: '/local/round/1/hints',
+      html: `<header class="header"><button class="icon">יציאה</button><div class="header-title">סיבוב 1 · אוכל</div><span class="timer">18</span></header><div class="body center"><span class="avatar large">נ</span><h1>התור של נועה</h1><p class="muted">אמרי בקול רמז של מילה אחת</p><div class="timer big">18</div><div class="card"><div class="row"><span>נועה</span><strong>עכשיו</strong></div><div class="row"><span>יואב</span><span class="muted">הבא בתור</span></div><div class="row"><span>מאיה</span><span class="muted">ממתינה</span></div><div class="row"><span>דור</span><span class="muted">ממתין</span></div></div><div class="actions"><button class="button primary">הרמז נאמר</button></div></div>`
+    },
+    {
+      name: 'מעבר להצבעה', route: '/local/vote/transition',
+      html: `<div class="body center"><span class="timer">5</span><div class="illustration">pre-vote-transition.webp</div><h1>עוברים להצבעה</h1><p class="muted">מעבירים את המכשיר בין השחקנים. אל תגלו למי הצבעתם.</p></div>`
+    },
+    {
+      name: 'העברת מכשיר — הצבעה', route: '/local/vote/pass',
+      html: `<div class="body center"><div class="progress"><span class="dot done"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><div class="illustration">pass-the-device.webp</div><h1>העבירו את המכשיר לדור</h1><p class="muted">אף אחד אחר לא מסתכל</p><div class="actions"><button class="button primary">אני דור — להצבעה</button></div></div>`
+    },
+    {
+      name: 'הצבעה פרטית', route: '/local/vote/cast',
+      html: `<header class="header"><span></span><div class="header-title">מי המתחזה?</div><span></span></header><div class="body"><p class="muted">בחרו שחקן אחד. הבחירה תישאר סודית.</p><button class="card card-button" disabled><span class="player"><span class="avatar">ד</span><strong>דור — אני</strong></span></button><button class="card card-button selected"><span class="player"><span class="avatar">נ</span><strong>נועה</strong></span></button><button class="card card-button"><span class="player"><span class="avatar">י</span><strong>יואב</strong></span></button><button class="card card-button"><span class="player"><span class="avatar">מ</span><strong>מאיה</strong></span></button><div class="actions"><button class="button primary">אישור הצבעה</button></div></div>`
+    },
+    {
+      name: 'ההצבעה נשמרה', route: '/local/vote/saved',
+      html: `<div class="body center"><div class="illustration">סימן אישור ללא שם המועמד</div><h1>ההצבעה נשמרה</h1><p class="muted">הבחירה הוסתרה מהמסך</p><div class="actions"><button class="button primary">הסתרתי — לשחקן הבא</button></div></div>`
+    },
+    {
+      name: 'הצבעה חוזרת', route: '/local/vote/runoff',
+      html: `<header class="header"><span></span><div class="header-title">יש תיקו</div><span></span></header><div class="body center"><p class="muted">דור מצביע שוב בין שני המועמדים</p><button class="card card-button"><span class="player"><span class="avatar large">נ</span><strong>נועה · 2 קולות</strong></span></button><button class="card card-button selected"><span class="player"><span class="avatar large">מ</span><strong>מאיה · 2 קולות</strong></span></button><p class="muted">אם שוב יהיה תיקו, אף אחד לא יודח</p><div class="actions"><button class="button primary">אישור הצבעה</button></div></div>`
+    },
+    {
+      name: 'אזרח הודח', route: '/local/elimination/citizen',
+      html: `<div class="body center"><span class="avatar large">י</span><h1>יואב הודח</h1><div class="card selected"><strong>יואב היה אזרח</strong></div><p class="muted">המילה נשארת סודית. יואב ממשיך לצפות, בלי רמז ובלי הצבעה.</p><div class="actions"><button class="button primary">ממשיכים לסיבוב 2</button></div></div>`
+    },
+    {
+      name: 'סיבוב נוסף — צופה', route: '/local/round/2/ready',
+      html: `<header class="header"><button class="icon">יציאה</button><div class="header-title">סיבוב 2 · אוכל</div><span></span></header><div class="body"><h1>סיבוב נוסף</h1><p class="muted">המתחזה עדיין ביניכם</p><div class="row"><span class="player"><span class="avatar">ד</span><strong>דור</strong></span><span>פעיל</span></div><div class="row"><span class="player"><span class="avatar">נ</span><strong>נועה</strong></span><span>פעילה</span></div><div class="row"><span class="player"><span class="avatar">מ</span><strong>מאיה</strong></span><span>פעילה</span></div><div class="row spectator"><span class="player"><span class="avatar">י</span><strong>יואב</strong></span><span>צופה</span></div><div class="actions"><button class="button primary">התחלת סבב 2</button></div></div>`
+    },
+    {
+      name: 'המתחזה נתפס — ניחוש', route: '/local/guess',
+      html: `<div class="body center"><div class="illustration">role-impostor.webp</div><h1>מאיה, נתפסת</h1><p class="muted">יש לך הזדמנות אחרונה לנחש את המילה</p><label class="field">הניחוש שלך<input class="input" placeholder="כתבו את המילה..."></label><p class="muted">רק מאיה מסתכלת על המסך</p><div class="actions"><button class="button primary">שליחת ניחוש</button></div></div>`
+    },
+    {
+      name: 'תוצאה — האזרחים ניצחו', route: '/local/result/citizens',
+      html: `<div class="body center"><div class="illustration">result-citizens-win.webp</div><h1>האזרחים ניצחו</h1><p class="muted">המתחזה נתפס ולא ניחש את המילה</p><div class="card"><strong>המתחזה: מאיה</strong><span>המילה: פיצה</span><span>2 סבבים · יואב הודח</span></div><p class="muted">משחק מקומי אינו משנה את הסטטיסטיקה</p><div class="actions"><button class="button primary">משחק נוסף</button><button class="button ghost">חזרה למסך הראשי</button></div></div>`
+    },
+    {
+      name: 'תוצאה — המתחזה ניצח', route: '/local/result/impostor',
+      html: `<div class="body center"><div class="illustration">result-impostor-win.webp</div><h1>המתחזה ניצח</h1><p class="muted">נשארו מתחזה ואזרח אחד</p><div class="card"><strong>המתחזה: מאיה</strong><span>המילה הייתה: פיצה</span><span>3 סבבים · 2 הודחו</span></div><p class="muted">משחק מקומי אינו משנה את הסטטיסטיקה</p><div class="actions"><button class="button primary">משחק נוסף</button><button class="button ghost">חזרה למסך הראשי</button></div></div>`
+    },
+    {
+      name: 'אישור יציאה', route: '/local/exit',
+      html: `<header class="header"><button class="icon">יציאה</button><div class="header-title">סיבוב 2</div><span></span></header><div class="body"><div class="overlay"><h1>לצאת מהמשחק?</h1><p class="muted">המשחק הנוכחי יימחק ולא יהיה אפשר להמשיך אותו.</p><button class="button danger">יציאה ומחיקה</button><button class="button primary">המשך משחק</button></div></div>`
+    }
+  ];
+
+  const root = document.getElementById('local-game-wireframes');
+  const phone = root.querySelector('#local-phone');
+  const select = root.querySelector('#local-screen');
+  const counter = root.querySelector('#local-counter');
+  const route = root.querySelector('#local-route');
+  const prev = root.querySelector('#local-prev');
+  const next = root.querySelector('#local-next');
+  let active = 0;
+
+  screens.forEach((screen, index) => {
+    const option = document.createElement('option');
+    option.value = String(index);
+    option.textContent = `${index + 1}. ${screen.name}`;
+    select.appendChild(option);
+  });
+
+  function render() {
+    const screen = screens[active];
+    phone.innerHTML = screen.html;
+    select.value = String(active);
+    counter.textContent = `${active + 1} מתוך ${screens.length}`;
+    route.textContent = screen.route;
+    prev.disabled = active === 0;
+    next.disabled = active === screens.length - 1;
+  }
+
+  prev.addEventListener('click', () => { if (active > 0) active -= 1; render(); });
+  next.addEventListener('click', () => { if (active < screens.length - 1) active += 1; render(); });
+  select.addEventListener('change', () => { active = Number(select.value); render(); });
+  render();
+})();
+</script>

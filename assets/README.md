@@ -58,6 +58,8 @@
 | `how-to-play.webp` | איך משחקים |
 | `private-room.webp` | יצירת חדר, הצטרפות ולובי פרטי |
 | `no-category-match.webp` | אין התאמה לקטגוריות |
+| `local-one-device.webp` | כרטיס והגדרת משחק במכשיר אחד |
+| `pass-the-device.webp` | מסך פרטיות לפני חשיפת תפקיד או הצבעה |
 
 תצוגת הסט: [`illustrations/contact-sheet.webp`](illustrations/contact-sheet.webp).
 
