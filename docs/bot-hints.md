@@ -110,20 +110,46 @@ Until every word has a pool, `TestEveryWordHasCitizenHints` fails and says how
 many are left. That is deliberate: the branch is not mergeable until the
 dataset is complete, so half a dataset cannot reach players.
 
-## The same pools decide the vote
+## How the vote reads the round
 
-A citizen bot knows the word and asks how much of it a hint touches: one of the
-word's own hints, or company it keeps, is no reason to suspect anybody. An
-impostor bot has no word and asks the same question of the board instead.
+One reading serves every bot at the table. It is given the board and nothing
+else — the category, who said what, in what order — and has no parameter for
+the secret word, for who the impostor is, or for who is a person. Each hint is
+judged against the round built without it.
 
-**A hint nobody curated is never suspicious.** The dataset holds the words bots
-write, never the words players write, so a hint that is not in it carries no
-opinion — and reading that silence as guilt would set the bots hunting every
-human at the table. That is a test, not an intention.
+Two things count against a hint: **standing apart** from every other hint on
+the board, and being one of the category's broad fallbacks. Standing apart is
+binary, never a matter of degree, and that is deliberate: two bots drawing on
+the same curated pool are joined by direct evidence and would out-weigh any
+outsider, so measuring strength would measure who shares a vocabulary rather
+than who fits the round.
 
-Suspicion raises the odds rather than deciding. A table of bots lands on a bot
-impostor about 39% of the time against 33% for a coin, and on a person playing
-the impostor about 33% — an opinion, not an answer.
+A hint reaches the round if the graph pairs it with another hint played, or if
+it shares a stem with one — `גבינות` reaches `גבינה`, `איטלקי` reaches
+`איטליה`. The stem rule is the only thing that speaks for a word nobody
+curated, which is to say for most of what a person writes.
+
+**Silence is not evidence.** A word the graph has never heard of, which reaches
+nothing on the board through its shape either, is a word we know nothing about,
+and it sits exactly where the round sits — neither accused nor cleared. The one
+person at a table of bots is the one player whose words are guaranteed to be
+missing from a graph built out of what bots say, so reading that silence as
+guilt would hunt them by construction.
+
+What that buys, measured over 30,000 rounds:
+
+| | person voted for | chance |
+|---|---|---|
+| the person is a citizen | 31% | 33% |
+| the person is the impostor, hint we can judge | 81% | 50% |
+| the person is the impostor, hint outside the graph | 50% | 50% |
+
+The middle row is the point: a hint that does not fit draws votes whoever wrote
+it. The last row is the honest limit — there is no semantic model here, only
+this graph, and a word outside it cannot be judged by anyone.
+
+Which is the other reason to prefer hints that overlap across a category.
+Every curated pair is a pair the round can be read by.
 
 ## Why a hint that fits only one word is wasted on the impostor
 

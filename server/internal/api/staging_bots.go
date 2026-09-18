@@ -25,6 +25,10 @@ const (
 	// One hint in stagingBotSilence gets no reaction from a given bot, so the
 	// board is not identical every turn.
 	stagingBotSilence = 3
+	// How sharply a bot acts on how the round reads. Low enough to have an
+	// opinion, high enough to be wrong often, which is most of what makes a
+	// vote look like a person's.
+	botVoteTemperature = 0.6
 )
 
 // botWriteTime is how long this bot appears to spend writing. Varying it is
@@ -34,58 +38,36 @@ func (s *Server) botWriteTime() time.Duration {
 	return stagingBotWriteSeconds*time.Second - spread + time.Duration(s.rng.Int64N(int64(2*spread)))
 }
 
-// botVote picks who this bot votes for.
+// botVote picks who this bot votes for, from the board and nothing else.
 //
-// The two roles judge with what they have, which is the same split the hints
-// use. A citizen bot knows the word and can ask whether a hint belongs beside
-// it. An impostor bot has no word — the game never gave it one — so it can
-// only ask whether a hint belongs beside the rest of the board, which is what
-// a person in that seat does while trying to look like everyone else.
+// There is one reading of the round for every bot at the table, citizen and
+// impostor alike, and it is built from what anyone watching could see: the
+// category, who said what, in what order. It is not given the secret word even
+// when the bot holding it is a citizen who knows it.
 //
-// Suspicion raises the odds, it does not decide. A bot that always voted for
-// its top suspect would be a better player than the person it is playing
-// against and would vote the same way every round. At these weights a table of
-// bots lands on the impostor about 39% of the time against 33% for a coin,
-// which is an opinion rather than an answer — and a person is never singled
-// out, because a hint nobody curated carries no opinion at all.
+// Giving a citizen bot the word would be truer to what a citizen knows, and it
+// is what this did before. The trouble is that the only thing it could judge a
+// hint against was a curated pool, so a hint nobody curated — which is every
+// hint a person writes — could never be judged at all, and the one human at
+// the table was the one player the bots could never form an opinion about.
+// Reading the round instead means a hint that does not fit is a hint that does
+// not fit, whoever wrote it.
 func (s *Server) botVote(view game.View, candidates []string) string {
-	weights := make([]int, len(candidates))
-	total := 0
-	for i, candidate := range candidates {
-		weight := 1
-		for _, h := range view.Hints {
-			if h.PlayerID != candidate || h.Missing {
-				continue
-			}
-			if view.SecretWord != "" {
-				weight += 2 * content.CitizenSuspicion(h.Text, view.SecretWord)
-			} else {
-				weight += 2 * content.BoardSuspicion(h.Text, otherHints(view.Hints, candidate))
-			}
+	board := make([]content.BoardHint, 0, len(view.Hints))
+	for _, h := range view.Hints {
+		if !h.Missing {
+			board = append(board, content.BoardHint{PlayerID: h.PlayerID, Text: h.Text})
 		}
-		weights[i] = weight
-		total += weight
 	}
-	pick := s.rng.IntN(total)
-	for i, weight := range weights {
-		if pick < weight {
+	odds := content.VoteOdds(content.Suspicion(view.Category, board), candidates, botVoteTemperature)
+	pick := s.rng.Float64()
+	for i, chance := range odds {
+		if pick < chance {
 			return candidates[i]
 		}
-		pick -= weight
+		pick -= chance
 	}
 	return candidates[len(candidates)-1]
-}
-
-// otherHints is the board as seen from one player's hint: everything written
-// by somebody else.
-func otherHints(hints []game.Hint, exclude string) []string {
-	out := make([]string, 0, len(hints))
-	for _, h := range hints {
-		if !h.Missing && h.PlayerID != exclude {
-			out = append(out, h.Text)
-		}
-	}
-	return out
 }
 
 // botGuess is the word a caught impostor names. Naming a word from the
