@@ -25,6 +25,10 @@ const (
 	// MaxDisconnects is the disconnect count at which a player who does not
 	// return within ReconnectDuration is removed.
 	MaxDisconnects = 3
+	// maxSilentVotes is how many voting phases in a row may pass with nobody
+	// voting before the match is called off. The first is a round the table
+	// could not decide and play goes on; the second ends it.
+	maxSilentVotes = 2
 )
 
 type Phase string
@@ -78,6 +82,9 @@ type Outcome string
 const (
 	OutcomeWin  Outcome = "win"
 	OutcomeLoss Outcome = "loss"
+	// OutcomeNone is a match that was called off rather than played out. It
+	// counts for nobody, so it is not recorded as a win or a loss.
+	OutcomeNone Outcome = "none"
 )
 
 type EndReason string
@@ -91,7 +98,11 @@ const (
 	ReasonImpostorGuessWrong   EndReason = "impostor_guess_wrong"
 	ReasonImpostorGuessTimeout EndReason = "impostor_guess_timeout"
 	ReasonImpostorGone         EndReason = "impostor_gone"
-	ReasonNotEnoughPlayers     EndReason = "not_enough_players"
+	// ReasonAbandoned is two voting phases running in which nobody voted at
+	// all. Rounds continue until one side wins, so a table that has stopped
+	// playing would otherwise go around forever.
+	ReasonAbandoned        EndReason = "abandoned"
+	ReasonNotEnoughPlayers EndReason = "not_enough_players"
 )
 
 var (
@@ -230,7 +241,10 @@ type Game struct {
 	reconnecting bool
 	hints        []Hint
 
-	candidates  []string
+	candidates []string
+	// silentVotes counts voting phases in a row that nobody voted in. One is a
+	// round the table could not decide; two is a table that has gone.
+	silentVotes int
 	votes       map[string]string
 	voteRounds  []map[string]string
 	abstentions []int
@@ -275,6 +289,9 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 
 // Version increases with every change to the game.
 func (g *Game) Version() uint64 { return g.version }
+
+// Phase is the phase the game is in, without building a player's view.
+func (g *Game) Phase() Phase { return g.phase }
 
 // PlayerIDs returns every player dealt into the game, in turn order,
 // including those who left or were removed.
@@ -705,6 +722,19 @@ func (g *Game) tally(at time.Time) {
 	g.voteRounds = append(g.voteRounds, counted)
 	g.abstentions = append(g.abstentions, len(g.activeIDs())-len(counted))
 
+	// A vote nobody cast says nothing about who the impostor is, and two of
+	// them in a row say the table is not there any more. A tie is not one of
+	// these: people voted, they just did not agree.
+	if len(counted) == 0 {
+		g.silentVotes++
+		if g.silentVotes >= maxSilentVotes {
+			g.end(TeamNone, ReasonAbandoned)
+			return
+		}
+	} else {
+		g.silentVotes = 0
+	}
+
 	var top []string
 	most := 0
 	for _, c := range g.candidates {
@@ -810,6 +840,12 @@ func (g *Game) end(winner Team, reason EndReason) {
 	}
 	outcomes := make(map[string]Outcome, len(g.players))
 	for id, p := range g.players {
+		// A match that was called off counts for nobody: no win, no loss, and
+		// nothing recorded on anybody's device.
+		if reason == ReasonAbandoned {
+			outcomes[id] = OutcomeNone
+			continue
+		}
 		// A player the table voted out still wins with their side. Only
 		// walking out or being removed for repeated disconnects loses on its
 		// own account.

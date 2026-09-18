@@ -297,8 +297,32 @@ func (s *Server) runStagingBots() {
 	}
 	for _, entry := range slices.Clone(s.publicRooms) {
 		s.removeGameBotsWithoutHumans(entry, s.now())
-		if entry.room.Game() != nil {
-			s.runStagingBotsInGame(entry, s.now())
+		g := entry.room.Game()
+		if g == nil {
+			continue
+		}
+		s.runStagingBotsInGame(entry, s.now())
+		// A match a bot ended — by voting the last citizen out, by guessing,
+		// or by nobody voting twice — publishes and stops there. An ended game
+		// schedules no timer, so without this the room would sit finished and
+		// still full until a player happened to do something, and its bots
+		// would sit in it.
+		if entry.room.Game().Phase() == game.PhaseEnded {
+			s.tickRoom(entry)
+		}
+	}
+	// Last, because the loop above is one of the things that drops rooms.
+	//
+	// A bot exists only while its room does. Rooms are dropped by several paths
+	// — a finished match settling, a lobby emptying, a panic taking one down —
+	// and each lets its bots go by walking the members it has at that moment. A
+	// bot that was not among them, for whatever reason, would sit in s.players
+	// for the life of the process. This is the invariant itself, rather than
+	// one more place that has to remember.
+	for id, sess := range s.players {
+		if sess.bot && s.roomsByID[sess.roomID] == nil {
+			sess.leaveGame()
+			delete(s.players, id)
 		}
 	}
 }

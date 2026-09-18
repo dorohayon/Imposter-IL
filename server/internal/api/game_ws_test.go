@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/dorohayon/Imposter-IL/server/internal/game"
 )
 
 type wsPlayer struct {
@@ -509,4 +510,74 @@ func TestWSReconnectingIntoALaterRoundAsASpectator(t *testing.T) {
 		map[string]any{"gameId": gameID, "hintIndex": 0, "reactionId": "laugh"}))
 	wantReplyError(t, again.command("hint", "game.submitHint",
 		map[string]any{"gameId": gameID, "text": "מילהחדשה"}), "player_not_active")
+}
+
+// Two voting phases with nobody voting calls the match off over the wire, and
+// a player who was away for it is told the same thing on reconnect.
+func TestWSTwoSilentVotesCallTheMatchOff(t *testing.T) {
+	c := newClient(t)
+	roomID, players := c.roomWithPlayers(4)
+	host := players[0]
+	gameID, _ := c.startGame(roomID, players)
+	for _, p := range players {
+		wantOK(t, p.w.command("confirm", "game.confirmRole", map[string]any{"gameId": gameID}))
+	}
+
+	// Nobody writes and nobody votes: every turn and every vote times out.
+	// Five seconds at a time, because a single long jump would cascade through
+	// several phases in one tick and prove nothing about the order they came
+	// in.
+	away := players[1]
+	dropped := false
+	var rounds []float64
+	for step := 0; step < 200; step++ {
+		c.advance(5 * time.Second)
+		c.tick(roomID)
+
+		c.srv.mu.Lock()
+		v, err := c.srv.players[host.id].game.View(host.id)
+		c.srv.mu.Unlock()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(rounds) == 0 || rounds[len(rounds)-1] != float64(v.Round) {
+			rounds = append(rounds, float64(v.Round))
+		}
+		// One player drops out partway, and must come back to the same answer.
+		if v.Round == 2 && !dropped {
+			dropped = true
+			_ = away.w.ws.Close(websocket.StatusNormalClosure, "")
+		}
+		if v.Phase == game.PhaseEnded {
+			break
+		}
+	}
+
+	end := host.w.gameState(phase("ended"))
+	result := end["result"].(map[string]any)
+	if result["winner"] != nil || result["reason"] != "abandoned" {
+		t.Fatalf("result = %v, want a match called off", result)
+	}
+	// One silent vote was not enough: the match reached a second round first.
+	if len(rounds) < 2 || rounds[1] != 2 {
+		t.Fatalf("rounds seen = %v, want a second round before the end", rounds)
+	}
+	for id, outcome := range result["outcomes"].(map[string]any) {
+		if outcome != "none" {
+			t.Errorf("%s got %q from a match that was called off", id, outcome)
+		}
+	}
+	if !dropped {
+		t.Fatal("the test never dropped a player")
+	}
+
+	// The player who was away comes back to the same answer, not to a loss.
+	again := c.dial(away.token)
+	again.sessionState(func(s map[string]any) bool { return s["activity"] == "game" })
+	back := again.gameState(phase("ended"))
+	backResult := back["result"].(map[string]any)
+	if backResult["reason"] != "abandoned" ||
+		backResult["outcomes"].(map[string]any)[away.id] != "none" {
+		t.Fatalf("reconnected into %v", backResult)
+	}
 }

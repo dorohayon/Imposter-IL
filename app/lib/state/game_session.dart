@@ -492,6 +492,9 @@ class GameSession extends ChangeNotifier {
   /// Counts a game's win or loss once. Server errors never reach here, so a
   /// crash records nothing.
   void _record(String gameId, String outcome) {
+    // A match that was called off counts for nobody, so nothing is recorded —
+    // not even the fact that it happened, in case it resumes as a real one.
+    if (outcome == 'none') return;
     if (_countedGames.contains(gameId)) return;
     _countedGames = [..._countedGames, gameId];
     if (_countedGames.length > 50) _countedGames.removeAt(0);

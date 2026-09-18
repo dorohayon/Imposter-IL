@@ -1692,6 +1692,8 @@ const _resultReasons = {
   'impostor_guess_timeout': 'המתחזה נתפס, אבל הזמן לניחוש נגמר.',
   'impostor_gone': 'המתחזה עזב את המשחק.',
   'not_enough_players': 'נשארו פחות משלושה שחקנים, ולכן המשחק הופסק.',
+  'abandoned': 'שני סבבי הצבעה עברו בלי אף הצבעה, ולכן המשחק בוטל. '
+      'הוא לא נספר לאף אחד — לא כניצחון ולא כהפסד.',
 };
 
 class _Result extends StatelessWidget {
@@ -1754,11 +1756,13 @@ class _Result extends StatelessWidget {
             height: 168,
           ),
           Text(
-            stopped
-                ? 'המשחק הופסק'
-                : citizensWon
-                    ? 'האזרחים ניצחו!'
-                    : 'המתחזה ניצח!',
+            result.reason == 'abandoned'
+                ? 'המשחק בוטל'
+                : stopped
+                    ? 'המשחק הופסק'
+                    : citizensWon
+                        ? 'האזרחים ניצחו!'
+                        : 'המתחזה ניצח!',
             style: Theme.of(context).textTheme.headlineLarge,
             textAlign: TextAlign.center,
           ),
@@ -1768,7 +1772,9 @@ class _Result extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, fontSize: 17),
           ),
-          if (outcome != null) ...[
+          // A match that was called off is recorded for nobody, so there is
+          // nothing to tell anyone they earned.
+          if (outcome != null && outcome != 'none') ...[
             const SizedBox(height: 10),
             StatusBanner(
               text: outcome == 'win' ? 'נרשם לכם ניצחון' : 'נרשם לכם הפסד',

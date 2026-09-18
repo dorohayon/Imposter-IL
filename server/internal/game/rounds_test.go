@@ -282,3 +282,140 @@ func TestStaleTimersAndRepeatedCommandsChangeNothing(t *testing.T) {
 		t.Fatalf("a finished match still has a deadline at %v", g.Deadline())
 	}
 }
+
+// A table that stops voting is a table that has gone home, and rounds run
+// until somebody wins, so something has to call it.
+func TestTwoSilentVotesCallTheMatchOff(t *testing.T) {
+	g := newGame(t, 5)
+	confirmAll(t, g)
+	now := playRound(t, g, t0)
+
+	// Nobody votes. One round like that is a table that could not decide.
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now)
+	if g.result != nil {
+		t.Fatalf("one silent vote ended the match: %+v", g.result)
+	}
+	if g.round != 2 {
+		t.Fatalf("round = %d, want 2", g.round)
+	}
+
+	// Twice is a table that is not there.
+	now = playRound(t, g, now)
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now)
+	wantResult(t, g, TeamNone, ReasonAbandoned)
+
+	// It counts for nobody: not a win, not a loss, nothing to record.
+	for id, outcome := range g.result.Outcomes {
+		if outcome != OutcomeNone {
+			t.Errorf("%s got %q from a match that was called off", id, outcome)
+		}
+	}
+}
+
+// One vote is enough to say the table is still there.
+func TestASingleVoteResetsTheSilence(t *testing.T) {
+	g := newGame(t, 5)
+	confirmAll(t, g)
+	now := playRound(t, g, t0)
+
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now) // silent once
+	now = playRound(t, g, now)
+
+	// One player votes; nobody is eliminated, because one vote for one target
+	// still picks somebody — so pick a citizen and let the round go on.
+	voter := citizens(g)[0]
+	target := citizens(g)[1]
+	must(t, g.Vote(voter, target, now))
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now)
+	if g.result != nil {
+		t.Fatalf("a round with a vote in it ended the match: %+v", g.result)
+	}
+	if g.silentVotes != 0 {
+		t.Fatalf("silentVotes = %d after a vote was cast", g.silentVotes)
+	}
+
+	// And now silence has to start over: one more is not enough.
+	now = playRound(t, g, now)
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now)
+	if g.result != nil {
+		t.Fatalf("the counter did not reset: %+v", g.result)
+	}
+}
+
+// People who voted and disagreed are still playing.
+func TestATieIsNotSilence(t *testing.T) {
+	g := newGame(t, 5)
+	confirmAll(t, g)
+	now := playRound(t, g, t0)
+
+	// Two citizens each pick a different target: a tie, with votes in it.
+	c := citizens(g)
+	must(t, g.Vote(c[0], c[1], now))
+	must(t, g.Vote(c[1], g.impostor, now))
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now)
+	wantPhase(t, g, PhaseRunoffVoting)
+	if g.silentVotes != 0 {
+		t.Fatalf("a tie counted as silence: silentVotes = %d", g.silentVotes)
+	}
+
+	// The runoff ties too, so nobody is eliminated and the match goes on.
+	must(t, g.Vote(c[0], c[1], now))
+	must(t, g.Vote(c[2], g.impostor, now))
+	now = now.Add(DefaultConfig().RunoffVoteDuration)
+	g.Tick(now)
+	if g.result != nil {
+		t.Fatalf("two ties ended the match: %+v", g.result)
+	}
+	if g.silentVotes != 0 {
+		t.Fatalf("a second tie counted as silence: silentVotes = %d", g.silentVotes)
+	}
+	if g.round != 2 {
+		t.Fatalf("round = %d, want 2", g.round)
+	}
+
+	// Ties are not silence, so it still takes two silent votes to call it off.
+	now = playRound(t, g, now)
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now)
+	if g.result != nil {
+		t.Fatalf("one silent vote after two ties ended the match: %+v", g.result)
+	}
+	now = playRound(t, g, now)
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now)
+	wantResult(t, g, TeamNone, ReasonAbandoned)
+}
+
+// A runoff nobody turns up for counts, because a runoff is a voting phase.
+func TestASilentRunoffCounts(t *testing.T) {
+	g := newGame(t, 5)
+	confirmAll(t, g)
+	now := playRound(t, g, t0)
+	c := citizens(g)
+	must(t, g.Vote(c[0], c[1], now))
+	must(t, g.Vote(c[1], g.impostor, now))
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now)
+	wantPhase(t, g, PhaseRunoffVoting)
+
+	// Nobody votes in the runoff: one silent phase, and the match goes on.
+	now = now.Add(DefaultConfig().RunoffVoteDuration)
+	g.Tick(now)
+	if g.result != nil {
+		t.Fatalf("a silent runoff alone ended the match: %+v", g.result)
+	}
+	if g.silentVotes != 1 {
+		t.Fatalf("silentVotes = %d after a silent runoff, want 1", g.silentVotes)
+	}
+
+	now = playRound(t, g, now)
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now)
+	wantResult(t, g, TeamNone, ReasonAbandoned)
+}

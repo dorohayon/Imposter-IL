@@ -133,4 +133,50 @@ void main() {
     expect(api.channel.commands('game.vote').single['payload'],
         {'gameId': 'g_1', 'targetPlayerId': 'p_2'});
   });
+
+  testWidgets('a match called off is not recorded as a win or a loss',
+      (tester) async {
+    final api = FakeApi();
+    final session = await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    final wins = session.wins;
+    final losses = session.losses;
+
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1'
+    });
+    api.channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(
+          phase: 'ended',
+          round: 3,
+          result: {
+            'winner': null,
+            'reason': 'abandoned',
+            'impostorPlayerId': 'p_4',
+            'secretWord': 'פיל',
+            'voteRounds': <Map<String, String>>[],
+            'abstentions': <int>[],
+            'outcomes': {
+              'p_me': 'none',
+              'p_2': 'none',
+              'p_3': 'none',
+              'p_4': 'none',
+            },
+          },
+        ));
+    await settle(tester);
+
+    expect(find.text('המשחק בוטל'), findsOneWidget);
+    expect(find.textContaining('בלי אף הצבעה'), findsOneWidget);
+    // Neither banner, and nothing added to the profile.
+    expect(find.text('נרשם לכם ניצחון'), findsNothing);
+    expect(find.text('נרשם לכם הפסד'), findsNothing);
+    expect(session.wins, wins);
+    expect(session.losses, losses);
+  });
 }

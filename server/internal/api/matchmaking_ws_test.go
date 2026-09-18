@@ -144,9 +144,6 @@ func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
 				}))
 			}
 		case game.PhaseEnded:
-			// The room settles back to the lobby on the next tick, and that is
-			// where the bots are let go.
-			c.tickAll()
 			c.srv.mu.Lock()
 			defer c.srv.mu.Unlock()
 			for _, sess := range c.srv.players {
