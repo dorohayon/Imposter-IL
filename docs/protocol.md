@@ -278,7 +278,7 @@
 ```
 
 - `phase`: `role_reveal` | `hints` | `hint_break` | `pre_voting` | `voting` | `runoff_voting` | `impostor_guess` | `ended`.
-- `round` סופר סבבי רמזים־והצבעה מ־1. משחק ממשיך בסבבים עד שאחד הצדדים מנצח.
+- `round` סופר סבבי רמזים־והצבעה מ־1. **שינוי לא תואם:** `eliminated`, `none` ו־`abandoned` אינם מוכרים לגרסאות ישנות, ולכן `clientBuild` עלה ל־2 והשרת נפרס עם `MIN_CLIENT_BUILD=2`. התקנה ישנה מקבלת `426 client_too_old` ומסך עדכון. משחק ממשיך בסבבים עד שאחד הצדדים מנצח.
 - `secretWord` חסר אצל המתחזה עד `ended`.
 - `players` לפי סדר התורות. `status`: `active` | `eliminated` | `left` | `removed`. `eliminated` הוא שחקן שהודח בהצבעה: הוא צופה וממשיך להגיב, אינו מקבל תור ואינו מצביע, והתוצאה שלו היא של הקבוצה שלו.
 - `result.outcomes` הוא `win` | `loss` | `none`. `none` הוא משחק שבוטל (`reason: "abandoned"`) אחרי שתי הצבעות ברצף בלי אף הצבעה, ואינו נספר במכשיר.

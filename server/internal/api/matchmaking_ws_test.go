@@ -115,7 +115,15 @@ func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
 			c.advance(5 * time.Second)
 			c.tickAll()
 		case game.PhaseVoting, game.PhaseRunoffVoting:
-			if view.MyVote == "" {
+			// The table can vote the human out too, and a spectator does not
+			// vote.
+			playing := false
+			for _, p := range view.Players {
+				if p.ID == human.id {
+					playing = p.Status == game.StatusActive
+				}
+			}
+			if playing && view.MyVote == "" {
 				var target string
 				for _, candidate := range view.Candidates {
 					if candidate != human.id {

@@ -365,3 +365,31 @@ func TestBodyLimit(t *testing.T) {
 	status, body := c.do("POST", "/v1/sessions", "", `{"nickname":"`+strings.Repeat("א", maxBodyBytes)+`","avatarId":"avatar-f01-notebook"}`)
 	c.wantError(400, "invalid_message", status, body)
 }
+
+// The protocol gained eliminated players, a "none" outcome and an abandoned
+// match. An install that predates them cannot read a game state, so the server
+// has to turn it away rather than let it show nonsense — which is what
+// MIN_CLIENT_BUILD is for, and what deploy/setup-cloudrun.sh now sets.
+func TestAnInstallOlderThanTheProtocolIsTurnedAway(t *testing.T) {
+	c := newClient(t)
+	c.srv.RequireClientBuild(2)
+
+	for build, want := range map[string]int{
+		"1": http.StatusUpgradeRequired,
+		"2": http.StatusCreated,
+		"3": http.StatusCreated,
+	} {
+		req := httptest.NewRequest(http.MethodPost, "/v1/sessions",
+			strings.NewReader(`{"nickname":"דור","avatarId":"avatar-f01-notebook"}`))
+		req.Header.Set("X-Client-Build", build)
+		rec := httptest.NewRecorder()
+		c.mux.ServeHTTP(rec, req)
+		if rec.Code != want {
+			t.Errorf("build %s = %d, want %d", build, rec.Code, want)
+		}
+		if want == http.StatusUpgradeRequired &&
+			!strings.Contains(rec.Body.String(), "client_too_old") {
+			t.Errorf("build %s got %s", build, rec.Body.String())
+		}
+	}
+}

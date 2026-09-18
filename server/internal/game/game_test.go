@@ -748,18 +748,20 @@ func TestCitizenLeavingLosesAndGameContinuesWithThree(t *testing.T) {
 	}
 }
 
-func TestFewerThanThreeEndsGameAndRemainingWin(t *testing.T) {
+// Citizens walking out until one is left is the impostor winning, not a match
+// that ran out of people. Parity does not care how the citizens went.
+func TestCitizensWalkingOutToParityIsAnImpostorWin(t *testing.T) {
 	g := newGame(t, 4)
 	confirmAll(t, g)
 	c := citizens(g)
 	must(t, g.Leave(c[0], t0))
 	wantPhase(t, g, PhaseHints)
 	must(t, g.Leave(c[1], t0))
-	wantResult(t, g, TeamNone, ReasonNotEnoughPlayers)
+	wantResult(t, g, TeamImpostor, ReasonImpostorParity)
 	for id, o := range g.result.Outcomes {
-		want := OutcomeWin
-		if id == c[0] || id == c[1] {
-			want = OutcomeLoss
+		want := OutcomeLoss
+		if id == g.impostor {
+			want = OutcomeWin
 		}
 		if o != want {
 			t.Fatalf("%s outcome = %s, want %s", id, o, want)

@@ -1324,7 +1324,16 @@ class _HintsState extends State<_Hints> {
               'עוד לא נשלחו רמזים.',
               style: TextStyle(color: AppColors.muted),
             ),
-          for (final (i, h) in game.hints.indexed)
+          for (final (i, h) in game.hints.indexed) ...[
+            // The board keeps every round. A line between them says which
+            // hints belong together, so a long board reads as a match rather
+            // than one very long round.
+            if (game.round > 1 &&
+                (i == 0 || game.hints[i - 1].round != h.round))
+              Padding(
+                padding: EdgeInsets.only(top: i == 0 ? 0 : 6, bottom: 8),
+                child: RoundDivider(round: h.round),
+              ),
             if (game.player(h.playerId) case final p?)
               Padding(
                 // Reactions are always to the last hint, so its card is where
@@ -1352,6 +1361,7 @@ class _HintsState extends State<_Hints> {
                       !session.muted.contains(h.playerId),
                 ),
               ),
+          ],
           if (lastHint != null &&
               !lastHint.missing &&
               session.showReactions) ...[

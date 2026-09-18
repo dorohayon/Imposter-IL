@@ -1174,3 +1174,37 @@ class SpectatorNote extends StatelessWidget {
     );
   }
 }
+
+/// Separates one round's hints from the next on a board that keeps them all.
+class RoundDivider extends StatelessWidget {
+  const RoundDivider({required this.round, super.key});
+
+  final int round;
+
+  @override
+  Widget build(BuildContext context) {
+    final line = Expanded(
+      child: Container(
+        height: 1,
+        color: AppColors.cream.withValues(alpha: .14),
+      ),
+    );
+    return Row(
+      children: [
+        line,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            'סבב $round',
+            style: TextStyle(
+              color: AppColors.cream.withValues(alpha: .55),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        line,
+      ],
+    );
+  }
+}

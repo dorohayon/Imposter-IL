@@ -494,7 +494,12 @@ func (r *Room) syncGame(now time.Time) {
 		return
 	}
 	for _, p := range v.Players {
-		if p.Status == game.StatusActive || !r.removeMember(p.ID) {
+		// A player the table voted out is still in the room: they watch the
+		// rest of the match, they reconnect into it, and in a private room they
+		// play the next game. Only walking out or being removed for repeated
+		// disconnects takes somebody out of the room.
+		if p.Status == game.StatusActive || p.Status == game.StatusEliminated ||
+			!r.removeMember(p.ID) {
 			continue
 		}
 		if p.ID == r.host {

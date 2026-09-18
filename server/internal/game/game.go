@@ -808,9 +808,16 @@ func (g *Game) removeAll(ids []string, status PlayerStatus, at time.Time) {
 		g.candidates = slices.DeleteFunc(g.candidates, func(c string) bool { return c == id })
 	}
 
+	citizens, impostors := g.citizensAndImpostors()
 	switch {
 	case removedImpostor:
 		g.end(TeamCitizens, ReasonImpostorGone)
+	case impostors > 0 && impostors >= citizens:
+		// Reached by walking out or being removed just as much as by a vote.
+		// Checked before the head count, because one citizen against one
+		// impostor is a match the impostor has won, not a match that ran out
+		// of players.
+		g.end(TeamImpostor, ReasonImpostorParity)
 	case len(g.activeIDs()) < MinPlayersToContinue:
 		g.end(TeamNone, ReasonNotEnoughPlayers)
 	case g.phase == PhaseRoleReveal:

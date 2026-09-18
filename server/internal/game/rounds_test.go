@@ -419,3 +419,45 @@ func TestASilentRunoffCounts(t *testing.T) {
 	g.Tick(now)
 	wantResult(t, g, TeamNone, ReasonAbandoned)
 }
+
+// Parity is reached by people walking out just as much as by a vote, and it is
+// an impostor win rather than a match that ran out of players.
+func TestParityIsCheckedHoweverTheCitizensWent(t *testing.T) {
+	t.Run("removed for disconnecting", func(t *testing.T) {
+		g := newGame(t, 4)
+		confirmAll(t, g)
+		now := t0
+		c := citizens(g)
+		// One citizen walks out, leaving two citizens and the impostor.
+		must(t, g.Leave(c[0], now))
+		if g.result != nil {
+			t.Fatalf("three players ended the match: %+v", g.result)
+		}
+		// The other is removed after a third disconnect: one citizen left.
+		for i := 0; i < MaxDisconnects; i++ {
+			must(t, g.Disconnect(c[1], now))
+			if i < MaxDisconnects-1 {
+				must(t, g.Reconnect(c[1], now))
+			}
+		}
+		now = now.Add(DefaultConfig().ReconnectDuration)
+		g.Tick(now)
+		wantResult(t, g, TeamImpostor, ReasonImpostorParity)
+	})
+
+	t.Run("voted out and then walking out", func(t *testing.T) {
+		g := newGame(t, 5)
+		confirmAll(t, g)
+		now := playRound(t, g, t0)
+		now = voteOut(t, g, citizens(g)[0], now)
+		// Three citizens and the impostor; two walk out, and the last one
+		// standing is the impostor's win.
+		c := citizens(g)
+		must(t, g.Leave(c[0], now))
+		if g.result != nil {
+			t.Fatalf("ended too early: %+v", g.result)
+		}
+		must(t, g.Leave(c[1], now))
+		wantResult(t, g, TeamImpostor, ReasonImpostorParity)
+	})
+}

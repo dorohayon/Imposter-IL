@@ -1,7 +1,7 @@
 name: imposter_il
 description: אפליקציית המשחק מי המתחזה?
 publish_to: none
-version: 0.1.0+1
+version: 0.1.0+2
 
 # The Android and iOS runners use the Flutter 3.44 templates (UIScene
 # lifecycle, Android Gradle Plugin 9). CI builds both on exactly 3.44.0 and

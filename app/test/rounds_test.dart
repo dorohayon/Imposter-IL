@@ -56,10 +56,48 @@ void main() {
     await settle(tester);
 
     expect(find.byType(RoundBadge), findsOneWidget);
-    expect(find.text('סבב 3'), findsOneWidget);
     // Hints from earlier rounds are still on the board.
     expect(find.text('חדק'), findsWidgets);
     expect(find.text('אפריקה'), findsWidgets);
+
+    // And they are grouped by the round they were given in, not run together.
+    expect(find.byType(RoundDivider), findsNWidgets(2));
+    expect(find.text('סבב 1'), findsOneWidget);
+    expect(find.text('סבב 2'), findsOneWidget);
+    // The badge names the round being played now.
+    expect(find.text('סבב 3'), findsOneWidget);
+  });
+
+  testWidgets('a first round is not divided into rounds', (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1'
+    });
+    api.channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(
+          phase: 'hints',
+          turn: 'p_2',
+          hints: [
+            {
+              'playerId': 'p_3',
+              'text': 'חדק',
+              'round': 1,
+              'missing': false,
+              'reactions': <String, int>{}
+            },
+          ],
+        ));
+    await settle(tester);
+
+    expect(find.byType(RoundBadge), findsNothing);
+    expect(find.byType(RoundDivider), findsNothing);
   });
 
   testWidgets('a player who was voted out watches and cannot write',
