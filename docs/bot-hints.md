@@ -118,16 +118,23 @@ the secret word, for who the impostor is, or for who is a person. Each hint is
 judged against the round built without it.
 
 Two things count against a hint: **standing apart** from every other hint on
-the board, and being one of the category's broad fallbacks. Standing apart is
-binary, never a matter of degree, and that is deliberate: two bots drawing on
-the same curated pool are joined by direct evidence and would out-weigh any
+the board, and being one of the category's broad fallbacks — and never both at
+once. A hint the category calls broad was always going to reach nothing in
+particular; that is what makes it broad, so charging it for standing apart as
+well charges it twice for one fact. Saying little is not the same as saying
+something that does not belong, and it reads as the lesser of the two.
+
+Standing apart is binary, never a matter of degree. Two bots drawing on the
+same curated pool are joined by direct evidence and would out-weigh any
 outsider, so measuring strength would measure who shares a vocabulary rather
 than who fits the round.
 
 A hint reaches the round if the graph pairs it with another hint played, or if
 it shares a stem with one — `גבינות` reaches `גבינה`, `איטלקי` reaches
 `איטליה`. The stem rule is the only thing that speaks for a word nobody
-curated, which is to say for most of what a person writes.
+curated, which is to say for most of what a person writes. The graph is keyed
+the way the game reads a word, so `גונגל` reaches the curated `ג'ונגל`:
+spelling decides nothing.
 
 **Silence is not evidence.** A word the graph has never heard of, which reaches
 nothing on the board through its shape either, is a word we know nothing about,
@@ -136,17 +143,19 @@ person at a table of bots is the one player whose words are guaranteed to be
 missing from a graph built out of what bots say, so reading that silence as
 guilt would hunt them by construction.
 
-What that buys, measured over 30,000 rounds:
+What that buys, measured over 30,000 rounds. The person is voted for in
+proportion to how badly their hint fits, and never to who they are:
 
-| | person voted for | chance |
+| the person's hint | as a citizen | as the impostor |
 |---|---|---|
-| the person is a citizen | 31% | 33% |
-| the person is the impostor, hint we can judge | 81% | 50% |
-| the person is the impostor, hint outside the graph | 50% | 50% |
+| their own words, outside the graph | 32% | 50% |
+| a broad category word | 49% | 69% |
+| a word belonging to another round | 64% | 82% |
+| *chance* | *33%* | *50%* |
 
-The middle row is the point: a hint that does not fit draws votes whoever wrote
-it. The last row is the honest limit — there is no semantic model here, only
-this graph, and a word outside it cannot be judged by anyone.
+The middle and bottom rows are the point: a hint that does not fit draws votes
+whoever wrote it. The top row is the honest limit — there is no semantic model
+here, only this graph, and a word outside it cannot be judged by anyone.
 
 Which is the other reason to prefer hints that overlap across a category.
 Every curated pair is a pair the round can be read by.

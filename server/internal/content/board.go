@@ -55,24 +55,37 @@ func (t hintTables) suspicion(category string, board []BoardHint) map[string]flo
 				break
 			}
 		}
+		// A hint the category lists as broad says little about any word in it,
+		// which is what somebody with nothing to go on reaches for. Curating it
+		// as broad is itself something we know, and it has to be settled before
+		// the guard below or it never gets asked: half the fallback hints
+		// appear in no citizen pool, so the graph has no other opinion on them
+		// and the signal would be dropped for exactly the hints it is for.
+		vague := slices.ContainsFunc(t.fallback[category], func(f string) bool { return sameWord(f, h.Text) })
+
 		// Whether there is anything to judge this hint on at all. A word the
 		// graph has never heard of, which reaches nothing on the board through
-		// its shape either, is a word we know nothing about — and silence is
-		// not evidence. The one person at the table is the one player whose
-		// words are guaranteed to be missing from a graph built out of what
-		// bots say, so reading that silence as guilt would hunt them by
-		// construction: measured at 78% before this guard existed.
-		if len(t.together[h.Text]) == 0 && !reach {
+		// its shape and is not one the category calls broad, is a word we know
+		// nothing about — and silence is not evidence. The one person at the
+		// table is the one player whose words are guaranteed to be missing from
+		// a graph built out of what bots say, so reading that silence as guilt
+		// would hunt them by construction: measured at 78% before this guard
+		// existed.
+		if !t.known(h.Text) && !reach && !vague {
 			continue
 		}
+		// Broad or apart, never both. A hint the category calls broad is one
+		// that was always going to reach nothing in particular — that is what
+		// makes it broad — so charging it for standing apart as well would be
+		// charging it twice for one fact, and it read as worse than a hint
+		// from another round entirely. Saying little is not the same as saying
+		// something that does not belong.
 		score := 0.0
-		if !reach {
-			score += apartWeight
-		}
-		// A hint the category lists as broad says little about any word in it,
-		// which is what somebody with nothing to go on reaches for.
-		if slices.ContainsFunc(t.fallback[category], func(f string) bool { return sameWord(f, h.Text) }) {
-			score += vaguenessWeight
+		switch {
+		case vague:
+			score = vaguenessWeight
+		case !reach:
+			score = apartWeight
 		}
 		raw[h.PlayerID] = score
 		sum += raw[h.PlayerID]
@@ -122,7 +135,7 @@ func (t hintTables) affinity(a, b string) bool {
 	// Hebrew carries meaning in the stem, so איטלקי reaches איטליה and גבינות
 	// reaches גבינה. That is the only thing that speaks for a word nobody
 	// curated, which is to say for most of what a person writes.
-	return sameWord(a, b) || t.together[a][b] > 0 || sharesStem(a, b)
+	return sameWord(a, b) || t.linked(a, b) || sharesStem(a, b)
 }
 
 func sharesStem(a, b string) bool {

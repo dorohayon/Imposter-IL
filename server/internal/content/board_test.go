@@ -126,3 +126,60 @@ func TestVoteOddsAreAProbability(t *testing.T) {
 		t.Errorf("a colder read was not more decided: %v vs %v", sharp, odds)
 	}
 }
+
+// Half the curated fallback hints appear in no citizen pool, so the graph has
+// nothing else to say about them. If the broad-hint signal is decided after
+// the guard that drops unjudgeable hints, it never runs for exactly the hints
+// it exists for — a round where the impostor reaches for a category word came
+// out perfectly flat.
+func TestABroadHintIsJudgedEvenWhenTheGraphIsSilent(t *testing.T) {
+	f := loadHintTables([]byte(fixture))
+
+	// מנה is in the fixture's fallback pool and in none of its citizen pools.
+	if f.known("מנה") {
+		t.Fatal("the fixture changed: מנה now appears in a citizen pool")
+	}
+	board := []BoardHint{
+		{"a", "מתוק"}, {"b", "קר"}, {"c", "קיץ"}, {"broad", "מנה"},
+	}
+	scores := f.suspicion("אוכל", board)
+	for _, id := range []string{"a", "b", "c"} {
+		if scores["broad"] <= scores[id] {
+			t.Errorf("the broad hint (%.2f) did not read worse than %q (%.2f)",
+				scores["broad"], id, scores[id])
+		}
+	}
+
+	// ארוחה too, and a round made only of broad hints still accuses nobody in
+	// particular.
+	flat := f.suspicion("אוכל", []BoardHint{{"a", "ארוחה"}, {"b", "מנה"}})
+	for id, score := range flat {
+		if math.Abs(score) > 1e-9 {
+			t.Errorf("%q stood out (%.2f) where every hint is equally broad", id, score)
+		}
+	}
+}
+
+// The graph is keyed the way the game reads a word, not the way it happens to
+// be spelled in the dataset. ג'ונגל and גונגל are one word to the engine, and
+// before this the curated spelling could use the graph while the other was
+// treated as a word nobody had ever heard of.
+func TestSpellingDoesNotDecideWhetherAHintCanBeJudged(t *testing.T) {
+	board := func(spelling string) []BoardHint {
+		return []BoardHint{
+			{"a", "פרווה"}, {"b", "טורף"}, {"c", "זנב"}, {"x", spelling},
+		}
+	}
+	for _, pair := range [][2]string{
+		{"ג'ונגל", "גונגל"},   // geresh dropped, as normalisation drops it
+		{"טורף", "טורפ"},      // final letter written plain
+		{"אפריקה", "אפריקה!"}, // punctuation
+	} {
+		curated := Suspicion("חיות", board(pair[0]))["x"]
+		typed := Suspicion("חיות", board(pair[1]))["x"]
+		if math.Abs(curated-typed) > 1e-9 {
+			t.Errorf("%q read %+.2f but %q read %+.2f: spelling decided whether it could be judged",
+				pair[0], curated, pair[1], typed)
+		}
+	}
+}

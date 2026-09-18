@@ -64,8 +64,13 @@ func loadHintTables(raw []byte) hintTables {
 			t.citizen[word] = hints
 			for _, hint := range hints {
 				appearances[c.Name][hint]++
-				if t.together[hint] == nil {
-					t.together[hint] = map[string]int{}
+				// Keyed the way the game reads a word, so that a player typing
+				// גונגל reaches the curated ג'ונגל. The engine drops geresh,
+				// maqaf and punctuation and folds final letters; a graph keyed
+				// on raw spelling would answer only to the exact one curated.
+				key := game.NormalizeWord(hint)
+				if t.together[key] == nil {
+					t.together[key] = map[string]int{}
 				}
 				// Hints that share a word's pool describe the same thing. This
 				// is what lets an impostor read the board: knowledge about the
@@ -73,7 +78,7 @@ func loadHintTables(raw []byte) hintTables {
 				// play.
 				for _, other := range hints {
 					if other != hint {
-						t.together[hint][other]++
+						t.together[key][game.NormalizeWord(other)]++
 					}
 				}
 			}
@@ -92,6 +97,17 @@ func loadHintTables(raw []byte) hintTables {
 		sort.Strings(t.shared[category])
 	}
 	return t
+}
+
+// linked reports whether the graph pairs these two hints, however either of
+// them happens to be spelled.
+func (t hintTables) linked(a, b string) bool {
+	return t.together[game.NormalizeWord(a)][game.NormalizeWord(b)] > 0
+}
+
+// known reports whether the graph has anything at all to say about a hint.
+func (t hintTables) known(hint string) bool {
+	return len(t.together[game.NormalizeWord(hint)]) > 0
 }
 
 // CitizenHints are the hints for a secret word, in file order. Empty for a
@@ -133,7 +149,9 @@ func (t hintTables) impostorHints(category string, seen []string) []string {
 		}
 		score := 0
 		for _, said := range seen {
-			score += t.together[hint][said]
+			if t.linked(hint, said) {
+				score += t.together[game.NormalizeWord(hint)][game.NormalizeWord(said)]
+			}
 		}
 		if score > 0 {
 			ranked = append(ranked, scored{hint, score})
