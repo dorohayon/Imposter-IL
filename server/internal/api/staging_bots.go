@@ -34,6 +34,21 @@ func (s *Server) botWriteTime() time.Duration {
 	return stagingBotWriteSeconds*time.Second - spread + time.Duration(s.rng.Int64N(int64(2*spread)))
 }
 
+// botGuess is the word a caught impostor names. Naming a word from the
+// category is what a person does in that seat; it was the literal string
+// "לאיודע", which is the most watched moment of the round spent on a shrug.
+// Uniform over the category on purpose — reasoning towards the real word from
+// the hints would make a bot better at this than the player it is playing
+// against.
+func (s *Server) botGuess(category string) string {
+	for _, c := range content.Categories {
+		if c.Name == category && len(c.Words) > 0 {
+			return c.Words[s.rng.IntN(len(c.Words))]
+		}
+	}
+	return "לאיודע"
+}
+
 // botStillThinking reports whether the bot has not finished its pause yet,
 // starting one if it has none pending.
 func (s *Server) botStillThinking(bot *session, now time.Time, d time.Duration) bool {
@@ -47,19 +62,33 @@ func (s *Server) botStillThinking(bot *session, now time.Time, d time.Duration) 
 	return false
 }
 
-// The fallback pool, for a category content has no hints for.
+// The last resort, for a category the dataset does not cover.
 var stagingBotHints = []string{
 	"מיוחד", "מוכר", "צבעוני", "נפוץ", "מעניין", "גדול", "קטן",
 	"מהיר", "ישן", "חדש", "עגול", "חזק", "נדיר", "שימושי",
 }
 
-// botHintPool is what a bot has to work with this round. Drawing from the
-// category is what a human impostor does, and close enough to what a citizen
-// does that one real player at a table of bots stops reading the same
-// adjectives every game. The engine refuses a hint that repeats another or
-// gives the secret word away, so the caller tries the next one.
-func botHintPool(category string) []string {
-	if pool := content.BotHints(category); len(pool) > 0 {
+// botHintPool is what this bot has to work with, in the order it should try.
+//
+// The two roles read different things, and that is the point. A citizen bot is
+// handed the word by the game and draws from that word's curated pool. An
+// impostor's View carries no secret word at all, so it can only do what a
+// human impostor does: look at the category and at what has already been said.
+// Nothing here has to be trusted to keep them apart — with no word, the
+// citizen pool cannot be reached.
+func botHintPool(view game.View) []string {
+	if view.SecretWord != "" {
+		if pool := content.CitizenHints(view.SecretWord); len(pool) > 0 {
+			return pool
+		}
+	}
+	said := make([]string, 0, len(view.Hints))
+	for _, h := range view.Hints {
+		if !h.Missing {
+			said = append(said, h.Text)
+		}
+	}
+	if pool := content.ImpostorHints(view.Category, said); len(pool) > 0 {
 		return pool
 	}
 	return stagingBotHints
@@ -226,9 +255,16 @@ func (s *Server) runStagingBotsInGame(entry *roomEntry, now time.Time) {
 				// round; the other players see "כותב רמז..." meanwhile.
 			} else {
 				acted = true
-				pool := botHintPool(view.Category)
-				for range pool {
-					hint := pool[s.botHint%uint64(len(pool))]
+				pool := botHintPool(view)
+				// Best first for an impostor, so start there and walk on when
+				// the engine refuses one; a citizen's pool has no order worth
+				// keeping, so start somewhere different each time.
+				start := uint64(0)
+				if view.SecretWord != "" {
+					start = s.botHint
+				}
+				for i := range pool {
+					hint := pool[(start+uint64(i))%uint64(len(pool))]
 					s.botHint++
 					actionErr = entry.room.WithGame(now, func(g *game.Game) error {
 						return g.SubmitHint(id, hint, now)
@@ -258,8 +294,9 @@ func (s *Server) runStagingBotsInGame(entry *roomEntry, now time.Time) {
 		case game.PhaseImpostorGuess:
 			if view.Role == game.RoleImpostor {
 				acted = true
+				guess := s.botGuess(view.Category)
 				actionErr = entry.room.WithGame(now, func(g *game.Game) error {
-					return g.SubmitGuess(id, "לאיודע", now)
+					return g.SubmitGuess(id, guess, now)
 				})
 			}
 		}

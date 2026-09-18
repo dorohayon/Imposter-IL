@@ -102,3 +102,19 @@ cd server && go test ./internal/content/
 ```
 
 The failure names the word and the hint, and says which rule it broke.
+
+Until every word has a pool, `TestEveryWordHasCitizenHints` fails and says how
+many are left. That is deliberate: the branch is not mergeable until the
+dataset is complete, so half a dataset cannot reach players.
+
+## Why a hint that fits only one word is wasted on the impostor
+
+The impostor's candidates are the hints **two or more words in the category
+share**. A hint used by exactly one word is that word's signature, and letting
+the impostor reach for it would make a bot better at the game than a person in
+the same seat.
+
+So a pool of six hints that are each unique to their word validates perfectly
+and contributes nothing to the impostor — the bot falls back to the broad pool
+and the round reads like the one before it. Hints that overlap across two or
+three words in the category are what give an impostor something to read.
