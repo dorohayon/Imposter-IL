@@ -34,6 +34,60 @@ func (s *Server) botWriteTime() time.Duration {
 	return stagingBotWriteSeconds*time.Second - spread + time.Duration(s.rng.Int64N(int64(2*spread)))
 }
 
+// botVote picks who this bot votes for.
+//
+// The two roles judge with what they have, which is the same split the hints
+// use. A citizen bot knows the word and can ask whether a hint belongs beside
+// it. An impostor bot has no word — the game never gave it one — so it can
+// only ask whether a hint belongs beside the rest of the board, which is what
+// a person in that seat does while trying to look like everyone else.
+//
+// Suspicion raises the odds, it does not decide. A bot that always voted for
+// its top suspect would be a better player than the person it is playing
+// against and would vote the same way every round. At these weights a table of
+// bots lands on the impostor about 39% of the time against 33% for a coin,
+// which is an opinion rather than an answer — and a person is never singled
+// out, because a hint nobody curated carries no opinion at all.
+func (s *Server) botVote(view game.View, candidates []string) string {
+	weights := make([]int, len(candidates))
+	total := 0
+	for i, candidate := range candidates {
+		weight := 1
+		for _, h := range view.Hints {
+			if h.PlayerID != candidate || h.Missing {
+				continue
+			}
+			if view.SecretWord != "" {
+				weight += 2 * content.CitizenSuspicion(h.Text, view.SecretWord)
+			} else {
+				weight += 2 * content.BoardSuspicion(h.Text, otherHints(view.Hints, candidate))
+			}
+		}
+		weights[i] = weight
+		total += weight
+	}
+	pick := s.rng.IntN(total)
+	for i, weight := range weights {
+		if pick < weight {
+			return candidates[i]
+		}
+		pick -= weight
+	}
+	return candidates[len(candidates)-1]
+}
+
+// otherHints is the board as seen from one player's hint: everything written
+// by somebody else.
+func otherHints(hints []game.Hint, exclude string) []string {
+	out := make([]string, 0, len(hints))
+	for _, h := range hints {
+		if !h.Missing && h.PlayerID != exclude {
+			out = append(out, h.Text)
+		}
+	}
+	return out
+}
+
 // botGuess is the word a caught impostor names. Naming a word from the
 // category is what a person does in that seat; it was the literal string
 // "לאיודע", which is the most watched moment of the round spent on a shrug.
@@ -285,7 +339,7 @@ func (s *Server) runStagingBotsInGame(entry *roomEntry, now time.Time) {
 				})
 				if len(candidates) > 0 {
 					acted = true
-					target := candidates[s.rng.IntN(len(candidates))]
+					target := s.botVote(view, candidates)
 					actionErr = entry.room.WithGame(now, func(g *game.Game) error {
 						return g.Vote(id, target, now)
 					})

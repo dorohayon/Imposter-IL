@@ -110,6 +110,21 @@ Until every word has a pool, `TestEveryWordHasCitizenHints` fails and says how
 many are left. That is deliberate: the branch is not mergeable until the
 dataset is complete, so half a dataset cannot reach players.
 
+## The same pools decide the vote
+
+A citizen bot knows the word and asks how much of it a hint touches: one of the
+word's own hints, or company it keeps, is no reason to suspect anybody. An
+impostor bot has no word and asks the same question of the board instead.
+
+**A hint nobody curated is never suspicious.** The dataset holds the words bots
+write, never the words players write, so a hint that is not in it carries no
+opinion — and reading that silence as guilt would set the bots hunting every
+human at the table. That is a test, not an intention.
+
+Suspicion raises the odds rather than deciding. A table of bots lands on a bot
+impostor about 39% of the time against 33% for a coin, and on a person playing
+the impostor about 33% — an opinion, not an answer.
+
 ## Why a hint that fits only one word is wasted on the impostor
 
 The impostor's candidates are the hints **two or more words in the category
