@@ -720,15 +720,52 @@ func TestThirdDisconnectOutsideTurnRemovesAfterThirtySeconds(t *testing.T) {
 	})
 }
 
-func TestDisconnectedVoterAddsNoVote(t *testing.T) {
+// A choice already made survives a moment of bad signal. Dropping it meant a
+// phone losing the network between the tap and the timer closing threw the
+// vote away, which on a phone is a normal thing to happen.
+func TestAVoteSurvivesTheVoterDroppingOffline(t *testing.T) {
 	g := newGame(t, 4)
 	now := toVoting(t, g)
 	c := citizens(g)
 	must(t, g.Vote(c[0], g.impostor, now))
 	must(t, g.Vote(c[1], c[2], now))
+	must(t, g.Vote(c[2], c[1], now))
+	// Two of them drop off the line after choosing.
 	must(t, g.Disconnect(c[1], now.Add(time.Second)))
+	must(t, g.Disconnect(c[2], now.Add(time.Second)))
 	g.Tick(now.Add(20 * time.Second))
-	wantPhase(t, g, PhaseImpostorGuess)
+
+	// All three votes counted, so c[1] and c[2] tie and go to a runoff — the
+	// impostor is not simply handed the round by the other two vanishing.
+	wantPhase(t, g, PhaseRunoffVoting)
+	if len(g.voteRounds[0]) != 3 {
+		t.Fatalf("counted %d votes, want all three", len(g.voteRounds[0]))
+	}
+	// One abstention, and it is the impostor, who never voted at all — not the
+	// two who chose and then lost the network.
+	if g.abstentions[0] != 1 {
+		t.Fatalf("abstentions = %d, want only the impostor who never voted", g.abstentions[0])
+	}
+	for _, id := range []string{c[1], c[2]} {
+		if _, voted := g.voteRounds[0][id]; !voted {
+			t.Errorf("%s chose and then dropped offline, and their vote was thrown away", id)
+		}
+	}
+}
+
+// A vote from somebody who has left the match is a different thing: it goes
+// when they go.
+func TestAVoteFromSomebodyWhoLeftIsDropped(t *testing.T) {
+	g := newGame(t, 5)
+	now := toVoting(t, g)
+	c := citizens(g)
+	must(t, g.Vote(c[0], g.impostor, now))
+	must(t, g.Vote(c[1], g.impostor, now))
+	must(t, g.Leave(c[0], now))
+	g.Tick(now.Add(20 * time.Second))
+	if len(g.voteRounds[0]) != 1 {
+		t.Fatalf("counted %v, want only the vote of somebody still in the match", g.voteRounds[0])
+	}
 }
 
 func TestCitizenLeavingLosesAndGameContinuesWithThree(t *testing.T) {

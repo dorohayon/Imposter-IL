@@ -300,7 +300,7 @@
 }
 ```
 
-`abstentions` מונה לכל סבב כמה שחקנים פעילים לא הצביעו, כולל מי שהיה מנותק בסיום ההצבעה.
+`abstentions` מונה לכל סבב כמה שחקנים פעילים לא הצביעו כלל. מי שהצביע ואז התנתק נספר כמצביע.
 
 `winner`: `citizens` | `impostor` | `null` (עבור `not_enough_players`). ערכי `reason` ב־[`architecture.md`](architecture.md#משחק-internalgame--ממומש).
 

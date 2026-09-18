@@ -711,13 +711,17 @@ func (g *Game) startVoting(phase Phase, candidates []string, at time.Time, d tim
 }
 
 func (g *Game) tally(at time.Time) {
+	// A vote already cast counts, whether or not its voter is still on the
+	// line. Dropping them meant a moment of bad signal between choosing and
+	// the timer closing silently threw away a choice somebody had made, and on
+	// a phone that is a normal thing to happen. Votes of players who left or
+	// were removed are deleted when they go, so what is left here is the
+	// deliberate choice of somebody still in the match.
 	counted := map[string]string{}
 	counts := map[string]int{}
 	for voter, target := range g.votes {
-		if g.players[voter].connected { // a disconnected player adds no vote
-			counted[voter] = target
-			counts[target]++
-		}
+		counted[voter] = target
+		counts[target]++
 	}
 	g.voteRounds = append(g.voteRounds, counted)
 	g.abstentions = append(g.abstentions, len(g.activeIDs())-len(counted))
