@@ -16,14 +16,18 @@ import (
 func TestBotsReachForThePoolTheirRoleAllows(t *testing.T) {
 	const word = "פיצה"
 	citizen := game.View{Category: "אוכל", SecretWord: word}
-	if got := botHintPool(citizen); !slices.Equal(got, content.CitizenHints(word)) {
-		t.Errorf("a citizen bot got %v, want the word's own pool", got)
+	own := content.CitizenHints(word)
+	got := botHintPool(citizen)
+	// The word's own hints come first; the broad pool trails them, because a
+	// match runs several rounds and six hints run out.
+	if len(got) <= len(own) || !slices.Equal(got[:len(own)], own) {
+		t.Errorf("a citizen bot got %v, want the word's own pool first", got)
 	}
 
 	// An impostor's View carries no secret word, so the same call cannot
 	// return the word's pool even though the process is holding the word.
 	impostor := game.View{Category: "אוכל"}
-	got := botHintPool(impostor)
+	got = botHintPool(impostor)
 	for _, hint := range content.CitizenHints(word) {
 		if slices.Contains(got, hint) && !slices.Contains(content.ImpostorHints("אוכל", nil), hint) {
 			t.Errorf("an impostor bot was offered %q, which only the word's pool has", hint)
@@ -88,5 +92,70 @@ func TestVotingIsIndependentOfTheSecretWordAndTheRoles(t *testing.T) {
 	// And the person writing a word nobody curated is not thereby singled out.
 	if share := citizen["p3"]; share < 0.28 || share > 0.39 {
 		t.Errorf("the unheard-of word took %.1f%% of the votes, want about a third", 100*share)
+	}
+}
+
+// A bot's name goes in front of a player, so it obeys the same rules a
+// player's nickname does, and its avatar has to be one that exists.
+func TestBotNamesAreNamesAPlayerCouldHave(t *testing.T) {
+	avatars := map[string]bool{}
+	for _, list := range stagingBotAvatars {
+		for _, a := range list {
+			avatars[a] = true
+		}
+	}
+	for gender, names := range stagingBotNames {
+		if len(names) < 8 {
+			t.Errorf("%s has only %d names: a table of four would repeat too often", gender, len(names))
+		}
+		for _, name := range names {
+			nickname := "בוט " + name
+			if _, ok := validNickname(nickname); !ok {
+				t.Errorf("%q is not a nickname the server would accept", nickname)
+			}
+			if content.Blocked(nickname) {
+				t.Errorf("%q is on the blocked list", nickname)
+			}
+		}
+	}
+
+	// A full table's worth, drawn over and over: never a repeated name or a
+	// repeated avatar, and never an avatar that does not exist.
+	srv := NewServer(time.Now, content.Policy(), content.Pick)
+	for round := 0; round < 2000; round++ {
+		var table []*session
+		for seat := 0; seat < 3; seat++ {
+			nickname, avatar := srv.botProfile(table)
+			if !avatars[avatar] {
+				t.Fatalf("%q is not one of the avatars", avatar)
+			}
+			for _, other := range table {
+				if other.nickname == nickname {
+					t.Fatalf("two bots called %q at one table", nickname)
+				}
+				if other.avatarID == avatar {
+					t.Fatalf("two bots wearing %q at one table", avatar)
+				}
+			}
+			table = append(table, &session{nickname: nickname, avatarID: avatar})
+		}
+	}
+}
+
+// The name and the face agree, which is the point of keeping two lists.
+func TestABotsAvatarMatchesItsName(t *testing.T) {
+	srv := NewServer(time.Now, content.Policy(), content.Pick)
+	gender := map[string]string{}
+	for g, names := range stagingBotNames {
+		for _, n := range names {
+			gender["בוט "+n] = g
+		}
+	}
+	for i := 0; i < 3000; i++ {
+		nickname, avatar := srv.botProfile(nil)
+		want := gender[nickname]
+		if !slices.Contains(stagingBotAvatars[want], avatar) {
+			t.Fatalf("%q was given %q, which is not a %s avatar", nickname, avatar, want)
+		}
 	}
 }

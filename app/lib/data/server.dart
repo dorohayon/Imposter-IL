@@ -9,7 +9,7 @@ import 'dart:io';
 /// for years, so the server's MIN_CLIENT_BUILD is the only way to retire a
 /// build whose protocol it no longer speaks; without the header there would be
 /// no way to tell an old install to update instead of failing strangely.
-const clientBuild = 1;
+const clientBuild = 2;
 
 /// The game server. Override with --dart-define=IMPOSTER_SERVER=https://host.
 Uri defaultServerUrl() {

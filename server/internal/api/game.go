@@ -218,6 +218,7 @@ type gamePlayerJSON struct {
 type hintJSON struct {
 	PlayerID  string         `json:"playerId"`
 	Text      string         `json:"text"`
+	Round     int            `json:"round"`
 	Missing   bool           `json:"missing"`
 	Reactions map[string]int `json:"reactions"`
 }
@@ -234,6 +235,7 @@ type resultJSON struct {
 
 type gameJSON struct {
 	GameID              string           `json:"gameId"`
+	Round               int              `json:"round"`
 	Phase               game.Phase       `json:"phase"`
 	Deadline            *time.Time       `json:"deadline"`
 	Category            string           `json:"category"`
@@ -260,6 +262,7 @@ func optional[T comparable](v T) *T {
 func (s *Server) gameJSON(gameID string, v game.View, profiles map[string]playerProfile) gameJSON {
 	out := gameJSON{
 		GameID:              gameID,
+		Round:               v.Round,
 		Phase:               v.Phase,
 		Category:            v.Category,
 		SecretWord:          v.SecretWord,
@@ -293,7 +296,7 @@ func (s *Server) gameJSON(gameID string, v game.View, profiles map[string]player
 		if reactions == nil {
 			reactions = map[string]int{}
 		}
-		out.Hints = append(out.Hints, hintJSON{PlayerID: h.PlayerID, Text: h.Text, Missing: h.Missing, Reactions: reactions})
+		out.Hints = append(out.Hints, hintJSON{PlayerID: h.PlayerID, Text: h.Text, Round: h.Round, Missing: h.Missing, Reactions: reactions})
 	}
 	if r := v.Result; r != nil {
 		out.Result = &resultJSON{

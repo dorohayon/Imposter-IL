@@ -84,7 +84,8 @@ func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
 	human.w.gameState(phase("role_reveal"))
 
 	wantOK(t, human.w.command("confirm", "game.confirmRole", map[string]any{"gameId": gameID}))
-	for step := 0; step < 20; step++ {
+	// A match now runs several hint-and-vote rounds before it ends.
+	for step := 0; step < 120; step++ {
 		c.srv.runStagingBots()
 		c.srv.mu.Lock()
 		sess := c.srv.players[human.id]
@@ -97,7 +98,8 @@ func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
 		case game.PhaseHints:
 			if view.CurrentTurn == human.id {
 				wantOK(t, human.w.command(fmt.Sprintf("hint-%d", step), "game.submitHint", map[string]any{
-					"gameId": gameID, "text": "אנושי",
+					// A new word each turn: the duplicate rule spans the match.
+					"gameId": gameID, "text": fmt.Sprintf("אנושי%d", step),
 				}))
 			} else {
 				// A bot spends stagingBotWriteSeconds appearing to write.
@@ -113,7 +115,15 @@ func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
 			c.advance(5 * time.Second)
 			c.tickAll()
 		case game.PhaseVoting, game.PhaseRunoffVoting:
-			if view.MyVote == "" {
+			// The table can vote the human out too, and a spectator does not
+			// vote.
+			playing := false
+			for _, p := range view.Players {
+				if p.ID == human.id {
+					playing = p.Status == game.StatusActive
+				}
+			}
+			if playing && view.MyVote == "" {
 				var target string
 				for _, candidate := range view.Candidates {
 					if candidate != human.id {

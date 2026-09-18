@@ -10,15 +10,54 @@ import (
 	"github.com/dorohayon/Imposter-IL/server/internal/matchmaking"
 )
 
-var stagingBotProfiles = []struct {
-	name, avatar string
-}{
-	{"בוט בלש", "avatar-m04-detective-hat"},
-	{"בוט רמז", "avatar-f01-notebook"},
-	{"בוט חשוד", "avatar-m02-binoculars"},
+// Staging bots are named "בוט" and an ordinary Hebrew first name. The prefix
+// is not decoration: a player has to be able to tell at a glance who at the
+// table is not a person. The name behind it is what makes the table readable —
+// "בוט חשוד" and "בוט רמז" read as roles rather than as players, and a round
+// of them was hard to follow.
+//
+// Kept in two lists so that a bot's avatar matches the name it is given.
+var stagingBotNames = map[string][]string{
+	"f": {"נועה", "שירה", "יעל", "מאיה", "תמר", "אביגיל", "הילה", "רוני",
+		"ליאור", "דנה", "אור", "טליה", "עדי", "מיכל", "שני", "אלה"},
+	"m": {"איתי", "נועם", "יונתן", "דניאל", "אורי", "עידו", "אלון", "גיא",
+		"עומר", "יואב", "אריאל", "תומר", "רועי", "אסף", "ניר", "עמית"},
+}
+
+var stagingBotAvatars = map[string][]string{
+	"f": {"avatar-f01-notebook", "avatar-f02-camera", "avatar-f03-headphones",
+		"avatar-f04-map", "avatar-f05-fingerprint-kit", "avatar-f06-laptop"},
+	"m": {"avatar-m01-flashlight", "avatar-m02-binoculars", "avatar-m03-evidence-bag",
+		"avatar-m04-detective-hat", "avatar-m05-badge", "avatar-m06-magnifying-glass"},
+}
+
+// botProfile picks a name and a matching avatar that nobody at this table is
+// already using. Two bots called בוט נועה would be worse than the roles they
+// replaced.
+func (s *Server) botProfile(taken []*session) (nickname, avatar string) {
+	used := func(field func(*session) string, value string) bool {
+		return slices.ContainsFunc(taken, func(other *session) bool { return field(other) == value })
+	}
+	for attempt := 0; ; attempt++ {
+		gender := "f"
+		if s.rng.IntN(2) == 0 {
+			gender = "m"
+		}
+		names, avatars := stagingBotNames[gender], stagingBotAvatars[gender]
+		nickname = "בוט " + names[s.rng.IntN(len(names))]
+		avatar = avatars[s.rng.IntN(len(avatars))]
+		free := !used(func(b *session) string { return b.nickname }, nickname) &&
+			!used(func(b *session) string { return b.avatarID }, avatar)
+		// The lists are far longer than a table, so this lands almost at once;
+		// the bound is only so that a shrunken list cannot spin here forever.
+		if free || attempt == 50 {
+			return nickname, avatar
+		}
+	}
 }
 
 const (
+	// How long a bot appearsconst (
 	// How long a bot appears to spend writing a hint, and deciding a vote.
 	stagingBotWriteSeconds = 10
 	stagingBotVoteSeconds  = 4
@@ -113,18 +152,17 @@ var stagingBotHints = []string{
 // Nothing here has to be trusted to keep them apart — with no word, the
 // citizen pool cannot be reached.
 func botHintPool(view game.View) []string {
-	if view.SecretWord != "" {
-		if pool := content.CitizenHints(view.SecretWord); len(pool) > 0 {
-			return pool
-		}
-	}
 	said := make([]string, 0, len(view.Hints))
 	for _, h := range view.Hints {
 		if !h.Missing {
 			said = append(said, h.Text)
 		}
 	}
-	if pool := content.ImpostorHints(view.Category, said); len(pool) > 0 {
+	// The broad pool trails the word's own, because a match runs several
+	// rounds now and six curated hints shared between the citizens run out by
+	// the third one. Better a broad hint than a turn nobody answers.
+	pool := append(content.CitizenHints(view.SecretWord), content.ImpostorHints(view.Category, said)...)
+	if len(pool) > 0 {
 		return pool
 	}
 	return stagingBotHints
@@ -159,13 +197,13 @@ func (s *Server) rebalanceStagingBots(entry *roomEntry, categories []string, now
 		delete(s.players, bot.playerID)
 	}
 	for len(bots) < desired {
-		profile := stagingBotProfiles[len(bots)%len(stagingBotProfiles)]
+		nickname, avatar := s.botProfile(bots)
 		s.botSequence++
 		id := fmt.Sprintf("p_bot_%d", s.botSequence)
 		bot := &session{
 			playerID:         id,
-			nickname:         profile.name,
-			avatarID:         profile.avatar,
+			nickname:         nickname,
+			avatarID:         avatar,
 			roomID:           entry.id,
 			bot:              true,
 			connected:        true,
@@ -199,6 +237,17 @@ func (s *Server) removeGameBotsWithoutHumans(entry *roomEntry, now time.Time) {
 		bot.leaveGame()
 		delete(s.players, bot.playerID)
 	}
+}
+
+// botStillPlaying reports whether this bot is still in the round rather than
+// watching it.
+func botStillPlaying(view game.View, id string) bool {
+	for _, p := range view.Players {
+		if p.ID == id {
+			return p.Status == game.StatusActive
+		}
+	}
+	return false
 }
 
 // botReact reacts to the newest hint, after a pause, so one real player can
@@ -248,8 +297,32 @@ func (s *Server) runStagingBots() {
 	}
 	for _, entry := range slices.Clone(s.publicRooms) {
 		s.removeGameBotsWithoutHumans(entry, s.now())
-		if entry.room.Game() != nil {
-			s.runStagingBotsInGame(entry, s.now())
+		g := entry.room.Game()
+		if g == nil {
+			continue
+		}
+		s.runStagingBotsInGame(entry, s.now())
+		// A match a bot ended — by voting the last citizen out, by guessing,
+		// or by nobody voting twice — publishes and stops there. An ended game
+		// schedules no timer, so without this the room would sit finished and
+		// still full until a player happened to do something, and its bots
+		// would sit in it.
+		if entry.room.Game().Phase() == game.PhaseEnded {
+			s.tickRoom(entry)
+		}
+	}
+	// Last, because the loop above is one of the things that drops rooms.
+	//
+	// A bot exists only while its room does. Rooms are dropped by several paths
+	// — a finished match settling, a lobby emptying, a panic taking one down —
+	// and each lets its bots go by walking the members it has at that moment. A
+	// bot that was not among them, for whatever reason, would sit in s.players
+	// for the life of the process. This is the invariant itself, rather than
+	// one more place that has to remember.
+	for id, sess := range s.players {
+		if sess.bot && s.roomsByID[sess.roomID] == nil {
+			sess.leaveGame()
+			delete(s.players, id)
 		}
 	}
 }
@@ -270,8 +343,14 @@ func (s *Server) runStagingBotsInGame(entry *roomEntry, now time.Time) {
 			continue
 		}
 		var actionErr error
+		// A bot the table voted out watches like anyone else: it still reacts,
+		// and it takes no turn and casts no vote.
 		reacted := s.botReact(entry, bot, view, now)
 		acted := false
+		if !botStillPlaying(view, id) {
+			changed = changed || reacted
+			continue
+		}
 		switch view.Phase {
 		case game.PhaseRoleReveal:
 			for _, player := range view.Players {

@@ -184,6 +184,7 @@ final _deadline =
 
 Map<String, dynamic> gameJson({
   required String phase,
+  int round = 1,
   String role = 'citizen',
   String? turn,
   List<Map<String, dynamic>> hints = const [],
@@ -195,6 +196,7 @@ Map<String, dynamic> gameJson({
 }) =>
     {
       'gameId': 'g_1',
+      'round': round,
       'phase': phase,
       'deadline': phase == 'ended' ? null : _deadline,
       'category': 'חיות',

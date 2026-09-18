@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/main.dart';
 import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/screens/legal_screens.dart';
+import 'package:imposter_il/screens/live_room.dart';
 import 'package:imposter_il/widgets/game_ui.dart';
 import 'package:imposter_il/state/game_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -121,4 +122,13 @@ bool isSelectedTile(WidgetTester tester, String label) {
       .descendant(of: tile, matching: find.byIcon(Icons.check_circle_rounded))
       .evaluate()
       .isNotEmpty;
+}
+
+/// Opens a private room this device just created, ready for game snapshots.
+Future<void> openCreatedRoom(WidgetTester tester, FakeApi api) async {
+  api.responses['POST /v1/rooms'] = {'room': roomJson()};
+  await tapText(tester, 'משחק עם חברים');
+  await tapText(tester, 'יצירת חדר');
+  await tapLive(tester, 'יצירת חדר');
+  expect(find.byType(LiveRoomScreen), findsOneWidget);
 }

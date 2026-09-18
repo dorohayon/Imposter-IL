@@ -56,6 +56,7 @@ Player _player(PlayerInfo info, String? me, {String? hint}) => Player(
       hint: hint,
       isMe: info.id == me,
       isDisconnected: !info.connected,
+      isEliminated: info.status == 'eliminated',
     );
 
 /// Counts down to a server deadline in the top-left timer circle.
@@ -1143,12 +1144,18 @@ class _HintsState extends State<_Hints> {
     final held = holding && game.hints.isNotEmpty ? game.hints.last : null;
     final word = game.secretWord;
     final lastHint = game.hints.isEmpty ? null : game.hints.last;
+    final watching = game.isEliminated(me);
+    // Newest first, keeping each hint's own index: reporting and reacting
+    // address a hint by where it sits in the match, not on the screen.
+    final board = [
+      for (var i = game.hints.length - 1; i >= 0; i--) (i, game.hints[i]),
+    ];
 
     return GameScaffold(
       title: game.category,
       timer: _timer(game),
       onExit: widget.onLeave,
-      bottom: myTurn
+      bottom: myTurn && !watching
           ? PrimaryButton(
               label: 'שליחת רמז',
               variant: ButtonVariant.confirm,
@@ -1158,12 +1165,20 @@ class _HintsState extends State<_Hints> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (game.round > 1) ...[
+            RoundBadge(round: game.round),
+            const SizedBox(height: 12),
+          ],
+          if (watching) ...[
+            const SpectatorNote(),
+            const SizedBox(height: 14),
+          ],
           // The impostor never receives the word, so there is nothing to show.
           if (!game.isImpostor && word != null) ...[
             _SecretWordPill(word: word),
             const SizedBox(height: 14),
           ],
-          if (myTurn) ...[
+          if (myTurn && !watching) ...[
             // Screen 10: the turn is a filled yellow card, not a line of text.
             Container(
               width: double.infinity,
@@ -1314,12 +1329,23 @@ class _HintsState extends State<_Hints> {
               'עוד לא נשלחו רמזים.',
               style: TextStyle(color: AppColors.muted),
             ),
-          for (final (i, h) in game.hints.indexed)
+          // Newest first. The board keeps every round, so oldest-first meant
+          // scrolling to the bottom to read the hint the table is actually
+          // talking about.
+          for (final (position, (i, h)) in board.indexed) ...[
+            // A line where the round changes, so a long board reads as a match
+            // rather than one very long round.
+            if (game.round > 1 &&
+                (position == 0 || board[position - 1].$2.round != h.round))
+              Padding(
+                padding: EdgeInsets.only(top: position == 0 ? 0 : 6, bottom: 8),
+                child: RoundDivider(round: h.round),
+              ),
             if (game.player(h.playerId) case final p?)
               Padding(
-                // Reactions are always to the last hint, so its card is where
-                // their bubbles rise from.
-                key: i == game.hints.length - 1 ? _lastHintKey : null,
+                // Reactions are always to the newest hint, which is now the
+                // first card, and its bubbles rise from there.
+                key: position == 0 ? _lastHintKey : null,
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _ReportableHint(
                   card: PlayerCard(
@@ -1342,6 +1368,7 @@ class _HintsState extends State<_Hints> {
                       !session.muted.contains(h.playerId),
                 ),
               ),
+          ],
           if (lastHint != null &&
               !lastHint.missing &&
               session.showReactions) ...[
@@ -1472,6 +1499,20 @@ class _Voting extends StatefulWidget {
   State<_Voting> createState() => _VotingState();
 }
 
+/// What a player has said across the whole match, for the vote to weigh. An
+/// empty string is a turn that passed without a hint; null is a player who has
+/// not spoken at all.
+String? _saidSoFar(GameView game, GameSession session, String id) {
+  final said = game.hintsOf(id);
+  if (said.isEmpty) return null;
+  if (session.muted.contains(id)) return 'הוסתר';
+  final words = [
+    for (final h in said)
+      if (!h.missing) h.text,
+  ];
+  return words.join(' · ');
+}
+
 class _VotingState extends State<_Voting> {
   String? _selected;
 
@@ -1493,26 +1534,37 @@ class _VotingState extends State<_Voting> {
     final selected = _selected ?? game.myVote;
     final isConfirmed = selected != null && selected == game.myVote;
     final runoff = game.phase == 'runoff_voting';
+    final watching = game.isEliminated(me);
 
     return GameScaffold(
       title: runoff ? 'הצבעה חוזרת' : 'מי המתחזה?',
       timer: _timer(game),
       onExit: widget.onLeave,
-      bottom: PrimaryButton(
-        label: isConfirmed ? 'ההצבעה נקלטה' : 'אישור הצבעה',
-        onPressed: selected == null || isConfirmed
-            ? null
-            : () => runCommand(
-                  context,
-                  session.send(
-                    'game.vote',
-                    {'gameId': game.id, 'targetPlayerId': selected},
-                  ),
-                ),
-      ),
+      bottom: watching
+          ? null
+          : PrimaryButton(
+              label: isConfirmed ? 'ההצבעה נקלטה' : 'אישור הצבעה',
+              onPressed: selected == null || isConfirmed
+                  ? null
+                  : () => runCommand(
+                        context,
+                        session.send(
+                          'game.vote',
+                          {'gameId': game.id, 'targetPlayerId': selected},
+                        ),
+                      ),
+            ),
       child: Column(
         children: [
-          if (!runoff)
+          if (game.round > 1) ...[
+            RoundBadge(round: game.round),
+            const SizedBox(height: 12),
+          ],
+          if (watching) ...[
+            const SpectatorNote(),
+            const SizedBox(height: 14),
+          ],
+          if (!runoff && !watching)
             const Padding(
               padding: EdgeInsets.only(bottom: 14),
               child: Text(
@@ -1533,7 +1585,7 @@ class _VotingState extends State<_Voting> {
                       Border.all(color: AppColors.coral.withValues(alpha: .42)),
                 ),
                 child: const Text(
-                  'היה תיקו. מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף יעניק ניצחון למתחזה.',
+                  'היה תיקו. מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף — איש לא מודח והמשחק ממשיך לסבב נוסף.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Color(0xFFFFD9D9), height: 1.4),
                 ),
@@ -1547,10 +1599,10 @@ class _VotingState extends State<_Voting> {
                   player: _player(
                     p,
                     me,
-                    hint: switch (game.hintOf(id)) {
-                      null => null,
-                      final h => h.missing ? '' : h.text,
-                    },
+                    // Everything they have said this match, not just the last
+                    // of it: by the third round the earlier rounds are most of
+                    // what there is to go on.
+                    hint: _saidSoFar(game, session, id),
                   ),
                   note: id == me
                       ? 'אי אפשר להצביע לעצמכם'
@@ -1559,7 +1611,7 @@ class _VotingState extends State<_Voting> {
                           1 => 'קול אחד בסבב הקודם',
                           final votes => '$votes קולות בסבב הקודם',
                         },
-                  enabled: id != me,
+                  enabled: id != me && !watching,
                   selected: selected == id,
                   onTap: () => setState(() => _selected = id),
                 ),
@@ -1666,12 +1718,13 @@ class _GuessState extends State<_Guess> {
 
 const _resultReasons = {
   'impostor_not_caught': 'ההצבעה סימנה אזרח, והמתחזה נשאר במשחק.',
-  'second_tie': 'גם ההצבעה החוזרת הסתיימה בתיקו.',
   'impostor_guessed_word': 'המתחזה נתפס, אבל הצליח לנחש את המילה.',
   'impostor_guess_wrong': 'המתחזה נתפס ולא הצליח לנחש את המילה.',
   'impostor_guess_timeout': 'המתחזה נתפס, אבל הזמן לניחוש נגמר.',
   'impostor_gone': 'המתחזה עזב את המשחק.',
   'not_enough_players': 'נשארו פחות משלושה שחקנים, ולכן המשחק הופסק.',
+  'abandoned': 'שני סבבי הצבעה עברו בלי אף הצבעה, ולכן המשחק בוטל. '
+      'הוא לא נספר לאף אחד — לא כניצחון ולא כהפסד.',
 };
 
 class _Result extends StatelessWidget {
@@ -1734,11 +1787,13 @@ class _Result extends StatelessWidget {
             height: 168,
           ),
           Text(
-            stopped
-                ? 'המשחק הופסק'
-                : citizensWon
-                    ? 'האזרחים ניצחו!'
-                    : 'המתחזה ניצח!',
+            result.reason == 'abandoned'
+                ? 'המשחק בוטל'
+                : stopped
+                    ? 'המשחק הופסק'
+                    : citizensWon
+                        ? 'האזרחים ניצחו!'
+                        : 'המתחזה ניצח!',
             style: Theme.of(context).textTheme.headlineLarge,
             textAlign: TextAlign.center,
           ),
@@ -1748,7 +1803,9 @@ class _Result extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, fontSize: 17),
           ),
-          if (outcome != null) ...[
+          // A match that was called off is recorded for nobody, so there is
+          // nothing to tell anyone they earned.
+          if (outcome != null && outcome != 'none') ...[
             const SizedBox(height: 10),
             StatusBanner(
               text: outcome == 'win' ? 'נרשם לכם ניצחון' : 'נרשם לכם הפסד',

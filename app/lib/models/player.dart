@@ -6,6 +6,7 @@ class Player {
     this.isMe = false,
     this.isHost = false,
     this.isDisconnected = false,
+    this.isEliminated = false,
   });
 
   final String nickname;
@@ -17,6 +18,10 @@ class Player {
   final bool isHost;
   final bool isDisconnected;
 
+  /// Voted out: watching the rest of the match, still reacting, no turn and
+  /// no vote.
+  final bool isEliminated;
+
   Player copyWith({String? hint, bool? isMe}) => Player(
         nickname: nickname,
         avatar: avatar,
@@ -24,6 +29,7 @@ class Player {
         isMe: isMe ?? this.isMe,
         isHost: isHost,
         isDisconnected: isDisconnected,
+        isEliminated: isEliminated,
       );
 }
 

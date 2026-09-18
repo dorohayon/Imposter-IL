@@ -397,3 +397,50 @@ func TestViewIsASnapshot(t *testing.T) {
 		t.Fatal("mutating a view changed the room")
 	}
 }
+
+// A player the table voted out is still in the room. Losing membership would
+// cost them their reconnect and, in a private room, the next game — which is
+// what happened while the room dropped everyone who was not active.
+func TestASpectatorKeepsTheirSeatInTheRoom(t *testing.T) {
+	r := newRoom(t, settings(), "p1", "p2", "p3", "p4")
+	must(t, r.Start("host", "animals", "פיל", t0))
+
+	// Find a citizen, and hand the whole table's vote to them.
+	var victim string
+	for _, id := range []string{"host", "p1", "p2", "p3", "p4"} {
+		v, err := r.Game().View(id)
+		must(t, err)
+		if v.Role == game.RoleCitizen {
+			victim = id
+			break
+		}
+	}
+
+	// Straight to the vote: every turn simply times out.
+	now := t0
+	for r.Game().Phase() != game.PhaseVoting {
+		now = now.Add(time.Minute)
+		r.Tick(now)
+		if r.Game().Phase() == game.PhaseEnded {
+			t.Fatal("the match ended before a vote")
+		}
+	}
+	for _, id := range []string{"host", "p1", "p2", "p3", "p4"} {
+		if id == victim {
+			continue
+		}
+		must(t, r.WithGame(now, func(g *game.Game) error { return g.Vote(id, victim, now) }))
+	}
+	now = now.Add(20 * time.Second)
+	r.Tick(now)
+
+	v, err := r.Game().View(victim)
+	must(t, err)
+	i := slices.IndexFunc(v.Players, func(p game.PlayerView) bool { return p.ID == victim })
+	if v.Players[i].Status != game.StatusEliminated {
+		t.Fatalf("%s is %q, want eliminated", victim, v.Players[i].Status)
+	}
+	if r.member(victim) == nil {
+		t.Fatalf("%s lost their seat in the room after being voted out", victim)
+	}
+}
