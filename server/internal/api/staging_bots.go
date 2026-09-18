@@ -10,15 +10,54 @@ import (
 	"github.com/dorohayon/Imposter-IL/server/internal/matchmaking"
 )
 
-var stagingBotProfiles = []struct {
-	name, avatar string
-}{
-	{"בוט בלש", "avatar-m04-detective-hat"},
-	{"בוט רמז", "avatar-f01-notebook"},
-	{"בוט חשוד", "avatar-m02-binoculars"},
+// Staging bots are named "בוט" and an ordinary Hebrew first name. The prefix
+// is not decoration: a player has to be able to tell at a glance who at the
+// table is not a person. The name behind it is what makes the table readable —
+// "בוט חשוד" and "בוט רמז" read as roles rather than as players, and a round
+// of them was hard to follow.
+//
+// Kept in two lists so that a bot's avatar matches the name it is given.
+var stagingBotNames = map[string][]string{
+	"f": {"נועה", "שירה", "יעל", "מאיה", "תמר", "אביגיל", "הילה", "רוני",
+		"ליאור", "דנה", "אור", "טליה", "עדי", "מיכל", "שני", "אלה"},
+	"m": {"איתי", "נועם", "יונתן", "דניאל", "אורי", "עידו", "אלון", "גיא",
+		"עומר", "יואב", "אריאל", "תומר", "רועי", "אסף", "ניר", "עמית"},
+}
+
+var stagingBotAvatars = map[string][]string{
+	"f": {"avatar-f01-notebook", "avatar-f02-camera", "avatar-f03-headphones",
+		"avatar-f04-map", "avatar-f05-fingerprint-kit", "avatar-f06-laptop"},
+	"m": {"avatar-m01-flashlight", "avatar-m02-binoculars", "avatar-m03-evidence-bag",
+		"avatar-m04-detective-hat", "avatar-m05-badge", "avatar-m06-magnifying-glass"},
+}
+
+// botProfile picks a name and a matching avatar that nobody at this table is
+// already using. Two bots called בוט נועה would be worse than the roles they
+// replaced.
+func (s *Server) botProfile(taken []*session) (nickname, avatar string) {
+	used := func(field func(*session) string, value string) bool {
+		return slices.ContainsFunc(taken, func(other *session) bool { return field(other) == value })
+	}
+	for attempt := 0; ; attempt++ {
+		gender := "f"
+		if s.rng.IntN(2) == 0 {
+			gender = "m"
+		}
+		names, avatars := stagingBotNames[gender], stagingBotAvatars[gender]
+		nickname = "בוט " + names[s.rng.IntN(len(names))]
+		avatar = avatars[s.rng.IntN(len(avatars))]
+		free := !used(func(b *session) string { return b.nickname }, nickname) &&
+			!used(func(b *session) string { return b.avatarID }, avatar)
+		// The lists are far longer than a table, so this lands almost at once;
+		// the bound is only so that a shrunken list cannot spin here forever.
+		if free || attempt == 50 {
+			return nickname, avatar
+		}
+	}
 }
 
 const (
+	// How long a bot appearsconst (
 	// How long a bot appears to spend writing a hint, and deciding a vote.
 	stagingBotWriteSeconds = 10
 	stagingBotVoteSeconds  = 4
@@ -159,13 +198,13 @@ func (s *Server) rebalanceStagingBots(entry *roomEntry, categories []string, now
 		delete(s.players, bot.playerID)
 	}
 	for len(bots) < desired {
-		profile := stagingBotProfiles[len(bots)%len(stagingBotProfiles)]
+		nickname, avatar := s.botProfile(bots)
 		s.botSequence++
 		id := fmt.Sprintf("p_bot_%d", s.botSequence)
 		bot := &session{
 			playerID:         id,
-			nickname:         profile.name,
-			avatarID:         profile.avatar,
+			nickname:         nickname,
+			avatarID:         avatar,
 			roomID:           entry.id,
 			bot:              true,
 			connected:        true,
