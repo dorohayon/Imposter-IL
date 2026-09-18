@@ -56,6 +56,7 @@ Player _player(PlayerInfo info, String? me, {String? hint}) => Player(
       hint: hint,
       isMe: info.id == me,
       isDisconnected: !info.connected,
+      isEliminated: info.status == 'eliminated',
     );
 
 /// Counts down to a server deadline in the top-left timer circle.
@@ -1143,12 +1144,13 @@ class _HintsState extends State<_Hints> {
     final held = holding && game.hints.isNotEmpty ? game.hints.last : null;
     final word = game.secretWord;
     final lastHint = game.hints.isEmpty ? null : game.hints.last;
+    final watching = game.isEliminated(me);
 
     return GameScaffold(
       title: game.category,
       timer: _timer(game),
       onExit: widget.onLeave,
-      bottom: myTurn
+      bottom: myTurn && !watching
           ? PrimaryButton(
               label: 'שליחת רמז',
               variant: ButtonVariant.confirm,
@@ -1158,12 +1160,20 @@ class _HintsState extends State<_Hints> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (game.round > 1) ...[
+            RoundBadge(round: game.round),
+            const SizedBox(height: 12),
+          ],
+          if (watching) ...[
+            const SpectatorNote(),
+            const SizedBox(height: 14),
+          ],
           // The impostor never receives the word, so there is nothing to show.
           if (!game.isImpostor && word != null) ...[
             _SecretWordPill(word: word),
             const SizedBox(height: 14),
           ],
-          if (myTurn) ...[
+          if (myTurn && !watching) ...[
             // Screen 10: the turn is a filled yellow card, not a line of text.
             Container(
               width: double.infinity,
@@ -1493,26 +1503,37 @@ class _VotingState extends State<_Voting> {
     final selected = _selected ?? game.myVote;
     final isConfirmed = selected != null && selected == game.myVote;
     final runoff = game.phase == 'runoff_voting';
+    final watching = game.isEliminated(me);
 
     return GameScaffold(
       title: runoff ? 'הצבעה חוזרת' : 'מי המתחזה?',
       timer: _timer(game),
       onExit: widget.onLeave,
-      bottom: PrimaryButton(
-        label: isConfirmed ? 'ההצבעה נקלטה' : 'אישור הצבעה',
-        onPressed: selected == null || isConfirmed
-            ? null
-            : () => runCommand(
-                  context,
-                  session.send(
-                    'game.vote',
-                    {'gameId': game.id, 'targetPlayerId': selected},
-                  ),
-                ),
-      ),
+      bottom: watching
+          ? null
+          : PrimaryButton(
+              label: isConfirmed ? 'ההצבעה נקלטה' : 'אישור הצבעה',
+              onPressed: selected == null || isConfirmed
+                  ? null
+                  : () => runCommand(
+                        context,
+                        session.send(
+                          'game.vote',
+                          {'gameId': game.id, 'targetPlayerId': selected},
+                        ),
+                      ),
+            ),
       child: Column(
         children: [
-          if (!runoff)
+          if (game.round > 1) ...[
+            RoundBadge(round: game.round),
+            const SizedBox(height: 12),
+          ],
+          if (watching) ...[
+            const SpectatorNote(),
+            const SizedBox(height: 14),
+          ],
+          if (!runoff && !watching)
             const Padding(
               padding: EdgeInsets.only(bottom: 14),
               child: Text(
@@ -1533,7 +1554,7 @@ class _VotingState extends State<_Voting> {
                       Border.all(color: AppColors.coral.withValues(alpha: .42)),
                 ),
                 child: const Text(
-                  'היה תיקו. מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף יעניק ניצחון למתחזה.',
+                  'היה תיקו. מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף — איש לא מודח והמשחק ממשיך לסבב נוסף.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Color(0xFFFFD9D9), height: 1.4),
                 ),
@@ -1559,7 +1580,7 @@ class _VotingState extends State<_Voting> {
                           1 => 'קול אחד בסבב הקודם',
                           final votes => '$votes קולות בסבב הקודם',
                         },
-                  enabled: id != me,
+                  enabled: id != me && !watching,
                   selected: selected == id,
                   onTap: () => setState(() => _selected = id),
                 ),
@@ -1666,7 +1687,6 @@ class _GuessState extends State<_Guess> {
 
 const _resultReasons = {
   'impostor_not_caught': 'ההצבעה סימנה אזרח, והמתחזה נשאר במשחק.',
-  'second_tie': 'גם ההצבעה החוזרת הסתיימה בתיקו.',
   'impostor_guessed_word': 'המתחזה נתפס, אבל הצליח לנחש את המילה.',
   'impostor_guess_wrong': 'המתחזה נתפס ולא הצליח לנחש את המילה.',
   'impostor_guess_timeout': 'המתחזה נתפס, אבל הזמן לניחוש נגמר.',

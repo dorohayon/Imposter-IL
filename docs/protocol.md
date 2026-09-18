@@ -258,6 +258,7 @@
 ```json
 {
   "gameId": "g_1",
+  "round": 1,
   "phase": "hints",
   "deadline": "2026-09-14T12:00:15Z",
   "category": "…",
@@ -268,7 +269,7 @@
   ],
   "currentTurnPlayerId": "p_1",
   "awaitingReconnect": false,
-  "hints": [ { "playerId": "p_3", "text": "חדק", "missing": false, "reactions": { "…": 3 } } ],
+  "hints": [ { "playerId": "p_3", "text": "חדק", "round": 1, "missing": false, "reactions": { "…": 3 } } ],
   "voteCandidates": [],
   "previousVotes": { "p_2": 2, "p_4": 2 },
   "myVote": null,
@@ -277,8 +278,10 @@
 ```
 
 - `phase`: `role_reveal` | `hints` | `hint_break` | `pre_voting` | `voting` | `runoff_voting` | `impostor_guess` | `ended`.
+- `round` סופר סבבי רמזים־והצבעה מ־1. משחק ממשיך בסבבים עד שאחד הצדדים מנצח.
 - `secretWord` חסר אצל המתחזה עד `ended`.
-- `players` לפי סדר התורות. `status`: `active` | `left` | `removed`.
+- `players` לפי סדר התורות. `status`: `active` | `eliminated` | `left` | `removed`. `eliminated` הוא שחקן שהודח בהצבעה: הוא צופה וממשיך להגיב, אינו מקבל תור ואינו מצביע, והתוצאה שלו היא של הקבוצה שלו.
+- `hints` נשמרים מכל הסבבים, וכל רמז נושא את `round` שבו נאמר. איסור רמז כפול חל על כל המשחק ולא על סבב בודד.
 - `myVote` הוא הקול של השחקן עצמו בלבד. קולות אחרים נחשפים רק ב־`result`.
 - `previousVotes` מופיע בהצבעה חוזרת בלבד, ומראה כמה קולות קיבל כל מועמד בסבב הקודם.
 

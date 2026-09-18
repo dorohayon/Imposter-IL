@@ -5,6 +5,8 @@ import (
 	"math/rand/v2"
 	"testing"
 	"time"
+
+	"github.com/coder/websocket"
 )
 
 type wsPlayer struct {
@@ -412,4 +414,99 @@ func TestFinishedGameStillNamesPlayersWhoseSessionIsGone(t *testing.T) {
 	if p := gamePlayer(g, gone.id); p["avatarId"] == "" {
 		t.Fatalf("player with no session lost their avatar: %v", p)
 	}
+}
+
+// A player who drops out and comes back in a later round must be told where
+// the match got to and what they are now: the round, the phase, and whether
+// they are still playing or watching.
+func TestWSReconnectingIntoALaterRoundAsASpectator(t *testing.T) {
+	c := newClient(t)
+	roomID, players := c.roomWithPlayers(5)
+	byID := map[string]*wsPlayer{}
+	for _, p := range players {
+		byID[p.id] = p
+	}
+	host := players[0]
+	gameID, impostor := c.startGame(roomID, players)
+	for _, p := range players {
+		wantOK(t, p.w.command("confirm", "game.confirmRole", map[string]any{"gameId": gameID}))
+	}
+
+	// Round one, played out.
+	g := host.w.gameState(phase("hints"))
+	if g["round"] != float64(1) {
+		t.Fatalf("round = %v, want 1", g["round"])
+	}
+	var order []string
+	for _, p := range g["players"].([]any) {
+		order = append(order, p.(map[string]any)["playerId"].(string))
+	}
+	words := []string{"חדק", "אפור", "גדול", "זיכרון", "כבד"}
+	for i, id := range order {
+		if i > 0 {
+			c.advance(3 * time.Second)
+			c.tick(roomID)
+		}
+		wantOK(t, byID[id].w.command(fmt.Sprintf("h%d", i), "game.submitHint",
+			map[string]any{"gameId": gameID, "text": words[i]}))
+	}
+	c.advance(3 * time.Second)
+	c.tick(roomID)
+	c.advance(5 * time.Second)
+	c.tick(roomID)
+	host.w.gameState(phase("voting"))
+
+	// The table votes out a citizen, so the match goes another round.
+	victim := order[0]
+	if victim == impostor {
+		victim = order[1]
+	}
+	for _, p := range players {
+		if p.id == victim {
+			continue
+		}
+		wantOK(t, p.w.command("v", "game.vote", map[string]any{"gameId": gameID, "targetPlayerId": victim}))
+	}
+	c.advance(20 * time.Second)
+	c.tick(roomID)
+
+	g = host.w.gameState(func(g map[string]any) bool { return g["round"] == float64(2) })
+	if g["phase"] != "hints" {
+		t.Fatalf("after an elimination the match is in %v", g["phase"])
+	}
+	// The board keeps round one, labelled.
+	for _, h := range g["hints"].([]any) {
+		if h.(map[string]any)["round"] != float64(1) {
+			t.Fatalf("hint from round %v on a round-two board", h.(map[string]any)["round"])
+		}
+	}
+
+	// The player who was voted out drops and comes back.
+	out := byID[victim]
+	_ = out.w.ws.Close(websocket.StatusNormalClosure, "")
+	again := c.dial(out.token)
+	again.sessionState(func(s map[string]any) bool { return s["activity"] == "game" })
+	back := again.gameState(func(g map[string]any) bool { return g["round"] == float64(2) })
+
+	if back["phase"] != "hints" {
+		t.Errorf("came back to %v, want the hints of round two", back["phase"])
+	}
+	if back["currentTurnPlayerId"] == victim {
+		t.Error("a spectator was given the turn on reconnect")
+	}
+	var status any
+	for _, p := range back["players"].([]any) {
+		if p.(map[string]any)["playerId"] == victim {
+			status = p.(map[string]any)["status"]
+		}
+	}
+	if status != "eliminated" {
+		t.Errorf("came back as %v, want eliminated", status)
+	}
+
+	// And a spectator may react, but not hint or vote.
+	wantOK(t, again.command("react", "game.react",
+		map[string]any{"gameId": gameID, "hintIndex": 0, "reactionId": "laugh"}))
+	wantReplyError(t, again.command("hint", "game.submitHint",
+		map[string]any{"gameId": gameID, "text": "מילהחדשה"}), "player_not_active")
 }

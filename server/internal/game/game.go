@@ -55,9 +55,14 @@ const (
 type PlayerStatus string
 
 const (
-	StatusActive  PlayerStatus = "active"
-	StatusLeft    PlayerStatus = "left"
-	StatusRemoved PlayerStatus = "removed" // third disconnect
+	StatusActive PlayerStatus = "active"
+	// StatusEliminated is a player the table voted out. They watch the rest of
+	// the match and may still react, but they do not hint or vote — and they
+	// win or lose with their team, because being voted out is a thing that
+	// happened to them, not a thing they did.
+	StatusEliminated PlayerStatus = "eliminated"
+	StatusLeft       PlayerStatus = "left"
+	StatusRemoved    PlayerStatus = "removed" // third disconnect
 )
 
 type Team string
@@ -78,8 +83,10 @@ const (
 type EndReason string
 
 const (
-	ReasonImpostorNotCaught    EndReason = "impostor_not_caught"
-	ReasonSecondTie            EndReason = "second_tie"
+	ReasonImpostorNotCaught EndReason = "impostor_not_caught"
+	// ReasonImpostorParity is the impostor outnumbering or matching the
+	// citizens still playing: with one impostor, the last citizen standing.
+	ReasonImpostorParity       EndReason = "impostor_parity"
 	ReasonImpostorGuessedWord  EndReason = "impostor_guessed_word"
 	ReasonImpostorGuessWrong   EndReason = "impostor_guess_wrong"
 	ReasonImpostorGuessTimeout EndReason = "impostor_guess_timeout"
@@ -145,8 +152,11 @@ type Policy struct {
 }
 
 type Hint struct {
-	PlayerID  string
-	Text      string
+	PlayerID string
+	Text     string
+	// Round the hint was given in, counting from 1. Hints from earlier rounds
+	// stay on the board, and a hint may not repeat one from any of them.
+	Round     int
 	Missing   bool           // "לא נשלח רמז"
 	Reactions map[string]int // reaction ID -> count
 }
@@ -174,8 +184,10 @@ type PlayerView struct {
 // View is what one player may see. It never carries the secret word to the
 // impostor, other players' roles or votes before the game ends.
 type View struct {
-	Version      uint64
-	Phase        Phase
+	Version uint64
+	Phase   Phase
+	// Round counts hint-and-vote rounds from 1.
+	Round        int
 	Deadline     time.Time // zero when the phase has no timer
 	Category     string
 	SecretWord   string
@@ -213,6 +225,7 @@ type Game struct {
 	deadline time.Time
 	version  uint64
 
+	round        int
 	turn         int
 	reconnecting bool
 	hints        []Hint
@@ -254,6 +267,7 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 	}
 	rng.Shuffle(len(g.order), func(i, j int) { g.order[i], g.order[j] = g.order[j], g.order[i] })
 	g.impostor = g.order[rng.IntN(len(g.order))]
+	g.round = 1
 	g.setPhase(PhaseRoleReveal, now, cfg.RoleRevealTimeout)
 	g.version = 1
 	return g, nil
@@ -384,7 +398,7 @@ func (g *Game) SubmitHint(playerID, text string, now time.Time) error {
 			return ErrHintDuplicate
 		}
 	}
-	g.hints = append(g.hints, Hint{PlayerID: playerID, Text: text})
+	g.hints = append(g.hints, Hint{PlayerID: playerID, Text: text, Round: g.round})
 	// Every submitted hint is held, the last one included: it is the one the
 	// table votes on, so it needs reading most.
 	g.setPhase(PhaseHintBreak, now, g.cfg.HintBreakDuration)
@@ -396,7 +410,9 @@ func (g *Game) SubmitHint(playerID, text string, now time.Time) error {
 // works while later turns are being written.
 func (g *Game) React(playerID string, hintIndex int, reactionID string, now time.Time) error {
 	g.Tick(now)
-	if _, err := g.activePlayer(playerID); err != nil {
+	// A player the table voted out still watches, and reacting is what they
+	// have left to do with the round.
+	if _, err := g.watcher(playerID); err != nil {
 		return err
 	}
 	if g.phase == PhaseRoleReveal || g.phase == PhaseEnded {
@@ -459,12 +475,14 @@ func (g *Game) SubmitGuess(playerID, guess string, now time.Time) error {
 
 func (g *Game) Disconnect(playerID string, now time.Time) error {
 	g.Tick(now)
-	p, err := g.activePlayer(playerID)
+	p, err := g.watcher(playerID)
 	if err != nil || !p.connected {
 		return err
 	}
 	p.connected = false
-	if g.phase != PhaseEnded {
+	// A spectator has no turn to hold up and nothing left to be removed from,
+	// and removing them would turn a team win into a personal loss.
+	if g.phase != PhaseEnded && p.status == StatusActive {
 		p.disconnects++
 		if p.disconnects >= MaxDisconnects {
 			p.removeAt = now.Add(g.cfg.ReconnectDuration)
@@ -484,13 +502,13 @@ func (g *Game) Disconnect(playerID string, now time.Time) error {
 // fresh hint timer.
 func (g *Game) Reconnect(playerID string, now time.Time) error {
 	g.Tick(now)
-	p, err := g.activePlayer(playerID)
+	p, err := g.watcher(playerID)
 	if err != nil || p.connected {
 		return err
 	}
 	p.connected = true
 	p.removeAt = time.Time{}
-	if g.phase == PhaseHints && g.order[g.turn] == playerID {
+	if g.phase == PhaseHints && p.status == StatusActive && g.order[g.turn] == playerID {
 		g.reconnecting = false
 		g.setPhase(PhaseHints, now, g.cfg.HintDuration)
 	}
@@ -506,7 +524,7 @@ func (g *Game) Leave(playerID string, now time.Time) error {
 	if !ok {
 		return ErrUnknownPlayer
 	}
-	if g.phase == PhaseEnded || p.status != StatusActive {
+	if g.phase == PhaseEnded || (p.status != StatusActive && p.status != StatusEliminated) {
 		return nil
 	}
 	g.remove(playerID, StatusLeft, now)
@@ -520,6 +538,7 @@ func (g *Game) View(playerID string) (View, error) {
 	}
 	v := View{
 		Version:      g.version,
+		Round:        g.round,
 		Phase:        g.phase,
 		Deadline:     g.deadline,
 		Category:     g.category,
@@ -572,6 +591,32 @@ func (g *Game) activePlayer(id string) (*player, error) {
 	return p, nil
 }
 
+// watcher returns a player who is still in the match, active or eliminated.
+// Reacting, disconnecting, reconnecting and leaving are all things a voted-out
+// spectator can still do.
+func (g *Game) watcher(id string) (*player, error) {
+	p, ok := g.players[id]
+	switch {
+	case !ok:
+		return nil, ErrUnknownPlayer
+	case p.status != StatusActive && p.status != StatusEliminated:
+		return nil, ErrPlayerNotActive
+	}
+	return p, nil
+}
+
+// citizensAndImpostors counts who is still playing on each side.
+func (g *Game) citizensAndImpostors() (citizens, impostors int) {
+	for _, id := range g.activeIDs() {
+		if id == g.impostor {
+			impostors++
+		} else {
+			citizens++
+		}
+	}
+	return citizens, impostors
+}
+
 func (g *Game) setPhase(phase Phase, from time.Time, d time.Duration) {
 	g.phase = phase
 	g.deadline = time.Time{}
@@ -585,7 +630,7 @@ func (g *Game) expire(at time.Time) {
 	case PhaseRoleReveal:
 		g.startTurn(0, at)
 	case PhaseHints:
-		g.hints = append(g.hints, Hint{PlayerID: g.order[g.turn], Missing: true})
+		g.hints = append(g.hints, Hint{PlayerID: g.order[g.turn], Missing: true, Round: g.round})
 		g.startTurn(g.turn+1, at)
 	case PhaseHintBreak:
 		g.startTurn(g.turn+1, at)
@@ -672,14 +717,46 @@ func (g *Game) tally(at time.Time) {
 	}
 	switch {
 	case len(top) == 1 && top[0] == g.impostor:
+		// Caught. One chance at the word decides the match.
 		g.setPhase(PhaseImpostorGuess, at, g.cfg.GuessDuration)
+	case len(top) == 1:
+		g.eliminate(top[0], at)
 	case len(top) > 1 && g.phase == PhaseVoting:
 		g.startVoting(PhaseRunoffVoting, top, at, g.cfg.RunoffVoteDuration)
-	case len(top) > 1:
-		g.end(TeamImpostor, ReasonSecondTie)
-	default: // a citizen was selected, or nobody received a vote
-		g.end(TeamImpostor, ReasonImpostorNotCaught)
+	default:
+		// A tie the runoff could not break, or a round nobody voted in.
+		// Nobody leaves the table and the match goes another round, which is
+		// also what stops a second tie from handing the impostor the win it
+		// used to get for free.
+		g.startRound(at)
 	}
+}
+
+// eliminate votes a citizen out and decides whether the match goes on. Only
+// ever a citizen: catching the impostor goes to the guess instead.
+func (g *Game) eliminate(id string, at time.Time) {
+	g.players[id].status = StatusEliminated
+	citizens, impostors := g.citizensAndImpostors()
+	switch {
+	case impostors >= citizens:
+		// With one impostor this is the last citizen standing: there is nobody
+		// left to outvote them, so the rest of the match is a formality.
+		g.end(TeamImpostor, ReasonImpostorParity)
+	case citizens+impostors < MinPlayersToContinue:
+		g.end(TeamNone, ReasonNotEnoughPlayers)
+	default:
+		g.startRound(at)
+	}
+}
+
+// startRound opens another round of hints. The board is not cleared: hints
+// from earlier rounds stay up, labelled by round, and a hint may not repeat
+// one from any of them.
+func (g *Game) startRound(at time.Time) {
+	g.round++
+	g.candidates = nil
+	g.votes = map[string]string{}
+	g.startTurn(0, at)
 }
 
 func (g *Game) remove(id string, status PlayerStatus, at time.Time) {
@@ -728,9 +805,16 @@ func cloneResult(result *Result) *Result {
 }
 
 func (g *Game) end(winner Team, reason EndReason) {
+	if g.result != nil {
+		return // A match ends once, however many timers were in flight.
+	}
 	outcomes := make(map[string]Outcome, len(g.players))
 	for id, p := range g.players {
-		won := p.status == StatusActive &&
+		// A player the table voted out still wins with their side. Only
+		// walking out or being removed for repeated disconnects loses on its
+		// own account.
+		stillIn := p.status == StatusActive || p.status == StatusEliminated
+		won := stillIn &&
 			(winner == TeamNone || (winner == TeamImpostor) == (id == g.impostor))
 		outcomes[id] = OutcomeLoss
 		if won {

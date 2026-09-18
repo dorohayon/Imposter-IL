@@ -85,8 +85,10 @@ func toVoting(t *testing.T, g *Game) time.Time {
 	return now
 }
 
+// citizens are the citizens still playing. Once a match can vote people out,
+// "not the impostor" is no longer the same as "still at the table".
 func citizens(g *Game) []string {
-	return slices.DeleteFunc(slices.Clone(g.order), func(id string) bool { return id == g.impostor })
+	return slices.DeleteFunc(g.activeIDs(), func(id string) bool { return id == g.impostor })
 }
 
 // voteFor makes every other active player vote for target.
@@ -165,15 +167,24 @@ func TestOnlyCitizensSeeTheSecretWord(t *testing.T) {
 func TestViewReturnsResultSnapshot(t *testing.T) {
 	g := newGame(t, 4)
 	now := toVoting(t, g)
-	g.Tick(now.Add(20 * time.Second))
+	// A round nobody votes in no longer ends anything, so reach the end the
+	// way a table does: catch the impostor, who then guesses wrong.
+	for _, id := range g.activeIDs() {
+		if id != g.impostor {
+			must(t, g.Vote(id, g.impostor, now))
+		}
+	}
+	now = now.Add(20 * time.Second)
+	g.Tick(now)
+	must(t, g.SubmitGuess(g.impostor, "לאיודע", now))
 
 	v, _ := g.View(g.impostor)
-	v.Result.Winner = TeamCitizens
-	v.Result.Outcomes[g.impostor] = OutcomeLoss
+	v.Result.Winner = TeamImpostor
+	v.Result.Outcomes[g.impostor] = OutcomeWin
 	v.Result.VoteRounds[0][g.order[0]] = g.order[1]
 
 	next, _ := g.View(g.impostor)
-	if next.Result.Winner != TeamImpostor || next.Result.Outcomes[g.impostor] != OutcomeWin || len(next.Result.VoteRounds[0]) != 0 {
+	if next.Result.Winner != TeamCitizens || next.Result.Outcomes[g.impostor] != OutcomeLoss || len(next.Result.VoteRounds[0]) != 3 {
 		t.Fatalf("mutating result view changed game result: %+v", next.Result)
 	}
 }
@@ -354,19 +365,70 @@ func TestLastVoteBeforeDeadlineCounts(t *testing.T) {
 	wantPhase(t, g, PhaseImpostorGuess)
 }
 
-func TestCitizenSelectedImpostorWins(t *testing.T) {
-	g := newGame(t, 5)
-	now := toVoting(t, g)
-	voteAllFor(t, g, citizens(g)[0], now)
-	g.Tick(now.Add(20 * time.Second))
-	wantResult(t, g, TeamImpostor, ReasonImpostorNotCaught)
+// citizensWin catches the impostor and lets them fail the guess: the ordinary
+// way a match ends once one vote no longer finishes it.
+func citizensWin(t *testing.T, g *Game, now time.Time) time.Time {
+	t.Helper()
+	for _, id := range g.activeIDs() {
+		if id != g.impostor {
+			must(t, g.Vote(id, g.impostor, now))
+		}
+	}
+	now = now.Add(20 * time.Second)
+	g.Tick(now)
+	wantPhase(t, g, PhaseImpostorGuess)
+	must(t, g.SubmitGuess(g.impostor, "לאיודע", now))
+	return now
 }
 
-func TestNoVotesImpostorWins(t *testing.T) {
+func TestVotingOutACitizenStartsAnotherRound(t *testing.T) {
+	g := newGame(t, 5) // four citizens and an impostor
+	now := toVoting(t, g)
+	out := citizens(g)[0]
+	voteAllFor(t, g, out, now)
+	now = now.Add(20 * time.Second)
+	g.Tick(now)
+
+	if g.result != nil {
+		t.Fatalf("the match ended on one vote: %+v", g.result)
+	}
+	if got := g.players[out].status; got != StatusEliminated {
+		t.Fatalf("status = %q, want eliminated", got)
+	}
+	if g.round != 2 {
+		t.Fatalf("round = %d, want 2", g.round)
+	}
+	wantPhase(t, g, PhaseHints)
+	// The eliminated citizen has no turn in the new round.
+	if g.order[g.turn] == out {
+		t.Fatal("the turn went to a player who was voted out")
+	}
+	// The board keeps what was said, labelled by the round it was said in.
+	if len(g.hints) != 5 {
+		t.Fatalf("hints = %d, want the first round kept", len(g.hints))
+	}
+	for _, h := range g.hints {
+		if h.Round != 1 {
+			t.Fatalf("hint %q carries round %d", h.Text, h.Round)
+		}
+	}
+}
+
+func TestARoundNobodyVotesInEliminatesNobody(t *testing.T) {
 	g := newGame(t, 4)
 	now := toVoting(t, g)
 	g.Tick(now.Add(20 * time.Second))
-	wantResult(t, g, TeamImpostor, ReasonImpostorNotCaught)
+	if g.result != nil {
+		t.Fatalf("silence ended the match: %+v", g.result)
+	}
+	if g.round != 2 {
+		t.Fatalf("round = %d, want 2", g.round)
+	}
+	for _, id := range g.order {
+		if g.players[id].status != StatusActive {
+			t.Fatalf("%s was voted out by nobody voting", id)
+		}
+	}
 }
 
 func TestImpostorGuess(t *testing.T) {
@@ -474,13 +536,24 @@ func TestTieGoesToRunoffAmongTiedOnly(t *testing.T) {
 	}
 	wantErr(t, g.Vote(c[0], c[2], now), ErrInvalidVoteTarget)
 
-	t.Run("second tie impostor wins", func(t *testing.T) {
+	t.Run("a runoff that ties again eliminates nobody", func(t *testing.T) {
 		must(t, g.Vote(c[0], c[1], now))
 		must(t, g.Vote(c[2], g.impostor, now))
 		g.Tick(now.Add(15 * time.Second))
-		wantResult(t, g, TeamImpostor, ReasonSecondTie)
-		if len(g.result.VoteRounds) != 2 {
-			t.Fatalf("vote rounds = %d, want 2", len(g.result.VoteRounds))
+		if g.result != nil {
+			t.Fatalf("a second tie ended the match: %+v", g.result)
+		}
+		if g.round != 2 {
+			t.Fatalf("round = %d, want 2", g.round)
+		}
+		wantPhase(t, g, PhaseHints)
+		for _, id := range g.order {
+			if g.players[id].status != StatusActive {
+				t.Fatalf("%s was voted out by a tie", id)
+			}
+		}
+		if len(g.voteRounds) != 2 {
+			t.Fatalf("vote rounds = %d, want both kept", len(g.voteRounds))
 		}
 	})
 }
@@ -599,6 +672,8 @@ func TestEveryDisconnectInTheGameCounts(t *testing.T) {
 		t.Fatal("a second disconnect outside the turn must not remove the player")
 	}
 	must(t, g.Reconnect(p, now.Add(time.Minute)))
+	// End the match before the last disconnect, which must not be counted.
+	must(t, g.Leave(g.impostor, now.Add(time.Minute)))
 	must(t, g.Disconnect(p, now.Add(time.Minute))) // ended: not counted
 	if g.players[p].disconnects != 2 {
 		t.Fatal("disconnects after the game ended must not count")
@@ -704,8 +779,7 @@ func TestImpostorLeavingLoses(t *testing.T) {
 
 func TestLeavingResultScreenIsNotAbandonment(t *testing.T) {
 	g := newGame(t, 4)
-	now := toVoting(t, g)
-	g.Tick(now.Add(20 * time.Second))
+	now := citizensWin(t, g, toVoting(t, g))
 	c := citizens(g)[0]
 	before := g.result.Outcomes[c]
 	must(t, g.Leave(c, now.Add(time.Minute)))

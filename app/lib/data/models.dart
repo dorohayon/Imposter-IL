@@ -51,7 +51,7 @@ class PlayerInfo {
   final String nickname;
   final String avatarId;
   final bool connected;
-  final String status; // active | left | removed
+  final String status; // active | eliminated | left | removed
   final int disconnects;
   final bool roleConfirmed;
 
@@ -126,6 +126,7 @@ class HintView {
   const HintView({
     required this.playerId,
     required this.text,
+    required this.round,
     required this.missing,
     required this.reactions,
   });
@@ -133,12 +134,17 @@ class HintView {
   factory HintView.fromJson(Map<String, dynamic> json) => HintView(
         playerId: json['playerId'] as String,
         text: json['text'] as String? ?? '',
+        round: json['round'] as int? ?? 1,
         missing: json['missing'] as bool? ?? false,
         reactions: (json['reactions'] as Map? ?? const {}).cast<String, int>(),
       );
 
   final String playerId;
   final String text;
+
+  /// The round it was given in, counting from 1. Earlier rounds stay on the
+  /// board.
+  final int round;
   final bool missing;
   final Map<String, int> reactions;
 }
@@ -180,6 +186,7 @@ class GameResult {
 class GameView {
   const GameView({
     required this.id,
+    required this.round,
     required this.phase,
     required this.deadline,
     required this.category,
@@ -199,6 +206,7 @@ class GameView {
     final result = json['result'] as Map<String, dynamic>?;
     return GameView(
       id: json['gameId'] as String,
+      round: json['round'] as int? ?? 1,
       phase: json['phase'] as String,
       deadline: _time(json['deadline']),
       category: json['category'] as String? ?? '',
@@ -220,6 +228,9 @@ class GameView {
   }
 
   final String id;
+
+  /// Hint-and-vote rounds, counting from 1.
+  final int round;
   final String phase;
   final DateTime? deadline;
   final String category;
@@ -237,6 +248,11 @@ class GameView {
   final GameResult? result;
 
   bool get isImpostor => myRole == 'impostor';
+
+  /// Whether this player was voted out and is now watching. A spectator still
+  /// reacts, but takes no turn and casts no vote.
+  bool isEliminated(String? playerId) =>
+      player(playerId)?.status == 'eliminated';
 
   PlayerInfo? player(String? id) {
     for (final p in players) {

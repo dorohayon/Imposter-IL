@@ -588,6 +588,7 @@ class PlayerCard extends StatelessWidget {
                 size: 48,
                 selected: selected,
                 disconnected: player.isDisconnected,
+                eliminated: player.isEliminated,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -1098,6 +1099,77 @@ class _ReactionBubbleState extends State<_ReactionBubble>
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Which hint-and-vote round the table is in. Shown from the second one, since
+/// a match that ends in one round never had rounds to count.
+class RoundBadge extends StatelessWidget {
+  const RoundBadge({required this.round, super.key});
+
+  final int round;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: AppColors.purple.withValues(alpha: .22),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: AppColors.purple.withValues(alpha: .6)),
+        ),
+        child: Text(
+          'סבב $round',
+          style: const TextStyle(
+            color: Color(0xFFD9C8FF),
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown to a player the table voted out: they keep watching and reacting, and
+/// they still win or lose with their side.
+class SpectatorNote extends StatelessWidget {
+  const SpectatorNote({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.coral.withValues(alpha: .13),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.coral.withValues(alpha: .42)),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.visibility_outlined, color: AppColors.coral, size: 26),
+          SizedBox(height: 8),
+          Text(
+            'הודחתם מהמשחק',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Secular One',
+              fontSize: 19,
+              color: Color(0xFFFFD9D9),
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'אתם ממשיכים לצפות ולהגיב, בלי רמזים והצבעות. '
+            'התוצאה שלכם היא של הקבוצה שלכם.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFFFFD9D9), height: 1.4),
+          ),
+        ],
       ),
     );
   }

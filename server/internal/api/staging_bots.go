@@ -152,18 +152,17 @@ var stagingBotHints = []string{
 // Nothing here has to be trusted to keep them apart — with no word, the
 // citizen pool cannot be reached.
 func botHintPool(view game.View) []string {
-	if view.SecretWord != "" {
-		if pool := content.CitizenHints(view.SecretWord); len(pool) > 0 {
-			return pool
-		}
-	}
 	said := make([]string, 0, len(view.Hints))
 	for _, h := range view.Hints {
 		if !h.Missing {
 			said = append(said, h.Text)
 		}
 	}
-	if pool := content.ImpostorHints(view.Category, said); len(pool) > 0 {
+	// The broad pool trails the word's own, because a match runs several
+	// rounds now and six curated hints shared between the citizens run out by
+	// the third one. Better a broad hint than a turn nobody answers.
+	pool := append(content.CitizenHints(view.SecretWord), content.ImpostorHints(view.Category, said)...)
+	if len(pool) > 0 {
 		return pool
 	}
 	return stagingBotHints
@@ -240,6 +239,17 @@ func (s *Server) removeGameBotsWithoutHumans(entry *roomEntry, now time.Time) {
 	}
 }
 
+// botStillPlaying reports whether this bot is still in the round rather than
+// watching it.
+func botStillPlaying(view game.View, id string) bool {
+	for _, p := range view.Players {
+		if p.ID == id {
+			return p.Status == game.StatusActive
+		}
+	}
+	return false
+}
+
 // botReact reacts to the newest hint, after a pause, so one real player can
 // see reactions arrive without a second person to send them. Reporting whether
 // it reacted, for the caller's publish.
@@ -309,8 +319,14 @@ func (s *Server) runStagingBotsInGame(entry *roomEntry, now time.Time) {
 			continue
 		}
 		var actionErr error
+		// A bot the table voted out watches like anyone else: it still reacts,
+		// and it takes no turn and casts no vote.
 		reacted := s.botReact(entry, bot, view, now)
 		acted := false
+		if !botStillPlaying(view, id) {
+			changed = changed || reacted
+			continue
+		}
 		switch view.Phase {
 		case game.PhaseRoleReveal:
 			for _, player := range view.Players {

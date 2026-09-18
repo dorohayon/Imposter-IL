@@ -10,14 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'support/fake_server.dart';
 import 'support/helpers.dart';
 
-Future<void> openCreatedRoom(WidgetTester tester, FakeApi api) async {
-  api.responses['POST /v1/rooms'] = {'room': roomJson()};
-  await tapText(tester, 'משחק עם חברים');
-  await tapText(tester, 'יצירת חדר');
-  await tapLive(tester, 'יצירת חדר');
-  expect(find.byType(LiveRoomScreen), findsOneWidget);
-}
-
 void main() {
   testWidgets('onboarding creates a session and remembers it', (tester) async {
     final api = FakeApi();
@@ -571,8 +563,7 @@ void main() {
           previousVotes: {'p_2': 2, 'p_3': 2},
         ));
     await settle(tester);
-    expect(
-        find.textContaining('תיקו נוסף יעניק ניצחון למתחזה'), findsOneWidget);
+    expect(find.textContaining('תיקו נוסף — איש לא מודח'), findsOneWidget);
     expect(isEnabled(tester, 'אישור הצבעה'), isFalse);
     // The tie that led here.
     expect(find.text('2 קולות בסבב הקודם'), findsNWidgets(2));

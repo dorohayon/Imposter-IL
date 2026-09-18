@@ -16,14 +16,18 @@ import (
 func TestBotsReachForThePoolTheirRoleAllows(t *testing.T) {
 	const word = "פיצה"
 	citizen := game.View{Category: "אוכל", SecretWord: word}
-	if got := botHintPool(citizen); !slices.Equal(got, content.CitizenHints(word)) {
-		t.Errorf("a citizen bot got %v, want the word's own pool", got)
+	own := content.CitizenHints(word)
+	got := botHintPool(citizen)
+	// The word's own hints come first; the broad pool trails them, because a
+	// match runs several rounds and six hints run out.
+	if len(got) <= len(own) || !slices.Equal(got[:len(own)], own) {
+		t.Errorf("a citizen bot got %v, want the word's own pool first", got)
 	}
 
 	// An impostor's View carries no secret word, so the same call cannot
 	// return the word's pool even though the process is holding the word.
 	impostor := game.View{Category: "אוכל"}
-	got := botHintPool(impostor)
+	got = botHintPool(impostor)
 	for _, hint := range content.CitizenHints(word) {
 		if slices.Contains(got, hint) && !slices.Contains(content.ImpostorHints("אוכל", nil), hint) {
 			t.Errorf("an impostor bot was offered %q, which only the word's pool has", hint)
