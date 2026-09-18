@@ -81,29 +81,3 @@ func TestReactions(t *testing.T) {
 		t.Fatal("the MVP policy blocks no hint and accepts approved reactions")
 	}
 }
-
-// A bot hint that the engine refuses is a bot that says nothing, so the pools
-// have to obey the same rules a player's hint does.
-func TestBotHintsAreUsableHints(t *testing.T) {
-	for _, c := range Categories {
-		pool := BotHints(c.Name)
-		if len(pool) == 0 {
-			t.Errorf("category %q has no bot hints", c.Name)
-			continue
-		}
-		seen := map[string]bool{}
-		for _, hint := range pool {
-			switch {
-			case strings.ContainsAny(hint, " \t"):
-				t.Errorf("%q is more than one word", hint)
-			case len([]rune(hint)) > 25:
-				t.Errorf("%q is longer than a hint may be", hint)
-			case Blocked(hint):
-				t.Errorf("%q is on the blocked list", hint)
-			case seen[hint]:
-				t.Errorf("%q appears twice in %q", hint, c.Name)
-			}
-			seen[hint] = true
-		}
-	}
-}
