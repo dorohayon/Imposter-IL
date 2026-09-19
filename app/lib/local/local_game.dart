@@ -25,6 +25,10 @@ enum LocalPhase {
   /// here there is one screen, so the announcement needs its own moment.
   tie,
 
+  /// A runoff that tied as well: nobody goes, and the table is told so before
+  /// the next round of hints (design 15ג).
+  tieAgain,
+
   /// A tie, voted again between the tied players only.
   runoff,
 
@@ -175,7 +179,10 @@ class LocalGame {
   int tiedVotes = 0;
 
   /// Set when a runoff tied as well, so the next round can say nobody went.
-  bool tiedAgain = false;
+  /// The tied players, for the announcement to name them. Kept apart from
+  /// [votes], which says who chose whom and never leaves the ballot: an
+  /// announcement the whole table reads may carry totals and nothing else.
+  List<int> tieCandidates = [];
   String? submittedGuess;
   LocalOutcome? outcome;
   LocalEndReason? endReason;
@@ -240,7 +247,6 @@ class LocalGame {
 
   void startRound() {
     if (phase != LocalPhase.ready) return;
-    tiedAgain = false;
     revealed = false;
     seat = 0;
     phase = LocalPhase.hints;
@@ -333,6 +339,7 @@ class LocalGame {
       // nobody and the table goes around again.
       if (phase == LocalPhase.voting) {
         tiedVotes = most;
+        tieCandidates = [...top]..sort();
         runoffCandidates = top..sort();
         _previousVotes = {
           for (final c in top) c: counts[c] ?? 0,
@@ -344,8 +351,14 @@ class LocalGame {
         return;
       }
       // A runoff that tied as well: nobody goes, and the next round says why.
-      tiedAgain = true;
-      _nextRound();
+      // Nobody goes, and the table is told so rather than finding out by
+      // nothing happening.
+      tiedVotes = most;
+      tieCandidates = [...top]..sort();
+      votes.clear();
+      revealed = false;
+      ballotSaved = false;
+      phase = LocalPhase.tieAgain;
       return;
     }
 
@@ -366,6 +379,12 @@ class LocalGame {
   /// Moves on from naming the citizen who was voted out.
   void afterElimination() {
     if (phase != LocalPhase.elimination) return;
+    _nextRound();
+  }
+
+  /// The table has read the second tie; the next round of hints begins.
+  void afterSecondTie() {
+    if (phase != LocalPhase.tieAgain) return;
     _nextRound();
   }
 
@@ -492,6 +511,8 @@ extension LocalGameSnapshot on LocalGame {
         'votes': {for (final e in votes.entries) '${e.key}': e.value},
         'ballotSaved': ballotSaved,
         'runoffCandidates': runoffCandidates,
+        'tiedVotes': tiedVotes,
+        'tieCandidates': tieCandidates,
         'previousVotes': {
           for (final e in previousVotes.entries) '${e.key}': e.value,
         },
@@ -543,6 +564,9 @@ LocalGame? localGameFromJson(Map<String, dynamic> json, {Random? rng}) {
       for (final e in (json['previousVotes'] as Map? ?? {}).entries)
         int.parse(e.key as String): e.value as int,
     });
+    game.tiedVotes = json['tiedVotes'] as int? ?? 0;
+    game.tieCandidates =
+        ((json['tieCandidates'] as List?) ?? const []).cast<int>();
     game.lastEliminated = json['lastEliminated'] as int?;
     game.submittedGuess = json['submittedGuess'] as String?;
     for (final pair in (json['eliminations'] as List? ?? [])) {

@@ -207,6 +207,10 @@ void main() {
     expect(find.text('יש תיקו'), findsOneWidget);
     expect(find.textContaining('היה תיקו.'), findsOneWidget);
     expect(find.text('2 מועמדים קיבלו 2 קולות'), findsOneWidget);
+    // Each candidate carries their own count, and the illustration carries no
+    // text of its own (design 15ב).
+    expect(find.text('2 קולות'), findsNWidgets(2));
+    expect(find.text('אחר כך מעבירים את המכשיר לשחקן הבא'), findsOneWidget);
     // Both tied players are named, and nobody has been asked to vote yet.
     for (final i in game.runoffCandidates) {
       expect(find.text(game.players[i].name), findsOneWidget);
@@ -217,7 +221,8 @@ void main() {
     expect(game.phase, LocalPhase.runoff);
   });
 
-  testWidgets('a second tie tells the next round nobody went', (tester) async {
+  testWidgets('a second tie is announced before the next round',
+      (tester) async {
     final game = _game();
     _toVote(game);
     final order = game.activePlayers;
@@ -228,10 +233,17 @@ void main() {
       game.castVote(order[0]);
       if (game.phase == LocalPhase.tie) game.startRunoff();
     }
-    expect(game.phase, LocalPhase.ready);
+    expect(game.phase, LocalPhase.tieAgain);
     await _pumpGame(tester, game);
 
-    expect(find.textContaining('אף אחד לא הודח'), findsOneWidget);
+    // Design 15ג: its own screen, not a line on the round that follows.
+    expect(find.text('שוב יש תיקו'), findsOneWidget);
+    expect(find.text('גם הפעם הקולות התחלקו שווה בשווה'), findsOneWidget);
+    expect(find.text('איש לא הודח. ממשיכים לסבב רמזים נוסף.'), findsOneWidget);
+
+    await tapText(tester, 'ממשיכים לסבב הבא');
+    expect(game.phase, LocalPhase.ready);
+    expect(game.round, 2);
   });
 
   testWidgets('a runoff self-card keeps its previous vote count',

@@ -182,13 +182,13 @@ void main() {
     g.castVote(order[0]);
     g.castVote(order[1]);
     g.castVote(order[0]);
+    expect(g.phase, LocalPhase.tieAgain);
+    g.afterSecondTie();
     expect(g.phase, LocalPhase.ready);
     expect(g.round, 2);
     expect(g.players.every((p) => !p.eliminated), isTrue);
-    // And the round that follows says why nobody went.
-    expect(g.tiedAgain, isTrue);
-    g.startRound();
-    expect(g.tiedAgain, isFalse, reason: 'the note is for one round only');
+    // And the table is told, on a screen of its own, before the round begins.
+    expect(g.tieCandidates, unorderedEquals([order[0], order[1]]));
   });
 
   test('nobody votes for themselves', () {

@@ -171,6 +171,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
         LocalPhase.hints => _hints(),
         LocalPhase.voteTransition => _voteTransition(),
         LocalPhase.tie => _tie(),
+        LocalPhase.tieAgain => _tieAgain(),
         LocalPhase.voting ||
         LocalPhase.runoff =>
           _game.revealed ? _ballot() : _passDevice(forVoting: true),
@@ -355,9 +356,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           Text(
             _game.round == 1
                 ? 'מניחים את המכשיר במקום שכולם רואים.'
-                : _game.tiedAgain
-                    ? 'גם ההצבעה החוזרת הסתיימה בתיקו — אף אחד לא הודח. סדר התורות הוגרל מחדש.'
-                    : 'המתחזה עדיין ביניכם. סדר התורות הוגרל מחדש.',
+                : 'המתחזה עדיין ביניכם. סדר התורות הוגרל מחדש.',
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, height: 1.45),
           ),
@@ -493,71 +492,33 @@ class _LocalGameScreenState extends State<LocalGameScreen>
 
   // ---- what the vote decided ---------------------------------------------
 
-  /// Telling the table there was a tie. Online this arrives on everybody's own
-  /// screen at once; with one phone it has to be a moment of its own, before
-  /// the phone starts going round again.
-  Widget _tie() {
-    final tied = _game.runoffCandidates;
-    return GameScaffold(
-      title: 'יש תיקו',
-      onExit: _leave,
-      bottom: PrimaryButton(
-        label: 'מתחילים הצבעה חוזרת',
-        onPressed: () => _apply(_game.startRunoff),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 8),
-          Text(
-            '${tied.length} מועמדים קיבלו ${_game.tiedVotes} קולות',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, fontSize: 15),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (final i in tied)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Column(
-                    children: [
-                      AvatarView(asset: _game.players[i].avatar, size: 72),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: 84,
-                        child: Text(
-                          _game.players[i].name,
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.coral.withValues(alpha: .13),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.coral.withValues(alpha: .42)),
-            ),
-            child: const Text(
-              'היה תיקו. מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף — איש לא מודח והמשחק ממשיך לסבב נוסף.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFFFFD9D9), height: 1.4),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  /// Design 15ב. Online a tie reaches every player's own screen at once; with
+  /// one phone the table needs a moment of its own, before the phone starts
+  /// going round again.
+  Widget _tie() => _TieAnnouncement(
+        game: _game,
+        title: 'יש תיקו',
+        subtitle: '${_game.tieCandidates.length} מועמדים קיבלו '
+            '${_game.tiedVotes} קולות',
+        explanation:
+            'היה תיקו. מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף — איש לא מודח והמשחק ממשיך לסבב נוסף.',
+        action: 'מתחילים הצבעה חוזרת',
+        footnote: 'אחר כך מעבירים את המכשיר לשחקן הבא',
+        onExit: _leave,
+        onContinue: () => _apply(_game.startRunoff),
+      );
+
+  /// Design 15ג. A runoff that tied as well: nobody goes, and saying so is the
+  /// difference between a rule and a round that looks like nothing happened.
+  Widget _tieAgain() => _TieAnnouncement(
+        game: _game,
+        title: 'שוב יש תיקו',
+        subtitle: 'גם הפעם הקולות התחלקו שווה בשווה',
+        explanation: 'איש לא הודח. ממשיכים לסבב רמזים נוסף.',
+        action: 'ממשיכים לסבב הבא',
+        onExit: _leave,
+        onContinue: () => _apply(_game.afterSecondTie),
+      );
 
   Widget _elimination() {
     final out = _game.players[_game.lastEliminated!];
@@ -966,6 +927,113 @@ class _BallotState extends State<_Ballot> {
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, fontSize: 13),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The tie announcement, in both its forms (design 15ב and 15ג).
+///
+/// It carries totals and names only. Who voted for whom stays on the ballot
+/// that cast it — this is the one tie screen the whole table reads together.
+class _TieAnnouncement extends StatelessWidget {
+  const _TieAnnouncement({
+    required this.game,
+    required this.title,
+    required this.subtitle,
+    required this.explanation,
+    required this.action,
+    required this.onExit,
+    required this.onContinue,
+    this.footnote,
+  });
+
+  final LocalGame game;
+  final String title;
+  final String subtitle;
+  final String explanation;
+  final String action;
+  final String? footnote;
+  final VoidCallback onExit;
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    return GameScaffold(
+      title: title,
+      onExit: onExit,
+      bottom: PrimaryButton(label: action, onPressed: onContinue),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Illustration(
+            'assets/illustrations/tie-announcement.webp',
+            height: 190,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.muted, fontSize: 15),
+          ),
+          const SizedBox(height: 16),
+          // Wrapped rather than a row: a tie can be between more than two, and
+          // the design says never to crop a name or show only the first pair.
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 14,
+            runSpacing: 14,
+            children: [
+              for (final i in game.tieCandidates)
+                SizedBox(
+                  width: 96,
+                  child: Column(
+                    children: [
+                      AvatarView(asset: game.players[i].avatar, size: 66),
+                      const SizedBox(height: 8),
+                      Text(
+                        game.players[i].name,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${game.tiedVotes} קולות',
+                        style: const TextStyle(
+                          color: AppColors.yellow,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.coral.withValues(alpha: .13),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.coral.withValues(alpha: .42)),
+            ),
+            child: Text(
+              explanation,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xFFFFD9D9), height: 1.4),
+            ),
+          ),
+          if (footnote case final note?) ...[
+            const SizedBox(height: 12),
+            Text(
+              note,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.muted, fontSize: 13),
+            ),
+          ],
         ],
       ),
     );
