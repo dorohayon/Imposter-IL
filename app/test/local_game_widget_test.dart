@@ -32,11 +32,12 @@ LocalGame _game({int players = 4, int? hintSeconds = 30}) => LocalGame(
 
 void _toVote(LocalGame game) {
   while (game.phase == LocalPhase.roleReveal) {
-    game.roleSeen();
+    game.reveal();
+    game.roleSeen(game.currentPlayer);
   }
   game.startRound();
   while (game.phase == LocalPhase.hints) {
-    game.hintSpoken();
+    game.hintSpoken(game.currentPlayer);
   }
   game.startVoting();
 }
@@ -58,6 +59,7 @@ Future<void> _pumpGame(WidgetTester tester, LocalGame game) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
+      key: UniqueKey(),
       theme: AppTheme.dark,
       home: LocalGameScreen(resumed: game),
     ),
@@ -74,6 +76,21 @@ void main() {
     expect(await LocalStore.load(), isNull);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.containsKey('local.game'), isFalse);
+  });
+
+  testWidgets('a fresh offline install can start a local game', (tester) async {
+    final api = FakeApi()
+      ..responses['POST /v1/sessions'] = const ApiException('network_error');
+    await startApp(tester, api);
+
+    expect(find.byType(HomeScreen), findsOneWidget);
+    await tapText(tester, 'משחק במכשיר אחד');
+    await tapText(tester, 'המשך להגדרות');
+    await tapText(tester, 'מתחילים');
+
+    expect(find.byType(LocalGameScreen), findsOneWidget);
+    expect(
+        api.requests.where((request) => request.$2 == '/v1/sessions'), isEmpty);
   });
 
   testWidgets('the private ballot shows the voter but never enables self-vote',
@@ -134,6 +151,66 @@ void main() {
     await tester.enterText(find.byType(TextField), 'תשובה שגויה');
     await tapText(tester, 'שליחת ניחוש');
     expect(find.text('האזרחים ניצחו!'), findsOneWidget);
+  });
+
+  testWidgets('leaving a private phase covers its content before the dialog',
+      (tester) async {
+    Future<void> expectCovered(LocalGame game, Finder privateContent) async {
+      await _pumpGame(tester, game);
+      expect(privateContent, findsWidgets);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('לצאת מהמשחק?'), findsOneWidget);
+      expect(privateContent, findsNothing);
+      expect(game.revealed, isFalse);
+
+      await tapText(tester, 'המשך משחק');
+      expect(find.textContaining('העבירו את המכשיר ל'), findsOneWidget);
+    }
+
+    final role = _game();
+    while (role.currentPlayer == role.impostor) {
+      role.reveal();
+      role.roleSeen(role.currentPlayer);
+    }
+    role.reveal();
+    await expectCovered(role, find.text(role.secretWord));
+
+    final ballot = _game();
+    _toVote(ballot);
+    ballot.reveal();
+    await expectCovered(ballot, find.text('אישור הצבעה'));
+
+    final guess = _game();
+    _toVote(guess);
+    _voteFor(guess, guess.impostor);
+    guess.reveal();
+    await expectCovered(guess, find.byType(TextField));
+  });
+
+  testWidgets('a runoff self-card keeps its previous vote count',
+      (tester) async {
+    final game = _game();
+    _toVote(game);
+    final order = game.activePlayers;
+    game.castVote(order[1]);
+    game.castVote(order[0]);
+    game.castVote(order[1]);
+    game.castVote(order[0]);
+    game.reveal();
+    await _pumpGame(tester, game);
+
+    final self = game.currentPlayer;
+    final card = find.byWidgetPredicate(
+      (widget) =>
+          widget is PlayerCard &&
+          widget.player.nickname == game.players[self].name,
+    );
+    final selfCard = tester.widget<PlayerCard>(card);
+    expect(selfCard.note, '${game.previousVotes[self]} קולות בסבב הקודם');
+    expect(selfCard.secondaryNote, 'אי אפשר להצביע לעצמכם');
+    expect(selfCard.enabled, isFalse);
   });
 
   testWidgets('home offers a saved game and resumes behind the privacy screen',
@@ -243,5 +320,38 @@ void main() {
     await tester.tap(find.widgetWithText(ChoiceChip, 'הכול'));
     await tester.pump();
     expect(isEnabled(tester, 'מתחילים'), isFalse);
+  });
+
+  testWidgets('adding players never reuses a customized avatar',
+      (tester) async {
+    await startAtHome(tester);
+    await tapText(tester, 'משחק במכשיר אחד');
+
+    await tester.tap(find.byType(AvatarView).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byWidgetPredicate(
+      (widget) => widget is AvatarView && widget.asset == avatarAssets[4],
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('עוד שחקנים'));
+    await tester.pump();
+    var assigned = [
+      for (final widget
+          in tester.widgetList<AvatarView>(find.byType(AvatarView)))
+        if (widget.size == 44) widget.asset,
+    ];
+    expect(assigned.toSet(), hasLength(5));
+
+    await tester.tap(find.byTooltip('פחות שחקנים'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('עוד שחקנים'));
+    await tester.pump();
+    assigned = [
+      for (final widget
+          in tester.widgetList<AvatarView>(find.byType(AvatarView)))
+        if (widget.size == 44) widget.asset,
+    ];
+    expect(assigned.toSet(), hasLength(5));
   });
 }

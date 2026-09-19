@@ -37,11 +37,12 @@ void main() {
     final api = FakeApi()
       ..responses['POST /v1/sessions'] = const ApiException('network_error');
     await startApp(tester, api);
+    await tapText(tester, 'משחק ברשת');
     await tester.enterText(find.byType(TextField), 'דור');
     await tapText(tester, 'ממשיכים');
     expect(
         find.text('אין חיבור לשרת. בדקו את החיבור ונסו שוב.'), findsOneWidget);
-    expect(find.byType(HomeScreen), findsNothing);
+    expect(find.byType(OnboardingScreen), findsOneWidget);
   });
 
   testWidgets('create a room with server categories, manage the lobby',

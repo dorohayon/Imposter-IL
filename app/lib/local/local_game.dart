@@ -213,8 +213,12 @@ class LocalGame {
   }
 
   /// The next player has seen their role.
-  void roleSeen() {
-    if (phase != LocalPhase.roleReveal) return;
+  void roleSeen(int player) {
+    if (phase != LocalPhase.roleReveal ||
+        !revealed ||
+        player != currentPlayer) {
+      return;
+    }
     revealed = false;
     seat++;
     if (seat >= players.length) {
@@ -235,8 +239,8 @@ class LocalGame {
 
   /// A hint was spoken, or the turn ran out of time. Either way the device
   /// moves on; with nothing typed there is nothing to record.
-  void hintSpoken({bool timedOut = false}) {
-    if (phase != LocalPhase.hints) return;
+  void hintSpoken(int player, {bool timedOut = false}) {
+    if (phase != LocalPhase.hints || player != currentPlayer) return;
     if (timedOut) missedHintSeats.add(currentPlayer);
     seat++;
     if (seat >= turnOrder.length) {
@@ -390,7 +394,7 @@ class LocalGame {
     if (secondsRemaining! > 0) return;
     switch (phase) {
       case LocalPhase.hints:
-        hintSpoken(timedOut: true);
+        hintSpoken(currentPlayer, timedOut: true);
       case LocalPhase.voteTransition:
         startVoting();
       case LocalPhase.guess:

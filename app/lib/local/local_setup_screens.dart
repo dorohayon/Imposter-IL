@@ -39,7 +39,9 @@ class _LocalPlayersScreenState extends State<LocalPlayersScreen> {
     while (_names.length < count) {
       final seat = _names.length + 1;
       _names.add(TextEditingController(text: 'שחקן $seat'));
-      _avatars.add(avatarAssets[(seat - 1) % avatarAssets.length]);
+      _avatars.add(
+        avatarAssets.firstWhere((avatar) => !_avatars.contains(avatar)),
+      );
     }
     while (_names.length > count) {
       _names.removeLast().dispose();

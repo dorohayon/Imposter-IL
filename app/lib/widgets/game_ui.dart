@@ -560,6 +560,7 @@ class PlayerCard extends StatelessWidget {
     this.selected = false,
     this.enabled = true,
     this.note,
+    this.secondaryNote,
     this.onTap,
     super.key,
   });
@@ -568,6 +569,7 @@ class PlayerCard extends StatelessWidget {
 
   /// An extra line under the hint, such as why a row cannot be picked.
   final String? note;
+  final String? secondaryNote;
   final bool selected;
   final bool enabled;
   final VoidCallback? onTap;
@@ -616,6 +618,14 @@ class PlayerCard extends StatelessWidget {
                     if (note != null)
                       Text(
                         note!,
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 13,
+                        ),
+                      ),
+                    if (secondaryNote != null)
+                      Text(
+                        secondaryNote!,
                         style: const TextStyle(
                           color: AppColors.muted,
                           fontSize: 13,

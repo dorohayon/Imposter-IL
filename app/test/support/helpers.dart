@@ -39,9 +39,14 @@ Future<GameSession> startApp(
 /// Starts the app and passes onboarding.
 Future<GameSession> startAtHome(WidgetTester tester, [FakeApi? api]) async {
   final session = await startApp(tester, api ?? FakeApi());
-  await tester.enterText(find.byType(TextField), 'דור');
-  await tapText(tester, 'ממשיכים');
+  if (!session.signedIn) {
+    await tapText(tester, 'משחק ברשת');
+    await tester.enterText(find.byType(TextField), 'דור');
+    await tapText(tester, 'ממשיכים');
+  }
   expect(find.byType(HomeScreen), findsOneWidget);
+  await tester.ensureVisible(find.byTooltip('הגדרות'));
+  await tester.pumpAndSettle();
   return session;
 }
 

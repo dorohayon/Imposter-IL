@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../state/game_session.dart';
 import 'live_room.dart';
+import 'onboarding_screen.dart';
 import '../theme/app_theme.dart';
 import '../local/local_game.dart';
 import '../local/local_screens.dart';
@@ -57,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SessionScope.of(context); // rebuild when the activity changes
+    final session = SessionScope.of(context);
     _returnToActivity(context);
     final page = DecoratedBox(
       decoration: const BoxDecoration(
@@ -100,8 +101,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           const Spacer(),
                           IconButton.filledTonal(
                             tooltip: 'פרופיל',
-                            onPressed: () =>
-                                _open(context, const ProfileScreen()),
+                            onPressed: () => _open(
+                              context,
+                              session.signedIn
+                                  ? const ProfileScreen()
+                                  : const OnboardingScreen(),
+                            ),
                             icon: const Icon(Icons.person_rounded),
                           ),
                         ],
@@ -127,8 +132,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Spacer(),
                       PrimaryButton(
                         label: 'משחק ברשת',
-                        onPressed: () =>
-                            _open(context, const OnlineChoiceScreen()),
+                        onPressed: () => _open(
+                          context,
+                          session.signedIn
+                              ? const OnlineChoiceScreen()
+                              : const OnboardingScreen(),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       PrimaryButton(

@@ -120,6 +120,14 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   }
 
   Future<void> _leave() async {
+    // A translucent dialog must never leave a role, ballot or typed guess
+    // readable underneath it. Cancelling intentionally returns to the neutral
+    // handoff screen, so only the intended player can reveal it again.
+    if (_game.revealed) {
+      setState(_game.hidePrivateContent);
+      _syncTimer();
+      unawaited(LocalStore.save(_game));
+    }
     final go = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -255,13 +263,14 @@ class _LocalGameScreenState extends State<LocalGameScreen>
 
   Widget _roleReveal() {
     final impostor = _game.currentPlayer == _game.impostor;
+    final player = _game.currentPlayer;
     return GameScaffold(
       title: '',
       showHeader: false,
       accent: impostor ? AppColors.purple : null,
       bottom: PrimaryButton(
         label: 'הבנתי — הסתירו',
-        onPressed: () => _apply(_game.roleSeen),
+        onPressed: () => _apply(() => _game.roleSeen(player)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -388,7 +397,8 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   // ---- hints -------------------------------------------------------------
 
   Widget _hints() {
-    final speaker = _game.players[_game.turnOrder[_game.seat]];
+    final speakerSeat = _game.currentPlayer;
+    final speaker = _game.players[speakerSeat];
     return GameScaffold(
       title: 'סיבוב ${_game.round} · ${_game.category}',
       onExit: _leave,
@@ -402,7 +412,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       bottom: PrimaryButton(
         label: 'הרמז נאמר',
         variant: ButtonVariant.confirm,
-        onPressed: () => _apply(_game.hintSpoken),
+        onPressed: () => _apply(() => _game.hintSpoken(speakerSeat)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -922,12 +932,13 @@ class _BallotState extends State<_Ballot> {
                   avatar: game.players[i].avatar,
                 ),
                 note: widget.runoff && game.previousVotes[i] != null
-                    ? i == widget.voter
-                        ? 'אי אפשר להצביע לעצמכם'
-                        : '${game.previousVotes[i]} קולות בסבב הקודם'
+                    ? '${game.previousVotes[i]} קולות בסבב הקודם'
                     : i == widget.voter
                         ? 'אי אפשר להצביע לעצמכם'
                         : null,
+                secondaryNote: widget.runoff && i == widget.voter
+                    ? 'אי אפשר להצביע לעצמכם'
+                    : null,
                 enabled: i != widget.voter,
                 selected: _selected == i,
                 onTap: i == widget.voter

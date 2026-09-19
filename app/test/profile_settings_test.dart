@@ -84,6 +84,7 @@ void main() {
   testWidgets('nickname length follows the server rune count', (tester) async {
     final api = FakeApi();
     await startApp(tester, api);
+    await tapText(tester, 'משחק ברשת');
 
     // One displayed grapheme, but two Unicode code points: the same count the
     // Go server validates.

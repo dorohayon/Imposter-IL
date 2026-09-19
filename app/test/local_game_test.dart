@@ -18,11 +18,12 @@ LocalGame game({int players = 4, int seed = 7, int? hintSeconds = 30}) =>
 /// Walks role reveal and a hint round, leaving the game at the vote.
 void toVote(LocalGame g) {
   while (g.phase == LocalPhase.roleReveal) {
-    g.roleSeen();
+    g.reveal();
+    g.roleSeen(g.currentPlayer);
   }
   g.startRound();
   while (g.phase == LocalPhase.hints) {
-    g.hintSpoken();
+    g.hintSpoken(g.currentPlayer);
   }
   g.startVoting();
 }
@@ -54,10 +55,23 @@ void main() {
     final seen = <int>[];
     while (g.phase == LocalPhase.roleReveal) {
       seen.add(g.currentPlayer);
-      g.roleSeen();
+      g.reveal();
+      g.roleSeen(g.currentPlayer);
     }
     expect(seen, [0, 1, 2, 3]);
     expect(g.phase, LocalPhase.ready);
+  });
+
+  test('a repeated role acknowledgement cannot skip the next player', () {
+    final g = game();
+    final player = g.currentPlayer;
+    g.reveal();
+    g.roleSeen(player);
+    expect(g.currentPlayer, isNot(player));
+
+    g.roleSeen(player);
+    expect(g.currentPlayer, 1);
+    expect(g.revealed, isFalse);
   });
 
   test('voting out a citizen starts another round and keeps them watching', () {
@@ -78,7 +92,7 @@ void main() {
     g.startRound();
     while (g.phase == LocalPhase.hints) {
       expect(g.currentPlayer, isNot(victim));
-      g.hintSpoken();
+      g.hintSpoken(g.currentPlayer);
     }
     g.startVoting();
     for (final voter in g.activePlayers) {
@@ -97,7 +111,7 @@ void main() {
     // One more, and the last citizen is alone with the impostor.
     g.startRound();
     while (g.phase == LocalPhase.hints) {
-      g.hintSpoken();
+      g.hintSpoken(g.currentPlayer);
     }
     g.startVoting();
     citizens = g.activePlayers.where((i) => i != g.impostor).toList();
@@ -188,7 +202,8 @@ void main() {
   test('the ready screen order is the order used for the hint round', () {
     final g = game(players: 6);
     while (g.phase == LocalPhase.roleReveal) {
-      g.roleSeen();
+      g.reveal();
+      g.roleSeen(g.currentPlayer);
     }
     final announced = [...g.turnOrder];
     g.startRound();
@@ -198,7 +213,8 @@ void main() {
   test('hint and transition timers advance without typed input', () {
     final g = game(hintSeconds: 20);
     while (g.phase == LocalPhase.roleReveal) {
-      g.roleSeen();
+      g.reveal();
+      g.roleSeen(g.currentPlayer);
     }
     g.startRound();
     final timedOut = g.currentPlayer;
@@ -210,7 +226,7 @@ void main() {
     expect(g.secondsRemaining, 20);
 
     while (g.phase == LocalPhase.hints) {
-      g.hintSpoken();
+      g.hintSpoken(g.currentPlayer);
     }
     expect(g.phase, LocalPhase.voteTransition);
     expect(g.secondsRemaining, LocalGame.voteTransitionSeconds);
@@ -218,6 +234,22 @@ void main() {
       g.tick();
     }
     expect(g.phase, LocalPhase.voting);
+  });
+
+  test('a stale hint action cannot skip the next speaker', () {
+    final g = game();
+    while (g.phase == LocalPhase.roleReveal) {
+      g.reveal();
+      g.roleSeen(g.currentPlayer);
+    }
+    g.startRound();
+    final speaker = g.currentPlayer;
+    g.hintSpoken(speaker);
+    final next = g.currentPlayer;
+
+    g.hintSpoken(speaker);
+    expect(g.currentPlayer, next);
+    expect(g.seat, 1);
   });
 
   test('the caught impostor loses when the guess clock expires', () {
@@ -297,7 +329,7 @@ void main() {
       allVoteFor(g, victim);
       g.afterElimination();
       g.startRound();
-      g.hintSpoken();
+      g.hintSpoken(g.currentPlayer);
 
       final back = localGameFromJson(g.toJson(), rng: Random(1))!;
       expect(back.secretWord, g.secretWord);
