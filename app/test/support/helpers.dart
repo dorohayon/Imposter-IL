@@ -40,7 +40,7 @@ Future<GameSession> startApp(
 Future<GameSession> startAtHome(WidgetTester tester, [FakeApi? api]) async {
   final session = await startApp(tester, api ?? FakeApi());
   if (!session.signedIn) {
-    await tapText(tester, 'משחק ברשת');
+    await tapTooltip(tester, 'פרופיל');
     await tester.enterText(find.byType(TextField), 'דור');
     await tapText(tester, 'ממשיכים');
   }

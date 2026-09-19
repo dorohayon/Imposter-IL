@@ -22,7 +22,7 @@ class OnboardingScreen extends StatelessWidget {
           onSubmit: (nickname, avatarId) async {
             await SessionScope.read(context).signIn(nickname, avatarId);
             if (!context.mounted) return;
-            Navigator.of(context).pop();
+            Navigator.of(context).pop(true);
           },
         ),
       ),

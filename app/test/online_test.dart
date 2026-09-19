@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/screens/live_room.dart';
 import 'package:imposter_il/screens/online_flow.dart';
+import 'package:imposter_il/local/online_choice_screen.dart';
 
 import 'support/fake_server.dart';
 import 'support/helpers.dart';
@@ -48,6 +50,20 @@ void pushSearch(FakeChannel channel, String status, int players) =>
     });
 
 void main() {
+  testWidgets('first online tap continues after choosing a nickname',
+      (tester) async {
+    final api = FakeApi();
+    await startApp(tester, api);
+
+    await tapText(tester, 'משחק ברשת');
+    await tester.enterText(find.byType(TextField), 'דור');
+    await tapText(tester, 'ממשיכים');
+
+    expect(find.byType(OnlineChoiceScreen), findsOneWidget);
+    expect(find.text('משחק מהיר'), findsOneWidget);
+    expect(find.text('חדר פרטי'), findsOneWidget);
+  });
+
   testWidgets('category load failure shows the server error and retries',
       (tester) async {
     final api = FakeApi();

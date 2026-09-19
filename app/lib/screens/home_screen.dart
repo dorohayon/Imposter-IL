@@ -42,6 +42,19 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
   }
 
+  Future<void> _openOnline(
+    BuildContext context,
+    GameSession session,
+  ) async {
+    if (!session.signedIn) {
+      final signedIn = await Navigator.of(context).push<bool>(
+        MaterialPageRoute<bool>(builder: (_) => const OnboardingScreen()),
+      );
+      if (signedIn != true || !context.mounted) return;
+    }
+    _open(context, const OnlineChoiceScreen());
+  }
+
   /// Reopens the live screen when the server says the player is still in a
   /// room, search or game, for example after the app restarted mid-game.
   void _returnToActivity(BuildContext context) {
@@ -132,12 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Spacer(),
                       PrimaryButton(
                         label: 'משחק ברשת',
-                        onPressed: () => _open(
-                          context,
-                          session.signedIn
-                              ? const OnlineChoiceScreen()
-                              : const OnboardingScreen(),
-                        ),
+                        onPressed: () => _openOnline(context, session),
                       ),
                       const SizedBox(height: 12),
                       PrimaryButton(
