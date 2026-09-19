@@ -303,6 +303,32 @@ void main() {
     expect(isEnabled(tester, 'המשך להגדרות'), isFalse);
   });
 
+  testWidgets('local names are visible and summary columns stay aligned',
+      (tester) async {
+    await startAtHome(tester);
+    await tapText(tester, 'משחק במכשיר אחד');
+
+    for (final field in tester.widgetList<TextField>(find.byType(TextField))) {
+      expect(field.style?.color, AppColors.night);
+    }
+
+    await tapText(tester, 'המשך להגדרות');
+    for (final label in ['שחקנים', 'קטגוריות', 'זמן לרמז', 'מתחזים', 'הצבעה']) {
+      expect(tester.widget<Text>(find.text(label).last).textAlign,
+          TextAlign.start);
+    }
+    for (final value in [
+      '4',
+      'הכול',
+      '30 שניות',
+      'מתחזה אחד',
+      'הצבעה פרטית במכשיר',
+    ]) {
+      expect(
+          tester.widget<Text>(find.text(value).last).textAlign, TextAlign.end);
+    }
+  });
+
   testWidgets(
       'setup supports 12 unique players and disables start with no categories',
       (tester) async {

@@ -151,6 +151,11 @@ class _LocalPlayersScreenState extends State<LocalPlayersScreen> {
                     child: TextField(
                       controller: _names[i],
                       textAlign: TextAlign.start,
+                      style: const TextStyle(
+                        color: AppColors.night,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
                       maxLength: 18,
                       decoration: InputDecoration(
                         counterText: '',
@@ -373,12 +378,17 @@ class _SummaryRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Text(label, style: const TextStyle(color: AppColors.muted)),
+            child: Text(
+              label,
+              textAlign: TextAlign.start,
+              style: const TextStyle(color: AppColors.muted),
+            ),
           ),
           const SizedBox(width: 12),
-          Flexible(
+          Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,

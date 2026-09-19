@@ -609,6 +609,11 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           TextField(
             controller: _guess,
             textAlign: TextAlign.start,
+            style: const TextStyle(
+              color: AppColors.night,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
             decoration: const InputDecoration(hintText: 'מה המילה?'),
             onChanged: (_) => setState(() {}),
           ),
