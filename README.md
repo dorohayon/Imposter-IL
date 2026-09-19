@@ -10,6 +10,7 @@
 - [חוקי המשחק](docs/game-rules.md)
 - [מפת המסכים](docs/screen-flow.md)
 - [אפיון המסכים](docs/screens.md)
+- [משחק במכשיר אחד — אפיון עיצוב ו־UX](docs/local-game-design.md)
 - [משחק ברשת ו־Matchmaking](docs/matchmaking.md)
 - [ניתוקים ומקרי קצה](docs/disconnections-and-edge-cases.md)
 - [החלטות מאושרות](docs/decisions.md)
@@ -17,7 +18,7 @@
 - [כיוון עיצובי](docs/design-direction.md)
 - [Wireframes וכל מצבי המסכים](docs/wireframes.md)
 - [הנחיות עיצוב לקלוד](CLAUDE.md)
-- [נכסי איור — 12 אווטארים ו־12 אילוסטרציות](assets/README.md)
+- [נכסי איור — 12 אווטארים ו־14 אילוסטרציות](assets/README.md)
 - [ארכיטקטורה ו־State Machines](docs/architecture.md)
 - [חוזי REST ו־WebSocket](docs/protocol.md)
 - [סקירת ארכיטקטורה לקראת ייצור](docs/production-architecture-review.md)
@@ -28,9 +29,10 @@
 
 - מצב מילה: משחק ברשת וחדר פרטי פועלים מקצה לקצה בשרת ובאפליקציה
 - Wireframe: גרסה מעודכנת עם 29 מסכים ומצבי מערכת
+- משחק במכשיר אחד: אפיון, 22 Wireframes ושני איורים מוכנים; המימוש וה־High Fidelity עדיין פתוחים
 - עיצוב: 29 מסכים, מערכת עיצוב ו־Prototype תחת [`design/claude/`](design/claude/); האפליקציה מותאמת למסכים, למעט בדיקה על מכשיר
 - מצב שאלה: מחוץ ל־MVP ויתוכנן בהמשך
-- כיוון עיצובי: נקבע; 12 אווטארים ו־12 אילוסטרציות בגרסת v1 נמצאים תחת `assets/`
+- כיוון עיצובי: נקבע; 12 אווטארים ו־14 אילוסטרציות נמצאים תחת `assets/`
 - שרת Go: מנוע משחק, חדרים פרטיים, Matchmaking, REST ו־WebSocket, 6 קטגוריות תוכן ורשימת תגובות
 - חוסן ייצור: כיבוי מסודר, הכלת `panic`, ניקוי sessions וחדרים, הגבלות קצב, `/metrics` ולוגים ב־JSON
 - Hosting: מכונה אחת ב־GCE (`e2-micro`, Free Tier) עם Caddy; הנוהל ב־[`deploy/`](deploy/)
