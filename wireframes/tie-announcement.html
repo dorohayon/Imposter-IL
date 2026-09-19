@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>מי המתחזה? · הכרזה על תיקו</title>
+  <style>
+    @font-face { font-family: Rubik; src: url('../app/assets/fonts/Rubik-Regular.ttf'); font-weight: 400; }
+    @font-face { font-family: Rubik; src: url('../app/assets/fonts/Rubik-Bold.ttf'); font-weight: 700; }
+    @font-face { font-family: Secular; src: url('../app/assets/fonts/SecularOne-Regular.ttf'); }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f2efe8; color: #14132b; font-family: Rubik, sans-serif; }
+    .intro { max-width: 960px; padding: 28px 22px 12px; margin: auto; }
+    .intro h1 { margin: 0 0 8px; font: 32px Secular, sans-serif; }
+    .intro p { margin: 0; line-height: 1.6; }
+    .gallery { max-width: 1260px; margin: 0 auto; display: flex; justify-content: center; align-items: flex-start; flex-wrap: wrap; gap: 28px; padding: 28px 16px 54px; }
+    .variant { width: min(390px, 100%); }
+    .variant h2 { margin: 0 0 10px; font: 19px Secular, sans-serif; }
+    .phone {
+      position: relative; width: 100%; aspect-ratio: 390 / 844; overflow: hidden;
+      border-radius: 34px; background: radial-gradient(ellipse 140% 58% at 50% 27%, #42203c 0%, #251c38 42%, #14132b 78%);
+      box-shadow: 0 20px 38px #14132b3b; color: #fff8e7; display: flex; flex-direction: column;
+    }
+    .status { height: 38px; display: flex; align-items: center; justify-content: space-between; direction: ltr; padding: 0 26px; font: 13px Rubik; color: #fff8e7c9; }
+    .header { display: grid; grid-template-columns: 50px 1fr 50px; align-items: center; gap: 8px; padding: 8px 22px 0; min-height: 66px; }
+    .header h3 { margin: 0; font: 32px/1.15 Secular; text-align: center; }
+    .exit { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 14px; border: 1px solid #ff6b6b66; background: #ff6b6b25; color: #ffb7b7; font: 25px Rubik; }
+    .stage { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: 10px 22px 22px; text-align: center; }
+    .art { display: block; width: min(235px, 70%); height: 226px; object-fit: contain; margin: 0 auto 8px; filter: drop-shadow(0 14px 18px #0006); }
+    .summary { margin: 0 0 18px; color: #fff8e7c9; font: 17px/1.35 Rubik; }
+    .summary strong { color: #ffd447; }
+    .candidates { display: flex; justify-content: center; gap: 18px; margin: 0 0 18px; }
+    .candidate { min-width: 100px; max-width: 144px; flex: 1; display: flex; align-items: center; flex-direction: column; gap: 7px; }
+    .candidate img { width: 76px; height: 76px; border-radius: 50%; background: #302741; object-fit: contain; }
+    .candidate strong { font: 20px/1.1 Secular; max-width: 100%; overflow-wrap: anywhere; }
+    .candidate span { font: 13px/1.25 Rubik; color: #ffd447; }
+    .notice { border: 1px solid #ff6b6b77; border-radius: 18px; padding: 15px 17px; background: #ff6b6b1e; color: #fff8e7; font: 15px/1.55 Rubik; }
+    .notice strong { color: #ffb7b7; }
+    .notice:before { content: '⚖'; display: inline-block; color: #ffd447; margin-left: 7px; }
+    .footer { padding: 12px 22px 29px; background: linear-gradient(transparent, #14132b 22%); }
+    .primary { width: 100%; height: 62px; border: 0; border-radius: 18px; background: #ffd447; box-shadow: 0 8px 0 #d9a900; color: #14132b; font: 23px Secular; }
+    .footer small { display: block; text-align: center; margin-top: 14px; font: 12px Rubik; color: #fff8e7ad; }
+    .note { font: 13px/1.5 Rubik; margin-top: 14px; color: #4a4252; }
+    @media (max-width: 400px) { .gallery { padding-inline: 6px; } .art { height: 190px; width: 205px; } .phone { border-radius: 22px; } }
+  </style>
+</head>
+<body>
+  <header class="intro">
+    <h1>הכרזה על תיקו · הרחבת Design V1</h1>
+    <p>שלוש וריאציות ב־390×844. דוגמת שחקנים בלבד; המועמדים, האווטארים ומספר הקולות מגיעים ממצב המשחק.</p>
+  </header>
+  <main class="gallery">
+    <section class="variant">
+      <h2>01 · ברשת · לפני הצבעה חוזרת</h2>
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>●●●  ▰</span></div>
+        <div class="header"><div class="exit" aria-label="יציאה">×</div><h3>יש תיקו</h3><span></span></div>
+        <div class="stage">
+          <img class="art" src="../assets/illustrations/tie-announcement.webp" alt="בלשית בוחנת מאזניים מאוזנים עם שתי ערימות הצבעה שוות">
+          <p class="summary"><strong>2 מועמדים</strong> קיבלו <strong>2 קולות</strong></p>
+          <div class="candidates">
+            <div class="candidate"><img src="../assets/avatars/avatar-f02-camera.webp" alt=""><strong>מאיה</strong><span>2 קולות</span></div>
+            <div class="candidate"><img src="../assets/avatars/avatar-f03-headphones.webp" alt=""><strong>נועה</strong><span>2 קולות</span></div>
+          </div>
+          <div class="notice"><strong>היה תיקו.</strong> מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף — איש לא מודח והמשחק ממשיך לסבב נוסף.</div>
+        </div>
+        <div class="footer"><button class="primary">מתחילים הצבעה חוזרת</button><small>ההצבעה החוזרת נמשכת 15 שניות</small></div>
+      </div>
+      <p class="note">הכרזה לכל השחקנים יחד. שעון ההצבעה מתחיל רק אחריה.</p>
+    </section>
+    <section class="variant">
+      <h2>02 · במכשיר אחד · הכרזה משותפת</h2>
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>●●●  ▰</span></div>
+        <div class="header"><span></span><h3>יש תיקו</h3><span></span></div>
+        <div class="stage">
+          <img class="art" src="../assets/illustrations/tie-announcement.webp" alt="בלשית בוחנת מאזניים מאוזנים עם שתי ערימות הצבעה שוות">
+          <p class="summary"><strong>2 מועמדים</strong> קיבלו <strong>2 קולות</strong></p>
+          <div class="candidates">
+            <div class="candidate"><img src="../assets/avatars/avatar-f02-camera.webp" alt=""><strong>מאיה</strong><span>2 קולות</span></div>
+            <div class="candidate"><img src="../assets/avatars/avatar-f03-headphones.webp" alt=""><strong>נועה</strong><span>2 קולות</span></div>
+          </div>
+          <div class="notice"><strong>היה תיקו.</strong> מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף — איש לא מודח והמשחק ממשיך לסבב נוסף.</div>
+        </div>
+        <div class="footer"><button class="primary">מתחילים הצבעה חוזרת</button><small>אחר כך מעבירים את המכשיר לשחקן הבא</small></div>
+      </div>
+      <p class="note">המסך הציבורי נעלם לפני מסך הפרטיות של המצביע הראשון. אין טיימר להצבעה המקומית.</p>
+    </section>
+    <section class="variant">
+      <h2>03 · תיקו חוזר · אין הדחה</h2>
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>●●●  ▰</span></div>
+        <div class="header"><span></span><h3>שוב יש תיקו</h3><span></span></div>
+        <div class="stage">
+          <img class="art" src="../assets/illustrations/tie-announcement.webp" alt="בלשית בוחנת מאזניים מאוזנים עם שתי ערימות הצבעה שוות">
+          <p class="summary">גם הפעם הקולות התחלקו שווה בשווה</p>
+          <div class="candidates">
+            <div class="candidate"><img src="../assets/avatars/avatar-f02-camera.webp" alt=""><strong>מאיה</strong><span>2 קולות</span></div>
+            <div class="candidate"><img src="../assets/avatars/avatar-f03-headphones.webp" alt=""><strong>נועה</strong><span>2 קולות</span></div>
+          </div>
+          <div class="notice"><strong>איש לא הודח.</strong> ממשיכים לסבב רמזים נוסף.</div>
+        </div>
+        <div class="footer"><button class="primary">ממשיכים לסבב הבא</button></div>
+      </div>
+      <p class="note">אין ניצחון למתחזה בגלל התיקו. שומרים על אותם שחקנים פעילים.</p>
+    </section>
+  </main>
+</body>
+</html>
