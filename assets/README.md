@@ -52,6 +52,7 @@
 | `role-impostor.webp` | חשיפת תפקיד מתחזה |
 | `voting.webp` | הצבעה והצבעה חוזרת |
 | `pre-vote-transition.webp` | מעבר של 5 שניות מסיום הרמזים להצבעה |
+| `tie-announcement.webp` | הכרזת תיקו לפני הצבעה חוזרת, ובתיקו חוזר לפני סבב חדש |
 | `result-citizens-win.webp` | ניצחון אזרחים |
 | `result-impostor-win.webp` | ניצחון מתחזה |
 | `connection-error.webp` | ניתוק, חיבור מחדש או תקלה בשרת |
@@ -61,7 +62,8 @@
 | `local-one-device.webp` | כרטיס והגדרת משחק במכשיר אחד |
 | `pass-the-device.webp` | מסך פרטיות לפני חשיפת תפקיד או הצבעה |
 
-תצוגת הסט: [`illustrations/contact-sheet.webp`](illustrations/contact-sheet.webp).
+תצוגת סט v1: [`illustrations/contact-sheet.webp`](illustrations/contact-sheet.webp).
+האיור החדש להכרזת תיקו מופיע בנפרד בקובץ `tie-announcement.webp`.
 
 האיורים נועדו להשתלב עם שכבות UI מעליהם או לצידם. אין להטמיע בתוך התמונות כותרות, כפתורים, מילה סודית, קוד חדר או הודעות שגיאה.
 

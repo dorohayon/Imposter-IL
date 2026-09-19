@@ -14,6 +14,11 @@
 
 גלריית `Imposter IL Design System.dc.html` נשארה בפרויקט בלבד; המידות שהמימוש צריך מרוכזות ב־`design-system.md`.
 
+הרחבת הכרזת התיקו מתועדת ב־`docs/tie-screen-design.md`, עם הדמיית המסך
+`wireframes/tie-announcement.html` ואיור `assets/illustrations/tie-announcement.webp`.
+יש להעביר את ההרחבה לייצוא Claude Design הקנוני. הטקסט הישן על ניצחון למתחזה
+בתיקו חוזר אינו תקף; לאחר תיקו חוזר ממשיכים לסבב נוסף בלי הדחה.
+
 ## הרחבת משחק במכשיר אחד
 
 הייצוא `Imposter IL Local Game.dc.html` מרחיב את Design V1 לפי
