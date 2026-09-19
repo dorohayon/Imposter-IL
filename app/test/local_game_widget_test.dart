@@ -189,6 +189,51 @@ void main() {
     await expectCovered(guess, find.byType(TextField));
   });
 
+  // Online, a tie reaches every player on their own screen at once. With one
+  // phone the table needs a moment of its own, or the first anybody hears of
+  // it is the header on a ballot they are already holding.
+  testWidgets('a tie is announced to the table before the phone goes round',
+      (tester) async {
+    final game = _game();
+    _toVote(game);
+    final order = game.activePlayers;
+    game.castVote(order[1]);
+    game.castVote(order[0]);
+    game.castVote(order[1]);
+    game.castVote(order[0]);
+    expect(game.phase, LocalPhase.tie);
+    await _pumpGame(tester, game);
+
+    expect(find.text('יש תיקו'), findsOneWidget);
+    expect(find.textContaining('היה תיקו.'), findsOneWidget);
+    expect(find.text('2 מועמדים קיבלו 2 קולות'), findsOneWidget);
+    // Both tied players are named, and nobody has been asked to vote yet.
+    for (final i in game.runoffCandidates) {
+      expect(find.text(game.players[i].name), findsOneWidget);
+    }
+    expect(find.textContaining('העבירו את המכשיר'), findsNothing);
+
+    await tapText(tester, 'מתחילים הצבעה חוזרת');
+    expect(game.phase, LocalPhase.runoff);
+  });
+
+  testWidgets('a second tie tells the next round nobody went', (tester) async {
+    final game = _game();
+    _toVote(game);
+    final order = game.activePlayers;
+    for (var i = 0; i < 2; i++) {
+      game.castVote(order[1]);
+      game.castVote(order[0]);
+      game.castVote(order[1]);
+      game.castVote(order[0]);
+      if (game.phase == LocalPhase.tie) game.startRunoff();
+    }
+    expect(game.phase, LocalPhase.ready);
+    await _pumpGame(tester, game);
+
+    expect(find.textContaining('אף אחד לא הודח'), findsOneWidget);
+  });
+
   testWidgets('a runoff self-card keeps its previous vote count',
       (tester) async {
     final game = _game();
@@ -198,6 +243,8 @@ void main() {
     game.castVote(order[0]);
     game.castVote(order[1]);
     game.castVote(order[0]);
+    // Past the tie announcement, which the table reads before voting again.
+    game.startRunoff();
     game.reveal();
     await _pumpGame(tester, game);
 

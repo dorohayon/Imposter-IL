@@ -170,6 +170,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
         LocalPhase.ready => _ready(),
         LocalPhase.hints => _hints(),
         LocalPhase.voteTransition => _voteTransition(),
+        LocalPhase.tie => _tie(),
         LocalPhase.voting ||
         LocalPhase.runoff =>
           _game.revealed ? _ballot() : _passDevice(forVoting: true),
@@ -354,7 +355,9 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           Text(
             _game.round == 1
                 ? 'מניחים את המכשיר במקום שכולם רואים.'
-                : 'המתחזה עדיין ביניכם. סדר התורות הוגרל מחדש.',
+                : _game.tiedAgain
+                    ? 'גם ההצבעה החוזרת הסתיימה בתיקו — אף אחד לא הודח. סדר התורות הוגרל מחדש.'
+                    : 'המתחזה עדיין ביניכם. סדר התורות הוגרל מחדש.',
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, height: 1.45),
           ),
@@ -489,6 +492,72 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   }
 
   // ---- what the vote decided ---------------------------------------------
+
+  /// Telling the table there was a tie. Online this arrives on everybody's own
+  /// screen at once; with one phone it has to be a moment of its own, before
+  /// the phone starts going round again.
+  Widget _tie() {
+    final tied = _game.runoffCandidates;
+    return GameScaffold(
+      title: 'יש תיקו',
+      onExit: _leave,
+      bottom: PrimaryButton(
+        label: 'מתחילים הצבעה חוזרת',
+        onPressed: () => _apply(_game.startRunoff),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 8),
+          Text(
+            '${tied.length} מועמדים קיבלו ${_game.tiedVotes} קולות',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.muted, fontSize: 15),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (final i in tied)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Column(
+                    children: [
+                      AvatarView(asset: _game.players[i].avatar, size: 72),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: 84,
+                        child: Text(
+                          _game.players[i].name,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.coral.withValues(alpha: .13),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.coral.withValues(alpha: .42)),
+            ),
+            child: const Text(
+              'היה תיקו. מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף — איש לא מודח והמשחק ממשיך לסבב נוסף.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFFFFD9D9), height: 1.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _elimination() {
     final out = _game.players[_game.lastEliminated!];

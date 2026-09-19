@@ -20,6 +20,11 @@ enum LocalPhase {
   /// Handing the device round so each player votes alone.
   voting,
 
+  /// Telling the table there was a tie, before the phone starts going round
+  /// again. Online every player sees the tie on their own screen at once;
+  /// here there is one screen, so the announcement needs its own moment.
+  tie,
+
   /// A tie, voted again between the tied players only.
   runoff,
 
@@ -165,6 +170,12 @@ class LocalGame {
 
   /// Who the table voted out this round, once it has.
   int? lastEliminated;
+
+  /// How many votes each tied player took, for the tie announcement.
+  int tiedVotes = 0;
+
+  /// Set when a runoff tied as well, so the next round can say nobody went.
+  bool tiedAgain = false;
   String? submittedGuess;
   LocalOutcome? outcome;
   LocalEndReason? endReason;
@@ -229,6 +240,7 @@ class LocalGame {
 
   void startRound() {
     if (phase != LocalPhase.ready) return;
+    tiedAgain = false;
     revealed = false;
     seat = 0;
     phase = LocalPhase.hints;
@@ -320,6 +332,7 @@ class LocalGame {
       // A tie goes to a runoff between the tied; a tie there eliminates
       // nobody and the table goes around again.
       if (phase == LocalPhase.voting) {
+        tiedVotes = most;
         runoffCandidates = top..sort();
         _previousVotes = {
           for (final c in top) c: counts[c] ?? 0,
@@ -327,9 +340,11 @@ class LocalGame {
         votes.clear();
         revealed = false;
         ballotSaved = false;
-        phase = LocalPhase.runoff;
+        phase = LocalPhase.tie;
         return;
       }
+      // A runoff that tied as well: nobody goes, and the next round says why.
+      tiedAgain = true;
       _nextRound();
       return;
     }
@@ -352,6 +367,14 @@ class LocalGame {
   void afterElimination() {
     if (phase != LocalPhase.elimination) return;
     _nextRound();
+  }
+
+  /// The table has read the tie; the phone starts going round again.
+  void startRunoff() {
+    if (phase != LocalPhase.tie) return;
+    seat = 0;
+    revealed = false;
+    phase = LocalPhase.runoff;
   }
 
   void _nextRound() {

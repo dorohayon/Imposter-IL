@@ -152,8 +152,14 @@ void main() {
     g.castVote(order[1]);
     g.castVote(order[0]);
 
-    expect(g.phase, LocalPhase.runoff);
+    // The table is told there was a tie before the phone goes round again:
+    // online everybody sees it on their own screen at once, and here there is
+    // only the one screen.
+    expect(g.phase, LocalPhase.tie);
+    expect(g.tiedVotes, 2);
     expect(g.runoffCandidates, unorderedEquals([order[0], order[1]]));
+    g.startRunoff();
+    expect(g.phase, LocalPhase.runoff);
     for (final voter in g.activePlayers) {
       expect(g.candidatesFor(voter), everyElement(isIn(g.runoffCandidates)));
     }
@@ -168,7 +174,8 @@ void main() {
     g.castVote(order[0]);
     g.castVote(order[1]);
     g.castVote(order[0]);
-    expect(g.phase, LocalPhase.runoff);
+    expect(g.phase, LocalPhase.tie);
+    g.startRunoff();
 
     // And the same again in the runoff.
     g.castVote(order[1]);
@@ -178,6 +185,10 @@ void main() {
     expect(g.phase, LocalPhase.ready);
     expect(g.round, 2);
     expect(g.players.every((p) => !p.eliminated), isTrue);
+    // And the round that follows says why nobody went.
+    expect(g.tiedAgain, isTrue);
+    g.startRound();
+    expect(g.tiedAgain, isFalse, reason: 'the note is for one round only');
   });
 
   test('nobody votes for themselves', () {
