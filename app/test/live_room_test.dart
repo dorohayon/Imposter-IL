@@ -49,7 +49,7 @@ void main() {
     final api = FakeApi();
     await startAtHome(tester, api);
     api.responses['POST /v1/rooms'] = {'room': roomJson()};
-    await tapText(tester, 'משחק עם חברים');
+    await openPrivateRoom(tester);
     await tapText(tester, 'יצירת חדר');
 
     // Categories come from the server. "הכול" is the default; tapping one
@@ -113,7 +113,7 @@ void main() {
       (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);
-    await tapText(tester, 'משחק עם חברים');
+    await openPrivateRoom(tester);
     await tapText(tester, 'הצטרפות לחדר');
 
     api.responses['POST /v1/rooms/join'] =

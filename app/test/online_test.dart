@@ -25,7 +25,7 @@ Map<String, dynamic> searchJson(String status, int players) => {
 /// Opens the categories, keeps only food, and starts searching.
 Future<FakeChannel> startSearching(WidgetTester tester, FakeApi api) async {
   await startAtHome(tester, api);
-  await tapText(tester, 'משחק ברשת');
+  await openQuickGame(tester);
   expect(find.byType(CategorySelectionScreen), findsOneWidget);
   // "הכול" is the default; tapping one category leaves it for just that one.
   await tapText(tester, 'אוכל');
@@ -55,7 +55,7 @@ void main() {
     api.responses['GET /v1/categories'] = const ApiException('network_error');
     await startAtHome(tester, api);
 
-    await tapText(tester, 'משחק ברשת');
+    await openQuickGame(tester);
     expect(find.text('משהו השתבש'), findsOneWidget);
     expect(find.text('השרת לא זמין כרגע. נסו שוב בעוד רגע.'), findsOneWidget);
     expect(find.text('ניסיון נוסף'), findsOneWidget);
@@ -64,7 +64,7 @@ void main() {
     await tapText(tester, 'חזרה למסך הבית');
     expect(find.byType(HomeScreen), findsOneWidget);
 
-    await tapText(tester, 'משחק ברשת');
+    await openQuickGame(tester);
     api.responses['GET /v1/categories'] = categories;
     await tapText(tester, 'ניסיון נוסף');
     expect(find.text('אוכל'), findsOneWidget);
@@ -204,7 +204,7 @@ void main() {
       (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);
-    await tapText(tester, 'משחק ברשת');
+    await openQuickGame(tester);
 
     // "הכול" is selected on its own — the six categories are not lit up too.
     expect(isSelectedTile(tester, 'הכול'), isTrue);
