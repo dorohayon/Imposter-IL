@@ -281,7 +281,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
             style: const TextStyle(color: AppColors.muted, fontSize: 15),
           ),
           const SizedBox(height: 10),
-          Center(child: _CategoryPill(category: _game.category)),
+          Center(child: CategoryPill(category: _game.category)),
           const SizedBox(height: 12),
           Illustration(
             impostor
@@ -296,25 +296,19 @@ class _LocalGameScreenState extends State<LocalGameScreen>
             style: Theme.of(context).textTheme.headlineLarge,
           ),
           const SizedBox(height: 12),
-          InfoCard(
-            label: 'המילה הסודית',
-            light: !impostor,
-            child: impostor
-                ? const Text(
-                    'לא קיבלת את המילה — רק את הקטגוריה.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 15, height: 1.45),
-                  )
-                : Text(
-                    _game.secretWord,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.night,
-                      fontFamily: 'Secular One',
-                      fontSize: 34,
-                    ),
-                  ),
-          ),
+          SecretWordCard(word: _game.secretWord, impostor: impostor),
+          if (!impostor) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'המתחזה לא יודע את המילה הסודית. שמרו עליה בסוד.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.muted,
+                fontSize: 15,
+                height: 1.45,
+              ),
+            ),
+          ],
           const SizedBox(height: 14),
           for (final (i, tip) in (impostor
                   ? const [
@@ -804,40 +798,6 @@ class _PlayerRow extends StatelessWidget {
           ),
           if (note != null)
             Text(note!, style: const TextStyle(color: AppColors.muted)),
-        ],
-      ),
-    );
-  }
-}
-
-class _CategoryPill extends StatelessWidget {
-  const _CategoryPill({required this.category});
-
-  final String category;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.purple.withValues(alpha: .22),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.purple.withValues(alpha: .6)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('קטגוריה',
-              style: TextStyle(color: Color(0xFFD9C8FF), fontSize: 13)),
-          const SizedBox(width: 8),
-          Text(
-            category,
-            style: const TextStyle(
-              color: Color(0xFFC4B0FF),
-              fontFamily: 'Secular One',
-              fontSize: 17,
-            ),
-          ),
         ],
       ),
     );

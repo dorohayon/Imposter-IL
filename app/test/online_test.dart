@@ -184,7 +184,7 @@ void main() {
       'game': gameJson(phase: 'role_reveal'),
     });
     await settle(tester);
-    expect(find.text('אתם אזרחים'), findsOneWidget);
+    expect(find.text('את/ה אזרח/ית'), findsOneWidget);
 
     channel.event('game.state', {
       'stateVersion': 5001,

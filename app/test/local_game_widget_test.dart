@@ -380,4 +380,66 @@ void main() {
     ];
     expect(assigned.toSet(), hasLength(5));
   });
+  // The role reveal exists twice — once online and once on one device — and the
+  // two drifted: one had the category as a purple pill above the picture, the
+  // other as a turquoise line below it and again in the header; one said
+  // "אתם אזרחים" and the other "את/ה אזרח/ית"; and only one masked the
+  // impostor's word. They share their parts now, and this is what says so.
+  group('the role reveal reads the same in both games', () {
+    testWidgets('one device', (tester) async {
+      final game = _game();
+      game.reveal();
+      await _pumpGame(tester, game);
+
+      expect(find.byType(CategoryPill), findsOneWidget);
+      expect(find.byType(SecretWordCard), findsOneWidget);
+      final citizen = game.currentPlayer != game.impostor;
+      expect(
+        find.text(citizen ? 'את/ה אזרח/ית' : 'את/ה המתחזה'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('online', (tester) async {
+      final api = FakeApi();
+      await startAtHome(tester, api);
+      await openPrivateRoom(tester);
+      api.responses['POST /v1/rooms'] = {'room': roomJson()};
+      await tapText(tester, 'יצירת חדר');
+      await tapLive(tester, 'יצירת חדר');
+      api.channel.event('session.state', {
+        'playerId': 'p_me',
+        'activity': 'game',
+        'roomId': 'r_1',
+        'gameId': 'g_1',
+      });
+      api.channel
+          .snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
+      await settle(tester);
+
+      expect(find.byType(CategoryPill), findsOneWidget);
+      expect(find.byType(SecretWordCard), findsOneWidget);
+      expect(find.text('את/ה אזרח/ית'), findsOneWidget);
+      // The category is named once, not in the header and again below it.
+      expect(find.text('חיות'), findsOneWidget);
+    });
+  });
+
+  testWidgets('the impostor is shown masked tiles, never the word',
+      (tester) async {
+    final game = _game();
+    // Hand the device round until the impostor is the one holding it.
+    while (game.currentPlayer != game.impostor) {
+      game.reveal();
+      game.roleSeen(game.currentPlayer);
+    }
+    game.reveal();
+    await _pumpGame(tester, game);
+
+    expect(find.byType(SecretWordCard), findsOneWidget);
+    expect(find.text(game.secretWord), findsNothing);
+    expect(find.text('המילה לא מוצגת לכם — רק הקטגוריה.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

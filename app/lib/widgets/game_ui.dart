@@ -1218,3 +1218,99 @@ class RoundDivider extends StatelessWidget {
     );
   }
 }
+
+/// The round's category, as a pill. Shared by the online and one-device role
+/// reveals so the same screen reads the same way in both.
+class CategoryPill extends StatelessWidget {
+  const CategoryPill({required this.category, super.key});
+
+  final String category;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.purple.withValues(alpha: .22),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.purple.withValues(alpha: .6)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'קטגוריה',
+            style: TextStyle(color: Color(0xFFD9C8FF), fontSize: 13),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            category,
+            style: const TextStyle(
+              color: Color(0xFFC4B0FF),
+              fontFamily: 'Secular One',
+              fontSize: 17,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The word card on a role reveal: the word itself for a citizen, and four
+/// masked tiles for the impostor, who is told what they are rather than shown
+/// nothing at all.
+///
+/// Shared, because the same card was drawn twice — once online and once for
+/// the one-device game — and the two drifted apart.
+class SecretWordCard extends StatelessWidget {
+  const SecretWordCard({required this.word, required this.impostor, super.key});
+
+  /// The secret word. Ignored when [impostor] is true, and never read from
+  /// there, so an impostor's card cannot show it by accident.
+  final String? word;
+  final bool impostor;
+
+  @override
+  Widget build(BuildContext context) {
+    return InfoCard(
+      label: 'המילה הסודית',
+      light: !impostor,
+      child: impostor
+          ? Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (var i = 0; i < 4; i++)
+                      Container(
+                        width: 34,
+                        height: 44,
+                        margin: EdgeInsets.only(right: i == 3 ? 0 : 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.night.withValues(alpha: .45),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'המילה לא מוצגת לכם — רק הקטגוריה.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 15, height: 1.45),
+                ),
+              ],
+            )
+          : Text(
+              word ?? '',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.night,
+                fontFamily: 'Secular One',
+                fontSize: 38,
+              ),
+            ),
+    );
+  }
+}
