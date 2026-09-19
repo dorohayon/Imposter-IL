@@ -36,7 +36,7 @@ Future<GameSession> openActiveGame(
 ) async {
   final session = await startAtHome(tester, api);
   api.responses['POST /v1/rooms'] = {'room': roomJson()};
-  await tapText(tester, 'משחק עם חברים');
+  await openPrivateRoom(tester);
   await tapText(tester, 'יצירת חדר');
   await tapLive(tester, 'יצירת חדר');
   enterGame(api.channel, 'g_1');
@@ -84,6 +84,7 @@ void main() {
   testWidgets('nickname length follows the server rune count', (tester) async {
     final api = FakeApi();
     await startApp(tester, api);
+    await tapText(tester, 'משחק ברשת');
 
     // One displayed grapheme, but two Unicode code points: the same count the
     // Go server validates.
@@ -98,7 +99,7 @@ void main() {
       (tester) async {
     final api = FakeApi();
     final session = await startAtHome(tester, api);
-    await tapText(tester, 'משחק עם חברים');
+    await openPrivateRoom(tester);
     api.responses['POST /v1/rooms'] = {'room': roomJson()};
     await tapText(tester, 'יצירת חדר');
     await tapLive(tester, 'יצירת חדר');
@@ -240,7 +241,7 @@ void main() {
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
 
-    await tapText(tester, 'משחק עם חברים');
+    await openPrivateRoom(tester);
     api.responses['POST /v1/rooms'] = {'room': roomJson()};
     await tapText(tester, 'יצירת חדר');
     await tapLive(tester, 'יצירת חדר');
@@ -301,7 +302,7 @@ void main() {
     );
     final api = FakeApi();
     await startAtHome(tester, api);
-    await tapText(tester, 'משחק עם חברים');
+    await openPrivateRoom(tester);
     api.responses['POST /v1/rooms'] = {'room': roomJson()};
     await tapText(tester, 'יצירת חדר');
     await tapLive(tester, 'יצירת חדר');
@@ -336,7 +337,7 @@ void main() {
 
     final api = FakeApi();
     await startAtHome(tester, api);
-    await tapText(tester, 'משחק עם חברים');
+    await openPrivateRoom(tester);
     api.responses['POST /v1/rooms'] = {'room': roomJson()};
     await tapText(tester, 'יצירת חדר');
     await tapLive(tester, 'יצירת חדר');
@@ -349,7 +350,7 @@ void main() {
       (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);
-    await tapText(tester, 'משחק עם חברים');
+    await openPrivateRoom(tester);
     api.responses['POST /v1/rooms'] = {'room': roomJson()};
     await tapText(tester, 'יצירת חדר');
     await tapLive(tester, 'יצירת חדר');

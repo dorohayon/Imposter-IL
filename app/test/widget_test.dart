@@ -98,7 +98,7 @@ void main() {
 
     expect(find.text('מי המתחזה?'), findsOneWidget);
     expect(find.text('משחק ברשת'), findsOneWidget);
-    expect(find.text('משחק עם חברים'), findsOneWidget);
+    expect(find.text('משחק במכשיר אחד'), findsOneWidget);
     expect(find.byTooltip('פרופיל'), findsOneWidget);
     expect(find.byTooltip('הגדרות'), findsOneWidget);
   });
@@ -122,11 +122,14 @@ void main() {
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
 
-    await tapText(tester, 'משחק עם חברים');
+    await openPrivateRoom(tester);
     await tapText(tester, 'הצטרפות לחדר');
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.text('יצירת חדר'), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('משחק מהיר'), findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
@@ -153,12 +156,12 @@ void main() {
 
     final handle = tester.ensureSemantics();
     final button = find.byWidgetPredicate(
-      (widget) => widget is PrimaryButton && widget.label == 'משחק עם חברים',
+      (widget) => widget is PrimaryButton && widget.label == 'משחק במכשיר אחד',
     );
     expect(
         tester.getSemantics(button),
         matchesSemantics(
-          label: 'משחק עם חברים',
+          label: 'משחק במכשיר אחד',
           isButton: true,
           isEnabled: true,
           hasEnabledState: true,
@@ -167,11 +170,11 @@ void main() {
 
     // Activating through the semantics tree, the way assistive tech does.
     tester.semantics.performAction(
-      find.semantics.byLabel('משחק עם חברים'),
+      find.semantics.byLabel('משחק במכשיר אחד'),
       SemanticsAction.tap,
     );
     await tester.pumpAndSettle();
-    expect(find.text('יצירת חדר'), findsOneWidget);
+    expect(find.text('מי משחק?'), findsOneWidget);
     handle.dispose();
   });
 }

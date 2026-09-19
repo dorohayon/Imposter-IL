@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 /// This build's number: the part after `+` in pubspec.yaml's `version`.
 /// CI checks the two agree (.github/workflows/app.yml).
 ///
@@ -11,10 +13,15 @@ import 'dart:io';
 /// no way to tell an old install to update instead of failing strangely.
 const clientBuild = 2;
 
+const productionServerUrl = 'https://imposter-eegbs6v5uq-uc.a.run.app';
+
 /// The game server. Override with --dart-define=IMPOSTER_SERVER=https://host.
-Uri defaultServerUrl() {
+/// Release builds must work on a physical phone without a build flag, while
+/// debug builds keep pointing at the developer machine/emulator by default.
+Uri defaultServerUrl({bool releaseMode = kReleaseMode}) {
   const configured = String.fromEnvironment('IMPOSTER_SERVER');
   if (configured.isNotEmpty) return Uri.parse(configured);
+  if (releaseMode) return Uri.parse(productionServerUrl);
   // The Android emulator reaches the development machine at 10.0.2.2.
   return Uri.parse(
     Platform.isAndroid ? 'http://10.0.2.2:8080' : 'http://localhost:8080',

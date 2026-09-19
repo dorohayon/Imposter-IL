@@ -69,7 +69,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
             // The screen stays visible so the player can retry or go home.
           }
         },
-        onHome: () => Navigator.of(context).pop(),
+        onHome: () => Navigator.of(context).popUntil((route) => route.isFirst),
       );
     }
     final allIds = [for (final c in categories) c.id];

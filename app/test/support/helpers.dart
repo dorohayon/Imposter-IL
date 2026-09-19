@@ -39,9 +39,14 @@ Future<GameSession> startApp(
 /// Starts the app and passes onboarding.
 Future<GameSession> startAtHome(WidgetTester tester, [FakeApi? api]) async {
   final session = await startApp(tester, api ?? FakeApi());
-  await tester.enterText(find.byType(TextField), 'דור');
-  await tapText(tester, 'ממשיכים');
+  if (!session.signedIn) {
+    await tapTooltip(tester, 'פרופיל');
+    await tester.enterText(find.byType(TextField), 'דור');
+    await tapText(tester, 'ממשיכים');
+  }
   expect(find.byType(HomeScreen), findsOneWidget);
+  await tester.ensureVisible(find.byTooltip('הגדרות'));
+  await tester.pumpAndSettle();
   return session;
 }
 
@@ -127,8 +132,20 @@ bool isSelectedTile(WidgetTester tester, String label) {
 /// Opens a private room this device just created, ready for game snapshots.
 Future<void> openCreatedRoom(WidgetTester tester, FakeApi api) async {
   api.responses['POST /v1/rooms'] = {'room': roomJson()};
-  await tapText(tester, 'משחק עם חברים');
+  await openPrivateRoom(tester);
   await tapText(tester, 'יצירת חדר');
   await tapLive(tester, 'יצירת חדר');
   expect(find.byType(LiveRoomScreen), findsOneWidget);
+}
+
+/// The private room moved behind `משחק ברשת`, so getting to it is two taps.
+Future<void> openPrivateRoom(WidgetTester tester) async {
+  await tapText(tester, 'משחק ברשת');
+  await tapText(tester, 'חדר פרטי');
+}
+
+/// Quick matchmaking moved behind `משחק ברשת` as well.
+Future<void> openQuickGame(WidgetTester tester) async {
+  await tapText(tester, 'משחק ברשת');
+  await tapText(tester, 'משחק מהיר');
 }
