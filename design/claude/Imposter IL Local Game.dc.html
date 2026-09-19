@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{margin:0;background:#EDEBE4}a{color:#14132B}a:hover{color:#8B5CF6}</style></helmet>
+<div style="padding:44px 48px 80px;font-family:Rubik,system-ui,sans-serif">
+<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:36px">
+<div style="font:400 12px/1 ui-monospace,Menlo,monospace;color:#8B5CF6;letter-spacing:.12em">MI HA-MITHAZE · LOCAL GAME · PR #26</div>
+<h1 style="margin:0;font:400 38px/1.1 'Secular One',system-ui,sans-serif;color:#14132B" dir="rtl">משחק במכשיר אחד — עיצוב מסכים</h1>
+<p style="margin:0;max-width:720px;font:400 14px/1.6 Rubik,sans-serif;color:rgba(20,19,43,.6)" dir="rtl">22 המצבים שב־<span style="font-family:ui-monospace,monospace;font-size:13px">wireframes/local-game.html</span> ב־High Fidelity, 390×844, עברית ו־RTL. הרכיבים, הצבעים, האווטארים והאיורים הם אלה של Design V1; מסכים שכבר קיימים במשחק ברשת עברו התאמה ולא עוצבו מחדש. ליד כל מסך מצוין אם הוא מיחזור של מסך קיים או מצב חדש.</p>
+</div>
+
+<div style="display:flex;align-items:center;gap:12px;margin:0 0 22px"><span style="font:400 20px/1 'Secular One',sans-serif;color:#14132B" dir="rtl">א · ניווט ראשי</span><span style="flex:1;height:1px;background:rgba(20,19,43,.14)"></span></div>
+<div style="display:flex;flex-wrap:wrap;gap:36px;margin-bottom:52px">
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">01 · מסך הבית — שני מצבי משחק <span style="color:#8B5CF6">· עדכון של מסך 03</span></div>
+<div data-screen-label="L01" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(120% 70% at 50% 0%,#2A2455 0%,#14132B 62%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;justify-content:space-between;padding:6px 22px 0">
+<div aria-label="פרופיל" style="width:46px;height:46px;border-radius:14px;background:rgba(255,248,231,.1);border:1px solid rgba(255,248,231,.16);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="rgba(255,248,231,.85)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"></circle><path d="M4.8 20a7.2 7.2 0 0114.4 0"></path></svg></div>
+<div aria-label="הגדרות" style="width:46px;height:46px;border-radius:14px;background:rgba(255,248,231,.1);border:1px solid rgba(255,248,231,.16);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="rgba(255,248,231,.85)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008.4 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2a2 2 0 110-4h.09A1.65 1.65 0 004.6 8.4a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V2a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H22a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;padding:10px 26px 34px;gap:14px">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+<div style="width:178px;height:178px;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/home-hero.webp" alt="" style="width:100%;height:100%;object-fit:contain;display:block"></div>
+<div style="text-align:center"><div style="font:400 44px/1.05 'Secular One',sans-serif;color:#FFF8E7">מי המתחזה?</div><div style="margin-top:8px;font:500 14px/1 Rubik,sans-serif;color:#FFD447">משחק חקירה חברתי בעברית</div></div>
+</div>
+<button style="height:70px;border:none;border-radius:20px;background:#FFD447;font:400 25px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900;display:flex;align-items:center;justify-content:center;gap:10px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#14132B" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.6 2.8 2.6 15.2 0 18M12 3c-2.6 2.8-2.6 15.2 0 18"></path></svg>משחק ברשת</button>
+<button style="height:70px;border-radius:20px;background:transparent;border:2px solid #2DD4BF;font:400 25px/1 'Secular One',sans-serif;color:#2DD4BF;display:flex;align-items:center;justify-content:center;gap:10px"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#2DD4BF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.6"></rect><path d="M10.6 5.6h2.8"></path></svg>משחק במכשיר אחד</button>
+<button style="height:52px;border:none;border-radius:16px;background:rgba(255,248,231,.08);font:500 16px/1 Rubik,sans-serif;color:rgba(255,248,231,.85)">איך משחקים?</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">02 · בחירת משחק ברשת <span style="color:#2DD4BF">· מסך חדש</span></div>
+<div data-screen-label="L02" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:#14132B;overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 22px 0">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,248,231,.1);border:1px solid rgba(255,248,231,.16);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="rgba(255,248,231,.85)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></div>
+<div style="font:400 24px/1.1 'Secular One',sans-serif;color:#FFF8E7">משחק ברשת</div>
+<div style="width:46px;height:46px"></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;padding:18px 26px 32px;gap:16px">
+<div style="font:400 14px/1.5 Rubik,sans-serif;color:rgba(255,248,231,.62);text-align:center">שני מצבים, אותו משחק. אפשר להצטרף לשחקנים אחרים או לפתוח חדר לחברים.</div>
+<div style="border-radius:26px;background:rgba(255,212,71,.12);border:2px solid #FFD447;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 28px rgba(0,0,0,.28)">
+<div style="display:flex;align-items:center;gap:14px">
+<div style="width:86px;height:86px;flex:none;border-radius:22px;background:rgba(255,248,231,.07);display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/matchmaking-team.webp" alt="" style="width:78px;height:78px;object-fit:contain;display:block"></div>
+<div style="flex:1"><div style="font:400 26px/1.1 'Secular One',sans-serif;color:#FFD447">משחק מהיר</div><div style="margin-top:6px;font:400 14px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.75)">מצטרפים לשחקנים אחרים לפי הקטגוריות שבחרתם.</div></div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><span style="font:500 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.8);background:rgba(255,248,231,.1);border-radius:999px;padding:7px 12px">4–8 שחקנים</span><span style="font:500 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.8);background:rgba(255,248,231,.1);border-radius:999px;padding:7px 12px">מתחילים תוך שנייה</span></div>
+</div>
+<div style="border-radius:26px;background:rgba(255,248,231,.06);border:2px solid rgba(255,248,231,.14);padding:18px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:14px">
+<div style="width:86px;height:86px;flex:none;border-radius:22px;background:rgba(255,248,231,.07);display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/private-room.webp" alt="" style="width:78px;height:78px;object-fit:contain;display:block"></div>
+<div style="flex:1"><div style="font:400 26px/1.1 'Secular One',sans-serif;color:#FFF8E7">חדר פרטי</div><div style="margin-top:6px;font:400 14px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.7)">יוצרים חדר ושולחים קוד, או מצטרפים לקוד שקיבלתם.</div></div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><span style="font:500 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.7);background:rgba(255,248,231,.08);border-radius:999px;padding:7px 12px">3–12 שחקנים</span><span style="font:500 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.7);background:rgba(255,248,231,.08);border-radius:999px;padding:7px 12px">אתם קובעים מתי מתחילים</span></div>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;gap:10px;align-items:flex-start;border-radius:16px;background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.32);padding:13px 14px">
+<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#2DD4BF" stroke-width="2" stroke-linecap="round" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 7.6v.2"></path></svg>
+<span style="font:400 13px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.72)">אין חיבור? חוזרים למסך הבית ובוחרים <span style="color:#2DD4BF">משחק במכשיר אחד</span>.</span>
+</div>
+</div>
+</div></div>
+
+</div>
+
+<div style="display:flex;align-items:center;gap:12px;margin:0 0 22px"><span style="font:400 20px/1 'Secular One',sans-serif;color:#14132B" dir="rtl">ב · הגדרת משחק מקומי</span><span style="flex:1;height:1px;background:rgba(20,19,43,.14)"></span></div>
+<div style="display:flex;flex-wrap:wrap;gap:36px;margin-bottom:52px">
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">03 · שחקנים <span style="color:#2DD4BF">· מסך חדש</span></div>
+<div data-screen-label="L03" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(120% 55% at 50% 0%,#1B4F4A 0%,#14132B 56%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 22px 0">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,248,231,.1);border:1px solid rgba(255,248,231,.16);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="rgba(255,248,231,.85)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></div>
+<div style="font:400 22px/1.1 'Secular One',sans-serif;color:#FFF8E7">משחק במכשיר אחד</div>
+<div style="width:46px;height:46px"></div>
+</div>
+<div style="display:flex;gap:6px;padding:12px 26px 0"><span style="flex:1;height:4px;border-radius:2px;background:#2DD4BF"></span><span style="flex:1;height:4px;border-radius:2px;background:rgba(255,248,231,.16)"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:14px 26px 28px;gap:14px;min-height:0">
+<div style="display:flex;align-items:center;gap:14px">
+<div style="width:74px;height:74px;flex:none;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/local-one-device.webp" alt="" style="width:100%;height:100%;object-fit:contain;display:block"></div>
+<div><div style="font:400 28px/1.1 'Secular One',sans-serif;color:#FFF8E7">מי משחק?</div><div style="margin-top:5px;font:400 13px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.62)">מכשיר אחד עובר בין כולם. הרמזים נאמרים בקול.</div></div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:rgba(255,248,231,.07);border-radius:18px;padding:10px 12px">
+<div style="width:48px;height:48px;border-radius:14px;background:rgba(255,248,231,.1);border:1px solid rgba(255,248,231,.2);display:flex;align-items:center;justify-content:center;font:400 26px/1 'Secular One',sans-serif;color:#FFF8E7">−</div>
+<div style="flex:1;text-align:center"><div style="font:400 30px/1 'Secular One',sans-serif;color:#FFF8E7">4 שחקנים</div><div style="margin-top:4px;font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.45)">3–12</div></div>
+<div style="width:48px;height:48px;border-radius:14px;background:#FFD447;display:flex;align-items:center;justify-content:center;font:400 26px/1 'Secular One',sans-serif;color:#14132B">+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:center;gap:11px"><div style="width:48px;height:48px;border-radius:50%;background:#8B5CF6;flex:none;overflow:hidden;border:2px solid rgba(255,248,231,.22)"><img src="assets/avatars/avatar-m04-detective-hat.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div style="flex:1;height:52px;border-radius:15px;background:#FFF8E7;display:flex;align-items:center;padding:0 16px;font:500 16px/1 Rubik,sans-serif;color:#14132B">דור</div></div>
+<div style="display:flex;align-items:center;gap:11px"><div style="width:48px;height:48px;border-radius:50%;background:#EC6FA8;flex:none;overflow:hidden;border:2px solid rgba(255,248,231,.22)"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div style="flex:1;height:52px;border-radius:15px;background:#FFF8E7;display:flex;align-items:center;padding:0 16px;font:500 16px/1 Rubik,sans-serif;color:#14132B">נועה</div></div>
+<div style="display:flex;align-items:center;gap:11px"><div style="width:48px;height:48px;border-radius:50%;background:#5B8DEF;flex:none;overflow:hidden;border:2px solid rgba(255,248,231,.22)"><img src="assets/avatars/avatar-m02-binoculars.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div style="flex:1;height:52px;border-radius:15px;background:#FFF8E7;display:flex;align-items:center;padding:0 16px;font:500 16px/1 Rubik,sans-serif;color:#14132B">יואב</div></div>
+<div style="display:flex;align-items:center;gap:11px"><div style="width:48px;height:48px;border-radius:50%;background:#2DD4BF;flex:none;overflow:hidden;border:2px solid #FFD447"><img src="assets/avatars/avatar-f02-camera.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div style="flex:1;height:52px;border-radius:15px;background:#FFF8E7;border:2px solid #8B5CF6;display:flex;align-items:center;padding:0 14px;font:500 16px/1 Rubik,sans-serif;color:#14132B">מאיה<span style="width:2px;height:20px;background:#8B5CF6;margin-inline-start:2px"></span></div></div>
+</div>
+<div style="font:400 12px/1.4 Rubik,sans-serif;color:rgba(255,248,231,.45)">לחיצה על אווטאר מחליפה אותו באחד שלא בשימוש.</div>
+<div style="flex:1"></div>
+<button style="height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">המשך להגדרות</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">04 · שחקנים — שגיאת שם <span style="color:#2DD4BF">· מסך חדש</span></div>
+<div data-screen-label="L04" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(120% 55% at 50% 0%,#1B4F4A 0%,#14132B 56%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 22px 0">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,248,231,.1);border:1px solid rgba(255,248,231,.16);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="rgba(255,248,231,.85)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></div>
+<div style="font:400 22px/1.1 'Secular One',sans-serif;color:#FFF8E7">משחק במכשיר אחד</div>
+<div style="width:46px;height:46px"></div>
+</div>
+<div style="display:flex;gap:6px;padding:12px 26px 0"><span style="flex:1;height:4px;border-radius:2px;background:#2DD4BF"></span><span style="flex:1;height:4px;border-radius:2px;background:rgba(255,248,231,.16)"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:14px 26px 28px;gap:14px;min-height:0">
+<div style="display:flex;align-items:center;gap:14px">
+<div style="width:74px;height:74px;flex:none;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/local-one-device.webp" alt="" style="width:100%;height:100%;object-fit:contain;display:block"></div>
+<div><div style="font:400 28px/1.1 'Secular One',sans-serif;color:#FFF8E7">מי משחק?</div><div style="margin-top:5px;font:400 13px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.62)">מכשיר אחד עובר בין כולם. הרמזים נאמרים בקול.</div></div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:rgba(255,248,231,.07);border-radius:18px;padding:10px 12px">
+<div style="width:48px;height:48px;border-radius:14px;background:rgba(255,248,231,.1);border:1px solid rgba(255,248,231,.2);display:flex;align-items:center;justify-content:center;font:400 26px/1 'Secular One',sans-serif;color:#FFF8E7">−</div>
+<div style="flex:1;text-align:center"><div style="font:400 30px/1 'Secular One',sans-serif;color:#FFF8E7">4 שחקנים</div><div style="margin-top:4px;font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.45)">3–12</div></div>
+<div style="width:48px;height:48px;border-radius:14px;background:#FFD447;display:flex;align-items:center;justify-content:center;font:400 26px/1 'Secular One',sans-serif;color:#14132B">+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:center;gap:11px"><div style="width:48px;height:48px;border-radius:50%;background:#8B5CF6;flex:none;overflow:hidden;border:2px solid rgba(255,248,231,.22)"><img src="assets/avatars/avatar-m04-detective-hat.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div style="flex:1;height:52px;border-radius:15px;background:#FFF8E7;display:flex;align-items:center;padding:0 16px;font:500 16px/1 Rubik,sans-serif;color:#14132B">דור</div></div>
+<div style="display:flex;flex-direction:column;gap:7px">
+<div style="display:flex;align-items:center;gap:11px"><div style="width:48px;height:48px;border-radius:50%;background:#EC6FA8;flex:none;overflow:hidden;border:2px solid rgba(255,248,231,.22)"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div style="flex:1;height:52px;border-radius:15px;background:#FFF8E7;border:2px solid #FF6B6B;display:flex;align-items:center;padding:0 14px;font:500 16px/1 Rubik,sans-serif;color:#14132B">דור</div></div>
+<div style="display:flex;align-items:center;gap:8px;padding-inline-start:59px"><span style="width:20px;height:20px;border-radius:50%;background:#FF6B6B;color:#3B1214;font:700 13px/20px Rubik,sans-serif;text-align:center;flex:none">!</span><span style="font:400 13px/1.3 Rubik,sans-serif;color:#FFD9D9">לכל שחקן צריך להיות שם שונה</span></div>
+</div>
+<div style="display:flex;align-items:center;gap:11px"><div style="width:48px;height:48px;border-radius:50%;background:#5B8DEF;flex:none;overflow:hidden;border:2px solid rgba(255,248,231,.22)"><img src="assets/avatars/avatar-m02-binoculars.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div style="flex:1;height:52px;border-radius:15px;background:#FFF8E7;display:flex;align-items:center;padding:0 16px;font:500 16px/1 Rubik,sans-serif;color:#14132B">יואב</div></div>
+<div style="display:flex;align-items:center;gap:11px"><div style="width:48px;height:48px;border-radius:50%;background:#2DD4BF;flex:none;overflow:hidden;border:2px solid rgba(255,248,231,.22)"><img src="assets/avatars/avatar-f02-camera.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div style="flex:1;height:52px;border-radius:15px;background:#FFF8E7;display:flex;align-items:center;padding:0 16px;font:500 16px/1 Rubik,sans-serif;color:#14132B">מאיה</div></div>
+</div>
+<div style="flex:1"></div>
+<button style="height:64px;border:none;border-radius:18px;background:rgba(255,212,71,.3);font:400 23px/1 'Secular One',sans-serif;color:rgba(20,19,43,.45)">המשך להגדרות</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">05 · חוקי המשחק <span style="color:#8B5CF6">· מיחזור של מסך 04 (קטגוריות)</span></div>
+<div data-screen-label="L05" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:#14132B;overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 22px 0">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,248,231,.1);border:1px solid rgba(255,248,231,.16);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="rgba(255,248,231,.85)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></div>
+<div style="font:400 22px/1.1 'Secular One',sans-serif;color:#FFF8E7">הגדרות המשחק</div>
+<div style="width:46px;height:46px"></div>
+</div>
+<div style="display:flex;gap:6px;padding:12px 26px 0"><span style="flex:1;height:4px;border-radius:2px;background:rgba(45,212,191,.35)"></span><span style="flex:1;height:4px;border-radius:2px;background:#2DD4BF"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:16px 26px 28px;gap:16px;min-height:0">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="font:500 14px/1 Rubik,sans-serif;color:#FFF8E7">קטגוריות</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<span style="font:500 14px/1 Rubik,sans-serif;color:#14132B;background:#FFD447;border-radius:999px;padding:11px 16px">הכול</span>
+<span style="font:500 14px/1 Rubik,sans-serif;color:rgba(255,248,231,.85);background:rgba(255,248,231,.08);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:10px 15px">אוכל</span>
+<span style="font:500 14px/1 Rubik,sans-serif;color:rgba(255,248,231,.85);background:rgba(255,248,231,.08);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:10px 15px">חיות</span>
+<span style="font:500 14px/1 Rubik,sans-serif;color:rgba(255,248,231,.85);background:rgba(255,248,231,.08);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:10px 15px">ספורט</span>
+<span style="font:500 14px/1 Rubik,sans-serif;color:rgba(255,248,231,.85);background:rgba(255,248,231,.08);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:10px 15px">מקצועות</span>
+<span style="font:500 14px/1 Rubik,sans-serif;color:rgba(255,248,231,.85);background:rgba(255,248,231,.08);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:10px 15px">מקומות</span>
+<span style="font:500 14px/1 Rubik,sans-serif;color:rgba(255,248,231,.85);background:rgba(255,248,231,.08);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:10px 15px">חפצים</span>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="font:500 14px/1 Rubik,sans-serif;color:#FFF8E7">זמן לכל רמז</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<span style="font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.85);background:rgba(255,248,231,.08);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:11px 18px">20</span>
+<span style="font:500 15px/1 Rubik,sans-serif;color:#14132B;background:#FFD447;border-radius:999px;padding:12px 19px">30</span>
+<span style="font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.85);background:rgba(255,248,231,.08);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:11px 18px">45</span>
+<span style="font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.85);background:rgba(255,248,231,.08);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:11px 18px">60</span>
+<span style="font:500 14px/1 Rubik,sans-serif;color:rgba(255,248,231,.85);background:rgba(255,248,231,.08);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:11px 16px">ללא טיימר</span>
+</div>
+</div>
+<div style="background:#FFF8E7;border-radius:22px;padding:6px 16px">
+<div style="display:flex;align-items:center;justify-content:space-between;height:48px;border-bottom:1px solid rgba(20,19,43,.1)"><span style="font:400 14px/1 Rubik,sans-serif;color:rgba(20,19,43,.6)">שחקנים</span><span style="font:400 19px/1 'Secular One',sans-serif;color:#14132B">4</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;height:48px;border-bottom:1px solid rgba(20,19,43,.1)"><span style="font:400 14px/1 Rubik,sans-serif;color:rgba(20,19,43,.6)">קטגוריות</span><span style="font:400 19px/1 'Secular One',sans-serif;color:#14132B">הכול</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;height:48px;border-bottom:1px solid rgba(20,19,43,.1)"><span style="font:400 14px/1 Rubik,sans-serif;color:rgba(20,19,43,.6)">זמן לרמז</span><span style="font:400 19px/1 'Secular One',sans-serif;color:#14132B">30 שניות</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;height:48px;border-bottom:1px solid rgba(20,19,43,.1)"><span style="font:400 14px/1 Rubik,sans-serif;color:rgba(20,19,43,.6)">מתחזה אחד</span><span style="width:22px;height:22px;border-radius:50%;background:#8B5CF6;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#FFF8E7" stroke-width="3" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;height:48px"><span style="font:400 14px/1 Rubik,sans-serif;color:rgba(20,19,43,.6)">הצבעה פרטית במכשיר</span><span style="width:22px;height:22px;border-radius:50%;background:#2DD4BF;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#0E2B2A" stroke-width="3" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span></div>
+</div>
+<div style="flex:1"></div>
+<button style="height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">מתחילים</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">06 · המשך משחק מקומי שנשמר <span style="color:#2DD4BF">· מצב חדש על מסך 03</span></div>
+<div data-screen-label="L06" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(120% 70% at 50% 0%,#2A2455 0%,#14132B 62%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;position:relative">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.4)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.25);border-radius:2px;display:block"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:10px 26px 34px;gap:14px;opacity:.32">
+<div style="display:flex;justify-content:space-between"><div style="width:46px;height:46px;border-radius:14px;background:rgba(255,248,231,.1)"></div><div style="width:46px;height:46px;border-radius:14px;background:rgba(255,248,231,.1)"></div></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+<div style="width:178px;height:178px"><img src="assets/illustrations/home-hero.webp" alt="" style="width:100%;height:100%;object-fit:contain;display:block"></div>
+<div style="font:400 44px/1.05 'Secular One',sans-serif;color:#FFF8E7">מי המתחזה?</div>
+</div>
+<div style="height:70px;border-radius:20px;background:#FFD447"></div>
+<div style="height:70px;border-radius:20px;border:2px solid #2DD4BF"></div>
+</div>
+<div style="position:absolute;inset:0;background:rgba(9,8,24,.72);display:flex;align-items:flex-end;padding:20px">
+<div style="width:100%;background:#FFF8E7;border-radius:28px;padding:24px 22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 -14px 44px rgba(0,0,0,.45)">
+<div style="display:flex;align-items:center;gap:12px">
+<div style="width:52px;height:52px;border-radius:16px;background:rgba(45,212,191,.18);display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="#149C8D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3.2-6.9"></path><path d="M21 4v5h-5"></path></svg></div>
+<div><div style="font:400 26px/1.1 'Secular One',sans-serif;color:#14132B">להמשיך את המשחק?</div><div style="margin-top:4px;font:400 14px/1.4 Rubik,sans-serif;color:rgba(20,19,43,.62)">סיבוב 2 נשמר במכשיר · 4 שחקנים</div></div>
+</div>
+<div style="display:flex;gap:8px;align-items:center;background:rgba(20,19,43,.05);border-radius:14px;padding:11px 13px">
+<div style="display:flex">
+<span style="width:30px;height:30px;border-radius:50%;background:#8B5CF6;overflow:hidden;border:2px solid #FFF8E7;display:block"><img src="assets/avatars/avatar-m04-detective-hat.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span>
+<span style="width:30px;height:30px;border-radius:50%;background:#EC6FA8;overflow:hidden;border:2px solid #FFF8E7;display:block;margin-inline-start:-10px"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span>
+<span style="width:30px;height:30px;border-radius:50%;background:#5B8DEF;overflow:hidden;border:2px solid #FFF8E7;display:block;margin-inline-start:-10px"><img src="assets/avatars/avatar-m02-binoculars.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span>
+<span style="width:30px;height:30px;border-radius:50%;background:#2DD4BF;overflow:hidden;border:2px solid #FFF8E7;display:block;margin-inline-start:-10px"><img src="assets/avatars/avatar-f02-camera.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span>
+</div>
+<span style="font:400 13px/1.3 Rubik,sans-serif;color:rgba(20,19,43,.6)">דור · נועה · יואב · מאיה</span>
+</div>
+<button style="height:60px;border:none;border-radius:18px;background:#FFD447;font:400 22px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">המשך משחק</button>
+<button style="height:52px;border-radius:16px;background:transparent;border:2px solid rgba(255,107,107,.55);font:500 17px/1 Rubik,sans-serif;color:#C4413F">מחיקת המשחק</button>
+</div>
+</div>
+</div></div>
+
+</div>
+</div>
+
+<div style="padding:0 48px 52px;font-family:Rubik,system-ui,sans-serif">
+<div style="display:flex;align-items:center;gap:12px;margin:0 0 22px"><span style="font:400 20px/1 'Secular One',sans-serif;color:#14132B" dir="rtl">ג · חלוקת תפקידים</span><span style="flex:1;height:1px;background:rgba(20,19,43,.14)"></span></div>
+<div style="display:flex;flex-wrap:wrap;gap:36px;margin-bottom:52px">
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">07 · העברת מכשיר — תפקיד <span style="color:#2DD4BF">· מסך חדש</span></div>
+<div data-screen-label="L07" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(110% 55% at 50% 20%,#3A3470 0%,#14132B 64%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 26px 0">
+<span style="width:26px;height:8px;border-radius:4px;background:#FFD447"></span>
+<span style="width:8px;height:8px;border-radius:50%;background:rgba(255,248,231,.22)"></span>
+<span style="width:8px;height:8px;border-radius:50%;background:rgba(255,248,231,.22)"></span>
+<span style="width:8px;height:8px;border-radius:50%;background:rgba(255,248,231,.22)"></span>
+<span style="margin-inline-start:6px;font:500 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)">1 מתוך 4</span>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 26px 32px;gap:20px;text-align:center">
+<img src="assets/illustrations/pass-the-device.webp" alt="" style="width:238px;height:238px;object-fit:contain;filter:drop-shadow(0 18px 34px rgba(10,8,30,.55))">
+<div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+<div style="display:inline-flex;align-items:center;gap:9px;background:rgba(255,248,231,.09);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:6px 14px 6px 6px">
+<span style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.72)">התור של</span>
+<span style="width:30px;height:30px;border-radius:50%;background:#8B5CF6;overflow:hidden;display:block"><img src="assets/avatars/avatar-m04-detective-hat.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span>
+</div>
+<div style="font:400 34px/1.15 'Secular One',sans-serif;color:#FFF8E7">העבירו את המכשיר לדור</div>
+<div style="font:400 15px/1.5 Rubik,sans-serif;color:rgba(255,248,231,.68);max-width:270px">רק דור מסתכל על המסך. השאר מחכים שנייה.</div>
+</div>
+<div style="flex:1"></div>
+<button style="width:100%;height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">אני דור — הציגו לי</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">08 · חשיפת תפקיד — אזרח <span style="color:#8B5CF6">· מיחזור של מסך 07</span></div>
+<div data-screen-label="L08" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(110% 60% at 50% 0%,#1B4F4A 0%,#14132B 58%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:16px 26px 28px;gap:16px">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,248,231,.09);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:5px 12px 5px 5px"><span style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.8)">דור</span><span style="width:28px;height:28px;border-radius:50%;background:#8B5CF6;overflow:hidden;display:block"><img src="assets/avatars/avatar-m04-detective-hat.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span></div>
+<div style="display:inline-flex;align-items:center;gap:8px;background:rgba(45,212,191,.16);border:1px solid rgba(45,212,191,.45);border-radius:999px;padding:8px 16px"><span style="font:500 13px/1 Rubik,sans-serif;color:#8FF3E6">קטגוריה</span><span style="font:400 17px/1 'Secular One',sans-serif;color:#2DD4BF">אוכל</span></div>
+</div>
+<div style="text-align:center;font:400 30px/1.15 'Secular One',sans-serif;color:#FFF8E7">את/ה אזרח/ית</div>
+<div style="background:#FFF8E7;border-radius:28px;padding:24px 20px;text-align:center;box-shadow:0 14px 34px rgba(0,0,0,.35)">
+<div style="font:500 13px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)">המילה הסודית</div>
+<div style="margin-top:10px;font:400 46px/1.1 'Secular One',sans-serif;color:#14132B">פיצה</div>
+<div style="margin-top:14px;height:1px;background:rgba(20,19,43,.12)"></div>
+<div style="margin-top:12px;font:400 14px/1.5 Rubik,sans-serif;color:rgba(20,19,43,.7)">זכרו את המילה ואל תראו אותה לאחרים.</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:12px;background:rgba(255,248,231,.07);border-radius:16px;padding:14px"><span style="width:26px;height:26px;border-radius:8px;background:#FFD447;color:#14132B;font:700 14px/26px Rubik,sans-serif;text-align:center;flex:none">1</span><span style="font:400 14px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.85)">בתור שלכם אומרים בקול רמז של מילה אחת.</span></div>
+<div style="display:flex;gap:12px;background:rgba(255,248,231,.07);border-radius:16px;padding:14px"><span style="width:26px;height:26px;border-radius:8px;background:#FFD447;color:#14132B;font:700 14px/26px Rubik,sans-serif;text-align:center;flex:none">2</span><span style="font:400 14px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.85)">רמז ברור מדי יעזור למתחזה. רמז מרומז מדי יעורר חשד.</span></div>
+</div>
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/role-citizen.webp" alt="" style="max-height:150px;max-width:62%;height:100%;object-fit:contain;display:block"></div>
+<button style="height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">הבנתי — הסתירו</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">09 · חשיפת תפקיד — מתחזה <span style="color:#8B5CF6">· מיחזור של מסך 08</span></div>
+<div data-screen-label="L09" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(110% 60% at 50% 0%,#4A2A8C 0%,#14132B 58%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:16px 26px 28px;gap:16px">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,248,231,.09);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:5px 12px 5px 5px"><span style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.8)">מאיה</span><span style="width:28px;height:28px;border-radius:50%;background:#2DD4BF;overflow:hidden;display:block"><img src="assets/avatars/avatar-f02-camera.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span></div>
+<div style="display:inline-flex;align-items:center;gap:8px;background:rgba(139,92,246,.22);border:1px solid rgba(139,92,246,.6);border-radius:999px;padding:8px 16px"><span style="font:500 13px/1 Rubik,sans-serif;color:#D9C8FF">קטגוריה</span><span style="font:400 17px/1 'Secular One',sans-serif;color:#C4B0FF">אוכל</span></div>
+</div>
+<div style="text-align:center;font:400 34px/1.1 'Secular One',sans-serif;color:#FFD447">את/ה המתחזה</div>
+<div style="background:linear-gradient(160deg,#8B5CF6,#5B3FBF);border-radius:28px;padding:24px 20px;text-align:center;box-shadow:0 14px 34px rgba(91,63,191,.45)">
+<div style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.8)">המילה הסודית</div>
+<div style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:10px"><span style="width:34px;height:44px;border-radius:8px;background:rgba(20,19,43,.45)"></span><span style="width:34px;height:44px;border-radius:8px;background:rgba(20,19,43,.45)"></span><span style="width:34px;height:44px;border-radius:8px;background:rgba(20,19,43,.45)"></span><span style="width:34px;height:44px;border-radius:8px;background:rgba(20,19,43,.45)"></span></div>
+<div style="margin-top:16px;font:500 15px/1.5 Rubik,sans-serif;color:#FFF8E7">לא קיבלת את המילה — רק את הקטגוריה.</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:12px;background:rgba(255,248,231,.07);border-radius:16px;padding:14px"><span style="width:26px;height:26px;border-radius:8px;background:#FFD447;color:#14132B;font:700 14px/26px Rubik,sans-serif;text-align:center;flex:none">1</span><span style="font:400 14px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.85)">הקשיבו לרמזים, השתלבו ונסו לגלות את המילה.</span></div>
+<div style="display:flex;gap:12px;background:rgba(255,248,231,.07);border-radius:16px;padding:14px"><span style="width:26px;height:26px;border-radius:8px;background:#FFD447;color:#14132B;font:700 14px/26px Rubik,sans-serif;text-align:center;flex:none">2</span><span style="font:400 14px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.85)">אם תיתפסו — תקבלו הזדמנות אחת לנחש את המילה ולנצח.</span></div>
+</div>
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/role-impostor.webp" alt="" style="max-height:150px;max-width:62%;height:100%;object-fit:contain;display:block"></div>
+<button style="height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">הבנתי — הסתירו</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">10 · כולם יודעים מי הם <span style="color:#2DD4BF">· מסך חדש</span></div>
+<div data-screen-label="L10" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(120% 55% at 50% 0%,#2A2455 0%,#14132B 60%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:20px 26px 30px;gap:18px;text-align:center">
+<img src="assets/illustrations/local-one-device.webp" alt="" style="width:190px;height:190px;object-fit:contain;filter:drop-shadow(0 16px 30px rgba(10,8,30,.5))">
+<div><div style="font:400 34px/1.15 'Secular One',sans-serif;color:#FFF8E7">כולם יודעים מי הם</div><div style="margin-top:8px;font:400 15px/1.5 Rubik,sans-serif;color:rgba(255,248,231,.68)">מניחים את המכשיר במקום שכולם רואים.</div></div>
+<div style="width:100%;background:#FFF8E7;border-radius:24px;padding:18px;display:flex;align-items:center;gap:14px;text-align:right">
+<div style="width:58px;height:58px;border-radius:50%;background:#EC6FA8;flex:none;overflow:hidden;border:3px solid #FFD447"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div>
+<div><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)">מתחילה</div><div style="margin-top:4px;font:400 24px/1.1 'Secular One',sans-serif;color:#14132B">נועה</div></div>
+</div>
+<div style="width:100%;display:flex;flex-direction:column;gap:8px">
+<div style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.55);text-align:right">סדר התורות בסיבוב זה</div>
+<div style="display:flex;align-items:center;gap:8px;background:rgba(255,248,231,.06);border-radius:16px;padding:10px 12px">
+<span style="width:36px;height:36px;border-radius:50%;background:#EC6FA8;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span>
+<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="rgba(255,248,231,.35)" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M15 5l-7 7 7 7"></path></svg>
+<span style="width:36px;height:36px;border-radius:50%;background:#5B8DEF;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-m02-binoculars.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span>
+<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="rgba(255,248,231,.35)" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M15 5l-7 7 7 7"></path></svg>
+<span style="width:36px;height:36px;border-radius:50%;background:#2DD4BF;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-f02-camera.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span>
+<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="rgba(255,248,231,.35)" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M15 5l-7 7 7 7"></path></svg>
+<span style="width:36px;height:36px;border-radius:50%;background:#8B5CF6;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-m04-detective-hat.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span>
+</div>
+</div>
+<div style="width:100%;display:flex;gap:10px;align-items:flex-start;border-radius:16px;background:rgba(255,212,71,.1);border:1px solid rgba(255,212,71,.32);padding:13px 14px;text-align:right">
+<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#FFD447" stroke-width="2" stroke-linecap="round" style="flex:none;margin-top:1px"><path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5l2.6-1.5M17.2 9l2.6-1.5"></path><circle cx="12" cy="12" r="3.4"></circle></svg>
+<span style="font:400 13px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.72)">רמז של מילה אחת, בלי לחזור על רמז קודם ובלי לומר את המילה עצמה.</span>
+</div>
+<div style="flex:1"></div>
+<button style="width:100%;height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">מתחילים סיבוב 1</button>
+</div>
+</div></div>
+
+</div>
+</div>
+
+<div style="padding:0 48px 52px;font-family:Rubik,system-ui,sans-serif">
+<div style="display:flex;align-items:center;gap:12px;margin:0 0 22px"><span style="font:400 20px/1 'Secular One',sans-serif;color:#14132B" dir="rtl">ד · סבב רמזים ומעבר להצבעה</span><span style="flex:1;height:1px;background:rgba(20,19,43,.14)"></span></div>
+<div style="display:flex;flex-wrap:wrap;gap:36px;margin-bottom:52px">
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">11 · סבב רמזים <span style="color:#8B5CF6">· מיחזור של מסכים 09/10</span></div>
+<div data-screen-label="L11" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:#14132B;overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px 0">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.5);display:flex;align-items:center;justify-content:center;font:500 12px/1 Rubik,sans-serif;color:#FF9B9B">יציאה</div>
+<div style="text-align:center"><div style="font:400 22px/1.1 'Secular One',sans-serif;color:#FFF8E7">סיבוב 1</div><div style="margin-top:3px;font:500 12px/1 Rubik,sans-serif;color:#2DD4BF">אוכל</div></div>
+<div style="width:52px;height:52px;border-radius:50%;border:4px solid #FFD447;background:rgba(255,212,71,.12);display:flex;align-items:center;justify-content:center;font:400 21px/1 'Secular One',sans-serif;color:#FFD447">18</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;padding:14px 24px 28px;gap:16px;min-height:0">
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+<div style="width:104px;height:104px;border-radius:50%;background:#EC6FA8;overflow:hidden;border:4px solid #FFD447;box-shadow:0 12px 28px rgba(236,111,168,.34)"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div>
+<div style="text-align:center"><div style="font:400 32px/1.1 'Secular One',sans-serif;color:#FFF8E7">התור של נועה</div><div style="margin-top:6px;font:400 14px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.65)">אמרי בקול רמז של מילה אחת</div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font:500 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.5)">סדר התורות</div>
+<div style="display:flex;flex-direction:column;gap:7px">
+<div style="display:flex;align-items:center;gap:11px;border-radius:16px;background:rgba(255,212,71,.14);border:2px solid #FFD447;padding:9px 12px"><span style="width:38px;height:38px;border-radius:50%;background:#EC6FA8;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span><span style="flex:1;font:500 15px/1 Rubik,sans-serif;color:#FFF8E7">נועה</span><span style="font:400 15px/1 'Secular One',sans-serif;color:#FFD447">עכשיו</span></div>
+<div style="display:flex;align-items:center;gap:11px;border-radius:16px;background:rgba(255,248,231,.07);padding:9px 12px"><span style="width:38px;height:38px;border-radius:50%;background:#5B8DEF;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-m02-binoculars.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span><span style="flex:1;font:500 15px/1 Rubik,sans-serif;color:#FFF8E7">יואב</span><span style="font:400 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)">הבא בתור</span></div>
+<div style="display:flex;align-items:center;gap:11px;border-radius:16px;background:rgba(255,248,231,.07);padding:9px 12px"><span style="width:38px;height:38px;border-radius:50%;background:#2DD4BF;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-f02-camera.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span><span style="flex:1;font:500 15px/1 Rubik,sans-serif;color:#FFF8E7">מאיה</span><span style="font:400 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.45)">ממתינה</span></div>
+<div style="display:flex;align-items:center;gap:11px;border-radius:16px;background:rgba(255,248,231,.07);padding:9px 12px"><span style="width:38px;height:38px;border-radius:50%;background:#8B5CF6;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-m04-detective-hat.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span><span style="flex:1;font:500 15px/1 Rubik,sans-serif;color:#FFF8E7">דור</span><span style="display:inline-flex;align-items:center;gap:5px;font:500 12px/1 Rubik,sans-serif;color:#2DD4BF"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#2DD4BF" stroke-width="3" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>אמר</span></div>
+</div>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;gap:10px;align-items:center;border-radius:16px;background:rgba(255,248,231,.05);padding:12px 14px">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255,248,231,.5)" stroke-width="2" stroke-linecap="round" style="flex:none"><path d="M12 3a4 4 0 014 4v4a4 4 0 01-8 0V7a4 4 0 014-4z"></path><path d="M5.5 11.5a6.5 6.5 0 0013 0M12 18v3"></path></svg>
+<span style="font:400 13px/1.4 Rubik,sans-serif;color:rgba(255,248,231,.6)">הרמזים נאמרים בקול — אין הקלדה ואין לוח רמזים.</span>
+</div>
+<button style="height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">הרמז נאמר</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">12 · מעבר להצבעה <span style="color:#8B5CF6">· מיחזור של מסך 11א</span></div>
+<div data-screen-label="L12" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(110% 55% at 50% 22%,#3A3470 0%,#14132B 64%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;position:relative">
+<div style="position:absolute;inset:0;pointer-events:none;font:400 100px/1 'Secular One',sans-serif;color:rgba(255,248,231,.05)">
+<span style="position:absolute;top:120px;right:-6px">?</span>
+<span style="position:absolute;bottom:150px;left:6px;font-size:72px">?</span>
+<span style="position:absolute;bottom:64px;right:24px;font-size:56px">?</span>
+</div>
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px 0">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.5);display:flex;align-items:center;justify-content:center;font:500 12px/1 Rubik,sans-serif;color:#FF9B9B">יציאה</div>
+<div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,248,231,.1);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:7px 14px;font:500 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.8)">כולם אמרו רמז</div>
+<div style="width:52px;height:52px"></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 26px 34px;gap:18px;text-align:center;position:relative">
+<img src="assets/illustrations/to-voting.png" alt="" style="width:272px;height:272px;object-fit:contain;filter:drop-shadow(0 18px 34px rgba(10,8,30,.55))">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="font:400 38px/1.1 'Secular One',sans-serif;color:#FFF8E7">עוברים להצבעה</div>
+<div style="font:500 15px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.72);max-width:290px">מעבירים את המכשיר בין השחקנים. אל תגלו למי הצבעתם.</div>
+</div>
+<div style="position:relative;width:126px;height:126px;display:flex;align-items:center;justify-content:center;margin-top:4px">
+<div style="position:absolute;inset:0;border-radius:50%;border:9px solid rgba(255,212,71,.2)"></div>
+<div style="position:absolute;inset:0;border-radius:50%;border:9px solid transparent;border-top-color:#FFD447;border-right-color:#FFD447;border-bottom-color:#FFD447;transform:rotate(18deg)"></div>
+<div style="width:102px;height:102px;border-radius:50%;background:#14132B;display:flex;align-items:center;justify-content:center;font:400 58px/1 'Secular One',sans-serif;color:#FFF8E7">5</div>
+</div>
+</div>
+</div></div>
+
+</div>
+
+<div style="display:flex;align-items:center;gap:12px;margin:0 0 22px"><span style="font:400 20px/1 'Secular One',sans-serif;color:#14132B" dir="rtl">ה · הצבעה פרטית</span><span style="flex:1;height:1px;background:rgba(20,19,43,.14)"></span></div>
+<div style="display:flex;flex-wrap:wrap;gap:36px;margin-bottom:52px">
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">13 · העברת מכשיר — הצבעה <span style="color:#8B5CF6">· וריאציה של מסך 07 החדש</span></div>
+<div data-screen-label="L13" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(110% 55% at 50% 20%,#42203C 0%,#14132B 62%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 26px 0">
+<span style="width:26px;height:8px;border-radius:4px;background:#FF6B6B"></span>
+<span style="width:8px;height:8px;border-radius:50%;background:rgba(255,248,231,.22)"></span>
+<span style="width:8px;height:8px;border-radius:50%;background:rgba(255,248,231,.22)"></span>
+<span style="width:8px;height:8px;border-radius:50%;background:rgba(255,248,231,.22)"></span>
+<span style="margin-inline-start:6px;font:500 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)">הצביעו 0 מתוך 4</span>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 26px 32px;gap:20px;text-align:center">
+<img src="assets/illustrations/pass-the-device.webp" alt="" style="width:238px;height:238px;object-fit:contain;filter:drop-shadow(0 18px 34px rgba(10,8,30,.55))">
+<div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+<div style="display:inline-flex;align-items:center;gap:9px;background:rgba(255,248,231,.09);border:1px solid rgba(255,248,231,.16);border-radius:999px;padding:6px 14px 6px 6px">
+<span style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.72)">מצביע/ה</span>
+<span style="width:30px;height:30px;border-radius:50%;background:#8B5CF6;overflow:hidden;display:block"><img src="assets/avatars/avatar-m04-detective-hat.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span>
+</div>
+<div style="font:400 34px/1.15 'Secular One',sans-serif;color:#FFF8E7">העבירו את המכשיר לדור</div>
+<div style="font:400 15px/1.5 Rubik,sans-serif;color:rgba(255,248,231,.68);max-width:270px">אף אחד אחר לא מסתכל על המסך.</div>
+</div>
+<div style="flex:1"></div>
+<button style="width:100%;height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">אני דור — להצבעה</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">14 · הצבעה פרטית <span style="color:#8B5CF6">· מיחזור של מסך 12</span></div>
+<div data-screen-label="L14" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(110% 55% at 50% 0%,#42203C 0%,#14132B 60%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px 0">
+<div style="width:46px;height:46px"></div>
+<div style="font:400 24px/1.1 'Secular One',sans-serif;color:#FFF8E7">מי המתחזה?</div>
+<div style="width:46px;height:46px"></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;padding:12px 22px 26px;gap:12px">
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,248,231,.07);border-radius:999px;padding:9px 14px;align-self:center">
+<span style="width:26px;height:26px;border-radius:50%;background:#8B5CF6;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-m04-detective-hat.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span>
+<span style="font:500 13px/1 Rubik,sans-serif;color:#FFF8E7">דור מצביע · הבחירה תישאר סודית</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="border-radius:18px;background:rgba(255,248,231,.04);border:2px dashed rgba(255,248,231,.16);padding:13px;display:flex;align-items:center;gap:12px"><div style="width:48px;height:48px;border-radius:50%;background:rgba(139,92,246,.45);flex:none;overflow:hidden"><img src="assets/avatars/avatar-m04-detective-hat.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;filter:grayscale(.6);opacity:.55"></div><div style="flex:1"><div style="font:500 16px/1.2 Rubik,sans-serif;color:rgba(255,248,231,.6)">דור · אני</div><div style="margin-top:2px;font:400 13px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.45)">אי אפשר להצביע לעצמכם</div></div></div>
+<div style="border-radius:18px;background:rgba(255,107,107,.18);border:2px solid #FF6B6B;padding:13px;display:flex;align-items:center;gap:12px"><div style="width:48px;height:48px;border-radius:50%;background:#EC6FA8;flex:none;overflow:hidden"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div style="flex:1"><div style="font:500 16px/1.2 Rubik,sans-serif;color:#FFF8E7">נועה</div><div style="margin-top:2px;font:500 11px/1 Rubik,sans-serif;color:#FFD9D9">הבחירה שלך</div></div><div style="width:28px;height:28px;border-radius:50%;background:#FF6B6B;flex:none;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#3B1214" stroke-width="3.2" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></div></div>
+<div style="border-radius:18px;background:rgba(255,248,231,.07);border:2px solid rgba(255,248,231,.12);padding:13px;display:flex;align-items:center;gap:12px"><div style="width:48px;height:48px;border-radius:50%;background:#5B8DEF;flex:none;overflow:hidden"><img src="assets/avatars/avatar-m02-binoculars.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div style="flex:1;font:500 16px/1.2 Rubik,sans-serif;color:#FFF8E7">יואב</div><div style="width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,248,231,.3);flex:none"></div></div>
+<div style="border-radius:18px;background:rgba(255,248,231,.07);border:2px solid rgba(255,248,231,.12);padding:13px;display:flex;align-items:center;gap:12px"><div style="width:48px;height:48px;border-radius:50%;background:#2DD4BF;flex:none;overflow:hidden"><img src="assets/avatars/avatar-f02-camera.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div style="flex:1;font:500 16px/1.2 Rubik,sans-serif;color:#FFF8E7">מאיה</div><div style="width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,248,231,.3);flex:none"></div></div>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;gap:10px;align-items:center;border-radius:16px;background:rgba(255,248,231,.05);padding:12px 14px">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255,248,231,.5)" stroke-width="2" stroke-linecap="round" style="flex:none"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.2"></rect><path d="M8 10.5V7.8a4 4 0 018 0v2.7"></path></svg>
+<span style="font:400 13px/1.4 Rubik,sans-serif;color:rgba(255,248,231,.6)">אחרי האישור המסך יתנקה לפני ההעברה לשחקן הבא.</span>
+</div>
+<button style="height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">אישור הצבעה</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">15 · ההצבעה נשמרה <span style="color:#2DD4BF">· מסך חדש</span></div>
+<div data-screen-label="L15" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(110% 55% at 50% 20%,#14514A 0%,#14132B 60%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 26px 0">
+<span style="width:8px;height:8px;border-radius:50%;background:#2DD4BF"></span>
+<span style="width:26px;height:8px;border-radius:4px;background:#FF6B6B"></span>
+<span style="width:8px;height:8px;border-radius:50%;background:rgba(255,248,231,.22)"></span>
+<span style="width:8px;height:8px;border-radius:50%;background:rgba(255,248,231,.22)"></span>
+<span style="margin-inline-start:6px;font:500 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)">הצביעו 1 מתוך 4</span>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 26px 32px;gap:20px;text-align:center">
+<div style="width:150px;height:150px;border-radius:50%;background:rgba(45,212,191,.14);border:3px solid rgba(45,212,191,.45);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="76" height="76" fill="none" stroke="#2DD4BF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.2 5.2L20 7"></path></svg></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="font:400 36px/1.1 'Secular One',sans-serif;color:#FFF8E7">ההצבעה נשמרה</div>
+<div style="font:400 15px/1.5 Rubik,sans-serif;color:rgba(255,248,231,.68);max-width:280px">הבחירה הוסתרה מהמסך. אף אחד לא יראה למי הצבעת.</div>
+</div>
+<div style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border-radius:16px;background:rgba(255,248,231,.06);padding:13px">
+<span style="width:30px;height:30px;border-radius:50%;background:#EC6FA8;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span>
+<span style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.7)">הבאה בתור: נועה</span>
+</div>
+<div style="flex:1"></div>
+<button style="width:100%;height:64px;border:none;border-radius:18px;background:#2DD4BF;font:400 23px/1 'Secular One',sans-serif;color:#0E2B2A;box-shadow:0 8px 0 #17A395">הסתרתי — לשחקן הבא</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">16 · הצבעה חוזרת (תיקו) <span style="color:#8B5CF6">· מיחזור של מסך 13</span></div>
+<div data-screen-label="L16" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(110% 55% at 50% 0%,#42203C 0%,#14132B 60%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px 0">
+<div style="width:46px;height:46px"></div>
+<div style="font:400 24px/1.1 'Secular One',sans-serif;color:#FFF8E7">יש תיקו</div>
+<div style="width:46px;height:46px"></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;padding:14px 24px 28px;gap:16px">
+<div style="display:flex;align-items:center;gap:10px;border-radius:16px;background:rgba(255,212,71,.12);border:1px solid rgba(255,212,71,.4);padding:13px 14px">
+<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#FFD447" stroke-width="2" stroke-linecap="round" style="flex:none"><path d="M12 3v18M5 8h14M7.5 8l-3 6a3.2 3.2 0 006 0zM16.5 8l-3 6a3.2 3.2 0 006 0z"></path></svg>
+<span style="font:400 13px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.8)">שני מועמדים קיבלו 2 קולות. מצביעים שוב רק ביניהם.</span>
+</div>
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,248,231,.07);border-radius:999px;padding:9px 14px;align-self:center">
+<span style="width:26px;height:26px;border-radius:50%;background:#8B5CF6;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-m04-detective-hat.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span>
+<span style="font:500 13px/1 Rubik,sans-serif;color:#FFF8E7">דור מצביע שוב</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="border-radius:22px;background:rgba(255,248,231,.07);border:2px solid rgba(255,248,231,.12);padding:16px;display:flex;align-items:center;gap:14px"><div style="width:64px;height:64px;border-radius:50%;background:#EC6FA8;flex:none;overflow:hidden"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div style="flex:1"><div style="font:400 24px/1.1 'Secular One',sans-serif;color:#FFF8E7">נועה</div><div style="margin-top:4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.6)">2 קולות בסבב הקודם</div></div><div style="width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,248,231,.3);flex:none"></div></div>
+<div style="border-radius:22px;background:rgba(255,107,107,.18);border:2px solid #FF6B6B;padding:16px;display:flex;align-items:center;gap:14px"><div style="width:64px;height:64px;border-radius:50%;background:#2DD4BF;flex:none;overflow:hidden"><img src="assets/avatars/avatar-f02-camera.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div style="flex:1"><div style="font:400 24px/1.1 'Secular One',sans-serif;color:#FFF8E7">מאיה</div><div style="margin-top:4px;font:500 13px/1 Rubik,sans-serif;color:#FFD9D9">הבחירה שלך</div></div><div style="width:28px;height:28px;border-radius:50%;background:#FF6B6B;flex:none;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#3B1214" stroke-width="3.2" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></div></div>
+</div>
+<div style="flex:1"></div>
+<div style="font:400 13px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.55);text-align:center">אם גם עכשיו יהיה תיקו — אף אחד לא יודח ומתחיל סיבוב רמזים חדש.</div>
+<button style="height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">אישור הצבעה</button>
+</div>
+</div></div>
+
+</div>
+</div>
+
+<div style="padding:0 48px 52px;font-family:Rubik,system-ui,sans-serif">
+<div style="display:flex;align-items:center;gap:12px;margin:0 0 22px"><span style="font:400 20px/1 'Secular One',sans-serif;color:#14132B" dir="rtl">ו · הדחה, סיבוב נוסף וניחוש</span><span style="flex:1;height:1px;background:rgba(20,19,43,.14)"></span></div>
+<div style="display:flex;flex-wrap:wrap;gap:36px;margin-bottom:52px">
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">17 · אזרח הודח <span style="color:#2DD4BF">· מסך חדש</span></div>
+<div data-screen-label="L17" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(110% 55% at 50% 15%,#2A2455 0%,#14132B 62%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:24px 26px 30px;gap:18px;text-align:center">
+<div style="position:relative"><div style="width:132px;height:132px;border-radius:50%;background:#5B8DEF;overflow:hidden;border:4px solid rgba(255,248,231,.3)"><img src="assets/avatars/avatar-m02-binoculars.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;filter:grayscale(.85);opacity:.55"></div><span style="position:absolute;bottom:-6px;inset-inline-start:50%;transform:translateX(-50%);background:rgba(255,248,231,.9);color:#14132B;font:700 12px/1 Rubik,sans-serif;border-radius:999px;padding:6px 12px">הודח</span></div>
+<div style="margin-top:6px"><div style="font:400 36px/1.1 'Secular One',sans-serif;color:#FFF8E7">יואב הודח</div></div>
+<div style="width:100%;background:#FFF8E7;border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;justify-content:center;gap:10px"><span style="width:30px;height:30px;border-radius:50%;background:#2DD4BF;display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#0E2B2A" stroke-width="3" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span><span style="font:400 26px/1.1 'Secular One',sans-serif;color:#14132B">יואב היה אזרח</span></div>
+<div style="height:1px;background:rgba(20,19,43,.12)"></div>
+<div style="font:400 14px/1.5 Rubik,sans-serif;color:rgba(20,19,43,.7)">המילה נשארת סודית — המשחק ממשיך.</div>
+</div>
+<div style="width:100%;display:flex;gap:10px;align-items:flex-start;border-radius:16px;background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.42);padding:13px 14px;text-align:right">
+<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#C4B0FF" stroke-width="2" stroke-linecap="round" style="flex:none;margin-top:1px"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.6"></circle></svg>
+<span style="font:400 13px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.8)">יואב ממשיך לצפות: בלי תור לרמז ובלי הצבעה. התוצאה שלו תהיה של הקבוצה שלו.</span>
+</div>
+<div style="width:100%;display:flex;flex-direction:column;gap:8px">
+<div style="font:500 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.5);text-align:right">נשארו במשחק</div>
+<div style="display:flex;gap:8px">
+<div style="flex:1;border-radius:16px;background:rgba(255,248,231,.07);padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:7px"><span style="width:40px;height:40px;border-radius:50%;background:#8B5CF6;overflow:hidden;display:block"><img src="assets/avatars/avatar-m04-detective-hat.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span><span style="font:500 12px/1 Rubik,sans-serif;color:#FFF8E7">דור</span></div>
+<div style="flex:1;border-radius:16px;background:rgba(255,248,231,.07);padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:7px"><span style="width:40px;height:40px;border-radius:50%;background:#EC6FA8;overflow:hidden;display:block"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span><span style="font:500 12px/1 Rubik,sans-serif;color:#FFF8E7">נועה</span></div>
+<div style="flex:1;border-radius:16px;background:rgba(255,248,231,.07);padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:7px"><span style="width:40px;height:40px;border-radius:50%;background:#2DD4BF;overflow:hidden;display:block"><img src="assets/avatars/avatar-f02-camera.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span><span style="font:500 12px/1 Rubik,sans-serif;color:#FFF8E7">מאיה</span></div>
+</div>
+</div>
+<div style="flex:1"></div>
+<button style="width:100%;height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">ממשיכים לסיבוב 2</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">18 · סיבוב נוסף — עם צופה <span style="color:#8B5CF6">· מיחזור של מסך 21 (לובי)</span></div>
+<div data-screen-label="L18" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:#14132B;overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px 0">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.5);display:flex;align-items:center;justify-content:center;font:500 12px/1 Rubik,sans-serif;color:#FF9B9B">יציאה</div>
+<div style="text-align:center"><div style="font:400 22px/1.1 'Secular One',sans-serif;color:#FFF8E7">סיבוב 2</div><div style="margin-top:3px;font:500 12px/1 Rubik,sans-serif;color:#2DD4BF">אוכל</div></div>
+<div style="width:52px;height:52px"></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;padding:18px 26px 30px;gap:16px">
+<div style="text-align:center"><div style="font:400 32px/1.1 'Secular One',sans-serif;color:#FFF8E7">סיבוב נוסף</div><div style="margin-top:8px;font:400 15px/1.5 Rubik,sans-serif;color:rgba(255,248,231,.68)">המתחזה עדיין ביניכם. סדר התורות הוגרל מחדש.</div></div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:center;gap:12px;border-radius:18px;background:rgba(255,248,231,.07);padding:11px 13px"><span style="width:44px;height:44px;border-radius:50%;background:#2DD4BF;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-f02-camera.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span><span style="flex:1;font:500 16px/1 Rubik,sans-serif;color:#FFF8E7">מאיה</span><span style="display:inline-flex;align-items:center;gap:6px;font:500 12px/1 Rubik,sans-serif;color:#2DD4BF;background:rgba(45,212,191,.14);border-radius:999px;padding:7px 11px"><span style="width:7px;height:7px;border-radius:50%;background:#2DD4BF;display:block"></span>פעילה</span></div>
+<div style="display:flex;align-items:center;gap:12px;border-radius:18px;background:rgba(255,248,231,.07);padding:11px 13px"><span style="width:44px;height:44px;border-radius:50%;background:#8B5CF6;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-m04-detective-hat.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span><span style="flex:1;font:500 16px/1 Rubik,sans-serif;color:#FFF8E7">דור</span><span style="display:inline-flex;align-items:center;gap:6px;font:500 12px/1 Rubik,sans-serif;color:#2DD4BF;background:rgba(45,212,191,.14);border-radius:999px;padding:7px 11px"><span style="width:7px;height:7px;border-radius:50%;background:#2DD4BF;display:block"></span>פעיל</span></div>
+<div style="display:flex;align-items:center;gap:12px;border-radius:18px;background:rgba(255,248,231,.07);padding:11px 13px"><span style="width:44px;height:44px;border-radius:50%;background:#EC6FA8;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span><span style="flex:1;font:500 16px/1 Rubik,sans-serif;color:#FFF8E7">נועה</span><span style="display:inline-flex;align-items:center;gap:6px;font:500 12px/1 Rubik,sans-serif;color:#2DD4BF;background:rgba(45,212,191,.14);border-radius:999px;padding:7px 11px"><span style="width:7px;height:7px;border-radius:50%;background:#2DD4BF;display:block"></span>פעילה</span></div>
+<div style="display:flex;align-items:center;gap:12px;border-radius:18px;background:rgba(255,248,231,.035);border:1px dashed rgba(255,248,231,.16);padding:11px 13px"><span style="width:44px;height:44px;border-radius:50%;background:rgba(91,141,239,.4);overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-m02-binoculars.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;filter:grayscale(.85);opacity:.5"></span><span style="flex:1;font:500 16px/1 Rubik,sans-serif;color:rgba(255,248,231,.5)">יואב</span><span style="display:inline-flex;align-items:center;gap:6px;font:500 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.65);background:rgba(255,248,231,.1);border-radius:999px;padding:7px 11px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="rgba(255,248,231,.65)" stroke-width="2.2" stroke-linecap="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.4"></circle></svg>צופה</span></div>
+</div>
+<div style="display:flex;gap:10px;align-items:center;border-radius:16px;background:rgba(255,248,231,.05);padding:12px 14px">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255,248,231,.5)" stroke-width="2" stroke-linecap="round" style="flex:none"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5l3 2"></path></svg>
+<span style="font:400 13px/1.4 Rubik,sans-serif;color:rgba(255,248,231,.6)">3 שחקנים פעילים · 30 שניות לרמז</span>
+</div>
+<div style="flex:1"></div>
+<button style="height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">התחלת סיבוב 2</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">19 · המתחזה נתפס — ניחוש <span style="color:#8B5CF6">· מיחזור של מסך 14</span></div>
+<div data-screen-label="L19" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(110% 60% at 50% 0%,#4A2A8C 0%,#14132B 58%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px 0">
+<div style="width:46px;height:46px"></div>
+<div style="font:400 22px/1.1 'Secular One',sans-serif;color:#FFF8E7">מאיה, נתפסת</div>
+<div style="width:52px;height:52px;border-radius:50%;border:4px solid #FFD447;background:rgba(255,212,71,.12);display:flex;align-items:center;justify-content:center;font:400 21px/1 'Secular One',sans-serif;color:#FFD447">15</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;padding:14px 24px 28px;gap:16px">
+<div style="display:flex;justify-content:center"><div style="width:130px;height:130px;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/role-impostor.webp" alt="" style="width:100%;height:100%;object-fit:contain;display:block"></div></div>
+<div style="text-align:center"><div style="font:400 28px/1.2 'Secular One',sans-serif;color:#FFF8E7">עוד אפשר לנצח</div><div style="margin-top:8px;font:400 15px/1.55 Rubik,sans-serif;color:rgba(255,248,231,.7)">ניחוש נכון של המילה הסודית מעניק לך את הניצחון. יש ניסיון אחד.</div></div>
+<div style="display:flex;align-items:center;justify-content:center;gap:9px;background:rgba(139,92,246,.18);border:1px solid rgba(139,92,246,.5);border-radius:999px;padding:8px 14px;align-self:center">
+<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#C4B0FF" stroke-width="2" stroke-linecap="round" style="flex:none"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.2"></rect><path d="M8 10.5V7.8a4 4 0 018 0v2.7"></path></svg>
+<span style="font:500 13px/1 Rubik,sans-serif;color:#D9C8FF">רק מאיה מסתכלת על המסך</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="height:66px;border-radius:18px;background:#FFF8E7;border:2px solid #8B5CF6;display:flex;align-items:center;padding:0 18px;font:400 24px/1 'Secular One',sans-serif;color:rgba(20,19,43,.35)">מה המילה?</div>
+<div style="font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)">הניחוש לא מוצג לשחקנים בזמן ההקלדה</div>
+</div>
+<button style="height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">שליחת ניחוש</button>
+<div style="flex:1"></div>
+<div style="border-radius:16px;background:rgba(255,248,231,.06);padding:12px 14px;font:400 13px/1.5 Rubik,sans-serif;color:rgba(255,248,231,.6)">אם הזמן ייגמר או שהניחוש יהיה שגוי — האזרחים מנצחים.</div>
+</div>
+</div></div>
+
+</div>
+</div>
+
+<div style="padding:0 48px 80px;font-family:Rubik,system-ui,sans-serif">
+<div style="display:flex;align-items:center;gap:12px;margin:0 0 22px"><span style="font:400 20px/1 'Secular One',sans-serif;color:#14132B" dir="rtl">ז · תוצאה ומצבי מערכת</span><span style="flex:1;height:1px;background:rgba(20,19,43,.14)"></span></div>
+<div style="display:flex;flex-wrap:wrap;gap:36px">
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">20 · תוצאה — האזרחים ניצחו <span style="color:#8B5CF6">· מיחזור של מסך 15</span></div>
+<div data-screen-label="L20" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(110% 60% at 50% 0%,#14514A 0%,#14132B 58%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:12px 24px 28px;gap:14px">
+<div style="display:flex;justify-content:center"><div style="width:126px;height:126px;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/result-citizens-win.webp" alt="" style="width:100%;height:100%;object-fit:contain;display:block"></div></div>
+<div style="text-align:center"><div style="font:400 34px/1.1 'Secular One',sans-serif;color:#2DD4BF">האזרחים ניצחו!</div><div style="margin-top:8px;font:400 15px/1.5 Rubik,sans-serif;color:rgba(255,248,231,.75)">המתחזה נתפס ולא ניחש את המילה.</div></div>
+<div style="background:#FFF8E7;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:12px"><div style="width:52px;height:52px;border-radius:50%;background:#2DD4BF;border:3px solid #8B5CF6;flex:none;overflow:hidden"><img src="assets/avatars/avatar-f02-camera.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)">המתחזה הייתה</div><div style="font:400 22px/1.15 'Secular One',sans-serif;color:#14132B">מאיה</div></div></div>
+<div style="height:1px;background:rgba(20,19,43,.12)"></div>
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 13px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)">המילה הייתה</span><span style="font:400 26px/1 'Secular One',sans-serif;color:#14132B">פיצה</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 13px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)">הניחוש שלה</span><span style="font:500 16px/1 Rubik,sans-serif;color:#C4413F">פסטה</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 13px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)">סבבים</span><span style="font:500 16px/1 Rubik,sans-serif;color:#14132B">2</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.6)">מי הודח במהלך המשחק</div>
+<div style="display:flex;gap:8px">
+<div style="display:flex;align-items:center;gap:9px;border-radius:14px;background:rgba(255,248,231,.07);padding:9px 12px"><span style="width:32px;height:32px;border-radius:50%;background:rgba(91,141,239,.4);overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-m02-binoculars.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;filter:grayscale(.85);opacity:.55"></span><span style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)">יואב · סיבוב 1</span></div>
+<div style="display:flex;align-items:center;gap:9px;border-radius:14px;background:rgba(139,92,246,.16);border:1px solid rgba(139,92,246,.45);padding:9px 12px"><span style="width:32px;height:32px;border-radius:50%;background:#2DD4BF;overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-f02-camera.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span><span style="font:500 13px/1 Rubik,sans-serif;color:#D9C8FF">מאיה · סיבוב 2</span></div>
+</div>
+</div>
+<div style="display:flex;gap:10px;align-items:center;border-radius:16px;background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.3);padding:12px 14px">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2DD4BF" stroke-width="2" stroke-linecap="round" style="flex:none"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 7.6v.2"></path></svg>
+<span style="font:400 13px/1.4 Rubik,sans-serif;color:rgba(255,248,231,.72)">משחק במכשיר אחד אינו משנה את הסטטיסטיקה בפרופיל.</span>
+</div>
+<div style="flex:1"></div>
+<button style="height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">משחק נוסף</button>
+<button style="height:54px;border-radius:16px;background:transparent;border:2px solid rgba(255,248,231,.28);font:500 16px/1 Rubik,sans-serif;color:#FFF8E7">חזרה למסך הראשי</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">21 · תוצאה — המתחזה ניצח (שוויון כוחות) <span style="color:#8B5CF6">· מיחזור של מסך 16</span></div>
+<div data-screen-label="L21" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:radial-gradient(110% 60% at 50% 0%,#4A2A8C 0%,#14132B 58%);overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:12px 24px 28px;gap:14px">
+<div style="display:flex;justify-content:center"><div style="width:126px;height:126px;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/result-impostor-win.webp" alt="" style="width:100%;height:100%;object-fit:contain;display:block"></div></div>
+<div style="text-align:center"><div style="font:400 34px/1.1 'Secular One',sans-serif;color:#FFD447">המתחזה ניצח!</div><div style="margin-top:8px;font:400 15px/1.5 Rubik,sans-serif;color:rgba(255,248,231,.75)">נשארו אזרח אחד ומתחזה — ובשלב הזה המתחזה מנצח מיד.</div></div>
+<div style="background:#FFF8E7;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:12px"><div style="width:52px;height:52px;border-radius:50%;background:#2DD4BF;border:3px solid #8B5CF6;flex:none;overflow:hidden"><img src="assets/avatars/avatar-f02-camera.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div><div><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)">המתחזה הייתה</div><div style="font:400 22px/1.15 'Secular One',sans-serif;color:#14132B">מאיה</div></div></div>
+<div style="height:1px;background:rgba(20,19,43,.12)"></div>
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 13px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)">המילה הייתה</span><span style="font:400 26px/1 'Secular One',sans-serif;color:#14132B">פיצה</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 13px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)">סבבים</span><span style="font:500 16px/1 Rubik,sans-serif;color:#14132B">3</span></div>
+</div>
+<div style="display:flex;gap:10px;align-items:flex-start;border-radius:16px;background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.42);padding:13px 14px">
+<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#C4B0FF" stroke-width="2" stroke-linecap="round" style="flex:none;margin-top:1px"><path d="M12 3l7.5 3.4v5c0 4.4-3.1 8.2-7.5 9.6-4.4-1.4-7.5-5.2-7.5-9.6v-5z"></path></svg>
+<span style="font:400 13px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.8)">המתחזה לא נתפס — הוא הגיע לשוויון מספרי מול האזרחים הפעילים, ולכן אין שלב ניחוש.</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.6)">מי הודח במהלך המשחק</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div style="display:flex;align-items:center;gap:9px;border-radius:14px;background:rgba(255,248,231,.07);padding:9px 12px"><span style="width:32px;height:32px;border-radius:50%;background:rgba(91,141,239,.4);overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-m02-binoculars.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;filter:grayscale(.85);opacity:.55"></span><span style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)">יואב · סיבוב 1</span></div>
+<div style="display:flex;align-items:center;gap:9px;border-radius:14px;background:rgba(255,248,231,.07);padding:9px 12px"><span style="width:32px;height:32px;border-radius:50%;background:rgba(236,111,168,.4);overflow:hidden;display:block;flex:none"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;filter:grayscale(.85);opacity:.55"></span><span style="font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75)">נועה · סיבוב 2</span></div>
+</div>
+</div>
+<div style="flex:1"></div>
+<div style="font:400 12px/1.4 Rubik,sans-serif;color:rgba(255,248,231,.5);text-align:center">משחק במכשיר אחד אינו משנה את הסטטיסטיקה בפרופיל.</div>
+<button style="height:64px;border:none;border-radius:18px;background:#FFD447;font:400 23px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">משחק נוסף</button>
+<button style="height:54px;border-radius:16px;background:transparent;border:2px solid rgba(255,248,231,.28);font:500 16px/1 Rubik,sans-serif;color:#FFF8E7">חזרה למסך הראשי</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">22 · אישור יציאה ממשחק מקומי <span style="color:#2DD4BF">· מצב חדש</span></div>
+<div data-screen-label="L22" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:#14132B;overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;position:relative">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.4)"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.25);border-radius:2px;display:block"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;opacity:.3">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px 0">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.5)"></div>
+<div style="font:400 22px/1.1 'Secular One',sans-serif;color:#FFF8E7">סיבוב 2</div>
+<div style="width:52px;height:52px;border-radius:50%;border:4px solid #FFD447"></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:24px;gap:14px">
+<div style="width:104px;height:104px;border-radius:50%;background:#EC6FA8;overflow:hidden"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></div>
+<div style="font:400 32px/1.1 'Secular One',sans-serif;color:#FFF8E7">התור של נועה</div>
+</div>
+</div>
+<div style="position:absolute;inset:0;background:rgba(9,8,24,.76);display:flex;align-items:center;justify-content:center;padding:26px">
+<div style="width:100%;background:#FFF8E7;border-radius:28px;padding:26px 22px;display:flex;flex-direction:column;gap:16px;text-align:center;box-shadow:0 22px 54px rgba(0,0,0,.5)">
+<div style="width:62px;height:62px;border-radius:20px;background:rgba(255,107,107,.16);display:flex;align-items:center;justify-content:center;align-self:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#C4413F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.2l9 15.6H3z"></path><path d="M12 10v4M12 16.6v.2"></path></svg></div>
+<div><div style="font:400 28px/1.15 'Secular One',sans-serif;color:#14132B">לצאת מהמשחק?</div><div style="margin-top:8px;font:400 14px/1.5 Rubik,sans-serif;color:rgba(20,19,43,.65)">המשחק הנוכחי יימחק ולא יהיה אפשר להמשיך אותו.</div></div>
+<button style="height:60px;border:none;border-radius:18px;background:#FFD447;font:400 22px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 8px 0 #D9A900">המשך משחק</button>
+<button style="height:52px;border-radius:16px;background:transparent;border:2px solid rgba(255,107,107,.55);font:500 17px/1 Rubik,sans-serif;color:#C4413F">יציאה ומחיקה</button>
+</div>
+</div>
+</div></div>
+
+</div>
+</div>
+</x-dc>
+</body>
+</html>
