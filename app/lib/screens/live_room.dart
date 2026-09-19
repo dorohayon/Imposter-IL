@@ -939,49 +939,12 @@ class _ToVoting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GameScaffold(
-      title: '',
-      showHeader: true,
+    return ToVotingView(
       onExit: onLeave,
-      child: Column(
-        children: [
-          const SizedBox(height: 4),
-          const Illustration(
-            'assets/illustrations/pre-vote-transition.webp',
-            height: 190,
-          ),
-          const SizedBox(height: 18),
-          const Text(
-            'כל הרמזים נשלחו',
-            style: TextStyle(
-              color: AppColors.muted,
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'עוברים להצבעה',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.displayLarge,
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'זה הזמן להחליט מי המתחזה',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, fontSize: 15, height: 1.4),
-          ),
-          const SizedBox(height: 26),
-          if (game.deadline case final deadline?)
-            LiveCountdown(deadline: deadline, large: true),
-          const SizedBox(height: 14),
-          const Text(
-            'מסך ההצבעה נפתח אוטומטית',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, fontSize: 13),
-          ),
-        ],
-      ),
+      note: 'זה הזמן להחליט מי המתחזה',
+      countdown: game.deadline == null
+          ? const SizedBox.shrink()
+          : LiveCountdown(deadline: game.deadline!, large: true),
     );
   }
 }

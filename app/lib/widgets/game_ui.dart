@@ -1277,24 +1277,29 @@ class SecretWordCard extends StatelessWidget {
       label: 'המילה הסודית',
       light: !impostor,
       child: impostor
+          // Not a row of letter boxes. Four of them said the word was four
+          // letters long, which is a clue nobody meant to give — and the
+          // impostor would count them. One covered card says hidden without
+          // saying how much.
           ? Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    for (var i = 0; i < 4; i++)
-                      Container(
-                        width: 34,
-                        height: 44,
-                        margin: EdgeInsets.only(right: i == 3 ? 0 : 10),
-                        decoration: BoxDecoration(
-                          color: AppColors.night.withValues(alpha: .45),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                  ],
+                Container(
+                  height: 62,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.night.withValues(alpha: .45),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.cream.withValues(alpha: .10),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.visibility_off_rounded,
+                    size: 30,
+                    color: AppColors.cream.withValues(alpha: .45),
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 const Text(
                   'המילה לא מוצגת לכם — רק הקטגוריה.',
                   textAlign: TextAlign.center,
@@ -1311,6 +1316,80 @@ class SecretWordCard extends StatelessWidget {
                 fontSize: 38,
               ),
             ),
+    );
+  }
+}
+
+/// The beat between the last hint and the vote (screen 11א).
+///
+/// Shared by the online and one-device games, which drew it twice and drifted:
+/// one had a large dial in the middle of the screen, the other a small badge
+/// in the corner, and the headings were different sizes. The countdown itself
+/// is passed in, because online counts down to a deadline the server set and
+/// the one-device game counts its own seconds.
+class ToVotingView extends StatelessWidget {
+  const ToVotingView({
+    required this.countdown,
+    required this.note,
+    this.onExit,
+    super.key,
+  });
+
+  /// The dial, already counting.
+  final Widget countdown;
+
+  /// The line under the heading. The only thing the two games say
+  /// differently: online is deciding, one device is passing the phone around.
+  final String note;
+  final VoidCallback? onExit;
+
+  @override
+  Widget build(BuildContext context) {
+    return GameScaffold(
+      title: '',
+      onExit: onExit,
+      child: Column(
+        children: [
+          const SizedBox(height: 4),
+          const Illustration(
+            'assets/illustrations/pre-vote-transition.webp',
+            height: 190,
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'כל הרמזים נשלחו',
+            style: TextStyle(
+              color: AppColors.muted,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'עוברים להצבעה',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.displayLarge,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            note,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 15,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 26),
+          countdown,
+          const SizedBox(height: 14),
+          const Text(
+            'מסך ההצבעה נפתח אוטומטית',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.muted, fontSize: 13),
+          ),
+        ],
+      ),
     );
   }
 }

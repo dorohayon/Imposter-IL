@@ -426,6 +426,31 @@ void main() {
     });
   });
 
+  // The beat before the vote was drawn twice too, and drifted the same way:
+  // a large dial in the middle online, a small badge in the corner on one
+  // device, and headings of different sizes.
+  testWidgets('the beat before the vote reads the same in both games',
+      (tester) async {
+    final game = _game();
+    // Every hint spoken, and the beat before the vote opens.
+    while (game.phase == LocalPhase.roleReveal) {
+      game.reveal();
+      game.roleSeen(game.currentPlayer);
+    }
+    game.startRound();
+    while (game.phase == LocalPhase.hints) {
+      game.hintSpoken(game.currentPlayer);
+    }
+    expect(game.phase, LocalPhase.voteTransition);
+    await _pumpGame(tester, game);
+
+    expect(find.byType(ToVotingView), findsOneWidget);
+    expect(find.text('עוברים להצבעה'), findsOneWidget);
+    expect(find.text('כל הרמזים נשלחו'), findsOneWidget);
+    expect(find.text('מסך ההצבעה נפתח אוטומטית'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('the impostor is shown masked tiles, never the word',
       (tester) async {
     final game = _game();
@@ -440,6 +465,9 @@ void main() {
     expect(find.byType(SecretWordCard), findsOneWidget);
     expect(find.text(game.secretWord), findsNothing);
     expect(find.text('המילה לא מוצגת לכם — רק הקטגוריה.'), findsOneWidget);
+    // And nothing that counts the letters for them: a row of boxes told the
+    // impostor how long the word was.
+    expect(find.byIcon(Icons.visibility_off_rounded), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

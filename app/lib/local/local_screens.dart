@@ -460,38 +460,16 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   }
 
   Widget _voteTransition() {
-    return GameScaffold(
-      title: '',
+    final left = _game.secondsRemaining ?? LocalGame.voteTransitionSeconds;
+    return ToVotingView(
       onExit: _leave,
-      timer: TimerBadge(
-        seconds: _game.secondsRemaining ?? LocalGame.voteTransitionSeconds,
-        remaining: (_game.secondsRemaining ?? LocalGame.voteTransitionSeconds) /
-            LocalGame.voteTransitionSeconds,
-      ),
-      child: Column(
-        children: [
-          const SizedBox(height: 10),
-          const Text(
-            'כולם אמרו רמז',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, fontSize: 15),
-          ),
-          const SizedBox(height: 12),
-          const Illustration('assets/illustrations/pre-vote-transition.webp',
-              height: 190),
-          const SizedBox(height: 14),
-          Text(
-            'עוברים להצבעה',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge,
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'מעבירים את המכשיר בין השחקנים. אל תגלו למי הצבעתם.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, height: 1.45),
-          ),
-        ],
+      // The one line the two games say differently: online is deciding, and
+      // here the phone has to go round the table first.
+      note: 'מעבירים את המכשיר בין השחקנים. אל תגלו למי הצבעתם.',
+      countdown: TimerBadge(
+        seconds: left,
+        remaining: left / LocalGame.voteTransitionSeconds,
+        size: 120,
       ),
     );
   }
