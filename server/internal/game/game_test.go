@@ -515,15 +515,11 @@ func TestTieGoesToRunoffAmongTiedOnly(t *testing.T) {
 	must(t, g.Vote(c[0], c[1], now))
 	must(t, g.Vote(c[1], g.impostor, now))
 	g.Tick(now.Add(20 * time.Second))
-	// The tie is announced to everyone before the runoff opens, so the runoff
-	// gets its full fifteen seconds instead of sharing them with a notice.
-	wantPhase(t, g, PhaseTieBreak)
-	now = now.Add(20*time.Second + DefaultConfig().TieBreakDuration)
-	g.Tick(now)
 	wantPhase(t, g, PhaseRunoffVoting)
 	if want := []string{c[1], g.impostor}; !sameSet(g.candidates, want) {
 		t.Fatalf("runoff candidates = %v, want %v", g.candidates, want)
 	}
+	now = now.Add(20 * time.Second)
 	if want := now.Add(15 * time.Second); !g.Deadline().Equal(want) {
 		t.Fatalf("runoff deadline = %v, want %v", g.Deadline(), want)
 	}
@@ -568,7 +564,7 @@ func TestRunoffCatchesImpostor(t *testing.T) {
 	c := citizens(g)
 	must(t, g.Vote(c[0], c[1], now))
 	must(t, g.Vote(c[1], g.impostor, now))
-	now = now.Add(20*time.Second + DefaultConfig().TieBreakDuration)
+	now = now.Add(20 * time.Second)
 	g.Tick(now)
 	must(t, g.Vote(c[0], g.impostor, now))
 	g.Tick(now.Add(15 * time.Second))
@@ -737,7 +733,7 @@ func TestAVoteSurvivesTheVoterDroppingOffline(t *testing.T) {
 	// Two of them drop off the line after choosing.
 	must(t, g.Disconnect(c[1], now.Add(time.Second)))
 	must(t, g.Disconnect(c[2], now.Add(time.Second)))
-	g.Tick(now.Add(20*time.Second + DefaultConfig().TieBreakDuration))
+	g.Tick(now.Add(20 * time.Second))
 
 	// All three votes counted, so c[1] and c[2] tie and go to a runoff — the
 	// impostor is not simply handed the round by the other two vanishing.
@@ -877,11 +873,6 @@ func TestRunoffPreviousVotesHideNonCandidates(t *testing.T) {
 	must(t, g.Vote(c[4], c[0], now))
 
 	g.Tick(now.Add(20 * time.Second))
-	// The tie is announced to everyone before the runoff opens, so the runoff
-	// gets its full fifteen seconds instead of sharing them with a notice.
-	wantPhase(t, g, PhaseTieBreak)
-	now = now.Add(20*time.Second + DefaultConfig().TieBreakDuration)
-	g.Tick(now)
 	wantPhase(t, g, PhaseRunoffVoting)
 	if want := []string{c[1], g.impostor}; !sameSet(g.candidates, want) {
 		t.Fatalf("runoff candidates = %v, want %v", g.candidates, want)

@@ -277,8 +277,7 @@
 }
 ```
 
-- `phase`: `role_reveal` | `hints` | `hint_break` | `pre_voting` | `voting` | `tie_break` | `runoff_voting` | `impostor_guess` | `ended`.
-- `tie_break` הוא הכרזת התיקו: 3 שניות שבהן `voteCandidates` ו־`previousVotes` כבר מלאים ואי אפשר להצביע. שעון 15 השניות של `runoff_voting` מתחיל בסופן.
+- `phase`: `role_reveal` | `hints` | `hint_break` | `pre_voting` | `voting` | `runoff_voting` | `impostor_guess` | `ended`.
 - `round` סופר סבבי רמזים־והצבעה מ־1. **שינוי לא תואם:** `eliminated`, `none` ו־`abandoned` אינם מוכרים לגרסאות ישנות, ולכן `clientBuild` עלה ל־2 והשרת נפרס עם `MIN_CLIENT_BUILD=2`. התקנה ישנה מקבלת `426 client_too_old` ומסך עדכון. משחק ממשיך בסבבים עד שאחד הצדדים מנצח.
 - `secretWord` חסר אצל המתחזה עד `ended`.
 - `players` לפי סדר התורות. `status`: `active` | `eliminated` | `left` | `removed`. `eliminated` הוא שחקן שהודח בהצבעה: הוא צופה וממשיך להגיב, אינו מקבל תור ואינו מצביע, והתוצאה שלו היא של הקבוצה שלו.

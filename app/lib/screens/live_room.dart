@@ -836,7 +836,6 @@ class _LiveGame extends StatelessWidget {
       'role_reveal' => _RoleReveal(game: game, onLeave: onLeave),
       'hints' || 'hint_break' => _Hints(game: game, onLeave: onLeave),
       'pre_voting' => _ToVoting(game: game, onLeave: onLeave),
-      'tie_break' => _TieBreak(game: game, onLeave: onLeave),
       'voting' || 'runoff_voting' => _Voting(game: game, onLeave: onLeave),
       'impostor_guess' => _Guess(game: game, onLeave: onLeave),
       _ => _Result(game: game, onHome: onLeave),
@@ -1400,100 +1399,6 @@ class _SecretWordPill extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Design 15ד: the tie, announced to everybody at the same moment.
-///
-/// It has its own phase on the server rather than sitting over the runoff,
-/// because an announcement shown while the vote's clock is already running
-/// costs the table the seconds it spends reading it. The runoff's fifteen
-/// seconds start when this ends.
-class _TieBreak extends StatelessWidget {
-  const _TieBreak({required this.game, required this.onLeave});
-
-  final GameView game;
-  final VoidCallback onLeave;
-
-  @override
-  Widget build(BuildContext context) {
-    return GameScaffold(
-      title: 'יש תיקו',
-      onExit: onLeave,
-      timer: _timer(game),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Illustration(
-            'assets/illustrations/tie-announcement.webp',
-            height: 180,
-          ),
-          const SizedBox(height: 14),
-          Text(
-            '${game.voteCandidates.length} מועמדים קיבלו '
-            '${game.previousVotes.values.fold(0, (a, b) => a > b ? a : b)} קולות',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, fontSize: 15),
-          ),
-          const SizedBox(height: 16),
-          // Wrapped: a tie can be between more than two, and the design says
-          // never to crop a name or show only the first pair.
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 14,
-            runSpacing: 14,
-            children: [
-              for (final id in game.voteCandidates)
-                if (game.player(id) case final p?)
-                  SizedBox(
-                    width: 96,
-                    child: Column(
-                      children: [
-                        AvatarView(asset: p.avatarAsset, size: 66),
-                        const SizedBox(height: 8),
-                        Text(
-                          p.nickname,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${game.previousVotes[id] ?? 0} קולות',
-                          style: const TextStyle(
-                            color: AppColors.yellow,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.coral.withValues(alpha: .13),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.coral.withValues(alpha: .42)),
-            ),
-            child: const Text(
-              'היה תיקו. מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף — איש לא מודח והמשחק ממשיך לסבב נוסף.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFFFFD9D9), height: 1.4),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'ההצבעה החוזרת נמשכת 15 שניות',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, fontSize: 13),
           ),
         ],
       ),
