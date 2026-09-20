@@ -359,6 +359,10 @@ func TestATieIsNotSilence(t *testing.T) {
 	must(t, g.Vote(c[1], g.impostor, now))
 	now = now.Add(DefaultConfig().VoteDuration)
 	g.Tick(now)
+	// Announced to the table first; the runoff opens when that ends.
+	wantPhase(t, g, PhaseTieBreak)
+	now = now.Add(DefaultConfig().TieBreakDuration)
+	g.Tick(now)
 	wantPhase(t, g, PhaseRunoffVoting)
 	if g.silentVotes != 0 {
 		t.Fatalf("a tie counted as silence: silentVotes = %d", g.silentVotes)
@@ -401,6 +405,10 @@ func TestASilentRunoffCounts(t *testing.T) {
 	must(t, g.Vote(c[0], c[1], now))
 	must(t, g.Vote(c[1], g.impostor, now))
 	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now)
+	// Announced to the table first; the runoff opens when that ends.
+	wantPhase(t, g, PhaseTieBreak)
+	now = now.Add(DefaultConfig().TieBreakDuration)
 	g.Tick(now)
 	wantPhase(t, g, PhaseRunoffVoting)
 
@@ -460,4 +468,72 @@ func TestParityIsCheckedHoweverTheCitizensWent(t *testing.T) {
 		must(t, g.Leave(c[1], now))
 		wantResult(t, g, TeamImpostor, ReasonImpostorParity)
 	})
+}
+
+// The tie is announced to everyone at once, and the runoff gets its own full
+// time afterwards rather than sharing it with a notice nobody had read yet.
+func TestATieIsAnnouncedBeforeTheRunoffOpens(t *testing.T) {
+	g := newGame(t, 5)
+	confirmAll(t, g)
+	now := playRound(t, g, t0)
+	c := citizens(g)
+	must(t, g.Vote(c[0], c[1], now))
+	must(t, g.Vote(c[1], g.impostor, now))
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now)
+
+	wantPhase(t, g, PhaseTieBreak)
+	if want := now.Add(DefaultConfig().TieBreakDuration); !g.Deadline().Equal(want) {
+		t.Fatalf("announcement deadline = %v, want %v", g.Deadline(), want)
+	}
+	// Everybody sees who tied and on how many votes, and nobody sees who voted
+	// for whom: the counts are of the tied players only.
+	for _, id := range g.activeIDs() {
+		v, err := g.View(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !sameSet(v.Candidates, []string{c[1], g.impostor}) {
+			t.Errorf("%s sees candidates %v", id, v.Candidates)
+		}
+		if v.PreviousVotes[c[1]] != 1 || v.PreviousVotes[g.impostor] != 1 ||
+			len(v.PreviousVotes) != 2 {
+			t.Errorf("%s sees previous votes %v", id, v.PreviousVotes)
+		}
+		if v.MyVote != "" {
+			t.Errorf("%s came into the announcement holding a vote", id)
+		}
+	}
+	// No vote is taken while the announcement is up.
+	wantErr(t, g.Vote(c[0], g.impostor, now), ErrWrongPhase)
+
+	now = now.Add(DefaultConfig().TieBreakDuration)
+	g.Tick(now)
+	wantPhase(t, g, PhaseRunoffVoting)
+	// The runoff's fifteen seconds start here, not when the tie was counted.
+	if want := now.Add(DefaultConfig().RunoffVoteDuration); !g.Deadline().Equal(want) {
+		t.Fatalf("runoff deadline = %v, want %v", g.Deadline(), want)
+	}
+}
+
+// A player who comes back during the announcement joins it where it is, and
+// does not push everybody else's clock along.
+func TestReconnectingDuringTheAnnouncementDoesNotMoveTheClock(t *testing.T) {
+	g := newGame(t, 5)
+	confirmAll(t, g)
+	now := playRound(t, g, t0)
+	c := citizens(g)
+	must(t, g.Vote(c[0], c[1], now))
+	must(t, g.Vote(c[1], g.impostor, now))
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now)
+	wantPhase(t, g, PhaseTieBreak)
+	deadline := g.Deadline()
+
+	must(t, g.Disconnect(c[2], now))
+	must(t, g.Reconnect(c[2], now.Add(time.Second)))
+	if !g.Deadline().Equal(deadline) {
+		t.Fatalf("deadline moved to %v, was %v", g.Deadline(), deadline)
+	}
+	wantPhase(t, g, PhaseTieBreak)
 }

@@ -42,8 +42,12 @@ const (
 	PhaseHintBreak Phase = "hint_break"
 	// PhasePreVoting is the beat between the last hint and the vote, so the
 	// table can read the board before choosing (screen "עוברים להצבעה").
-	PhasePreVoting     Phase = "pre_voting"
-	PhaseVoting        Phase = "voting"
+	PhasePreVoting Phase = "pre_voting"
+	PhaseVoting    Phase = "voting"
+	// PhaseTieBreak announces a tie to every player at once, before the runoff
+	// opens. It exists so the announcement is not shown over a vote whose
+	// clock is already running: the runoff's own seconds start when this ends.
+	PhaseTieBreak      Phase = "tie_break"
 	PhaseRunoffVoting  Phase = "runoff_voting"
 	PhaseImpostorGuess Phase = "impostor_guess"
 	PhaseEnded         Phase = "ended"
@@ -133,6 +137,8 @@ type Config struct {
 	PreVotingDuration time.Duration
 	// HintBreakDuration is how long a new hint is held before the next turn.
 	HintBreakDuration time.Duration
+	// TieBreakDuration is how long the tie is announced before the runoff.
+	TieBreakDuration  time.Duration
 	ReconnectDuration time.Duration
 	// RoleRevealTimeout moves the game to hints even if some players have not
 	// confirmed; it ends earlier once every connected player confirmed.
@@ -149,6 +155,7 @@ func DefaultConfig() Config {
 		GuessDuration:      60 * time.Second,
 		PreVotingDuration:  5 * time.Second,
 		HintBreakDuration:  3 * time.Second,
+		TieBreakDuration:   3 * time.Second,
 		ReconnectDuration:  30 * time.Second,
 	}
 }
@@ -262,7 +269,7 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 		return nil, fmt.Errorf("%w: category and secret word are required", ErrInvalidSetup)
 	case rng == nil || policy.HintInappropriate == nil || policy.ValidReaction == nil:
 		return nil, fmt.Errorf("%w: rng and every policy function are required", ErrInvalidSetup)
-	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0 || cfg.PreVotingDuration <= 0 || cfg.HintBreakDuration <= 0:
+	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0 || cfg.PreVotingDuration <= 0 || cfg.HintBreakDuration <= 0 || cfg.TieBreakDuration <= 0:
 		return nil, fmt.Errorf("%w: invalid durations", ErrInvalidSetup)
 	}
 	g := &Game{
@@ -574,7 +581,7 @@ func (g *Game) View(playerID string) (View, error) {
 	if g.phase == PhaseHints {
 		v.CurrentTurn = g.order[g.turn]
 	}
-	if g.phase == PhaseRunoffVoting && len(g.voteRounds) > 0 {
+	if (g.phase == PhaseRunoffVoting || g.phase == PhaseTieBreak) && len(g.voteRounds) > 0 {
 		// Only the players in the runoff. Counting every target would tell
 		// everyone how the group voted on someone who is not even a
 		// candidate, and docs/protocol.md reveals other players' votes only
@@ -653,6 +660,9 @@ func (g *Game) expire(at time.Time) {
 		g.startTurn(g.turn+1, at)
 	case PhasePreVoting:
 		g.startVoting(PhaseVoting, g.activeIDs(), at, g.cfg.VoteDuration)
+	case PhaseTieBreak:
+		// The table has read the tie; the runoff gets its full time.
+		g.startVoting(PhaseRunoffVoting, g.candidates, at, g.cfg.RunoffVoteDuration)
 	case PhaseVoting, PhaseRunoffVoting:
 		g.tally(at)
 	case PhaseImpostorGuess:
@@ -756,7 +766,12 @@ func (g *Game) tally(at time.Time) {
 	case len(top) == 1:
 		g.eliminate(top[0], at)
 	case len(top) > 1 && g.phase == PhaseVoting:
-		g.startVoting(PhaseRunoffVoting, top, at, g.cfg.RunoffVoteDuration)
+		// Announced first, and voted on after. The candidates are already on
+		// the view so the announcement can name them.
+		g.candidates = top
+		g.votes = map[string]string{}
+		g.reconnecting = false
+		g.setPhase(PhaseTieBreak, at, g.cfg.TieBreakDuration)
 	default:
 		// A tie the runoff could not break, or a round nobody voted in.
 		// Nobody leaves the table and the match goes another round, which is

@@ -290,4 +290,38 @@ void main() {
     expect(session.wins, wins);
     expect(session.losses, losses);
   });
+  // Design 15ד. Online, the tie reaches every player at the same moment,
+  // because the server holds a phase of its own for it — the runoff's fifteen
+  // seconds start after, not during.
+  testWidgets('a tie is announced to everyone before the runoff opens',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1'
+    });
+    api.channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(
+          phase: 'tie_break',
+          candidates: ['p_2', 'p_4'],
+          previousVotes: {'p_2': 2, 'p_4': 2},
+        ));
+    await settle(tester);
+
+    expect(find.text('יש תיקו'), findsOneWidget);
+    expect(find.text('2 מועמדים קיבלו 2 קולות'), findsOneWidget);
+    expect(find.text('2 קולות'), findsNWidgets(2));
+    expect(find.text('ההצבעה החוזרת נמשכת 15 שניות'), findsOneWidget);
+    // Nobody votes while the announcement is up.
+    expect(find.text('אישור הצבעה'), findsNothing);
+    await tester.tap(find.text('נועה').first);
+    await settle(tester);
+    expect(api.channel.commands('game.vote'), isEmpty);
+  });
 }
