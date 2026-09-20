@@ -197,7 +197,7 @@ void main() {
     channel.snapshot(
         'game.state', 'game', gameJson(phase: 'hints', turn: 'p_me'));
     await settle(tester);
-    expect(find.text('התור שלכם'), findsOneWidget);
+    expect(find.text('הרמז שלך · מילה אחת'), findsOneWidget);
     channel.errors['game.submitHint'] = 'hint_contains_secret';
     await tester.enterText(find.byType(TextField), 'הפיל');
     await tapLive(tester, 'שליחת רמז');
@@ -210,7 +210,7 @@ void main() {
     await tester.pump();
     expect(
       find.ancestor(
-        of: find.text('3 / 25'),
+        of: find.text('3/25'),
         matching: find.byWidgetPredicate(
           (widget) =>
               widget is Directionality &&
@@ -240,19 +240,19 @@ void main() {
           ],
         ));
     await settle(tester);
-    expect(find.text('התור של נועה'), findsOneWidget);
-    // Once in its own row, once as the label on the reactions card (screen 09).
-    expect(find.text('חדק'), findsNWidgets(2));
+    expect(find.text('כותב/ת רמז…'), findsOneWidget);
+    // My clue is on my own card, with how many I have given.
+    expect(find.text('✓ חדק · רמז אחד'), findsOneWidget);
+    final chip = tester.getCenter(find.text('😂'));
     await tapLive(tester, 'זה מחשיד');
     expect(channel.commands('game.react').single['payload'],
         {'gameId': 'g_1', 'hintIndex': 0, 'reactionId': 'suspicious'});
 
-    // The bubble popped on touch, without waiting for the server: the chip,
-    // and the bubble now rising from the hint it belongs to.
+    // The bubble popped on touch, without waiting for the server: the chip in
+    // the dock, and the bubble now rising from my own card.
     expect(find.text('זה מחשיד'), findsNWidgets(2));
 
-    // The server counting it must not float a second one, and someone else's
-    // reaction floats its own.
+    // The count coming back in the snapshot must not float a second one.
     channel.snapshot(
         'game.state',
         'game',
@@ -271,7 +271,28 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.text('זה מחשיד'), findsNWidgets(2));
+
+    // Someone else's reaction rises from their own card, which is the only
+    // thing that names who sent it.
+    channel.event('game.reaction', {
+      'gameId': 'g_1',
+      'hintIndex': 0,
+      'reactionId': 'laugh',
+      'playerId': 'p_2',
+    });
+    await tester.pump();
+    await tester.pump();
     expect(find.text('😂'), findsNWidgets(2));
+    final card = tester.getRect(
+      find
+          .ancestor(of: find.text('נועה'), matching: find.byType(InkWell))
+          .first,
+    );
+    final bubble = [
+      for (var i = 0; i < 2; i++) tester.getCenter(find.text('😂').at(i)),
+    ].firstWhere((spot) => spot != chip);
+    expect(bubble.dx, greaterThanOrEqualTo(card.left));
+    expect(bubble.dx, lessThanOrEqualTo(card.right));
 
     // Both clear themselves up on the way off the top.
     await tester.pump(const Duration(seconds: 7));
@@ -283,7 +304,7 @@ void main() {
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'),
         version: 1);
     await settle(tester);
-    expect(find.text('התור של נועה'), findsOneWidget);
+    expect(find.text('כותב/ת רמז…'), findsOneWidget);
 
     // Voting: I cannot pick myself; my choice is sent on confirm.
     channel.snapshot(
@@ -613,11 +634,15 @@ void main() {
           ],
         ));
     await settle(tester);
-    // In its row, and again as the reactions card's label.
-    expect(find.text('גסות'), findsNWidgets(2));
+    // The clue sits on its author's card.
+    expect(find.text('✓ גסות · רמז אחד'), findsOneWidget);
 
-    // A visible button, not a hidden gesture. The typing dots animate
-    // continuously, so this screen never settles: pump a fixed time instead.
+    // Reporting hangs off the clue history, opened from that player's card:
+    // a visible button, not a hidden gesture.
+    await tester.tap(find.text('נועה'));
+    await settle(tester);
+    expect(find.text('הרמזים של נועה'), findsOneWidget);
+    expect(find.text('גסות'), findsOneWidget);
     await tester.tap(find.byTooltip('דיווח על הרמז'));
     await settle(tester);
     await tapLive(tester, 'דיווח');
@@ -626,9 +651,10 @@ void main() {
     expect(channel.commands('game.report').single['payload'],
         {'gameId': 'g_1', 'playerId': 'p_2', 'hintIndex': 0});
     // The hint is hidden on this device, and cannot be reported twice.
-    // Hidden in its row and on the reactions card: the label must not leak it.
+    // Hidden in the open sheet and on the card behind it.
     expect(find.text('גסות'), findsNothing);
-    expect(find.text('הוסתר'), findsNWidgets(2));
+    expect(find.text('הוסתר'), findsOneWidget);
+    expect(find.text('✓ הוסתר · רמז אחד'), findsOneWidget);
     expect(find.byTooltip('דיווח על הרמז'), findsNothing);
   });
 
@@ -677,7 +703,7 @@ void main() {
     channel.snapshot(
         'game.state', 'game', gameJson(phase: 'hints', turn: 'p_2'));
     await settle(tester);
-    expect(find.text('התור של נועה'), findsOneWidget);
+    expect(find.text('כותב/ת רמז…'), findsOneWidget);
 
     // נועה's hint lands and the turn passes to me in the same snapshot.
     channel.snapshot(
@@ -706,12 +732,11 @@ void main() {
           },
         ]));
     await settle(tester);
-    // The same purple card as "כותב רמז", now carrying the word itself.
-    expect(find.byType(TurnCard), findsOneWidget);
-    expect(find.text('הרמז של נועה'), findsOneWidget);
-    expect(find.text('התור הבא מתחיל'), findsOneWidget);
-    expect(find.text('התור שלכם'), findsNothing);
-    // One clock: the header circle steps aside for the inline countdown.
+    // Her card carries the word itself, and nobody is writing during the hold.
+    expect(find.text('✓ גבינה · רמז אחד'), findsOneWidget);
+    expect(find.text('כותב/ת רמז…'), findsNothing);
+    expect(find.text('הרמז שלך · מילה אחת'), findsNothing);
+    // One clock, in the header, counting the hold like every other phase.
     expect(find.byType(TimerBadge), findsOneWidget);
 
     // Then the turn opens, and the screen is about writing: the hold already
@@ -728,10 +753,9 @@ void main() {
           },
         ]));
     await settle(tester);
-    // Her hint stays in view beside the field while I write.
-    expect(find.text('הרמז הקודם · נועה'), findsOneWidget);
-    expect(find.text('התור שלכם'), findsOneWidget);
-    expect(find.text('גבינה'), findsWidgets); // still listed under the field
+    // Her hint stays in view on her card while I write.
+    expect(find.text('הרמז שלך · מילה אחת'), findsOneWidget);
+    expect(find.text('✓ גבינה · רמז אחד'), findsOneWidget);
 
     // The pre-vote screen does not repeat the clue: the hold already showed
     // it, and this screen is about the vote that is opening.
@@ -748,6 +772,6 @@ void main() {
         ]));
     await settle(tester);
     expect(find.text('עוברים להצבעה'), findsOneWidget);
-    expect(find.text('הרמז הקודם · נועה'), findsNothing);
+    expect(find.text('הרמז שלך · מילה אחת'), findsNothing);
   });
 }

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{margin:0;background:#EDEBE4}a{color:#14132B}a:hover{color:#8B5CF6}</style></helmet>
+<div style="padding:44px 48px 80px;font-family:Rubik,system-ui,sans-serif">
+<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:34px">
+<div style="font:400 12px/1 ui-monospace,Menlo,monospace;color:#8B5CF6;letter-spacing:.12em">CLUE SCREEN · WIREFRAME HANDOFF · cfdc3af</div>
+<h1 style="margin:0;font:400 38px/1.1 'Secular One',system-ui,sans-serif;color:#14132B" dir="rtl">מסך כתיבת רמזים — עיצוב מלא</h1>
+<p style="margin:0;max-width:760px;font:400 14px/1.6 Rubik,sans-serif;color:rgba(20,19,43,.6)" dir="rtl">יישום של <span style="font-family:ui-monospace,monospace;font-size:13px">wireframes/clue-turn-redesign.html</span> בשפת העיצוב הקיימת: גריד שתי עמודות עם כל המשתתפים והאווטארים, הדגשת השחקן הפעיל, כרטיס מילה שנפתח מלמעלה מתחת לכפתור, היסטוריית רמזים שנפתחת מלמטה וסרגל תגובות קבוע בתחתית שנגלל אופקית. הטיימר העגול נשאר בפינה השמאלית העליונה וכפתור היציאה בפינה הימנית. חוקי המשחק לא השתנו.</p>
+</div>
+
+<div style="display:flex;align-items:center;gap:12px;margin:0 0 20px"><span style="font:400 20px/1 'Secular One',sans-serif;color:#14132B" dir="rtl">א · מצבי הליבה</span><span style="flex:1;height:1px;background:rgba(20,19,43,.14)"></span></div>
+<div style="display:flex;flex-wrap:wrap;gap:36px;margin-bottom:50px">
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">C01 · המתנה לתור</div>
+<div data-screen-label="C01" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:#14132B;overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;position:relative">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75);flex:none"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:grid;grid-template-columns:48px 1fr 52px;align-items:center;gap:8px;padding:8px 20px 0;flex:none">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.5);display:flex;align-items:center;justify-content:center;font:500 12px/1 Rubik,sans-serif;color:#FF9B9B">יציאה</div>
+<div style="text-align:center"><div style="font:400 11px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)">קטגוריה</div><div style="margin-top:3px;font:400 19px/1.2 'Secular One',sans-serif;color:#FFF8E7">אוכל</div></div>
+<div style="width:52px;height:52px;border-radius:50%;border:4px solid #FFD447;background:rgba(255,212,71,.12);display:flex;align-items:center;justify-content:center;font:400 21px/1 'Secular One',sans-serif;color:#FFD447">42</div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 20px 0;flex:none">
+<div style="display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:8px 13px;border-radius:12px;border:1px solid rgba(255,248,231,.22);background:rgba(255,248,231,.06)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FFD447" stroke-width="2" stroke-linecap="round" style="flex:none"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.6"></circle></svg><span style="font:500 13px/1 Rubik,sans-serif;color:#FFF8E7">הצגת המילה שלי</span></div>
+<span style="font:400 13px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.6)">סיבוב 2 · תור 3 מתוך 8</span>
+</div>
+<div style="flex:1;min-height:0;overflow:hidden;padding:14px 20px 0;display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex:none"><strong style="font:500 15px/1 Rubik,sans-serif;color:#FFF8E7">המשתתפים</strong><span style="font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.5)">לחצו להיסטוריית רמזים</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;overflow-y:auto;min-height:0;padding-bottom:2px">
+<sc-for list="{{ waiting }}" as="p" hint-placeholder-count="8">
+<div style="{{ p.card }}">
+<span style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex:none;background:rgba(255,248,231,.1);display:block"><img alt="" src="{{ p.img }}" style="{{ p.imgStyle }}"></span>
+<span style="min-width:0;display:flex;flex-direction:column;gap:3px">
+<span style="{{ p.nameStyle }}">{{ p.name }}</span>
+<span style="{{ p.statusStyle }}">{{ p.status }}</span>
+</span>
+</div>
+</sc-for>
+</div>
+<div style="flex:none;margin-top:2px;margin-bottom:2px;padding:11px 13px;border-radius:14px;border:1px dashed rgba(255,248,231,.22);font:400 13px/1.4 Rubik,sans-serif;color:rgba(255,248,231,.62);text-align:center">מאיה כותבת עכשיו. אפשר להמשיך להגיב למטה.</div>
+</div>
+<div style="flex:none;padding:8px 14px 16px;border-top:1px solid rgba(255,248,231,.14);background:#14132B">
+<div style="display:flex;justify-content:space-between;gap:8px;margin:0 4px 7px;font:400 11px/1 Rubik,sans-serif;color:rgba(255,248,231,.5)"><span>תגובות</span><span>גררו לצדדים לעוד תגובות ↔</span></div>
+<div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px">
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:400 19px/1 Rubik,sans-serif;color:#FFF8E7">😂</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:400 19px/1 Rubik,sans-serif;color:#FFF8E7">🤔</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:400 19px/1 Rubik,sans-serif;color:#FFF8E7">👀</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:400 19px/1 Rubik,sans-serif;color:#FFF8E7">😮</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:400 19px/1 Rubik,sans-serif;color:#FFF8E7">👏</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:400 19px/1 Rubik,sans-serif;color:#FFF8E7">🙄</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:500 14px/1 Rubik,sans-serif;color:#FFF8E7;white-space:nowrap">רמז טוב!</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:500 14px/1 Rubik,sans-serif;color:#FFF8E7;white-space:nowrap">זה מחשיד</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:500 14px/1 Rubik,sans-serif;color:#FFF8E7;white-space:nowrap">לא השתכנעתי</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:500 14px/1 Rubik,sans-serif;color:#FFF8E7;white-space:nowrap">מה הקשר?</span>
+</div>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">C02 · התור שלי</div>
+<div data-screen-label="C02" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:#14132B;overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;position:relative">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75);flex:none"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:grid;grid-template-columns:48px 1fr 52px;align-items:center;gap:8px;padding:8px 20px 0;flex:none">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.5);display:flex;align-items:center;justify-content:center;font:500 12px/1 Rubik,sans-serif;color:#FF9B9B">יציאה</div>
+<div style="text-align:center"><div style="font:400 11px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)">קטגוריה</div><div style="margin-top:3px;font:400 19px/1.2 'Secular One',sans-serif;color:#FFF8E7">אוכל</div></div>
+<div style="width:52px;height:52px;border-radius:50%;border:4px solid #FFD447;background:rgba(255,212,71,.12);display:flex;align-items:center;justify-content:center;font:400 21px/1 'Secular One',sans-serif;color:#FFD447">15</div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 20px 0;flex:none">
+<div style="display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:8px 13px;border-radius:12px;border:1px solid rgba(255,248,231,.22);background:rgba(255,248,231,.06)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FFD447" stroke-width="2" stroke-linecap="round" style="flex:none"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.6"></circle></svg><span style="font:500 13px/1 Rubik,sans-serif;color:#FFF8E7">הצגת המילה שלי</span></div>
+<span style="font:400 13px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.6)">סיבוב 2 · תור 4 מתוך 8</span>
+</div>
+<div style="flex:1;min-height:0;overflow:hidden;padding:14px 20px 0;display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex:none"><strong style="font:500 15px/1 Rubik,sans-serif;color:#FFF8E7">המשתתפים</strong><span style="font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.5)">לחצו להיסטוריית רמזים</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;overflow-y:auto;min-height:0;padding-bottom:2px">
+<sc-for list="{{ mine }}" as="p" hint-placeholder-count="8">
+<div style="{{ p.card }}">
+<span style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex:none;background:rgba(255,248,231,.1);display:block"><img alt="" src="{{ p.img }}" style="{{ p.imgStyle }}"></span>
+<span style="min-width:0;display:flex;flex-direction:column;gap:3px">
+<span style="{{ p.nameStyle }}">{{ p.name }}</span>
+<span style="{{ p.statusStyle }}">{{ p.status }}</span>
+</span>
+</div>
+</sc-for>
+</div>
+<div style="flex:none;margin-top:2px;margin-bottom:2px;padding:12px;border-radius:16px;border:2px solid #FFD447;background:rgba(255,212,71,.1);display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;justify-content:space-between;gap:8px"><span style="font:600 13px/1 Rubik,sans-serif;color:#FFD447">הרמז שלך · מילה אחת</span><span style="font:400 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.6)">6/25</span></div>
+<div style="min-height:48px;border-radius:12px;background:#FFF8E7;display:flex;align-items:center;padding:0 14px;font:400 20px/1 'Secular One',sans-serif;color:#14132B">איטליה<span style="width:2px;height:22px;background:#8B5CF6;margin-inline-start:3px"></span></div>
+<button style="min-height:48px;border:none;border-radius:13px;background:#2DD4BF;font:400 20px/1 'Secular One',sans-serif;color:#0E2B2A;box-shadow:0 6px 0 #17A395">שליחת רמז</button>
+</div>
+</div>
+<div style="flex:none;padding:8px 14px 16px;border-top:1px solid rgba(255,248,231,.14);background:#14132B">
+<div style="display:flex;justify-content:space-between;gap:8px;margin:0 4px 7px;font:400 11px/1 Rubik,sans-serif;color:rgba(255,248,231,.5)"><span>תגובות</span><span>גררו לצדדים לעוד תגובות ↔</span></div>
+<div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px">
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:400 19px/1 Rubik,sans-serif;color:#FFF8E7">😂</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:400 19px/1 Rubik,sans-serif;color:#FFF8E7">🤔</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:400 19px/1 Rubik,sans-serif;color:#FFF8E7">👀</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:400 19px/1 Rubik,sans-serif;color:#FFF8E7">😮</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:400 19px/1 Rubik,sans-serif;color:#FFF8E7">👏</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:400 19px/1 Rubik,sans-serif;color:#FFF8E7">🙄</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:500 14px/1 Rubik,sans-serif;color:#FFF8E7;white-space:nowrap">רמז טוב!</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:500 14px/1 Rubik,sans-serif;color:#FFF8E7;white-space:nowrap">זה מחשיד</span>
+<span style="flex:0 0 auto;min-height:42px;display:flex;align-items:center;padding:7px 14px;border-radius:22px;border:1px solid rgba(255,248,231,.2);background:rgba(255,248,231,.07);font:500 14px/1 Rubik,sans-serif;color:#FFF8E7;white-space:nowrap">לא השתכנעתי</span>
+</div>
+</div>
+</div></div>
+
+</div>
+</div>
+
+<div style="padding:0 48px 80px;font-family:Rubik,system-ui,sans-serif">
+<div style="display:flex;align-items:center;gap:12px;margin:0 0 20px"><span style="font:400 20px/1 'Secular One',sans-serif;color:#14132B" dir="rtl">ב · כרטיסים נפתחים</span><span style="flex:1;height:1px;background:rgba(20,19,43,.14)"></span></div>
+<div style="display:flex;flex-wrap:wrap;gap:36px;margin-bottom:50px">
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">C03 · כרטיס המילה — נפתח מלמעלה מתחת לכפתור</div>
+<div data-screen-label="C03" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:#14132B;overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;position:relative">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75);flex:none;position:relative;z-index:3"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:grid;grid-template-columns:48px 1fr 52px;align-items:center;gap:8px;padding:8px 20px 0;flex:none;position:relative;z-index:3">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.5);display:flex;align-items:center;justify-content:center;font:500 12px/1 Rubik,sans-serif;color:#FF9B9B">יציאה</div>
+<div style="text-align:center"><div style="font:400 11px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)">קטגוריה</div><div style="margin-top:3px;font:400 19px/1.2 'Secular One',sans-serif;color:#FFF8E7">אוכל</div></div>
+<div style="width:52px;height:52px;border-radius:50%;border:4px solid #FFD447;background:rgba(255,212,71,.12);display:flex;align-items:center;justify-content:center;font:400 21px/1 'Secular One',sans-serif;color:#FFD447">38</div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 20px 0;flex:none;position:relative;z-index:3">
+<div style="display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:8px 13px;border-radius:12px;border:1px solid #FFD447;background:rgba(255,212,71,.16)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FFD447" stroke-width="2" stroke-linecap="round" style="flex:none"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.6"></circle></svg><span style="font:500 13px/1 Rubik,sans-serif;color:#FFD447">הצגת המילה שלי</span></div>
+<span style="font:400 13px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.6)">סיבוב 2 · תור 3 מתוך 8</span>
+</div>
+<div style="flex:1;min-height:0;overflow:hidden;padding:14px 20px 0;display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex:none"><strong style="font:500 15px/1 Rubik,sans-serif;color:#FFF8E7">המשתתפים</strong><span style="font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.5)">לחצו להיסטוריית רמזים</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;overflow-y:auto;min-height:0;padding-bottom:2px">
+<sc-for list="{{ waiting }}" as="p" hint-placeholder-count="8">
+<div style="{{ p.card }}">
+<span style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex:none;background:rgba(255,248,231,.1);display:block"><img alt="" src="{{ p.img }}" style="{{ p.imgStyle }}"></span>
+<span style="min-width:0;display:flex;flex-direction:column;gap:3px"><span style="{{ p.nameStyle }}">{{ p.name }}</span><span style="{{ p.statusStyle }}">{{ p.status }}</span></span>
+</div>
+</sc-for>
+</div>
+</div>
+<dc-import name="Clue Reaction Dock" hint-size="100%,110px" style="flex:none"></dc-import>
+<div style="position:absolute;inset:0;background:rgba(9,8,24,.66);z-index:2"></div>
+<div style="position:absolute;inset-inline:16px;top:168px;z-index:4;background:#FFF8E7;border-radius:20px;padding:16px;box-shadow:0 18px 40px rgba(0,0,0,.5)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px"><strong style="font:400 18px/1 'Secular One',sans-serif;color:#14132B">המילה שלי</strong><span style="width:44px;height:44px;border-radius:12px;border:1px solid rgba(20,19,43,.18);display:flex;align-items:center;justify-content:center;font:400 17px/1 Rubik,sans-serif;color:rgba(20,19,43,.65)">✕</span></div>
+<div style="border:2px solid #14132B;border-radius:16px;padding:18px;text-align:center;display:flex;flex-direction:column;gap:6px"><span style="font:500 13px/1 Rubik,sans-serif;color:rgba(20,19,43,.6)">קטגוריה: אוכל</span><strong style="font:400 30px/1.1 'Secular One',sans-serif;color:#14132B">פיצה</strong></div>
+<p style="margin:12px 0 0;font:400 13px/1.45 Rubik,sans-serif;color:rgba(20,19,43,.6)">הכרטיס נפתח מתחת לכפתור ונשאר מעל המשחק עד שסוגרים אותו. הטיימר ממשיך לרוץ.</p>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">C04 · היסטוריית רמזים של שחקן — נפתחת מלמטה</div>
+<div data-screen-label="C04" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:#14132B;overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;position:relative">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75);flex:none"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:grid;grid-template-columns:48px 1fr 52px;align-items:center;gap:8px;padding:8px 20px 0;flex:none">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.5);display:flex;align-items:center;justify-content:center;font:500 12px/1 Rubik,sans-serif;color:#FF9B9B">יציאה</div>
+<div style="text-align:center"><div style="font:400 11px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)">קטגוריה</div><div style="margin-top:3px;font:400 19px/1.2 'Secular One',sans-serif;color:#FFF8E7">אוכל</div></div>
+<div style="width:52px;height:52px;border-radius:50%;border:4px solid #FFD447;background:rgba(255,212,71,.12);display:flex;align-items:center;justify-content:center;font:400 21px/1 'Secular One',sans-serif;color:#FFD447">31</div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 20px 0;flex:none">
+<div style="display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:8px 13px;border-radius:12px;border:1px solid rgba(255,248,231,.22);background:rgba(255,248,231,.06)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FFD447" stroke-width="2" stroke-linecap="round" style="flex:none"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.6"></circle></svg><span style="font:500 13px/1 Rubik,sans-serif;color:#FFF8E7">הצגת המילה שלי</span></div>
+<span style="font:400 13px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.6)">סיבוב 2 · תור 3 מתוך 8</span>
+</div>
+<div style="flex:1;min-height:0;overflow:hidden;padding:14px 20px 0;display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex:none"><strong style="font:500 15px/1 Rubik,sans-serif;color:#FFF8E7">המשתתפים</strong><span style="font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.5)">לחצו להיסטוריית רמזים</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;overflow-y:auto;min-height:0;padding-bottom:2px">
+<sc-for list="{{ waiting }}" as="p" hint-placeholder-count="8">
+<div style="{{ p.card }}">
+<span style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex:none;background:rgba(255,248,231,.1);display:block"><img alt="" src="{{ p.img }}" style="{{ p.imgStyle }}"></span>
+<span style="min-width:0;display:flex;flex-direction:column;gap:3px"><span style="{{ p.nameStyle }}">{{ p.name }}</span><span style="{{ p.statusStyle }}">{{ p.status }}</span></span>
+</div>
+</sc-for>
+</div>
+</div>
+<dc-import name="Clue Reaction Dock" hint-size="100%,110px" style="flex:none"></dc-import>
+<div style="position:absolute;inset:0;background:rgba(9,8,24,.66);z-index:2"></div>
+<div style="position:absolute;inset-inline:14px;bottom:14px;z-index:4;background:#FFF8E7;border-radius:22px;padding:16px;box-shadow:0 -14px 40px rgba(0,0,0,.5)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px"><strong style="font:400 18px/1 'Secular One',sans-serif;color:#14132B">הרמזים של נועה</strong><span style="width:44px;height:44px;border-radius:12px;border:1px solid rgba(20,19,43,.18);display:flex;align-items:center;justify-content:center;font:400 17px/1 Rubik,sans-serif;color:rgba(20,19,43,.65)">✕</span></div>
+<div style="display:flex;align-items:center;gap:11px;padding-bottom:12px;margin-bottom:6px;border-bottom:1px solid rgba(20,19,43,.12)"><span style="width:44px;height:44px;border-radius:50%;overflow:hidden;display:block;flex:none;background:rgba(20,19,43,.08)"><img src="assets/avatars/avatar-f04-map.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"></span><span style="font:500 14px/1.3 Rubik,sans-serif;color:rgba(20,19,43,.65)">2 רמזים · סיבובים 1–2</span></div>
+<div style="display:flex;flex-direction:column">
+<div style="min-height:50px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 4px;border-bottom:1px solid rgba(20,19,43,.12)"><span style="font:400 13px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)">סיבוב 1</span><strong style="font:400 20px/1 'Secular One',sans-serif;color:#14132B">איטליה</strong></div>
+<div style="min-height:50px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 4px;border-bottom:1px solid rgba(20,19,43,.12)"><span style="font:400 13px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)">סיבוב 2</span><strong style="font:400 20px/1 'Secular One',sans-serif;color:#14132B">גבינה</strong></div>
+</div>
+<p style="margin:12px 0 0;font:400 13px/1.45 Rubik,sans-serif;color:rgba(20,19,43,.6)">לחיצה על כל כרטיס משתתף פותחת את הרמזים שלו לפי סיבובים.</p>
+</div>
+</div></div>
+
+</div>
+
+<div style="display:flex;align-items:center;gap:12px;margin:0 0 20px"><span style="font:400 20px/1 'Secular One',sans-serif;color:#14132B" dir="rtl">ג · מצבי קצה ורוחב צר</span><span style="flex:1;height:1px;background:rgba(20,19,43,.14)"></span></div>
+<div style="display:flex;flex-wrap:wrap;gap:36px">
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">C05 · רמז חסום</div>
+<div data-screen-label="C05" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:#14132B;overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;position:relative">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75);flex:none"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:grid;grid-template-columns:48px 1fr 52px;align-items:center;gap:8px;padding:8px 20px 0;flex:none">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.5);display:flex;align-items:center;justify-content:center;font:500 12px/1 Rubik,sans-serif;color:#FF9B9B">יציאה</div>
+<div style="text-align:center"><div style="font:400 11px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)">קטגוריה</div><div style="margin-top:3px;font:400 19px/1.2 'Secular One',sans-serif;color:#FFF8E7">אוכל</div></div>
+<div style="width:52px;height:52px;border-radius:50%;border:4px solid #FF6B6B;background:rgba(255,107,107,.14);display:flex;align-items:center;justify-content:center;font:400 21px/1 'Secular One',sans-serif;color:#FF9B9B">6</div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 20px 0;flex:none">
+<div style="display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:8px 13px;border-radius:12px;border:1px solid rgba(255,248,231,.22);background:rgba(255,248,231,.06)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FFD447" stroke-width="2" stroke-linecap="round" style="flex:none"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.6"></circle></svg><span style="font:500 13px/1 Rubik,sans-serif;color:#FFF8E7">הצגת המילה שלי</span></div>
+<span style="font:400 13px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.6)">סיבוב 2 · תור 4 מתוך 8</span>
+</div>
+<div style="flex:1;min-height:0;overflow:hidden;padding:14px 20px 0;display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex:none"><strong style="font:500 15px/1 Rubik,sans-serif;color:#FFF8E7">המשתתפים</strong><span style="font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.5)">לחצו להיסטוריית רמזים</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;overflow-y:auto;min-height:0;padding-bottom:2px">
+<sc-for list="{{ blocked }}" as="p" hint-placeholder-count="8">
+<div style="{{ p.card }}">
+<span style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex:none;background:rgba(255,248,231,.1);display:block"><img alt="" src="{{ p.img }}" style="{{ p.imgStyle }}"></span>
+<span style="min-width:0;display:flex;flex-direction:column;gap:3px"><span style="{{ p.nameStyle }}">{{ p.name }}</span><span style="{{ p.statusStyle }}">{{ p.status }}</span></span>
+</div>
+</sc-for>
+</div>
+<div style="flex:none;margin-top:2px;margin-bottom:2px;padding:12px;border-radius:16px;border:2px solid #FF6B6B;background:rgba(255,107,107,.12);display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;justify-content:space-between;gap:8px"><span style="font:600 13px/1 Rubik,sans-serif;color:#FFB7B7">הרמז שלך · מילה אחת</span><span style="font:400 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.6)">5/25</span></div>
+<div style="min-height:48px;border-radius:12px;background:#FFF8E7;border:2px solid #FF6B6B;display:flex;align-items:center;padding:0 14px;font:400 20px/1 'Secular One',sans-serif;color:#14132B">גבינה</div>
+<div style="display:flex;align-items:flex-start;gap:8px"><span style="width:20px;height:20px;border-radius:50%;background:#FF6B6B;color:#3B1214;font:700 13px/20px Rubik,sans-serif;text-align:center;flex:none">!</span><span style="font:400 13px/1.35 Rubik,sans-serif;color:#FFD9D9">הרמז כבר נאמר בסיבוב הזה. בחרו מילה אחרת.</span></div>
+<button style="min-height:48px;border:none;border-radius:13px;background:rgba(45,212,191,.25);font:400 20px/1 'Secular One',sans-serif;color:rgba(255,248,231,.45)">שליחת רמז</button>
+</div>
+</div>
+<dc-import name="Clue Reaction Dock" hint-size="100%,110px" style="flex:none"></dc-import>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">C06 · ניתוק של שחקן</div>
+<div data-screen-label="C06" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:#14132B;overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;position:relative">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75);flex:none"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:grid;grid-template-columns:48px 1fr 52px;align-items:center;gap:8px;padding:8px 20px 0;flex:none">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.5);display:flex;align-items:center;justify-content:center;font:500 12px/1 Rubik,sans-serif;color:#FF9B9B">יציאה</div>
+<div style="text-align:center"><div style="font:400 11px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)">קטגוריה</div><div style="margin-top:3px;font:400 19px/1.2 'Secular One',sans-serif;color:#FFF8E7">אוכל</div></div>
+<div style="width:52px;height:52px;border-radius:50%;border:4px solid #FFD447;background:rgba(255,212,71,.12);display:flex;align-items:center;justify-content:center;font:400 21px/1 'Secular One',sans-serif;color:#FFD447">27</div>
+</div>
+<div style="padding:12px 20px 0;flex:none"><div style="display:flex;align-items:center;gap:10px;border-radius:14px;border:1px solid rgba(255,107,107,.45);background:rgba(255,107,107,.12);padding:11px 13px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#FF9B9B" stroke-width="2" stroke-linecap="round" style="flex:none"><path d="M4.5 4.5l15 15M8.4 15.6a5 5 0 017.2 0M5.4 12.4a9.4 9.4 0 0113.2 0M11.9 18.8v.2"></path></svg><span style="font:400 13px/1.4 Rubik,sans-serif;color:#FFD9D9">יואב התנתק. ממתינים לו עד 30 שניות — אחר כך התור שלו ידולג.</span></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 20px 0;flex:none">
+<div style="display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:8px 13px;border-radius:12px;border:1px solid rgba(255,248,231,.22);background:rgba(255,248,231,.06)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FFD447" stroke-width="2" stroke-linecap="round" style="flex:none"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.6"></circle></svg><span style="font:500 13px/1 Rubik,sans-serif;color:#FFF8E7">הצגת המילה שלי</span></div>
+<span style="font:400 13px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.6)">סיבוב 2 · תור 3 מתוך 8</span>
+</div>
+<div style="flex:1;min-height:0;overflow:hidden;padding:12px 20px 0;display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex:none"><strong style="font:500 15px/1 Rubik,sans-serif;color:#FFF8E7">המשתתפים</strong><span style="font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.5)">לחצו להיסטוריית רמזים</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;overflow-y:auto;min-height:0;padding-bottom:2px">
+<sc-for list="{{ disconnected }}" as="p" hint-placeholder-count="8">
+<div style="{{ p.card }}">
+<span style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex:none;background:rgba(255,248,231,.1);display:block"><img alt="" src="{{ p.img }}" style="{{ p.imgStyle }}"></span>
+<span style="min-width:0;display:flex;flex-direction:column;gap:3px"><span style="{{ p.nameStyle }}">{{ p.name }}</span><span style="{{ p.statusStyle }}">{{ p.status }}</span></span>
+</div>
+</sc-for>
+</div>
+</div>
+<dc-import name="Clue Reaction Dock" hint-size="100%,110px" style="flex:none"></dc-import>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">C07 · הודחתי — צופה</div>
+<div data-screen-label="C07" dir="rtl" style="width:390px;height:844px;box-sizing:border-box;border-radius:40px;background:#14132B;overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;position:relative">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75);flex:none"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:grid;grid-template-columns:48px 1fr 52px;align-items:center;gap:8px;padding:8px 20px 0;flex:none">
+<div style="width:46px;height:46px;border-radius:14px;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.5);display:flex;align-items:center;justify-content:center;font:500 12px/1 Rubik,sans-serif;color:#FF9B9B">יציאה</div>
+<div style="text-align:center"><div style="font:400 11px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)">קטגוריה</div><div style="margin-top:3px;font:400 19px/1.2 'Secular One',sans-serif;color:#FFF8E7">אוכל</div></div>
+<div style="width:52px;height:52px;border-radius:50%;border:4px solid rgba(255,248,231,.28);display:flex;align-items:center;justify-content:center;font:400 21px/1 'Secular One',sans-serif;color:rgba(255,248,231,.6)">24</div>
+</div>
+<div style="padding:12px 20px 0;flex:none"><div style="display:flex;align-items:flex-start;gap:10px;border-radius:14px;border:1px solid rgba(139,92,246,.45);background:rgba(139,92,246,.14);padding:12px 13px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#C4B0FF" stroke-width="2" stroke-linecap="round" style="flex:none;margin-top:1px"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.6"></circle></svg><span style="font:400 13px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.85)">הודחת וממשיך לצפות. אין לך תור לרמז ואין הצבעה — אבל אפשר להגיב. התוצאה בסוף היא של הקבוצה שלך.</span></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 20px 0;flex:none">
+<div style="display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:8px 13px;border-radius:12px;border:1px solid rgba(255,248,231,.22);background:rgba(255,248,231,.06)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FFD447" stroke-width="2" stroke-linecap="round" style="flex:none"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.6"></circle></svg><span style="font:500 13px/1 Rubik,sans-serif;color:#FFF8E7">הצגת המילה שלי</span></div>
+<span style="font:400 13px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.6)">סיבוב 3 · תור 2 מתוך 6</span>
+</div>
+<div style="flex:1;min-height:0;overflow:hidden;padding:12px 20px 0;display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex:none"><strong style="font:500 15px/1 Rubik,sans-serif;color:#FFF8E7">המשתתפים</strong><span style="font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.5)">לחצו להיסטוריית רמזים</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;overflow-y:auto;min-height:0;padding-bottom:2px">
+<sc-for list="{{ eliminated }}" as="p" hint-placeholder-count="8">
+<div style="{{ p.card }}">
+<span style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex:none;background:rgba(255,248,231,.1);display:block"><img alt="" src="{{ p.img }}" style="{{ p.imgStyle }}"></span>
+<span style="min-width:0;display:flex;flex-direction:column;gap:3px"><span style="{{ p.nameStyle }}">{{ p.name }}</span><span style="{{ p.statusStyle }}">{{ p.status }}</span></span>
+</div>
+</sc-for>
+</div>
+</div>
+<dc-import name="Clue Reaction Dock" hint-size="100%,110px" style="flex:none"></dc-import>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div style="font:500 12px/1 Rubik,sans-serif;color:rgba(20,19,43,.55)" dir="rtl">C08 · רוחב 320px — אותו מסך</div>
+<div data-screen-label="C08" dir="rtl" style="width:320px;height:844px;box-sizing:border-box;border-radius:34px;background:#14132B;overflow:hidden;box-shadow:0 20px 54px rgba(16,14,44,.34);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;position:relative">
+<div style="height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 20px 4px;font:500 13px/1 Rubik,sans-serif;color:rgba(255,248,231,.75);flex:none"><span>9:41</span><span style="width:26px;height:9px;background:rgba(255,248,231,.4);border-radius:2px;display:block"></span></div>
+<div style="display:grid;grid-template-columns:46px 1fr 48px;align-items:center;gap:6px;padding:8px 14px 0;flex:none">
+<div style="width:44px;height:44px;border-radius:13px;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.5);display:flex;align-items:center;justify-content:center;font:500 11px/1 Rubik,sans-serif;color:#FF9B9B">יציאה</div>
+<div style="text-align:center"><div style="font:400 10px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)">קטגוריה</div><div style="margin-top:3px;font:400 17px/1.2 'Secular One',sans-serif;color:#FFF8E7">אוכל</div></div>
+<div style="width:48px;height:48px;border-radius:50%;border:4px solid #FFD447;background:rgba(255,212,71,.12);display:flex;align-items:center;justify-content:center;font:400 19px/1 'Secular One',sans-serif;color:#FFD447">42</div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:10px 14px 0;flex:none">
+<div style="display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:7px 10px;border-radius:11px;border:1px solid rgba(255,248,231,.22);background:rgba(255,248,231,.06)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FFD447" stroke-width="2" stroke-linecap="round" style="flex:none"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.6"></circle></svg><span style="font:500 12px/1 Rubik,sans-serif;color:#FFF8E7">המילה שלי</span></div>
+<span style="font:400 12px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.6)">סיבוב 2 · 3/8</span>
+</div>
+<div style="flex:1;min-height:0;overflow:hidden;padding:12px 14px 0;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:6px;flex:none"><strong style="font:500 14px/1 Rubik,sans-serif;color:#FFF8E7">המשתתפים</strong><span style="font:400 11px/1 Rubik,sans-serif;color:rgba(255,248,231,.5)">לחצו להיסטוריה</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;overflow-y:auto;min-height:0;padding-bottom:2px">
+<sc-for list="{{ narrow }}" as="p" hint-placeholder-count="8">
+<div style="{{ p.cardNarrow }}">
+<span style="width:42px;height:42px;border-radius:50%;overflow:hidden;flex:none;background:rgba(255,248,231,.1);display:block"><img alt="" src="{{ p.img }}" style="{{ p.imgStyle }}"></span>
+<span style="min-width:0;display:flex;flex-direction:column;gap:2px"><span style="{{ p.nameStyle }}">{{ p.name }}</span><span style="{{ p.statusStyle }}">{{ p.status }}</span></span>
+</div>
+</sc-for>
+</div>
+<div style="flex:none;margin-top:2px;margin-bottom:2px;padding:10px 12px;border-radius:14px;border:1px dashed rgba(255,248,231,.22);font:400 12px/1.4 Rubik,sans-serif;color:rgba(255,248,231,.62);text-align:center">מאיה כותבת עכשיו. אפשר להמשיך להגיב למטה.</div>
+</div>
+<dc-import name="Clue Reaction Dock" hint-size="100%,110px" style="flex:none"></dc-import>
+</div></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const A = {
+  noa: 'assets/avatars/avatar-f04-map.webp',
+  yoav: 'assets/avatars/avatar-m02-binoculars.webp',
+  maya: 'assets/avatars/avatar-f02-camera.webp',
+  dor: 'assets/avatars/avatar-m04-detective-hat.webp',
+  shira: 'assets/avatars/avatar-f03-headphones.webp',
+  uri: 'assets/avatars/avatar-m01-flashlight.webp',
+  roni: 'assets/avatars/avatar-f01-notebook.webp',
+  itay: 'assets/avatars/avatar-m03-evidence-bag.webp'
+};
+const BASE = 'position:relative;min-width:0;min-height:79px;padding:9px;border-radius:15px;display:flex;align-items:center;gap:9px;text-align:right;';
+const CARD = {
+  idle: BASE + 'border:1px solid rgba(255,248,231,.14);background:rgba(255,248,231,.05)',
+  active: BASE + 'border:2px solid #FFD447;background:rgba(255,212,71,.13);padding:8px',
+  self: BASE + 'border:1px solid rgba(139,92,246,.55);background:rgba(139,92,246,.14)',
+  selfActive: BASE + 'border:2px solid #FFD447;background:rgba(255,212,71,.13);padding:8px',
+  bad: BASE + 'border:1px solid rgba(255,107,107,.45);background:rgba(255,107,107,.1)',
+  out: BASE + 'border:1px dashed rgba(255,248,231,.2);background:rgba(255,248,231,.03)'
+};
+const NAME = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 14px/1.2 Rubik,sans-serif;color:#FFF8E7';
+const NAME_DIM = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 14px/1.2 Rubik,sans-serif;color:rgba(255,248,231,.5)';
+const WRAP = 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;';
+const ST = WRAP + 'font:400 12px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.55)';
+const ST_ACTIVE = WRAP + 'font:700 12px/1.3 Rubik,sans-serif;color:#FFD447';
+const ST_SENT = WRAP + 'font:500 12px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.8)';
+const ST_BAD = WRAP + 'font:500 12px/1.3 Rubik,sans-serif;color:#FF9B9B';
+const ST_SELF = WRAP + 'font:500 12px/1.3 Rubik,sans-serif;color:#C4B0FF';
+const IMG = 'width:100%;height:100%;object-fit:cover;display:block;border-radius:50%';
+const IMG_OUT = 'width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;filter:grayscale(.9);opacity:.5';
+
+function P(name, key, status, card, statusStyle, opts) {
+  const o = opts || {};
+  return {
+    name: name, img: A[key], status: status,
+    card: CARD[card], cardNarrow: CARD[card] + ';min-height:70px;padding:7px;gap:7px',
+    nameStyle: o.dim ? NAME_DIM : NAME,
+    statusStyle: statusStyle, imgStyle: o.dim ? IMG_OUT : IMG
+  };
+}
+
+class Component extends DCLogic {
+  renderVals() {
+    const waiting = [
+      P('נועה', 'noa', '✓ גבינה · 2 רמזים', 'idle', ST_SENT),
+      P('יואב', 'yoav', '✓ בצק · 2 רמזים', 'idle', ST_SENT),
+      P('מאיה', 'maya', 'כותבת רמז…', 'active', ST_ACTIVE),
+      P('דור · אני', 'dor', 'רמז קודם: עגול', 'self', ST_SELF),
+      P('שירה', 'shira', 'רמז קודם: תנור', 'idle', ST),
+      P('אורי', 'uri', 'רמז קודם: רוטב', 'idle', ST),
+      P('רוני', 'roni', 'רמז קודם: בזיליקום', 'idle', ST),
+      P('איתי', 'itay', 'רמז קודם: פרוסה', 'idle', ST)
+    ];
+    const mine = [
+      P('נועה', 'noa', '✓ גבינה · 2 רמזים', 'idle', ST_SENT),
+      P('יואב', 'yoav', '✓ בצק · 2 רמזים', 'idle', ST_SENT),
+      P('מאיה', 'maya', '✓ חם · 2 רמזים', 'idle', ST_SENT),
+      P('דור · אני', 'dor', 'כותב רמז…', 'selfActive', ST_ACTIVE),
+      P('שירה', 'shira', 'רמז קודם: תנור', 'idle', ST),
+      P('אורי', 'uri', 'רמז קודם: רוטב', 'idle', ST),
+      P('רוני', 'roni', 'רמז קודם: בזיליקום', 'idle', ST),
+      P('איתי', 'itay', 'רמז קודם: פרוסה', 'idle', ST)
+    ];
+    const blocked = mine;
+    const disconnected = [
+      P('נועה', 'noa', '✓ גבינה · 2 רמזים', 'idle', ST_SENT),
+      P('יואב', 'yoav', 'מנותק · ממתינים 30 שניות', 'bad', ST_BAD, { dim: true }),
+      P('מאיה', 'maya', 'כותבת רמז…', 'active', ST_ACTIVE),
+      P('דור · אני', 'dor', 'רמז קודם: עגול', 'self', ST_SELF),
+      P('שירה', 'shira', 'רמז קודם: תנור', 'idle', ST),
+      P('אורי', 'uri', 'רמז קודם: רוטב', 'idle', ST),
+      P('רוני', 'roni', 'רמז קודם: בזיליקום', 'idle', ST),
+      P('איתי', 'itay', 'רמז קודם: פרוסה', 'idle', ST)
+    ];
+    const eliminated = [
+      P('נועה', 'noa', '✓ גבינה · 3 רמזים', 'idle', ST_SENT),
+      P('יואב', 'yoav', 'כותב רמז…', 'active', ST_ACTIVE),
+      P('מאיה', 'maya', 'רמז קודם: חם', 'idle', ST),
+      P('דור · אני', 'dor', 'הודחת · צופה', 'out', ST_BAD, { dim: true }),
+      P('שירה', 'shira', 'הודחה בסיבוב 2', 'out', ST, { dim: true }),
+      P('אורי', 'uri', 'רמז קודם: רוטב', 'idle', ST),
+      P('רוני', 'roni', 'רמז קודם: בזיליקום', 'idle', ST),
+      P('איתי', 'itay', 'רמז קודם: פרוסה', 'idle', ST)
+    ];
+    const narrow = waiting;
+    return { waiting: waiting, mine: mine, blocked: blocked, disconnected: disconnected, eliminated: eliminated, narrow: narrow };
+  }
+}
+</script>
+</body>
+</html>

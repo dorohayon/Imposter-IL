@@ -341,11 +341,20 @@ class GameScaffold extends StatelessWidget {
     this.accent,
     this.contentPadding = const EdgeInsets.fromLTRB(24, 12, 24, 28),
     this.showHeader = true,
+    this.titleLabel,
+    this.scrollable = true,
     super.key,
   });
 
   final String title;
   final Widget child;
+
+  /// A small line above the title, such as the clue screen's "קטגוריה".
+  final String? titleLabel;
+
+  /// Screens that scroll a list under something pinned take the body as it is,
+  /// instead of putting the whole page in one scroll view.
+  final bool scrollable;
 
   /// Shown top-left inside a circle, usually a [TimerBadge].
   final Widget? timer;
@@ -388,10 +397,24 @@ class GameScaffold extends StatelessWidget {
                   children: [
                     SizedBox(width: 54, height: 54, child: timer),
                     Expanded(
-                      child: Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleLarge,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (titleLabel != null)
+                            Text(
+                              titleLabel!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: AppColors.muted,
+                                fontSize: 11,
+                              ),
+                            ),
+                          Text(
+                            title,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ],
                       ),
                     ),
                     SizedBox(
@@ -411,10 +434,12 @@ class GameScaffold extends StatelessWidget {
                 ),
               ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: contentPadding,
-                child: child,
-              ),
+              child: scrollable
+                  ? SingleChildScrollView(
+                      padding: contentPadding,
+                      child: child,
+                    )
+                  : Padding(padding: contentPadding, child: child),
             ),
           ],
         ),
@@ -764,201 +789,6 @@ class StepCard extends StatelessWidget {
   }
 }
 
-/// Three dots that rise in turn, next to "כותב רמז...". The turn belongs to
-/// someone else for up to a minute, and without this the screen looks frozen
-/// rather than waiting.
-class TypingDots extends StatefulWidget {
-  const TypingDots(
-      {this.color = AppColors.turquoise, this.size = 7, super.key});
-
-  final Color color;
-  final double size;
-
-  @override
-  State<TypingDots> createState() => _TypingDotsState();
-}
-
-class _TypingDotsState extends State<TypingDots>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1100),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < 3; i++)
-            Padding(
-              padding: EdgeInsets.only(left: i == 2 ? 0 : widget.size * .6),
-              child: Opacity(
-                // Each dot leads the next by a third of the cycle.
-                opacity: .35 +
-                    .65 *
-                        (1 - ((_controller.value * 3 - i) % 3).clamp(0, 1))
-                            .clamp(0, 1),
-                child: Container(
-                  width: widget.size,
-                  height: widget.size,
-                  decoration: BoxDecoration(
-                    color: widget.color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The hint that just landed, shown where the eye already is and lit for a
-/// moment so it is noticed.
-///
-/// This replaces an earlier attempt that froze the screen for three seconds
-/// before a turn: a pause costs the player time and still hides the hint the
-/// instant it ends. Showing it, unmissably, costs nothing.
-class LastHintCard extends StatelessWidget {
-  const LastHintCard({
-    required this.nickname,
-    required this.avatar,
-    required this.hint,
-    required this.highlight,
-    super.key,
-  });
-
-  final String nickname;
-  final String avatar;
-  final String hint;
-
-  /// Fades from lit to resting. Keyed on the hint so a new one lights again.
-  final bool highlight;
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      key: ValueKey(hint),
-      tween: Tween(begin: highlight ? 1 : 0, end: 0),
-      duration: const Duration(milliseconds: 2600),
-      curve: Curves.easeOut,
-      builder: (context, lit, child) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        decoration: BoxDecoration(
-          color: Color.lerp(AppColors.cream.withValues(alpha: .05),
-              AppColors.turquoise.withValues(alpha: .18), lit),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: Color.lerp(AppColors.cream.withValues(alpha: .10),
-                AppColors.turquoise, lit)!,
-          ),
-        ),
-        child: child,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'הרמז הקודם · $nickname',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  hint,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.cream,
-                    fontFamily: 'Secular One',
-                    fontSize: 20,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          AvatarView(asset: avatar, size: 40),
-        ],
-      ),
-    );
-  }
-}
-
-/// The purple card on the hints screen: whose turn it is, and what they are
-/// doing — writing, or the word they just wrote.
-///
-/// One card for both so it does not change shape or style mid-round: only its
-/// second line swaps.
-class TurnCard extends StatelessWidget {
-  const TurnCard({
-    required this.title,
-    required this.avatar,
-    required this.subtitle,
-    this.disconnected = false,
-    super.key,
-  });
-
-  final String title;
-  final String avatar;
-
-  /// The second line: the typing indicator, or the hint just written.
-  final Widget subtitle;
-  final bool disconnected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.purple.withValues(alpha: .26),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.purple.withValues(alpha: .55)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.cream,
-                    fontFamily: 'Secular One',
-                    fontSize: 22,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                subtitle,
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          AvatarView(asset: avatar, size: 56, disconnected: disconnected),
-        ],
-      ),
-    );
-  }
-}
-
 /// Floats a reaction off the top of the screen from [anchor], the way the
 /// design's `om-bubble` keyframes do: it pops at the card it belongs to,
 /// drifts sideways as it climbs, and fades out on the way up. It goes into the
@@ -1181,40 +1011,6 @@ class SpectatorNote extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Separates one round's hints from the next on a board that keeps them all.
-class RoundDivider extends StatelessWidget {
-  const RoundDivider({required this.round, super.key});
-
-  final int round;
-
-  @override
-  Widget build(BuildContext context) {
-    final line = Expanded(
-      child: Container(
-        height: 1,
-        color: AppColors.cream.withValues(alpha: .14),
-      ),
-    );
-    return Row(
-      children: [
-        line,
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Text(
-            'סבב $round',
-            style: TextStyle(
-              color: AppColors.cream.withValues(alpha: .55),
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        line,
-      ],
     );
   }
 }

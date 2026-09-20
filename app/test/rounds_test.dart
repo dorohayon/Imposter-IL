@@ -55,17 +55,20 @@ void main() {
         'game.state', 'game', laterRound(phase: 'hints', turn: 'p_2'));
     await settle(tester);
 
-    expect(find.byType(RoundBadge), findsOneWidget);
-    // Hints from earlier rounds are still on the board.
-    expect(find.text('חדק'), findsWidgets);
-    expect(find.text('אפריקה'), findsWidgets);
+    // The round, and how far its turn has got, sit above the board. Only the
+    // three players still in it are counted.
+    expect(find.text('סיבוב 3 · תור 1 מתוך 3'), findsOneWidget);
+    expect(find.text('כותב/ת רמז…'), findsOneWidget);
+    expect(find.text('הודח/ה · צופה'), findsOneWidget);
 
-    // And they are grouped by the round they were given in, not run together.
-    expect(find.byType(RoundDivider), findsNWidgets(2));
-    expect(find.text('סבב 1'), findsOneWidget);
-    expect(find.text('סבב 2'), findsOneWidget);
-    // The badge names the round being played now.
-    expect(find.text('סבב 3'), findsOneWidget);
+    // Earlier rounds are not spread over the board any more: each is kept
+    // under the player who said it, by round.
+    expect(find.text('חדק'), findsNothing);
+    await tester.tap(find.text('יובל'));
+    await settle(tester);
+    expect(find.text('הרמזים של יובל'), findsOneWidget);
+    expect(find.text('סיבוב 1'), findsOneWidget);
+    expect(find.text('חדק'), findsOneWidget);
   });
 
   testWidgets('a first round is not divided into rounds', (tester) async {
@@ -96,8 +99,9 @@ void main() {
         ));
     await settle(tester);
 
-    expect(find.byType(RoundBadge), findsNothing);
-    expect(find.byType(RoundDivider), findsNothing);
+    // One round in, the header still counts the turn, over all four players.
+    expect(find.text('סיבוב 1 · תור 2 מתוך 4'), findsOneWidget);
+    expect(find.text('סבב 1'), findsNothing);
   });
 
   testWidgets('a player who was voted out watches and cannot write',
@@ -172,7 +176,8 @@ void main() {
         {'gameId': 'g_1', 'targetPlayerId': 'p_2'});
   });
 
-  testWidgets('the board reads newest first', (tester) async {
+  testWidgets('a card carries the newest clue, the rest opens from it',
+      (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);
     await openCreatedRoom(tester, api);
@@ -183,18 +188,18 @@ void main() {
       'gameId': 'g_1'
     });
     api.channel.snapshot(
-        'game.state', 'game', laterRound(phase: 'hints', turn: 'p_2'));
+        'game.state', 'game', laterRound(phase: 'hints', turn: 'p_4'));
     await settle(tester);
 
-    // חדק came first in the match and אפריקה last, so אפריקה is on top and
-    // nobody has to scroll to the bottom to read what the table is discussing.
-    final newest = tester.getTopLeft(find.text('אפריקה').first).dy;
-    final oldest = tester.getTopLeft(find.text('חדק').first).dy;
-    expect(newest, lessThan(oldest),
-        reason: 'the newest hint should be above the oldest');
-    // And the round labels follow the same order.
-    expect(tester.getTopLeft(find.text('סבב 2')).dy,
-        lessThan(tester.getTopLeft(find.text('סבב 1')).dy));
+    // נועה last said אפריקה, in the round before this one, and that is what
+    // her card carries — nobody has to read down a board to find it.
+    expect(find.text('רמז קודם: אפריקה'), findsOneWidget);
+
+    // Her history opens from her card and names the round of each clue.
+    await tester.tap(find.text('נועה'));
+    await settle(tester);
+    expect(find.text('רמז אחד · סיבוב 2'), findsOneWidget);
+    expect(find.text('אפריקה'), findsOneWidget);
   });
 
   testWidgets('the vote shows everything each player has said', (tester) async {
