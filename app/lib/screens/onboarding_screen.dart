@@ -6,7 +6,6 @@ import '../models/player.dart';
 import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
-import 'home_screen.dart';
 
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
@@ -23,9 +22,7 @@ class OnboardingScreen extends StatelessWidget {
           onSubmit: (nickname, avatarId) async {
             await SessionScope.read(context).signIn(nickname, avatarId);
             if (!context.mounted) return;
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
-            );
+            Navigator.of(context).pop(true);
           },
         ),
       ),

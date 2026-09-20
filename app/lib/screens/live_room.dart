@@ -862,7 +862,8 @@ class _RoleReveal extends StatelessWidget {
     final confirmed = game.player(session.playerId)?.roleConfirmed ?? false;
     final impostor = game.isImpostor;
     return GameScaffold(
-      title: game.category,
+      // The pill below names the category; the header said it a second time.
+      title: '',
       timer: _timer(game),
       onExit: onLeave,
       accent: impostor ? const Color(0xFF4A2A8C) : const Color(0xFF1B4F4A),
@@ -877,69 +878,22 @@ class _RoleReveal extends StatelessWidget {
       ),
       child: Column(
         children: [
+          CategoryPill(category: game.category),
+          const SizedBox(height: 12),
           Illustration(
             impostor
                 ? 'assets/illustrations/role-impostor.webp'
                 : 'assets/illustrations/role-citizen.webp',
             height: 158,
           ),
+          const SizedBox(height: 4),
           Text(
-            'קטגוריה: ${game.category}',
-            style: const TextStyle(
-              color: AppColors.turquoise,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            impostor ? 'אתם המתחזה' : 'אתם אזרחים',
+            impostor ? 'את/ה המתחזה' : 'את/ה אזרח/ית',
             style: Theme.of(context).textTheme.headlineLarge,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          InfoCard(
-            label: 'המילה הסודית',
-            light: !impostor,
-            child: impostor
-                ? Column(
-                    children: [
-                      // Screen 08 stands the hidden word in as four masked
-                      // tiles. Saying "the word is not shown to you" in the
-                      // card and again underneath it said it twice.
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          for (var i = 0; i < 4; i++)
-                            Container(
-                              width: 34,
-                              height: 44,
-                              margin: EdgeInsets.only(right: i == 3 ? 0 : 10),
-                              decoration: BoxDecoration(
-                                color: AppColors.night.withValues(alpha: .45),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'המילה לא מוצגת לכם — רק הקטגוריה.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 15, height: 1.45),
-                      ),
-                    ],
-                  )
-                : Text(
-                    game.secretWord ?? '',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.night,
-                      fontFamily: 'Secular One',
-                      fontSize: 38,
-                    ),
-                  ),
-          ),
+          SecretWordCard(word: game.secretWord, impostor: impostor),
           if (!impostor) ...[
             const SizedBox(height: 12),
             // Screen 07 carries this line under the word card, before the
@@ -985,49 +939,12 @@ class _ToVoting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GameScaffold(
-      title: '',
-      showHeader: true,
+    return ToVotingView(
       onExit: onLeave,
-      child: Column(
-        children: [
-          const SizedBox(height: 4),
-          const Illustration(
-            'assets/illustrations/pre-vote-transition.webp',
-            height: 190,
-          ),
-          const SizedBox(height: 18),
-          const Text(
-            'כל הרמזים נשלחו',
-            style: TextStyle(
-              color: AppColors.muted,
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'עוברים להצבעה',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.displayLarge,
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'זה הזמן להחליט מי המתחזה',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, fontSize: 15, height: 1.4),
-          ),
-          const SizedBox(height: 26),
-          if (game.deadline case final deadline?)
-            LiveCountdown(deadline: deadline, large: true),
-          const SizedBox(height: 14),
-          const Text(
-            'מסך ההצבעה נפתח אוטומטית',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, fontSize: 13),
-          ),
-        ],
-      ),
+      note: 'זה הזמן להחליט מי המתחזה',
+      countdown: game.deadline == null
+          ? const SizedBox.shrink()
+          : LiveCountdown(deadline: game.deadline!, large: true),
     );
   }
 }

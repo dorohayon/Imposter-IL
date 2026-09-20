@@ -27,7 +27,7 @@ void main() {
     expect(isEnabled(tester, 'אישור והמשך'), isTrue);
     await tapText(tester, 'אישור והמשך');
 
-    expect(find.text('מי אתם במשחק?'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(legalAcceptedVersionKey), legalVersion);
     expect(api.requests.where((r) => r.$2 == '/v1/sessions'), isEmpty);

@@ -37,11 +37,12 @@ void main() {
     final api = FakeApi()
       ..responses['POST /v1/sessions'] = const ApiException('network_error');
     await startApp(tester, api);
+    await tapText(tester, 'משחק ברשת');
     await tester.enterText(find.byType(TextField), 'דור');
     await tapText(tester, 'ממשיכים');
     expect(
         find.text('אין חיבור לשרת. בדקו את החיבור ונסו שוב.'), findsOneWidget);
-    expect(find.byType(HomeScreen), findsNothing);
+    expect(find.byType(OnboardingScreen), findsOneWidget);
   });
 
   testWidgets('create a room with server categories, manage the lobby',
@@ -49,7 +50,7 @@ void main() {
     final api = FakeApi();
     await startAtHome(tester, api);
     api.responses['POST /v1/rooms'] = {'room': roomJson()};
-    await tapText(tester, 'משחק עם חברים');
+    await openPrivateRoom(tester);
     await tapText(tester, 'יצירת חדר');
 
     // Categories come from the server. "הכול" is the default; tapping one
@@ -113,7 +114,7 @@ void main() {
       (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);
-    await tapText(tester, 'משחק עם חברים');
+    await openPrivateRoom(tester);
     await tapText(tester, 'הצטרפות לחדר');
 
     api.responses['POST /v1/rooms/join'] =
@@ -185,7 +186,7 @@ void main() {
     });
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
-    expect(find.text('אתם אזרחים'), findsOneWidget);
+    expect(find.text('את/ה אזרח/ית'), findsOneWidget);
     expect(find.text('המילה הסודית'), findsOneWidget);
     expect(find.text('פיל'), findsOneWidget);
     await tapLive(tester, 'הבנתי');
@@ -511,7 +512,7 @@ void main() {
     api.channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
     expect(find.byType(LiveRoomScreen), findsOneWidget);
-    expect(find.text('אתם אזרחים'), findsOneWidget);
+    expect(find.text('את/ה אזרח/ית'), findsOneWidget);
   });
 
   testWidgets('leaving waits for the server and stays put if it fails',

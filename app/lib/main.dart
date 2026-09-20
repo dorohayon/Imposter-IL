@@ -6,7 +6,6 @@ import 'data/server.dart';
 import 'screens/home_screen.dart';
 import 'screens/private_flow.dart';
 import 'screens/legal_screens.dart';
-import 'screens/onboarding_screen.dart';
 import 'screens/secondary_screens.dart';
 import 'state/game_session.dart';
 import 'theme/app_theme.dart';
@@ -95,14 +94,15 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
   }
 }
 
-/// Picks the first screen, below [SessionScope] so it follows the session
-/// rather than the state it had at launch.
+/// Local play does not need a server identity, so Home is also the offline
+/// entry point. Online/profile actions ask for onboarding when there is no
+/// guest session yet.
 class _Start extends StatelessWidget {
   const _Start();
 
   @override
   Widget build(BuildContext context) {
-    final session = SessionScope.of(context);
-    return session.signedIn ? const HomeScreen() : const OnboardingScreen();
+    SessionScope.of(context);
+    return const HomeScreen();
   }
 }

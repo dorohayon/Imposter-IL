@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/screens/live_room.dart';
 import 'package:imposter_il/screens/online_flow.dart';
+import 'package:imposter_il/local/online_choice_screen.dart';
 
 import 'support/fake_server.dart';
 import 'support/helpers.dart';
@@ -25,7 +27,7 @@ Map<String, dynamic> searchJson(String status, int players) => {
 /// Opens the categories, keeps only food, and starts searching.
 Future<FakeChannel> startSearching(WidgetTester tester, FakeApi api) async {
   await startAtHome(tester, api);
-  await tapText(tester, 'משחק ברשת');
+  await openQuickGame(tester);
   expect(find.byType(CategorySelectionScreen), findsOneWidget);
   // "הכול" is the default; tapping one category leaves it for just that one.
   await tapText(tester, 'אוכל');
@@ -48,6 +50,20 @@ void pushSearch(FakeChannel channel, String status, int players) =>
     });
 
 void main() {
+  testWidgets('first online tap continues after choosing a nickname',
+      (tester) async {
+    final api = FakeApi();
+    await startApp(tester, api);
+
+    await tapText(tester, 'משחק ברשת');
+    await tester.enterText(find.byType(TextField), 'דור');
+    await tapText(tester, 'ממשיכים');
+
+    expect(find.byType(OnlineChoiceScreen), findsOneWidget);
+    expect(find.text('משחק מהיר'), findsOneWidget);
+    expect(find.text('חדר פרטי'), findsOneWidget);
+  });
+
   testWidgets('category load failure shows the server error and retries',
       (tester) async {
     final api = FakeApi();
@@ -55,7 +71,7 @@ void main() {
     api.responses['GET /v1/categories'] = const ApiException('network_error');
     await startAtHome(tester, api);
 
-    await tapText(tester, 'משחק ברשת');
+    await openQuickGame(tester);
     expect(find.text('משהו השתבש'), findsOneWidget);
     expect(find.text('השרת לא זמין כרגע. נסו שוב בעוד רגע.'), findsOneWidget);
     expect(find.text('ניסיון נוסף'), findsOneWidget);
@@ -64,7 +80,7 @@ void main() {
     await tapText(tester, 'חזרה למסך הבית');
     expect(find.byType(HomeScreen), findsOneWidget);
 
-    await tapText(tester, 'משחק ברשת');
+    await openQuickGame(tester);
     api.responses['GET /v1/categories'] = categories;
     await tapText(tester, 'ניסיון נוסף');
     expect(find.text('אוכל'), findsOneWidget);
@@ -168,7 +184,7 @@ void main() {
       'game': gameJson(phase: 'role_reveal'),
     });
     await settle(tester);
-    expect(find.text('אתם אזרחים'), findsOneWidget);
+    expect(find.text('את/ה אזרח/ית'), findsOneWidget);
 
     channel.event('game.state', {
       'stateVersion': 5001,
@@ -204,7 +220,7 @@ void main() {
       (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);
-    await tapText(tester, 'משחק ברשת');
+    await openQuickGame(tester);
 
     // "הכול" is selected on its own — the six categories are not lit up too.
     expect(isSelectedTile(tester, 'הכול'), isTrue);

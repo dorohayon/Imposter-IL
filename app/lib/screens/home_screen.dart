@@ -2,17 +2,57 @@ import 'package:flutter/material.dart';
 
 import '../state/game_session.dart';
 import 'live_room.dart';
+import 'onboarding_screen.dart';
 import '../theme/app_theme.dart';
+import '../local/local_game.dart';
+import '../local/local_screens.dart';
+import '../local/local_setup_screens.dart';
+import '../local/online_choice_screen.dart';
+import '../local/local_store.dart';
 import '../widgets/game_ui.dart';
-import 'online_flow.dart';
-import 'private_flow.dart';
 import 'secondary_screens.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  LocalGame? _savedLocalGame;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedLocalGame();
+  }
+
+  Future<void> _loadSavedLocalGame() async {
+    final saved = await LocalStore.load();
+    if (saved?.phase == LocalPhase.ended) {
+      await LocalStore.clear();
+      if (mounted) setState(() => _savedLocalGame = null);
+      return;
+    }
+    if (mounted) setState(() => _savedLocalGame = saved);
+  }
 
   void _open(BuildContext context, Widget screen) {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
+  }
+
+  Future<void> _openOnline(
+    BuildContext context,
+    GameSession session,
+  ) async {
+    if (!session.signedIn) {
+      final signedIn = await Navigator.of(context).push<bool>(
+        MaterialPageRoute<bool>(builder: (_) => const OnboardingScreen()),
+      );
+      if (signedIn != true || !context.mounted) return;
+    }
+    _open(context, const OnlineChoiceScreen());
   }
 
   /// Reopens the live screen when the server says the player is still in a
@@ -31,9 +71,9 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SessionScope.of(context); // rebuild when the activity changes
+    final session = SessionScope.of(context);
     _returnToActivity(context);
-    return DecoratedBox(
+    final page = DecoratedBox(
       decoration: const BoxDecoration(
         gradient: RadialGradient(
           center: Alignment(0, -1.05),
@@ -74,8 +114,12 @@ class HomeScreen extends StatelessWidget {
                           const Spacer(),
                           IconButton.filledTonal(
                             tooltip: 'פרופיל',
-                            onPressed: () =>
-                                _open(context, const ProfileScreen()),
+                            onPressed: () => _open(
+                              context,
+                              session.signedIn
+                                  ? const ProfileScreen()
+                                  : const OnboardingScreen(),
+                            ),
                             icon: const Icon(Icons.person_rounded),
                           ),
                         ],
@@ -101,14 +145,14 @@ class HomeScreen extends StatelessWidget {
                       const Spacer(),
                       PrimaryButton(
                         label: 'משחק ברשת',
-                        onPressed: () =>
-                            _open(context, const CategorySelectionScreen()),
+                        onPressed: () => _openOnline(context, session),
                       ),
                       const SizedBox(height: 12),
                       PrimaryButton(
-                        label: 'משחק עם חברים',
+                        label: 'משחק במכשיר אחד',
                         variant: ButtonVariant.secondary,
-                        onPressed: () => _open(context, const FriendsScreen()),
+                        onPressed: () =>
+                            _open(context, const LocalPlayersScreen()),
                       ),
                       const SizedBox(height: 12),
                       PrimaryButton(
@@ -125,6 +169,64 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+    final saved = _savedLocalGame;
+    if (saved == null) return page;
+    return Stack(
+      children: [
+        page,
+        const ModalBarrier(color: Color(0xB8090818), dismissible: false),
+        SafeArea(
+          minimum: const EdgeInsets.all(20),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Material(
+              color: AppColors.cream,
+              borderRadius: BorderRadius.circular(28),
+              child: Padding(
+                padding: const EdgeInsets.all(22),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'להמשיך את המשחק?',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium
+                          ?.copyWith(color: AppColors.night),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'סיבוב ${saved.round} נשמר במכשיר · ${saved.players.length} שחקנים',
+                      style: const TextStyle(color: Color(0xFF625E70)),
+                    ),
+                    const SizedBox(height: 14),
+                    PrimaryButton(
+                      label: 'המשך משחק',
+                      onPressed: () {
+                        setState(() => _savedLocalGame = null);
+                        _open(context, LocalGameScreen(resumed: saved));
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    PrimaryButton(
+                      label: 'מחיקת המשחק',
+                      variant: ButtonVariant.danger,
+                      onPressed: () async {
+                        await LocalStore.clear();
+                        if (mounted) {
+                          setState(() => _savedLocalGame = null);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

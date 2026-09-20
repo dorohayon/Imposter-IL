@@ -560,6 +560,7 @@ class PlayerCard extends StatelessWidget {
     this.selected = false,
     this.enabled = true,
     this.note,
+    this.secondaryNote,
     this.onTap,
     super.key,
   });
@@ -568,6 +569,7 @@ class PlayerCard extends StatelessWidget {
 
   /// An extra line under the hint, such as why a row cannot be picked.
   final String? note;
+  final String? secondaryNote;
   final bool selected;
   final bool enabled;
   final VoidCallback? onTap;
@@ -616,6 +618,14 @@ class PlayerCard extends StatelessWidget {
                     if (note != null)
                       Text(
                         note!,
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 13,
+                        ),
+                      ),
+                    if (secondaryNote != null)
+                      Text(
+                        secondaryNote!,
                         style: const TextStyle(
                           color: AppColors.muted,
                           fontSize: 13,
@@ -1205,6 +1215,181 @@ class RoundDivider extends StatelessWidget {
         ),
         line,
       ],
+    );
+  }
+}
+
+/// The round's category, as a pill. Shared by the online and one-device role
+/// reveals so the same screen reads the same way in both.
+class CategoryPill extends StatelessWidget {
+  const CategoryPill({required this.category, super.key});
+
+  final String category;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.purple.withValues(alpha: .22),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.purple.withValues(alpha: .6)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'קטגוריה',
+            style: TextStyle(color: Color(0xFFD9C8FF), fontSize: 13),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            category,
+            style: const TextStyle(
+              color: Color(0xFFC4B0FF),
+              fontFamily: 'Secular One',
+              fontSize: 17,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The word card on a role reveal: the word itself for a citizen, and four
+/// masked tiles for the impostor, who is told what they are rather than shown
+/// nothing at all.
+///
+/// Shared, because the same card was drawn twice — once online and once for
+/// the one-device game — and the two drifted apart.
+class SecretWordCard extends StatelessWidget {
+  const SecretWordCard({required this.word, required this.impostor, super.key});
+
+  /// The secret word. Ignored when [impostor] is true, and never read from
+  /// there, so an impostor's card cannot show it by accident.
+  final String? word;
+  final bool impostor;
+
+  @override
+  Widget build(BuildContext context) {
+    return InfoCard(
+      label: 'המילה הסודית',
+      light: !impostor,
+      child: impostor
+          // Not a row of letter boxes. Four of them said the word was four
+          // letters long, which is a clue nobody meant to give — and the
+          // impostor would count them. One covered card says hidden without
+          // saying how much.
+          ? Column(
+              children: [
+                Container(
+                  height: 62,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.night.withValues(alpha: .45),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.cream.withValues(alpha: .10),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.visibility_off_rounded,
+                    size: 30,
+                    color: AppColors.cream.withValues(alpha: .45),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'המילה לא מוצגת לכם — רק הקטגוריה.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 15, height: 1.45),
+                ),
+              ],
+            )
+          : Text(
+              word ?? '',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.night,
+                fontFamily: 'Secular One',
+                fontSize: 38,
+              ),
+            ),
+    );
+  }
+}
+
+/// The beat between the last hint and the vote (screen 11א).
+///
+/// Shared by the online and one-device games, which drew it twice and drifted:
+/// one had a large dial in the middle of the screen, the other a small badge
+/// in the corner, and the headings were different sizes. The countdown itself
+/// is passed in, because online counts down to a deadline the server set and
+/// the one-device game counts its own seconds.
+class ToVotingView extends StatelessWidget {
+  const ToVotingView({
+    required this.countdown,
+    required this.note,
+    this.onExit,
+    super.key,
+  });
+
+  /// The dial, already counting.
+  final Widget countdown;
+
+  /// The line under the heading. The only thing the two games say
+  /// differently: online is deciding, one device is passing the phone around.
+  final String note;
+  final VoidCallback? onExit;
+
+  @override
+  Widget build(BuildContext context) {
+    return GameScaffold(
+      title: '',
+      onExit: onExit,
+      child: Column(
+        children: [
+          const SizedBox(height: 4),
+          const Illustration(
+            'assets/illustrations/pre-vote-transition.webp',
+            height: 190,
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'כל הרמזים נשלחו',
+            style: TextStyle(
+              color: AppColors.muted,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'עוברים להצבעה',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.displayLarge,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            note,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 15,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 26),
+          countdown,
+          const SizedBox(height: 14),
+          const Text(
+            'מסך ההצבעה נפתח אוטומטית',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.muted, fontSize: 13),
+          ),
+        ],
+      ),
     );
   }
 }
