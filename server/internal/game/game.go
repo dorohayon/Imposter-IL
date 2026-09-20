@@ -36,10 +36,6 @@ type Phase string
 const (
 	PhaseRoleReveal Phase = "role_reveal"
 	PhaseHints      Phase = "hints"
-	// PhaseHintBreak holds on a hint that was just written, so the table can
-	// read it before the next player's turn takes the screen. Only after a
-	// hint that was actually submitted: a skipped turn has nothing to read.
-	PhaseHintBreak Phase = "hint_break"
 	// PhasePreVoting is the beat between the last hint and the vote, so the
 	// table can read the board before choosing (screen "עוברים להצבעה").
 	PhasePreVoting     Phase = "pre_voting"
@@ -131,8 +127,6 @@ type Config struct {
 	GuessDuration      time.Duration
 	// PreVotingDuration is how long the board is shown before voting opens.
 	PreVotingDuration time.Duration
-	// HintBreakDuration is how long a new hint is held before the next turn.
-	HintBreakDuration time.Duration
 	ReconnectDuration time.Duration
 	// RoleRevealTimeout moves the game to hints even if some players have not
 	// confirmed; it ends earlier once every connected player confirmed.
@@ -148,7 +142,6 @@ func DefaultConfig() Config {
 		RunoffVoteDuration: 15 * time.Second,
 		GuessDuration:      60 * time.Second,
 		PreVotingDuration:  5 * time.Second,
-		HintBreakDuration:  3 * time.Second,
 		ReconnectDuration:  30 * time.Second,
 	}
 }
@@ -262,7 +255,7 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 		return nil, fmt.Errorf("%w: category and secret word are required", ErrInvalidSetup)
 	case rng == nil || policy.HintInappropriate == nil || policy.ValidReaction == nil:
 		return nil, fmt.Errorf("%w: rng and every policy function are required", ErrInvalidSetup)
-	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0 || cfg.PreVotingDuration <= 0 || cfg.HintBreakDuration <= 0:
+	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0 || cfg.PreVotingDuration <= 0:
 		return nil, fmt.Errorf("%w: invalid durations", ErrInvalidSetup)
 	}
 	g := &Game{
@@ -416,9 +409,9 @@ func (g *Game) SubmitHint(playerID, text string, now time.Time) error {
 		}
 	}
 	g.hints = append(g.hints, Hint{PlayerID: playerID, Text: text, Round: g.round})
-	// Every submitted hint is held, the last one included: it is the one the
-	// table votes on, so it needs reading most.
-	g.setPhase(PhaseHintBreak, now, g.cfg.HintBreakDuration)
+	// The turn passes straight on: the hint stays on its author's card for the
+	// rest of the round, so there is nothing to hold the screen for.
+	g.startTurn(g.turn+1, now)
 	g.version++
 	return nil
 }
@@ -648,8 +641,6 @@ func (g *Game) expire(at time.Time) {
 		g.startTurn(0, at)
 	case PhaseHints:
 		g.hints = append(g.hints, Hint{PlayerID: g.order[g.turn], Missing: true, Round: g.round})
-		g.startTurn(g.turn+1, at)
-	case PhaseHintBreak:
 		g.startTurn(g.turn+1, at)
 	case PhasePreVoting:
 		g.startVoting(PhaseVoting, g.activeIDs(), at, g.cfg.VoteDuration)

@@ -119,12 +119,6 @@ func TestWSGamePlaysToTheEnd(t *testing.T) {
 	hints := []string{"חדק", "אפור", "גדול", "זיכרון"}
 	for i, id := range order {
 		p := byID[id]
-		if i > 0 {
-			// Each hint is held so the table can read it; the next turn opens
-			// when that ends.
-			c.advance(3 * time.Second)
-			c.tick(roomID)
-		}
 		if i == 0 {
 			wantReplyError(t, byID[order[1]].w.command("early", "game.submitHint", map[string]any{"gameId": gameID, "text": "מוקדם"}), "not_your_turn")
 			if id != impostor {
@@ -147,10 +141,7 @@ func TestWSGamePlaysToTheEnd(t *testing.T) {
 		}
 	}
 
-	// The last hint is held like the rest, then the board before the vote.
-	host.w.gameState(phase("hint_break"))
-	c.advance(3 * time.Second)
-	c.tick(roomID)
+	// The last hint opens the board shown before the vote.
 	host.w.gameState(phase("pre_voting"))
 	c.advance(5 * time.Second)
 	c.tick(roomID)
@@ -444,15 +435,9 @@ func TestWSReconnectingIntoALaterRoundAsASpectator(t *testing.T) {
 	}
 	words := []string{"חדק", "אפור", "גדול", "זיכרון", "כבד"}
 	for i, id := range order {
-		if i > 0 {
-			c.advance(3 * time.Second)
-			c.tick(roomID)
-		}
 		wantOK(t, byID[id].w.command(fmt.Sprintf("h%d", i), "game.submitHint",
 			map[string]any{"gameId": gameID, "text": words[i]}))
 	}
-	c.advance(3 * time.Second)
-	c.tick(roomID)
 	c.advance(5 * time.Second)
 	c.tick(roomID)
 	host.w.gameState(phase("voting"))

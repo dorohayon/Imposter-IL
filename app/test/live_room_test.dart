@@ -240,7 +240,7 @@ void main() {
           ],
         ));
     await settle(tester);
-    expect(find.text('כותב/ת רמז…'), findsOneWidget);
+    expect(find.text('כותב/ת רמז'), findsOneWidget);
     // My clue is on my own card, with how many I have given.
     expect(find.text('✓ חדק · רמז אחד'), findsOneWidget);
     final chip = tester.getCenter(find.text('😂'));
@@ -304,7 +304,7 @@ void main() {
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'),
         version: 1);
     await settle(tester);
-    expect(find.text('כותב/ת רמז…'), findsOneWidget);
+    expect(find.text('כותב/ת רמז'), findsOneWidget);
 
     // Voting: I cannot pick myself; my choice is sent on confirm.
     channel.snapshot(
@@ -687,7 +687,7 @@ void main() {
     expect(find.text('אישור הצבעה'), findsWidgets);
   });
 
-  testWidgets('a hint is held for reading, then the turn opens',
+  testWidgets('a hint lands on its card and the turn passes on at once',
       (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);
@@ -703,9 +703,10 @@ void main() {
     channel.snapshot(
         'game.state', 'game', gameJson(phase: 'hints', turn: 'p_2'));
     await settle(tester);
-    expect(find.text('כותב/ת רמז…'), findsOneWidget);
+    expect(find.text('כותב/ת רמז'), findsOneWidget);
 
-    // נועה's hint lands and the turn passes to me in the same snapshot.
+    // נועה's hint lands and the turn passes to me in the same snapshot: there
+    // is no beat in between, because her hint stays on her own card.
     channel.snapshot(
         'game.state',
         'game',
@@ -718,44 +719,14 @@ void main() {
           },
         ]));
     await settle(tester);
-
-    // Before any of that, the server holds her hint so it can be read.
-    channel.snapshot(
-        'game.state',
-        'game',
-        gameJson(phase: 'hint_break', hints: [
-          {
-            'playerId': 'p_2',
-            'text': 'גבינה',
-            'missing': false,
-            'reactions': <String, dynamic>{}
-          },
-        ]));
-    await settle(tester);
-    // Her card carries the word itself, and nobody is writing during the hold.
-    expect(find.text('✓ גבינה · רמז אחד'), findsOneWidget);
-    expect(find.text('כותב/ת רמז…'), findsNothing);
-    expect(find.text('הרמז שלך · מילה אחת'), findsNothing);
-    // One clock, in the header, counting the hold like every other phase.
-    expect(find.byType(TimerBadge), findsOneWidget);
-
-    // Then the turn opens, and the screen is about writing: the hold already
-    // showed her hint, so it is not repeated above the field.
-    channel.snapshot(
-        'game.state',
-        'game',
-        gameJson(phase: 'hints', turn: 'p_me', hints: [
-          {
-            'playerId': 'p_2',
-            'text': 'גבינה',
-            'missing': false,
-            'reactions': <String, dynamic>{}
-          },
-        ]));
-    await settle(tester);
-    // Her hint stays in view on her card while I write.
     expect(find.text('הרמז שלך · מילה אחת'), findsOneWidget);
     expect(find.text('✓ גבינה · רמז אחד'), findsOneWidget);
+    // My own card is the active one now (C02), so it says so too.
+    expect(find.text('כותב/ת רמז'), findsOneWidget);
+    // One clock, in the header.
+    expect(find.byType(TimerBadge), findsOneWidget);
+    // The keyboard waits to be asked for.
+    expect(tester.widget<TextField>(find.byType(TextField)).autofocus, isFalse);
 
     // The pre-vote screen does not repeat the clue: the hold already showed
     // it, and this screen is about the vote that is opening.

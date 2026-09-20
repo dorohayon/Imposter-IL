@@ -8,12 +8,7 @@ import (
 // playRound walks a round from wherever the hints phase is to the vote opening.
 func playRound(t *testing.T, g *Game, now time.Time) time.Time {
 	t.Helper()
-	for g.phase == PhaseHints || g.phase == PhaseHintBreak {
-		if g.phase == PhaseHintBreak {
-			now = now.Add(DefaultConfig().HintBreakDuration)
-			g.Tick(now)
-			continue
-		}
+	for g.phase == PhaseHints {
 		now = now.Add(time.Second)
 		must(t, g.SubmitHint(g.order[g.turn], uniqueHint(g), now))
 	}

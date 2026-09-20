@@ -58,7 +58,7 @@ void main() {
     // The round, and how far its turn has got, sit above the board. Only the
     // three players still in it are counted.
     expect(find.text('סיבוב 3 · תור 1 מתוך 3'), findsOneWidget);
-    expect(find.text('כותב/ת רמז…'), findsOneWidget);
+    expect(find.text('כותב/ת רמז'), findsOneWidget);
     expect(find.text('הודח/ה · צופה'), findsOneWidget);
 
     // Earlier rounds are not spread over the board any more: each is kept

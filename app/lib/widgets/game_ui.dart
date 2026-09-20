@@ -944,6 +944,50 @@ class _ReactionBubbleState extends State<_ReactionBubble>
   }
 }
 
+/// The dots after "כותב/ת רמז", counting up and starting over: `.` `..` `...`.
+/// A fixed width, so the text beside them does not shift as they come and go.
+class TypingDots extends StatefulWidget {
+  const TypingDots({required this.colour, super.key});
+
+  final Color colour;
+
+  @override
+  State<TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<TypingDots>
+    with SingleTickerProviderStateMixin {
+  late final _run = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _run.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 14,
+      child: AnimatedBuilder(
+        animation: _run,
+        builder: (context, _) => Text(
+          '.' * (1 + (_run.value * 3).floor().clamp(0, 2)),
+          style: TextStyle(
+            color: widget.colour,
+            fontSize: 12,
+            height: 1.3,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Which hint-and-vote round the table is in. Shown from the second one, since
 /// a match that ends in one round never had rounds to count.
 class RoundBadge extends StatelessWidget {

@@ -838,7 +838,7 @@ class _LiveGame extends StatelessWidget {
     if (me?.status == 'removed') return _Removed(onHome: onLeave);
     return switch (game.phase) {
       'role_reveal' => _RoleReveal(game: game, onLeave: onLeave),
-      'hints' || 'hint_break' => _Hints(game: game, onLeave: onLeave),
+      'hints' => _Hints(game: game, onLeave: onLeave),
       'pre_voting' => _ToVoting(game: game, onLeave: onLeave),
       'voting' || 'runoff_voting' => _Voting(game: game, onLeave: onLeave),
       'impostor_guess' => _Guess(game: game, onLeave: onLeave),
@@ -1078,7 +1078,7 @@ class _HintsState extends State<_Hints> {
     if (!p.connected) {
       return ('מנותק · ממתינים 30 שניות', AppColors.coral, false);
     }
-    if (active) return ('כותב/ת רמז…', AppColors.yellow, true);
+    if (active) return ('כותב/ת רמז', AppColors.yellow, true);
     final said = [
       for (final h in game.hints)
         if (h.playerId == p.id) h,
@@ -1108,13 +1108,10 @@ class _HintsState extends State<_Hints> {
     final session = SessionScope.of(context);
     final game = widget.game;
     final me = session.playerId;
-    // The server holds each hint for a moment so it can be read; nobody has
-    // the turn during it.
-    final holding = game.phase == 'hint_break';
-    final myTurn = game.currentTurnPlayerId == me && !holding;
+    final myTurn = game.currentTurnPlayerId == me;
     final watching = game.isEliminated(me);
     final word = game.secretWord;
-    final current = holding ? null : game.player(game.currentTurnPlayerId);
+    final current = game.player(game.currentTurnPlayerId);
     final playing = [
       for (final p in game.players)
         if (p.status == 'active') p,
@@ -1124,8 +1121,7 @@ class _HintsState extends State<_Hints> {
       for (final h in game.hints)
         if (h.round == game.round) h,
     ].length;
-    final turn = (given + (holding ? 0 : 1))
-        .clamp(1, playing.isEmpty ? 1 : playing.length);
+    final turn = (given + 1).clamp(1, playing.isEmpty ? 1 : playing.length);
 
     return GameScaffold(
       title: game.category,
@@ -1283,7 +1279,8 @@ class _HintsState extends State<_Hints> {
           ),
           // The bar is general, not tied to one clue, but the count it adds to
           // still belongs to the newest hint.
-          if (session.showReactions)
+          if (session.showReactions &&
+              MediaQuery.viewInsetsOf(context).bottom == 0)
             _ReactionDock(
               reactions: session.reactions,
               onReact: game.hints.isEmpty ? null : _react,
@@ -1385,16 +1382,24 @@ class _ParticipantCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(
-                      text,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: colour,
-                        fontSize: 12,
-                        height: 1.3,
-                        fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            text,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: colour,
+                              fontSize: 12,
+                              height: 1.3,
+                              fontWeight:
+                                  bold ? FontWeight.w700 : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        if (active) TypingDots(colour: colour),
+                      ],
                     ),
                   ],
                 ),
@@ -1464,7 +1469,7 @@ class _Composer extends StatelessWidget {
           TextField(
             controller: controller,
             maxLength: 25,
-            autofocus: true,
+            autofocus: false,
             textAlign: TextAlign.start,
             style: const TextStyle(
               color: AppColors.night,

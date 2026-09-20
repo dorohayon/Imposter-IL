@@ -71,11 +71,6 @@ func toVoting(t *testing.T, g *Game) time.Time {
 	for i, id := range g.order {
 		now = now.Add(time.Second)
 		must(t, g.SubmitHint(id, "hint"+string(rune('a'+i)), now))
-		// Every hint is held before the board moves on.
-		if g.phase == PhaseHintBreak {
-			now = now.Add(DefaultConfig().HintBreakDuration)
-			g.Tick(now)
-		}
 	}
 	// The finished board is held for a beat before the vote opens.
 	wantPhase(t, g, PhasePreVoting)
@@ -243,22 +238,16 @@ func TestHintTurnsFollowOrderWithSixtySeconds(t *testing.T) {
 	wantErr(t, g.SubmitHint(g.order[1], "early", t0), ErrNotYourTurn)
 	must(t, g.SubmitHint(g.order[0], "גדול", t0.Add(3*time.Second)))
 
-	// The hint shows at once, and is held so the table can read it before the
-	// next turn takes the screen.
+	// The hint shows at once, and the next turn starts on the same beat: the
+	// hint stays on its author's card, so there is nothing to hold for.
 	v, _ := g.View(g.order[2])
-	if v.Phase != PhaseHintBreak || len(v.Hints) != 1 || v.Hints[0].Text != "גדול" {
-		t.Fatalf("hint not held for reading: %+v", v)
+	if v.Phase != PhaseHints || len(v.Hints) != 1 || v.Hints[0].Text != "גדול" {
+		t.Fatalf("hint not shown at once: %+v", v)
 	}
-	if want := t0.Add(6 * time.Second); !g.Deadline().Equal(want) {
-		t.Fatalf("hint break deadline = %v, want %v", g.Deadline(), want)
-	}
-
-	g.Tick(t0.Add(6 * time.Second))
-	v, _ = g.View(g.order[2])
 	if v.CurrentTurn != g.order[1] {
 		t.Fatalf("next turn did not start: %+v", v)
 	}
-	if want := t0.Add(66 * time.Second); !g.Deadline().Equal(want) {
+	if want := t0.Add(63 * time.Second); !g.Deadline().Equal(want) {
 		t.Fatalf("next turn deadline = %v, want %v", g.Deadline(), want)
 	}
 }
@@ -902,13 +891,9 @@ func TestLastHintHoldsTheBoardBeforeVoting(t *testing.T) {
 	for i, id := range g.order {
 		now = now.Add(time.Second)
 		must(t, g.SubmitHint(id, "hint"+string(rune('a'+i)), now))
-		if g.phase == PhaseHintBreak {
-			now = now.Add(3 * time.Second)
-			g.Tick(now)
-		}
 	}
 
-	// The last hint is held like the rest, and then the pre-vote screen opens.
+	// The last hint opens the pre-vote screen straight away.
 	wantPhase(t, g, PhasePreVoting)
 	if want := now.Add(5 * time.Second); !g.Deadline().Equal(want) {
 		t.Fatalf("pre-voting deadline = %v, want %v", g.Deadline(), want)
@@ -927,35 +912,30 @@ func TestLastHintHoldsTheBoardBeforeVoting(t *testing.T) {
 	must(t, g.Vote(g.order[0], g.order[1], now.Add(5*time.Second)))
 }
 
-// A hint is held so the table can read it before the next turn takes the
-// screen, and the clock for that next turn only starts afterwards.
-func TestHintIsHeldBeforeTheNextTurn(t *testing.T) {
+// A hint passes the turn on at once: it stays on its author's card for the
+// rest of the round, so nothing holds the screen to show it.
+func TestHintPassesTheTurnOnAtOnce(t *testing.T) {
 	g := newGame(t, 4)
 	confirmAll(t, g)
 	must(t, g.SubmitHint(g.order[0], "גדול", t0))
 
-	wantPhase(t, g, PhaseHintBreak)
-	if want := t0.Add(3 * time.Second); !g.Deadline().Equal(want) {
-		t.Fatalf("hold deadline = %v, want %v", g.Deadline(), want)
-	}
-	// The hint is on the board, and nobody is on the clock.
-	v, _ := g.View(g.order[1])
-	if len(v.Hints) != 1 || v.Hints[0].Text != "גדול" || v.CurrentTurn != "" {
-		t.Fatalf("view during the hold = %+v", v)
-	}
-	wantErr(t, g.SubmitHint(g.order[1], "מוקדם", t0), ErrWrongPhase)
-
-	// The next player's full turn begins only when the hold ends.
-	g.Tick(t0.Add(3 * time.Second))
 	wantPhase(t, g, PhaseHints)
-	if want := t0.Add(63 * time.Second); !g.Deadline().Equal(want) {
+	// The hint is on the board and the next player is already on the clock,
+	// with a full turn of their own.
+	v, _ := g.View(g.order[1])
+	if len(v.Hints) != 1 || v.Hints[0].Text != "גדול" || v.CurrentTurn != g.order[1] {
+		t.Fatalf("view after the hint = %+v", v)
+	}
+	if want := t0.Add(60 * time.Second); !g.Deadline().Equal(want) {
 		t.Fatalf("next turn deadline = %v, want %v", g.Deadline(), want)
 	}
+	// And the player who just wrote cannot write again in the same turn.
+	wantErr(t, g.SubmitHint(g.order[0], "אפור", t0), ErrNotYourTurn)
 	must(t, g.SubmitHint(g.order[1], "אפור", t0.Add(4*time.Second)))
 }
 
-// A turn nobody wrote in has nothing to read, so it is not held.
-func TestSkippedTurnIsNotHeld(t *testing.T) {
+// A turn nobody wrote in moves straight on, like every other turn.
+func TestSkippedTurnMovesOn(t *testing.T) {
 	g := newGame(t, 4)
 	confirmAll(t, g)
 	g.Tick(t0.Add(60 * time.Second)) // the first turn runs out
