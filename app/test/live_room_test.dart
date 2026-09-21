@@ -688,6 +688,73 @@ void main() {
     expect(find.text('אישור הצבעה'), findsWidgets);
   });
 
+  testWidgets('a card is the same size with a clue and without one',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    // נועה is writing, so her card has no clue to lead with; יובל already has
+    // one. The two sit side by side and must not be different heights.
+    api.channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(phase: 'hints', turn: 'p_2', hints: [
+          {
+            'playerId': 'p_3',
+            'text': 'חדק',
+            'missing': false,
+            'reactions': <String, dynamic>{}
+          },
+        ]));
+    await settle(tester);
+
+    double card(String nickname) => tester
+        .getRect(
+          find
+              .ancestor(of: find.text(nickname), matching: find.byType(InkWell))
+              .first,
+        )
+        .height;
+    expect(card('נועה'), card('יובל'));
+  });
+
+  testWidgets('a server that still holds a hint shows the board, not a spinner',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    // This engine no longer sends hint_break, but a server that has not been
+    // deployed yet does, and an unknown phase would fall through to the result
+    // screen, which has no result to draw.
+    api.channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(phase: 'hint_break', hints: [
+          {
+            'playerId': 'p_2',
+            'text': 'גבינה',
+            'missing': false,
+            'reactions': <String, dynamic>{}
+          },
+        ]));
+    await settle(tester);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('הרמזים בסיבוב'), findsOneWidget);
+    expect(find.text('גבינה'), findsOneWidget);
+  });
+
   testWidgets('a hint lands on its card and the turn passes on at once',
       (tester) async {
     final api = FakeApi();

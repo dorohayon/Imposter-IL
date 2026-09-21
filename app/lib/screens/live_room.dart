@@ -834,7 +834,10 @@ class _LiveGame extends StatelessWidget {
     if (me?.status == 'removed') return _Removed(onHome: onLeave);
     return switch (game.phase) {
       'role_reveal' => _RoleReveal(game: game, onLeave: onLeave),
-      'hints' => _Hints(game: game, onLeave: onLeave),
+      // hint_break is gone from the engine, but a server that has not been
+      // deployed yet still sends it, and an unknown phase falls through to the
+      // result screen — which, with no result, is a spinner between turns.
+      'hints' || 'hint_break' => _Hints(game: game, onLeave: onLeave),
       'pre_voting' => _ToVoting(game: game, onLeave: onLeave),
       'voting' || 'runoff_voting' => _Voting(game: game, onLeave: onLeave),
       'impostor_guess' => _Guess(game: game, onLeave: onLeave),
@@ -1403,9 +1406,10 @@ class _ParticipantCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (word.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 7),
+              SizedBox(
+                height: 38,
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
                   child: Text(
                     word,
                     maxLines: 1,
@@ -1417,6 +1421,7 @@ class _ParticipantCard extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
               Container(
                 padding: const EdgeInsets.only(top: 6),
                 decoration: BoxDecoration(
@@ -1426,38 +1431,51 @@ class _ParticipantCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        text,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: colour,
-                          fontSize: 11,
-                          height: 1.2,
-                          fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
+                // Two lines' worth, always: long states like "מנותק ·
+                // ממתינים 30 שניות" need the room, and a card that grew to
+                // fit one would stand taller than the card beside it.
+                child: SizedBox(
+                  height: 28,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                text,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: colour,
+                                  fontSize: 11,
+                                  height: 1.2,
+                                  fontWeight:
+                                      bold ? FontWeight.w700 : FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                            if (active) TypingDots(colour: colour),
+                          ],
                         ),
                       ),
-                    ),
-                    if (active) TypingDots(colour: colour),
-                    const Spacer(),
-                    Container(
-                      width: 22,
-                      height: 22,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.cream.withValues(alpha: .1),
-                        borderRadius: BorderRadius.circular(7),
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 22,
+                        height: 22,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.cream.withValues(alpha: .1),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: Icon(
+                          Icons.chevron_right_rounded,
+                          size: 14,
+                          color: AppColors.cream.withValues(alpha: .7),
+                        ),
                       ),
-                      child: Icon(
-                        Icons.chevron_right_rounded,
-                        size: 14,
-                        color: AppColors.cream.withValues(alpha: .7),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
