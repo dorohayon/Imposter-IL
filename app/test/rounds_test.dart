@@ -61,15 +61,14 @@ void main() {
     expect(find.text('כותב/ת רמז'), findsOneWidget);
     expect(find.text('הודח/ה · צופה'), findsOneWidget);
 
-    // Earlier rounds are not spread over the board any more: each is kept
-    // under the player who said it, by round.
-    // Only what each player last said is on the board.
-    expect(find.text('חדק'), findsOneWidget);
+    // A new round starts the board empty: earlier rounds are kept under the
+    // player who said them, and open from their card.
+    expect(find.text('חדק'), findsNothing);
     await tester.tap(find.text('יובל'));
     await settle(tester);
     expect(find.text('הרמזים של יובל'), findsOneWidget);
     expect(find.text('סיבוב 1'), findsOneWidget);
-    expect(find.text('חדק'), findsNWidgets(2)); // the card and the sheet
+    expect(find.text('חדק'), findsOneWidget);
   });
 
   testWidgets('a first round is not divided into rounds', (tester) async {
@@ -177,7 +176,7 @@ void main() {
         {'gameId': 'g_1', 'targetPlayerId': 'p_2'});
   });
 
-  testWidgets('a card carries the newest clue, the rest opens from it',
+  testWidgets('a new round starts the board empty, with the rest one tap away',
       (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);
@@ -192,16 +191,16 @@ void main() {
         'game.state', 'game', laterRound(phase: 'hints', turn: 'p_4'));
     await settle(tester);
 
-    // נועה last said אפריקה, in the round before this one, and her card
-    // leads with it — nobody has to read down a board to find it.
-    expect(find.text('אפריקה'), findsOneWidget);
+    // נועה said אפריקה in the round before this one, so this round's board
+    // does not carry it — only the count under her name says she has spoken.
+    expect(find.text('אפריקה'), findsNothing);
     expect(find.text('1 רמז'), findsWidgets);
 
     // Her history opens from her card and names the round of each clue.
     await tester.tap(find.text('נועה'));
     await settle(tester);
     expect(find.text('1 רמז · סיבוב 2'), findsOneWidget);
-    expect(find.text('אפריקה'), findsNWidgets(2)); // the card and the sheet
+    expect(find.text('אפריקה'), findsOneWidget);
   });
 
   testWidgets('the vote shows everything each player has said', (tester) async {

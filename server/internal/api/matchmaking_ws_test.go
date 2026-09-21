@@ -106,6 +106,10 @@ func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
 				c.advance(stagingBotWriteSeconds * time.Second)
 				c.tickAll()
 			}
+		case game.PhaseHintBreak:
+			// Each hint is held so the table can read it.
+			c.advance(3 * time.Second)
+			c.tickAll()
 		case game.PhasePreVoting:
 			// The board is held for a beat before the vote opens.
 			c.advance(5 * time.Second)

@@ -277,7 +277,7 @@
 }
 ```
 
-- `phase`: `role_reveal` | `hints` | `pre_voting` | `voting` | `runoff_voting` | `impostor_guess` | `ended`.
+- `phase`: `role_reveal` | `hints` | `hint_break` | `pre_voting` | `voting` | `runoff_voting` | `impostor_guess` | `ended`.
 - `round` סופר סבבי רמזים־והצבעה מ־1. **שינוי לא תואם:** `eliminated`, `none` ו־`abandoned` אינם מוכרים לגרסאות ישנות, ולכן `clientBuild` עלה ל־2 והשרת נפרס עם `MIN_CLIENT_BUILD=2`. התקנה ישנה מקבלת `426 client_too_old` ומסך עדכון. משחק ממשיך בסבבים עד שאחד הצדדים מנצח.
 - `secretWord` חסר אצל המתחזה עד `ended`.
 - `players` לפי סדר התורות. `status`: `active` | `eliminated` | `left` | `removed`. `eliminated` הוא שחקן שהודח בהצבעה: הוא צופה וממשיך להגיב, אינו מקבל תור ואינו מצביע, והתוצאה שלו היא של הקבוצה שלו.
@@ -314,7 +314,7 @@
 | 7–8 חשיפת תפקיד | `game.state` עם `phase: role_reveal` ו־`myRole` |
 | 9–10 רמזים | `game.state` עם `phase: hints`; `currentTurnPlayerId` קובע אם זה התור שלי |
 | 11 רמז חסום | `reply` עם קוד `hint_*` |
-| המתנה בין תורות | אין. רמז שנשלח מעביר את התור מיד, והרמז נשאר על כרטיס השחקן שכתב אותו |
+| המתנה בין תורות | `phase: hint_break` — 3 שניות עם הרמז שנשלח, לפני שהתור הבא נפתח |
 | 11א עוברים להצבעה | `phase: pre_voting` — 5 שניות עם הלוח המלא לפני שההצבעה נפתחת |
 | 12–13 הצבעה | `phase: voting` / `runoff_voting` |
 | 14 ניחוש | `phase: impostor_guess` |

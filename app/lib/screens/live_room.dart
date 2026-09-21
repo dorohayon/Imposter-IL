@@ -484,6 +484,16 @@ class _Search extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          const Text(
+            'נא לא לעזוב עמוד זה.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.yellow,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 14),
           ListView.separated(
             shrinkWrap: true,
@@ -1067,13 +1077,16 @@ class _HintsState extends State<_Hints> {
   }
 
   /// The line under a participant's name, following screens C01 to C07.
-  /// The clue a participant's card leads with: the last one they gave. The
-  /// player writing right now has nothing to show — that is what the line
-  /// underneath says.
+  /// The clue a participant's card leads with: the one they gave in this
+  /// round, and nothing before it — a new round starts the board empty, and
+  /// earlier rounds open from the card. The player writing right now has
+  /// nothing to show either; the line underneath says so.
   String _word(PlayerInfo p, {required bool active}) {
     if (active) return '';
     for (final h in widget.game.hints.reversed) {
-      if (h.playerId == p.id && !h.missing) return _hintText(h);
+      if (h.playerId == p.id && h.round == widget.game.round && !h.missing) {
+        return _hintText(h);
+      }
     }
     return '';
   }
@@ -1111,10 +1124,13 @@ class _HintsState extends State<_Hints> {
     final session = SessionScope.of(context);
     final game = widget.game;
     final me = session.playerId;
-    final myTurn = game.currentTurnPlayerId == me;
+    // The server holds each hint for a moment so it can be read; nobody has
+    // the turn during it.
+    final holding = game.phase == 'hint_break';
+    final myTurn = game.currentTurnPlayerId == me && !holding;
     final watching = game.isEliminated(me);
     final word = game.secretWord;
-    final current = game.player(game.currentTurnPlayerId);
+    final current = holding ? null : game.player(game.currentTurnPlayerId);
     final playing = [
       for (final p in game.players)
         if (p.status == 'active') p,
@@ -1124,7 +1140,8 @@ class _HintsState extends State<_Hints> {
       for (final h in game.hints)
         if (h.round == game.round) h,
     ].length;
-    final turn = (given + 1).clamp(1, playing.isEmpty ? 1 : playing.length);
+    final turn = (given + (holding ? 0 : 1))
+        .clamp(1, playing.isEmpty ? 1 : playing.length);
 
     return GameScaffold(
       title: game.category,
@@ -1187,29 +1204,6 @@ class _HintsState extends State<_Hints> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'לחצו לכל הרמזים',
-                              textAlign: TextAlign.end,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: AppColors.muted,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsetsDirectional.only(start: 5),
-                            child: Icon(
-                              // The chevron mirrors itself in RTL, so it
-                              // points the way the cards open.
-                              Icons.chevron_right_rounded,
-                              size: 14,
-                              color: AppColors.muted,
                             ),
                           ),
                         ],
