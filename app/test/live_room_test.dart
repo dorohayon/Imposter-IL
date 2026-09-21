@@ -241,8 +241,9 @@ void main() {
         ));
     await settle(tester);
     expect(find.text('כותב/ת רמז'), findsOneWidget);
-    // My clue is on my own card, with how many I have given.
-    expect(find.text('✓ חדק · רמז אחד'), findsOneWidget);
+    // My own card leads with my clue, and counts them underneath.
+    expect(find.text('חדק'), findsOneWidget);
+    expect(find.text('1 רמז'), findsOneWidget);
     final chip = tester.getCenter(find.text('😂'));
     await tapLive(tester, 'זה מחשיד');
     expect(channel.commands('game.react').single['payload'],
@@ -634,15 +635,16 @@ void main() {
           ],
         ));
     await settle(tester);
-    // The clue sits on its author's card.
-    expect(find.text('✓ גסות · רמז אחד'), findsOneWidget);
+    // The clue sits on its author's card, as the card's headline.
+    expect(find.text('גסות'), findsOneWidget);
+    expect(find.text('1 רמז'), findsOneWidget);
 
     // Reporting hangs off the clue history, opened from that player's card:
     // a visible button, not a hidden gesture.
     await tester.tap(find.text('נועה'));
     await settle(tester);
     expect(find.text('הרמזים של נועה'), findsOneWidget);
-    expect(find.text('גסות'), findsOneWidget);
+    expect(find.text('גסות'), findsNWidgets(2)); // the card and the sheet
     await tester.tap(find.byTooltip('דיווח על הרמז'));
     await settle(tester);
     await tapLive(tester, 'דיווח');
@@ -653,8 +655,7 @@ void main() {
     // The hint is hidden on this device, and cannot be reported twice.
     // Hidden in the open sheet and on the card behind it.
     expect(find.text('גסות'), findsNothing);
-    expect(find.text('הוסתר'), findsOneWidget);
-    expect(find.text('✓ הוסתר · רמז אחד'), findsOneWidget);
+    expect(find.text('הוסתר'), findsNWidgets(2));
     expect(find.byTooltip('דיווח על הרמז'), findsNothing);
   });
 
@@ -720,7 +721,7 @@ void main() {
         ]));
     await settle(tester);
     expect(find.text('הרמז שלך · מילה אחת'), findsOneWidget);
-    expect(find.text('✓ גבינה · רמז אחד'), findsOneWidget);
+    expect(find.text('גבינה'), findsOneWidget);
     // My own card is the active one now (C02), so it says so too.
     expect(find.text('כותב/ת רמז'), findsOneWidget);
     // One clock, in the header.

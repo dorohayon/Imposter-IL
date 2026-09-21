@@ -75,14 +75,18 @@
 <span style="font:400 13px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.6)">סיבוב 2 · תור 4 מתוך 8</span>
 </div>
 <div style="flex:1;min-height:0;overflow:hidden;padding:14px 20px 0;display:flex;flex-direction:column;gap:9px">
-<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex:none"><strong style="font:500 15px/1 Rubik,sans-serif;color:#FFF8E7">המשתתפים</strong><span style="font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.5)">לחצו להיסטוריית רמזים</span></div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex:none"><strong style="font:500 15px/1 Rubik,sans-serif;color:#FFF8E7">הרמזים בסיבוב</strong><span style="display:inline-flex;align-items:center;gap:5px;font:400 12px/1 Rubik,sans-serif;color:rgba(255,248,231,.55)"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="rgba(255,248,231,.55)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>לחצו לכל הרמזים</span></div>
 <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;overflow-y:auto;min-height:0;padding-bottom:2px">
-<sc-for list="{{ mine }}" as="p" hint-placeholder-count="8">
+<sc-for list="{{ mineCards }}" as="p" hint-placeholder-count="8">
 <div style="{{ p.card }}">
-<span style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex:none;background:rgba(255,248,231,.1);display:block"><img alt="" src="{{ p.img }}" style="{{ p.imgStyle }}"></span>
-<span style="min-width:0;display:flex;flex-direction:column;gap:3px">
+<span style="display:flex;align-items:center;gap:7px;min-width:0">
+<span style="width:26px;height:26px;border-radius:50%;overflow:hidden;flex:none;background:rgba(255,248,231,.1);display:block"><img alt="" src="{{ p.img }}" style="{{ p.imgStyle }}"></span>
 <span style="{{ p.nameStyle }}">{{ p.name }}</span>
-<span style="{{ p.statusStyle }}">{{ p.status }}</span>
+</span>
+<span style="{{ p.wordStyle }}">{{ p.word }}</span>
+<span style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding-top:6px;border-top:1px solid rgba(255,248,231,.12)">
+<span style="{{ p.countStyle }}">{{ p.count }}</span>
+<span style="{{ p.chevron }}"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="rgba(255,248,231,.7)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></span>
 </span>
 </div>
 </sc-for>
@@ -368,6 +372,27 @@ class Component extends DCLogic {
       P('רוני', 'roni', 'רמז קודם: בזיליקום', 'idle', ST),
       P('איתי', 'itay', 'רמז קודם: פרוסה', 'idle', ST)
     ];
+    const CH = 'width:22px;height:22px;border-radius:7px;background:rgba(255,248,231,.1);display:flex;align-items:center;justify-content:center;flex:none';
+    const mineCards = [
+      { name: 'נועה', img: A.noa, word: 'גבינה', count: '2 רמזים', state: 'idle' },
+      { name: 'יואב', img: A.yoav, word: 'בצק', count: '2 רמזים', state: 'idle' },
+      { name: 'מאיה', img: A.maya, word: 'חם', count: '2 רמזים', state: 'idle' },
+      { name: 'דור · אני', img: A.dor, word: '', count: 'כותב רמז…', state: 'active' },
+      { name: 'שירה', img: A.shira, word: 'תנור', count: '1 רמז', state: 'idle' },
+      { name: 'אורי', img: A.uri, word: 'רוטב', count: '1 רמז', state: 'idle' },
+      { name: 'רוני', img: A.roni, word: 'בזיליקום', count: '1 רמז', state: 'idle' },
+      { name: 'איתי', img: A.itay, word: 'פרוסה', count: '1 רמז', state: 'idle' }
+    ].map(c => {
+      const act = c.state === 'active';
+      return {
+        name: c.name, img: c.img, word: c.word, count: c.count, hasWord: !!c.word,
+        card: (act ? CARD.selfActive : CARD.idle) + ';flex-direction:column;align-items:stretch;gap:7px;min-height:96px;cursor:pointer',
+        nameStyle: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:500 12px/1.2 Rubik,sans-serif;color:' + (act ? '#FFD447' : 'rgba(255,248,231,.72)'),
+        wordStyle: "font:400 22px/1.1 'Secular One',sans-serif;color:#FFF8E7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap",
+        countStyle: 'font:400 11px/1.2 Rubik,sans-serif;color:' + (act ? '#FFD447' : 'rgba(255,248,231,.5)'),
+        chevron: CH, imgStyle: IMG
+      };
+    });
     const blocked = mine;
     const disconnected = [
       P('נועה', 'noa', '✓ גבינה · 2 רמזים', 'idle', ST_SENT),
@@ -390,7 +415,7 @@ class Component extends DCLogic {
       P('איתי', 'itay', 'רמז קודם: פרוסה', 'idle', ST)
     ];
     const narrow = waiting;
-    return { waiting: waiting, mine: mine, blocked: blocked, disconnected: disconnected, eliminated: eliminated, narrow: narrow };
+    return { waiting: waiting, mine: mine, mineCards: mineCards, blocked: blocked, disconnected: disconnected, eliminated: eliminated, narrow: narrow };
   }
 }
 </script>

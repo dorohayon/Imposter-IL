@@ -258,7 +258,7 @@ void main() {
           },
         ]));
     await settle(tester);
-    expect(find.text('✓ חדק · רמז אחד'), findsOneWidget);
+    expect(find.text('חדק'), findsOneWidget);
     expect(find.text('זה מחשיד'), findsNothing); // the whole dock is gone
     expect(find.text('תגובות'), findsNothing);
     expect(vibrations, isEmpty); // vibration is off

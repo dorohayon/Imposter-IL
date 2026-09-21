@@ -59,10 +59,6 @@ Player _player(PlayerInfo info, String? me, {String? hint}) => Player(
       isEliminated: info.status == 'eliminated',
     );
 
-/// The lilac the design gives your own line in the participant grid, light
-/// enough to read on the purple card behind it.
-const _selfText = Color(0xFFC4B0FF);
-
 /// Counts down to a server deadline in the top-left timer circle.
 class LiveCountdown extends StatefulWidget {
   const LiveCountdown({required this.deadline, this.large = false, super.key});
@@ -1068,8 +1064,20 @@ class _HintsState extends State<_Hints> {
   }
 
   /// The line under a participant's name, following screens C01 to C07.
-  (String, Color, bool) _status(PlayerInfo p, {required bool active}) {
-    final game = widget.game;
+  /// The clue a participant's card leads with: the last one they gave. The
+  /// player writing right now has nothing to show — that is what the line
+  /// underneath says.
+  String _word(PlayerInfo p, {required bool active}) {
+    if (active) return '';
+    for (final h in widget.game.hints.reversed) {
+      if (h.playerId == p.id && !h.missing) return _hintText(h);
+    }
+    return '';
+  }
+
+  /// The line under the clue: how many clues that player has given, or what is
+  /// happening to them instead.
+  (String, Color, bool) _line(PlayerInfo p, {required bool active}) {
     final me = p.id == SessionScope.read(context).playerId;
     if (p.status == 'eliminated') {
       return (me ? 'הודחת · צופה' : 'הודח/ה · צופה', AppColors.coral, false);
@@ -1080,19 +1088,11 @@ class _HintsState extends State<_Hints> {
     }
     if (active) return ('כותב/ת רמז', AppColors.yellow, true);
     final said = [
-      for (final h in game.hints)
+      for (final h in widget.game.hints)
         if (h.playerId == p.id) h,
-    ];
-    if (said.isEmpty) return ('ממתין/ה לתור', AppColors.muted, false);
-    final last = said.last;
-    final text = _hintText(last);
-    final colour = me ? _selfText : AppColors.cream;
-    if (last.round != game.round) {
-      return ('רמז קודם: $text', AppColors.muted, false);
-    }
-    final count =
-        said.length == 1 ? 'רמז אחד' : '${said.length} רמזים'; // "1 רמזים"
-    return ('✓ $text · $count', colour, false);
+    ].length;
+    if (said == 0) return ('ממתין/ה לתור', AppColors.muted, false);
+    return (said == 1 ? '1 רמז' : '$said רמזים', AppColors.muted, false);
   }
 
   /// A reported player's hints are hidden wherever they are shown.
@@ -1180,7 +1180,7 @@ class _HintsState extends State<_Hints> {
                       child: Row(
                         children: [
                           Text(
-                            'המשתתפים',
+                            'הרמזים בסיבוב',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -1189,7 +1189,7 @@ class _HintsState extends State<_Hints> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'לחצו להיסטוריית רמזים',
+                              'לחצו לכל הרמזים',
                               textAlign: TextAlign.end,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1197,6 +1197,16 @@ class _HintsState extends State<_Hints> {
                                 color: AppColors.muted,
                                 fontSize: 12,
                               ),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsetsDirectional.only(start: 5),
+                            child: Icon(
+                              // The chevron mirrors itself in RTL, so it
+                              // points the way the cards open.
+                              Icons.chevron_right_rounded,
+                              size: 14,
+                              color: AppColors.muted,
                             ),
                           ),
                         ],
@@ -1223,7 +1233,11 @@ class _HintsState extends State<_Hints> {
                                     player: p,
                                     isMe: p.id == me,
                                     active: p.id == current?.id,
-                                    status: _status(
+                                    word: _word(
+                                      p,
+                                      active: p.id == current?.id,
+                                    ),
+                                    line: _line(
                                       p,
                                       active: p.id == current?.id,
                                     ),
@@ -1291,15 +1305,17 @@ class _HintsState extends State<_Hints> {
   }
 }
 
-/// One participant in the two-column grid: avatar, name and what they are
-/// doing right now. States follow C01 to C07 — active, yours, disconnected and
-/// eliminated each carry their own frame as well as their own line of text.
+/// One participant in the two-column grid, led by the clue they last gave,
+/// with their name above it and how many clues they have given below. States
+/// follow C01 to C08 — active, yours, disconnected and eliminated each carry
+/// their own frame as well as their own line of text.
 class _ParticipantCard extends StatelessWidget {
   const _ParticipantCard({
     required this.player,
     required this.isMe,
     required this.active,
-    required this.status,
+    required this.word,
+    required this.line,
     required this.onTap,
     super.key,
   });
@@ -1307,7 +1323,10 @@ class _ParticipantCard extends StatelessWidget {
   final PlayerInfo player;
   final bool isMe;
   final bool active;
-  final (String, Color, bool) status;
+
+  /// The clue to lead with, empty when there is none to show yet.
+  final String word;
+  final (String, Color, bool) line;
   final VoidCallback onTap;
 
   @override
@@ -1341,7 +1360,7 @@ class _ParticipantCard extends StatelessWidget {
                         AppColors.cream.withValues(alpha: .05),
                         1.0
                       );
-    final (text, colour, bold) = status;
+    final (text, colour, bold) = line;
     return Material(
       color: fill,
       borderRadius: BorderRadius.circular(15),
@@ -1349,57 +1368,94 @@ class _ParticipantCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(15),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 79),
+          constraints: const BoxConstraints(minHeight: 96),
           padding: EdgeInsets.all(width == 2 ? 8 : 9),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
             border: Border.all(color: border, width: width),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              AvatarView(
-                asset: player.avatarAsset,
-                size: 48,
-                disconnected: bad,
-                eliminated: out,
-              ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
+              Row(
+                children: [
+                  AvatarView(
+                    asset: player.avatarAsset,
+                    size: 26,
+                    disconnected: bad,
+                    eliminated: out,
+                  ),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
                       isMe ? '${player.nickname} · אני' : player.nickname,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: out
-                            ? AppColors.cream.withValues(alpha: .5)
-                            : AppColors.cream,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: active
+                            ? AppColors.yellow
+                            : AppColors.cream.withValues(alpha: out ? .5 : .72),
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            text,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: colour,
-                              fontSize: 12,
-                              height: 1.3,
-                              fontWeight:
-                                  bold ? FontWeight.w700 : FontWeight.w500,
-                            ),
-                          ),
+                  ),
+                ],
+              ),
+              if (word.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 7),
+                  child: Text(
+                    word,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.cream.withValues(alpha: out ? .5 : 1),
+                      fontFamily: 'Secular One',
+                      fontSize: 22,
+                    ),
+                  ),
+                ),
+              Container(
+                padding: const EdgeInsets.only(top: 6),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: AppColors.cream.withValues(alpha: .12),
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        text,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: colour,
+                          fontSize: 11,
+                          height: 1.2,
+                          fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
                         ),
-                        if (active) TypingDots(colour: colour),
-                      ],
+                      ),
+                    ),
+                    if (active) TypingDots(colour: colour),
+                    const Spacer(),
+                    Container(
+                      width: 22,
+                      height: 22,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.cream.withValues(alpha: .1),
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        size: 14,
+                        color: AppColors.cream.withValues(alpha: .7),
+                      ),
                     ),
                   ],
                 ),
@@ -1689,7 +1745,7 @@ class _HintHistorySheet extends StatelessWidget {
         : first == last
             ? 'סיבוב $first'
             : 'סיבובים $first–$last';
-    final count = hints.length == 1 ? 'רמז אחד' : '${hints.length} רמזים';
+    final count = hints.length == 1 ? '1 רמז' : '${hints.length} רמזים';
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(14),
