@@ -202,6 +202,11 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
+            'לאחר יצירת החדר, לא יהיה ניתן לשנות את ההגדרות.',
+            style: TextStyle(color: AppColors.muted, height: 1.45),
+          ),
+          const SizedBox(height: 18),
+          const Text(
             'מספר שחקנים מרבי',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),

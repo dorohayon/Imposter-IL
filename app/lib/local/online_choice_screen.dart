@@ -27,7 +27,8 @@ class OnlineChoiceScreen extends StatelessWidget {
           _ModeCard(
             illustration: 'assets/illustrations/matchmaking-team.webp',
             title: 'משחק מהיר',
-            description: 'מצטרפים לשחקנים אחרים לפי הקטגוריות שבחרתם.',
+            description:
+                'בוחרים קטגוריות, מצטרפים לשחקנים אחרים לפי הקטגוריות שבחרתם.',
             notes: const ['4–8 שחקנים'],
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -39,7 +40,7 @@ class OnlineChoiceScreen extends StatelessWidget {
           _ModeCard(
             illustration: 'assets/illustrations/private-room.webp',
             title: 'חדר פרטי',
-            description: 'יוצרים חדר ושולחים קוד, או מצטרפים לקוד שקיבלתם.',
+            description: 'יוצרים חדר ושולחים קוד, או מצטרפים לחדר קיים.',
             notes: const ['4–8 שחקנים', 'אתם קובעים מתי מתחילים'],
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const FriendsScreen()),

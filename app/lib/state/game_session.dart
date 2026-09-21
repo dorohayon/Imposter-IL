@@ -62,6 +62,10 @@ class GameSession extends ChangeNotifier {
   bool vibrationOn = true;
   bool showReactions = true;
 
+  /// Set by the clue screen so a reaction can pop from the card of whoever
+  /// sent it. Only one screen shows reactions, so one slot is enough.
+  void Function(String playerId, String reactionId)? onReaction;
+
   /// Players this device reported. Their hints are hidden here from then on.
   ///
   /// Kept on the device because a player id lasts only as long as a guest
@@ -334,8 +338,16 @@ class GameSession extends ChangeNotifier {
             (payload['categoryIds'] as List? ?? const []).cast<String>();
       case 'room.kicked':
         kicked = true;
+      case 'game.reaction':
+        // The only message that names who reacted; game.state carries counts
+        // alone. Nothing to store, so the screen animates it and it is gone.
+        onReaction?.call(
+          payload['playerId'] as String? ?? '',
+          payload['reactionId'] as String? ?? '',
+        );
+        return;
       default:
-        return; // game.reaction and unknown types need no state change
+        return; // unknown types need no state change
     }
     _notify();
   }

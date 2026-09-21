@@ -484,6 +484,16 @@ class _Search extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          const Text(
+            'נא לא לעזוב עמוד זה.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.yellow,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 14),
           ListView.separated(
             shrinkWrap: true,
@@ -834,6 +844,9 @@ class _LiveGame extends StatelessWidget {
     if (me?.status == 'removed') return _Removed(onHome: onLeave);
     return switch (game.phase) {
       'role_reveal' => _RoleReveal(game: game, onLeave: onLeave),
+      // hint_break is gone from the engine, but a server that has not been
+      // deployed yet still sends it, and an unknown phase falls through to the
+      // result screen — which, with no result, is a spinner between turns.
       'hints' || 'hint_break' => _Hints(game: game, onLeave: onLeave),
       'pre_voting' => _ToVoting(game: game, onLeave: onLeave),
       'voting' || 'runoff_voting' => _Voting(game: game, onLeave: onLeave),
@@ -844,9 +857,7 @@ class _LiveGame extends StatelessWidget {
 }
 
 Widget? _timer(GameView game) {
-  // During the hold the header would count the same three seconds as the
-  // inline countdown beside "התור הבא מתחיל". One clock at a time.
-  if (game.deadline == null || game.phase == 'hint_break') return null;
+  if (game.deadline == null) return null;
   return LiveCountdown(deadline: game.deadline!);
 }
 
@@ -961,12 +972,20 @@ class _Hints extends StatefulWidget {
 
 class _HintsState extends State<_Hints> {
   final _controller = TextEditingController();
-  final _lastHintKey = GlobalKey();
-  // Reactions of yours already on screen, waiting for the snapshot to catch up.
-  final _shown = <String, int>{};
+  // One key per participant, so a reaction can rise from the card of whoever
+  // sent it.
+  final _cardKeys = <String, GlobalKey>{};
+  GameSession? _session;
   String? _error;
   bool _busy = false;
+  bool _wordOpen = false;
   int _seed = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _session = SessionScope.read(context)..onReaction = _onReaction;
+  }
 
   @override
   void didUpdateWidget(_Hints old) {
@@ -975,63 +994,50 @@ class _HintsState extends State<_Hints> {
       _error = null;
       _controller.clear();
     }
-    _floatNewReactions(old.game);
+  }
+
+  @override
+  void dispose() {
+    _session?.onReaction = null;
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// Floats a reaction off [playerId]'s card. A card that is not on screen has
+  /// no key yet, and then the reaction is simply not animated.
+  void _pop(String playerId, String text) {
+    if (_cardKeys[playerId] case final key?) {
+      floatReaction(context, text, anchor: key, seed: _seed++);
+    }
+  }
+
+  /// Everyone else's reactions arrive as their own event, which is the only
+  /// message that names the sender. Yours is not animated twice: it already
+  /// popped on touch.
+  void _onReaction(String playerId, String reactionId) {
+    final session = _session;
+    if (!mounted || session == null || !session.showReactions) return;
+    if (playerId == session.playerId || session.muted.contains(playerId)) {
+      return;
+    }
+    for (final r in session.reactions) {
+      if (r.id == reactionId) _pop(playerId, r.text);
+    }
   }
 
   /// Your own reaction pops on touch, so the bubble does not wait for the
-  /// server. Its echo in the next snapshot would double it, so the reaction is
-  /// booked as already shown — and the booking is given back if the command
-  /// failed, because then no count is coming.
+  /// server. The echo names you, and is skipped above.
   Future<void> _react(ReactionOption r) async {
     final session = SessionScope.read(context);
     final messenger = ScaffoldMessenger.of(context);
-    floatReaction(context, r.text, anchor: _lastHintKey, seed: _seed++);
-    _shown[r.id] = (_shown[r.id] ?? 0) + 1;
+    _pop(session.playerId ?? '', r.text);
     final code = await session.send('game.react', {
       'gameId': widget.game.id,
       'hintIndex': widget.game.hints.length - 1,
       'reactionId': r.id,
     });
     if (code == null) return;
-    _shown[r.id] = (_shown[r.id] ?? 1) - 1;
     messenger.showSnackBar(SnackBar(content: Text(commandMessage(code))));
-  }
-
-  /// Everyone else's reactions arrive as counts, not events, so a bubble is a
-  /// count that went up since the last snapshot, minus the ones already shown
-  /// on touch. Capped, so a reconnect's fresh counts or someone leaning on a
-  /// button cannot flood the screen.
-  void _floatNewReactions(GameView old) {
-    final session = SessionScope.read(context);
-    final hints = widget.game.hints;
-    // A new hint, or a new game, starts the comparison over.
-    if (old.id != widget.game.id || hints.length != old.hints.length) {
-      _shown.clear();
-      return;
-    }
-    if (!session.showReactions || hints.isEmpty) return;
-    final before = old.hints.last.reactions;
-    var budget = 6;
-    for (final r in session.reactions) {
-      var added = (hints.last.reactions[r.id] ?? 0) - (before[r.id] ?? 0);
-      final mine = _shown[r.id] ?? 0;
-      if (mine > 0) {
-        final skip = added < mine ? added : mine;
-        _shown[r.id] = mine - skip;
-        added -= skip;
-      }
-      while (added > 0 && budget > 0) {
-        floatReaction(context, r.text, anchor: _lastHintKey, seed: _seed++);
-        added--;
-        budget--;
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   Future<void> _submit() async {
@@ -1048,6 +1054,71 @@ class _HintsState extends State<_Hints> {
     });
   }
 
+  /// Screen C04: every clue a player has given, by round, opened from the
+  /// bottom by tapping their card.
+  void _openHistory(PlayerInfo p) {
+    final session = SessionScope.read(context);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _HintHistorySheet(
+        player: p,
+        // Keeping each hint's index: reporting addresses a hint by where it
+        // sits in the match, not on the screen.
+        hints: [
+          for (final (i, h) in widget.game.hints.indexed)
+            if (h.playerId == p.id) (i, h),
+        ],
+        // Nobody reports themself.
+        reportable: p.id != session.playerId,
+      ),
+    );
+  }
+
+  /// The line under a participant's name, following screens C01 to C07.
+  /// The clue a participant's card leads with: the one they gave in this
+  /// round, and nothing before it — a new round starts the board empty, and
+  /// earlier rounds open from the card. The player writing right now has
+  /// nothing to show either; the line underneath says so.
+  String _word(PlayerInfo p, {required bool active}) {
+    if (active) return '';
+    for (final h in widget.game.hints.reversed) {
+      if (h.playerId == p.id && h.round == widget.game.round && !h.missing) {
+        return _hintText(h);
+      }
+    }
+    return '';
+  }
+
+  /// The line under the clue: how many clues that player has given, or what is
+  /// happening to them instead.
+  (String, Color, bool) _line(PlayerInfo p, {required bool active}) {
+    final me = p.id == SessionScope.read(context).playerId;
+    if (p.status == 'eliminated') {
+      return (me ? 'הודחת · צופה' : 'הודח/ה · צופה', AppColors.coral, false);
+    }
+    if (p.status != 'active') return ('יצא/ה מהמשחק', AppColors.muted, false);
+    if (!p.connected) {
+      return ('מנותק · ממתינים 30 שניות', AppColors.coral, false);
+    }
+    if (active) return ('כותב/ת רמז', AppColors.yellow, true);
+    final said = [
+      for (final h in widget.game.hints)
+        if (h.playerId == p.id) h,
+    ].length;
+    if (said == 0) return ('ממתין/ה לתור', AppColors.muted, false);
+    return (said == 1 ? '1 רמז' : '$said רמזים', AppColors.muted, false);
+  }
+
+  /// A reported player's hints are hidden wherever they are shown.
+  String _hintText(HintView h) {
+    if (h.missing) return 'לא נשלח רמז';
+    return SessionScope.read(context).muted.contains(h.playerId)
+        ? 'הוסתר'
+        : h.text;
+  }
+
   @override
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
@@ -1056,351 +1127,946 @@ class _HintsState extends State<_Hints> {
     // The server holds each hint for a moment so it can be read; nobody has
     // the turn during it.
     final holding = game.phase == 'hint_break';
-    final myTurn = game.currentTurnPlayerId == me;
-    final current = game.player(game.currentTurnPlayerId);
-    final held = holding && game.hints.isNotEmpty ? game.hints.last : null;
-    final word = game.secretWord;
-    final lastHint = game.hints.isEmpty ? null : game.hints.last;
+    final myTurn = game.currentTurnPlayerId == me && !holding;
     final watching = game.isEliminated(me);
-    // Newest first, keeping each hint's own index: reporting and reacting
-    // address a hint by where it sits in the match, not on the screen.
-    final board = [
-      for (var i = game.hints.length - 1; i >= 0; i--) (i, game.hints[i]),
+    final word = game.secretWord;
+    final current = holding ? null : game.player(game.currentTurnPlayerId);
+    final playing = [
+      for (final p in game.players)
+        if (p.status == 'active') p,
     ];
+    // "תור 3 מתוך 8": how far this round has got, not a hint index.
+    final given = [
+      for (final h in game.hints)
+        if (h.round == game.round) h,
+    ].length;
+    final turn = (given + (holding ? 0 : 1))
+        .clamp(1, playing.isEmpty ? 1 : playing.length);
 
     return GameScaffold(
       title: game.category,
+      titleLabel: 'קטגוריה',
       timer: _timer(game),
       onExit: widget.onLeave,
-      bottom: myTurn && !watching
-          ? PrimaryButton(
-              label: 'שליחת רמז',
-              variant: ButtonVariant.confirm,
-              onPressed: _busy ? null : _submit,
-            )
-          : null,
+      scrollable: false,
+      contentPadding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (game.round > 1) ...[
-            RoundBadge(round: game.round),
-            const SizedBox(height: 12),
-          ],
-          if (watching) ...[
-            const SpectatorNote(),
-            const SizedBox(height: 14),
-          ],
-          // The impostor never receives the word, so there is nothing to show.
-          if (!game.isImpostor && word != null) ...[
-            _SecretWordPill(word: word),
-            const SizedBox(height: 14),
-          ],
-          if (myTurn && !watching) ...[
-            // Screen 10: the turn is a filled yellow card, not a line of text.
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-              decoration: BoxDecoration(
-                color: AppColors.yellow,
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: Column(
-                children: [
-                  const Text(
-                    'התור שלכם',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.night,
-                      fontFamily: 'Secular One',
-                      fontSize: 30,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'מילה אחת, עד 25 תווים',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.night.withValues(alpha: .72),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
+          if (watching)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: SpectatorNote(),
+            )
+          else if (game.awaitingReconnect && current != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: _DisconnectBanner(nickname: current.nickname),
             ),
-            const SizedBox(height: 12),
-            // The hint before yours, kept in view while you write.
-            if (lastHint != null && !lastHint.missing)
-              if (game.player(lastHint.playerId) case final p?) ...[
-                LastHintCard(
-                  nickname: p.nickname,
-                  avatar: p.avatarAsset,
-                  hint: session.muted.contains(lastHint.playerId)
-                      ? 'הוסתר'
-                      : lastHint.text,
-                  highlight: false,
-                ),
-                const SizedBox(height: 12),
-              ],
-            TextField(
-              controller: _controller,
-              maxLength: 25,
-              autofocus: true,
-              textAlign: TextAlign.start,
-              style: const TextStyle(
-                color: AppColors.night,
-                fontSize: 21,
-                fontWeight: FontWeight.w800,
-              ),
-              decoration: const InputDecoration(hintText: 'הרמז שלכם'),
-              buildCounter: (context,
-                      {required currentLength,
-                      required isFocused,
-                      maxLength}) =>
-                  LtrText(
-                '$currentLength / $maxLength',
-                style: const TextStyle(color: AppColors.muted, fontSize: 13),
-              ),
-              onChanged: (_) {
-                if (_error != null) setState(() => _error = null);
-              },
-              onSubmitted: (_) => _submit(),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 8),
-              StatusBanner(
-                text: '${_error!} הרמז לא נשלח.',
-                positive: false,
-              ),
-            ],
-          ] else if (held != null && game.player(held.playerId) != null) ...[
-            // The same card as "כותב/ת רמז", with the written word in place of
-            // the typing line, so nothing changes shape between the two.
-            TurnCard(
-              title: 'הרמז של ${game.player(held.playerId)!.nickname}',
-              avatar: game.player(held.playerId)!.avatarAsset,
-              subtitle: Text(
-                session.muted.contains(held.playerId) ? 'הוסתר' : held.text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.yellow,
-                  fontFamily: 'Secular One',
-                  fontSize: 20,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Row(
               children: [
-                const Flexible(
+                // The impostor is never sent the word, so there is nothing to
+                // open.
+                if (word != null) ...[
+                  _WordButton(
+                    open: _wordOpen,
+                    onPressed: () => setState(() => _wordOpen = !_wordOpen),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
                   child: Text(
-                    'התור הבא מתחיל',
+                    'סיבוב ${game.round} · תור $turn מתוך ${playing.length}',
+                    textAlign: TextAlign.end,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: AppColors.muted, fontSize: 15),
+                    style:
+                        const TextStyle(color: AppColors.muted, fontSize: 13),
                   ),
                 ),
-                const SizedBox(width: 8),
-                if (game.deadline case final deadline?)
-                  LiveCountdown(deadline: deadline),
               ],
             ),
-          ] else if (current != null) ...[
-            // Screen 09: one purple card carrying the avatar, whose turn it is
-            // and that they are writing.
-            TurnCard(
-              title: game.awaitingReconnect
-                  ? 'אין חיבור ל־${current.nickname}'
-                  : 'התור של ${current.nickname}',
-              avatar: current.avatarAsset,
-              disconnected: !current.connected,
-              subtitle: Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      game.awaitingReconnect ? 'מחכים לחזרה' : 'כותב/ת רמז',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 15,
+          ),
+          Expanded(
+            child: Stack(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 14, 20, 0),
+                      child: Row(
+                        children: [
+                          Text(
+                            'הרמזים בסיבוב',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  const TypingDots(color: AppColors.muted, size: 5),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: 22),
-          const Text(
-            'רמזים שנשלחו',
-            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 10),
-          if (game.hints.isEmpty)
-            const Text(
-              'עוד לא נשלחו רמזים.',
-              style: TextStyle(color: AppColors.muted),
-            ),
-          // Newest first. The board keeps every round, so oldest-first meant
-          // scrolling to the bottom to read the hint the table is actually
-          // talking about.
-          for (final (position, (i, h)) in board.indexed) ...[
-            // A line where the round changes, so a long board reads as a match
-            // rather than one very long round.
-            if (game.round > 1 &&
-                (position == 0 || board[position - 1].$2.round != h.round))
-              Padding(
-                padding: EdgeInsets.only(top: position == 0 ? 0 : 6, bottom: 8),
-                child: RoundDivider(round: h.round),
-              ),
-            if (game.player(h.playerId) case final p?)
-              Padding(
-                // Reactions are always to the newest hint, which is now the
-                // first card, and its bubbles rise from there.
-                key: position == 0 ? _lastHintKey : null,
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _ReportableHint(
-                  card: PlayerCard(
-                    player: _player(
-                      p,
-                      me,
-                      hint: switch (h) {
-                        _ when h.missing => '',
-                        _ when session.muted.contains(h.playerId) => 'הוסתר',
-                        _ => h.text,
-                      },
-                    ),
-                  ),
-                  playerId: h.playerId,
-                  nickname: p.nickname,
-                  hintIndex: i,
-                  // Nobody reports themself, and a hidden hint is already dealt with.
-                  canReport: h.playerId != me &&
-                      !h.missing &&
-                      !session.muted.contains(h.playerId),
-                ),
-              ),
-          ],
-          if (lastHint != null &&
-              !lastHint.missing &&
-              session.showReactions) ...[
-            const SizedBox(height: 12),
-            // Screen 09 groups the reactions in a card headed by the hint they
-            // belong to, rather than a loose heading over bare chips.
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.cream.withValues(alpha: .05),
-                borderRadius: BorderRadius.circular(20),
-                border:
-                    Border.all(color: AppColors.cream.withValues(alpha: .10)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'תגובות לרמז האחרון',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(20, 9, 20, 4),
+                        child: LayoutBuilder(
+                          // Two columns, each card as tall as its own text, so
+                          // a long clue wraps instead of being cut.
+                          builder: (context, box) => Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final p in game.players)
+                                SizedBox(
+                                  width: (box.maxWidth - 8) / 2,
+                                  child: _ParticipantCard(
+                                    key: _cardKeys.putIfAbsent(
+                                      p.id,
+                                      GlobalKey.new,
+                                    ),
+                                    player: p,
+                                    isMe: p.id == me,
+                                    active: p.id == current?.id,
+                                    word: _word(
+                                      p,
+                                      active: p.id == current?.id,
+                                    ),
+                                    line: _line(
+                                      p,
+                                      active: p.id == current?.id,
+                                    ),
+                                    onTap: () => _openHistory(p),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
-                      Text(
-                        // A reported hint is hidden in its row, so it must be
-                        // hidden here too or the label leaks it back.
-                        session.muted.contains(lastHint.playerId)
-                            ? 'הוסתר'
-                            : lastHint.text,
-                        style: const TextStyle(
-                          color: AppColors.yellow,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
+                    ),
+                    if (myTurn && !watching)
+                      _Composer(
+                        controller: _controller,
+                        error: _error,
+                        busy: _busy,
+                        onChanged: () => setState(() => _error = null),
+                        onSubmit: _submit,
+                      )
+                    else if (current != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                        child: _DashedNote(
+                          text: '${current.nickname} כותב/ת עכשיו. '
+                              'אפשר להמשיך להגיב למטה.',
                         ),
                       ),
-                    ],
+                  ],
+                ),
+                // C03: the word opens from the top, under its button, over a
+                // scrim. The header stays above it, so the timer keeps running
+                // in view.
+                if (_wordOpen && word != null) ...[
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _wordOpen = false),
+                      child: const ColoredBox(color: Color(0xA8090818)),
+                    ),
                   ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final r in session.reactions)
-                        ActionChip(
-                          onPressed: () => _react(r),
-                          avatar: (lastHint.reactions[r.id] ?? 0) == 0
-                              ? null
-                              : CircleAvatar(
-                                  child: Text('${lastHint.reactions[r.id]}'),
-                                ),
-                          backgroundColor:
-                              AppColors.cream.withValues(alpha: .08),
-                          side: BorderSide(
-                              color: AppColors.cream.withValues(alpha: .12)),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                          label: Text(r.text),
-                        ),
-                    ],
+                  Positioned(
+                    top: 6,
+                    left: 16,
+                    right: 16,
+                    child: _WordCard(
+                      category: game.category,
+                      word: word,
+                      onClose: () => setState(() => _wordOpen = false),
+                    ),
                   ),
                 ],
-              ),
+              ],
             ),
-          ],
+          ),
+          // The bar is general, not tied to one clue, but the count it adds to
+          // still belongs to the newest hint.
+          if (session.showReactions &&
+              MediaQuery.viewInsetsOf(context).bottom == 0)
+            _ReactionDock(
+              reactions: session.reactions,
+              onReact: game.hints.isEmpty ? null : _react,
+            ),
         ],
       ),
     );
   }
 }
 
-class _SecretWordPill extends StatelessWidget {
-  const _SecretWordPill({required this.word});
+/// One participant in the two-column grid, led by the clue they last gave,
+/// with their name above it and how many clues they have given below. States
+/// follow C01 to C08 — active, yours, disconnected and eliminated each carry
+/// their own frame as well as their own line of text.
+class _ParticipantCard extends StatelessWidget {
+  const _ParticipantCard({
+    required this.player,
+    required this.isMe,
+    required this.active,
+    required this.word,
+    required this.line,
+    required this.onTap,
+    super.key,
+  });
 
+  final PlayerInfo player;
+  final bool isMe;
+  final bool active;
+
+  /// The clue to lead with, empty when there is none to show yet.
   final String word;
+  final (String, Color, bool) line;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.cream,
-        borderRadius: BorderRadius.circular(18),
+    final out = player.status != 'active';
+    final bad = !out && !player.connected;
+    // Frame and fill per state, in the order a card can be in more than one:
+    // out, then whose turn it is, then dropped, then yours.
+    final (Color border, Color fill, double width) = out
+        ? (
+            AppColors.cream.withValues(alpha: .2),
+            AppColors.cream.withValues(alpha: .03),
+            1.0
+          )
+        : active
+            ? (AppColors.yellow, AppColors.yellow.withValues(alpha: .13), 2.0)
+            : bad
+                ? (
+                    AppColors.coral.withValues(alpha: .45),
+                    AppColors.coral.withValues(alpha: .1),
+                    1.0
+                  )
+                : isMe
+                    ? (
+                        AppColors.purple.withValues(alpha: .55),
+                        AppColors.purple.withValues(alpha: .14),
+                        1.0
+                      )
+                    : (
+                        AppColors.cream.withValues(alpha: .14),
+                        AppColors.cream.withValues(alpha: .05),
+                        1.0
+                      );
+    final (text, colour, bold) = line;
+    return Material(
+      color: fill,
+      borderRadius: BorderRadius.circular(15),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(15),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 96),
+          padding: EdgeInsets.all(width == 2 ? 8 : 9),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: border, width: width),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  AvatarView(
+                    asset: player.avatarAsset,
+                    size: 26,
+                    disconnected: bad,
+                    eliminated: out,
+                  ),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      isMe ? '${player.nickname} · אני' : player.nickname,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: active
+                            ? AppColors.yellow
+                            : AppColors.cream.withValues(alpha: out ? .5 : .72),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: 38,
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    word,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.cream.withValues(alpha: out ? .5 : 1),
+                      fontFamily: 'Secular One',
+                      fontSize: 22,
+                    ),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.only(top: 6),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: AppColors.cream.withValues(alpha: .12),
+                    ),
+                  ),
+                ),
+                // Two lines' worth, always: long states like "מנותק ·
+                // ממתינים 30 שניות" need the room, and a card that grew to
+                // fit one would stand taller than the card beside it.
+                child: SizedBox(
+                  height: 28,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                text,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: colour,
+                                  fontSize: 11,
+                                  height: 1.2,
+                                  fontWeight:
+                                      bold ? FontWeight.w700 : FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                            if (active) TypingDots(colour: colour),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 22,
+                        height: 22,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.cream.withValues(alpha: .1),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: Icon(
+                          Icons.chevron_right_rounded,
+                          size: 14,
+                          color: AppColors.cream.withValues(alpha: .7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      child: Row(
+    );
+  }
+}
+
+/// C02 and C05: the clue field, its counter and the send button, in a frame
+/// that turns coral when the clue was refused.
+class _Composer extends StatelessWidget {
+  const _Composer({
+    required this.controller,
+    required this.error,
+    required this.busy,
+    required this.onChanged,
+    required this.onSubmit,
+  });
+
+  final TextEditingController controller;
+  final String? error;
+  final bool busy;
+  final VoidCallback onChanged;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    final bad = error != null;
+    final accent = bad ? AppColors.coral : AppColors.yellow;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: bad ? .12 : .1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accent, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'המילה שלכם',
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'הרמז שלך · מילה אחת',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: AppColors.night.withValues(alpha: .55),
-                    fontSize: 12,
+                    color: bad ? const Color(0xFFFFB7B7) : AppColors.yellow,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                Text(
-                  word,
-                  style: const TextStyle(
+              ),
+              const SizedBox(width: 8),
+              LtrText(
+                '${controller.text.characters.length}/25',
+                style: const TextStyle(color: AppColors.muted, fontSize: 13),
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          TextField(
+            controller: controller,
+            maxLength: 25,
+            autofocus: false,
+            textAlign: TextAlign.start,
+            style: const TextStyle(
+              color: AppColors.night,
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
+            ),
+            decoration: const InputDecoration(
+              hintText: 'הרמז שלכם',
+              counterText: '',
+            ),
+            onChanged: (_) => onChanged(),
+            onSubmitted: (_) => onSubmit(),
+          ),
+          if (error != null) ...[
+            const SizedBox(height: 9),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: AppColors.coral,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Text(
+                    '!',
+                    style: TextStyle(
+                      color: Color(0xFF3B1214),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '$error הרמז לא נשלח.',
+                    style: const TextStyle(
+                      color: Color(0xFFFFD9D9),
+                      fontSize: 13,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 9),
+          PrimaryButton(
+            label: 'שליחת רמז',
+            variant: ButtonVariant.confirm,
+            onPressed: busy || bad ? null : onSubmit,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The pill that opens the word card, top-right of the board (C01, C03).
+class _WordButton extends StatelessWidget {
+  const _WordButton({required this.open, required this.onPressed});
+
+  final bool open;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: open
+          ? AppColors.yellow.withValues(alpha: .16)
+          : AppColors.cream.withValues(alpha: .06),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 38),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: open
+                  ? AppColors.yellow
+                  : AppColors.cream.withValues(alpha: .22),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.visibility_outlined,
+                size: 16,
+                color: AppColors.yellow,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'הצגת המילה שלי',
+                style: TextStyle(
+                  color: open ? AppColors.yellow : AppColors.cream,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// C03: the word, over the board, until it is closed. The timer above it keeps
+/// running, which is the point of opening it here rather than on its own page.
+class _WordCard extends StatelessWidget {
+  const _WordCard({
+    required this.category,
+    required this.word,
+    required this.onClose,
+  });
+
+  final String category;
+  final String word;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.cream,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Text(
+                  'המילה שלי',
+                  style: TextStyle(
                     color: AppColors.night,
                     fontFamily: 'Secular One',
-                    fontSize: 22,
+                    fontSize: 18,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: onClose,
+                  tooltip: 'סגירה',
+                  icon: const Icon(Icons.close_rounded),
+                  color: AppColors.night.withValues(alpha: .65),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.night, width: 2),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'קטגוריה: $category',
+                    style: TextStyle(
+                      color: AppColors.night.withValues(alpha: .6),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    word,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.night,
+                      fontFamily: 'Secular One',
+                      fontSize: 30,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// C04: what one player has said, round by round.
+class _HintHistorySheet extends StatelessWidget {
+  const _HintHistorySheet({
+    required this.player,
+    required this.hints,
+    required this.reportable,
+  });
+
+  final PlayerInfo player;
+
+  /// Each hint with its index in the match, which is how a report names it.
+  final List<(int, HintView)> hints;
+  final bool reportable;
+
+  @override
+  Widget build(BuildContext context) {
+    // Read live: reporting from this sheet has to hide the clue under it.
+    final hidden = SessionScope.of(context).muted.contains(player.id);
+    final canReport = reportable && !hidden;
+    final first = hints.isEmpty ? 0 : hints.first.$2.round;
+    final last = hints.isEmpty ? 0 : hints.last.$2.round;
+    final rounds = hints.isEmpty
+        ? ''
+        : first == last
+            ? 'סיבוב $first'
+            : 'סיבובים $first–$last';
+    final count = hints.length == 1 ? '1 רמז' : '${hints.length} רמזים';
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Material(
+          color: AppColors.cream,
+          borderRadius: BorderRadius.circular(22),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'הרמזים של ${player.nickname}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.night,
+                          fontFamily: 'Secular One',
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      tooltip: 'סגירה',
+                      icon: const Icon(Icons.close_rounded),
+                      color: AppColors.night.withValues(alpha: .65),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      AvatarView(asset: player.avatarAsset, size: 44),
+                      const SizedBox(width: 11),
+                      Expanded(
+                        child: Text(
+                          hints.isEmpty
+                              ? 'עוד לא נשלחו רמזים.'
+                              : '$count · $rounds',
+                          style: TextStyle(
+                            color: AppColors.night.withValues(alpha: .65),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (final (index, h) in hints)
+                          Container(
+                            constraints: const BoxConstraints(minHeight: 50),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                top: BorderSide(
+                                  color: AppColors.night.withValues(alpha: .12),
+                                ),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  'סיבוב ${h.round}',
+                                  style: TextStyle(
+                                    color:
+                                        AppColors.night.withValues(alpha: .55),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Flexible(
+                                  child: Text(
+                                    h.missing
+                                        ? 'לא נשלח רמז'
+                                        : hidden
+                                            ? 'הוסתר'
+                                            : h.text,
+                                    textAlign: TextAlign.end,
+                                    style: const TextStyle(
+                                      color: AppColors.night,
+                                      fontFamily: 'Secular One',
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                ),
+                                // Not in the design, but the stores require a
+                                // way to report what another player wrote, and
+                                // this is the only place a clue is now read on
+                                // its own.
+                                if (canReport && !h.missing)
+                                  IconButton(
+                                    tooltip: 'דיווח על הרמז',
+                                    icon: const Icon(
+                                      Icons.flag_outlined,
+                                      size: 20,
+                                    ),
+                                    color: AppColors.night.withValues(
+                                      alpha: .55,
+                                    ),
+                                    onPressed: () => _reportHint(
+                                      context,
+                                      playerId: player.id,
+                                      nickname: player.nickname,
+                                      hintIndex: index,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// C01: who is writing, while you wait. A quiet line rather than a card, so
+/// the board above it keeps the room's attention.
+class _DashedNote extends StatelessWidget {
+  const _DashedNote({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        // ponytail: a solid faint border, not the design's dashes — dashes
+        // need a painter, and nothing here is signalled by the border alone.
+        border: Border.all(color: AppColors.cream.withValues(alpha: .22)),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: AppColors.cream.withValues(alpha: .62),
+          fontSize: 13,
+          height: 1.4,
+        ),
+      ),
+    );
+  }
+}
+
+/// C06: the player whose turn it is dropped, and the table is waiting.
+class _DisconnectBanner extends StatelessWidget {
+  const _DisconnectBanner({required this.nickname});
+
+  final String nickname;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      decoration: BoxDecoration(
+        color: AppColors.coral.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.coral.withValues(alpha: .45)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.wifi_off_rounded,
+              size: 18, color: Color(0xFFFF9B9B)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '$nickname התנתק. ממתינים לו עד 30 שניות — '
+              'אחר כך התור שלו ידולג.',
+              style: const TextStyle(
+                color: Color(0xFFFFD9D9),
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+/// The reaction bar, pinned under the board and scrolling sideways. It belongs
+/// to the table, not to one clue, so it carries no clue text.
+class _ReactionDock extends StatelessWidget {
+  const _ReactionDock({required this.reactions, required this.onReact});
+
+  final List<ReactionOption> reactions;
+
+  /// Null before the first clue of the match, when there is nothing to react
+  /// to yet.
+  final ValueChanged<ReactionOption>? onReact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 16),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: AppColors.cream.withValues(alpha: .14)),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 7),
+            child: Row(
+              children: [
+                const Text(
+                  'תגובות',
+                  style: TextStyle(color: AppColors.muted, fontSize: 11),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'גררו לצדדים לעוד תגובות ↔',
+                    textAlign: TextAlign.end,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.muted.withValues(alpha: .8),
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final r in reactions)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 7),
+                    child: _ReactionChip(
+                      reaction: r,
+                      onTap: onReact == null ? null : () => onReact!(r),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReactionChip extends StatelessWidget {
+  const _ReactionChip({required this.reaction, required this.onTap});
+
+  final ReactionOption reaction;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    // Emoji get the bigger, tighter pill; the structured messages are text.
+    final emoji = !RegExp(r'[֐-׿]').hasMatch(reaction.text);
+    return Opacity(
+      opacity: onTap == null ? .45 : 1,
+      child: Material(
+        color: AppColors.cream.withValues(alpha: .07),
+        borderRadius: BorderRadius.circular(22),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(22),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 42),
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppColors.cream.withValues(alpha: .2)),
+            ),
+            child: Text(
+              reaction.text,
+              softWrap: false,
+              style: TextStyle(
+                color: AppColors.cream,
+                fontSize: emoji ? 19 : 14,
+                fontWeight: emoji ? FontWeight.w400 : FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1906,70 +2572,47 @@ class _StateMessage extends StatelessWidget {
 /// Required of any app that shows text one player wrote to another (App Store
 /// review guideline 1.2, Google Play's UGC policy). It is a visible button
 /// rather than a long-press, so the action is not hidden behind a gesture.
-class _ReportableHint extends StatelessWidget {
-  const _ReportableHint({
-    required this.card,
-    required this.playerId,
-    required this.nickname,
-    required this.hintIndex,
-    required this.canReport,
-  });
-
-  final Widget card;
-  final String playerId;
-  final String nickname;
-  final int hintIndex;
-  final bool canReport;
-
-  @override
-  Widget build(BuildContext context) {
-    if (!canReport) return card;
-    return Row(
-      children: [
-        Expanded(child: card),
-        IconButton(
-          tooltip: 'דיווח על הרמז',
-          icon: const Icon(Icons.flag_outlined, color: AppColors.muted),
-          onPressed: () => _confirm(context),
+/// Reports one hint and hides that player's hints on this device. Not part of
+/// the clue-screen design, but the stores require a way to report what another
+/// player wrote, so it hangs off the clue history.
+Future<void> _reportHint(
+  BuildContext context, {
+  required String playerId,
+  required String nickname,
+  required int hintIndex,
+}) async {
+  final session = SessionScope.read(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('לדווח על הרמז?'),
+      content: Text(
+        'הרמז יישלח לבדיקה, ולא תראו יותר רמזים של $nickname במכשיר הזה.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('ביטול'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('דיווח'),
         ),
       ],
-    );
-  }
-
-  Future<void> _confirm(BuildContext context) async {
-    final session = SessionScope.read(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('לדווח על הרמז?'),
-        content: Text(
-          'הרמז יישלח לבדיקה, ולא תראו יותר רמזים של $nickname במכשיר הזה.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('ביטול'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('דיווח'),
-          ),
-        ],
+    ),
+  );
+  if (confirmed != true) return;
+  final code = await session.reportPlayer(playerId, hintIndex: hintIndex);
+  // The hiding is local and holds either way; the report itself may not have
+  // reached the server, and saying it did would be a lie.
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(
+        code == null
+            ? 'הדיווח נשלח. הרמזים האלה יוסתרו.'
+            : 'הרמזים האלה יוסתרו, אבל הדיווח לא נשלח. ${commandMessage(code)}',
       ),
-    );
-    if (confirmed != true) return;
-    final code = await session.reportPlayer(playerId, hintIndex: hintIndex);
-    // The hiding is local and holds either way; the report itself may not
-    // have reached the server, and saying it did would be a lie.
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          code == null
-              ? 'הדיווח נשלח. הרמזים האלה יוסתרו.'
-              : 'הרמזים האלה יוסתרו, אבל הדיווח לא נשלח. ${commandMessage(code)}',
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
