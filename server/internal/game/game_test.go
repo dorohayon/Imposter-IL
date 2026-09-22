@@ -339,6 +339,34 @@ func TestReactionsAreUnlimitedDuringNextTurn(t *testing.T) {
 	}
 }
 
+func TestPreHintReactionsBeforeFirstHintOfLaterRound(t *testing.T) {
+	g := newGame(t, 4)
+	confirmAll(t, g)
+	must(t, g.SubmitHint(g.order[0], "ראשון", t0))
+	g.Tick(t0.Add(3 * time.Second))
+	g.round = 2
+	g.startTurn(0, t0.Add(3*time.Second))
+	last := len(g.hints) - 1
+	must(t, g.React(g.order[1], last, "suspicious", t0.Add(3*time.Second)))
+	if g.hints[last].Reactions != nil {
+		t.Fatalf("reaction must not attach to the previous round's hint: %+v", g.hints[last].Reactions)
+	}
+	if g.pendingReactions["suspicious"] != 1 {
+		t.Fatalf("pending = %v, want one suspicious", g.pendingReactions)
+	}
+	must(t, g.SubmitHint(g.order[0], "שני", t0.Add(3*time.Second)))
+	var got *Hint
+	for i := range g.hints {
+		if g.hints[i].Round == 2 && g.hints[i].Text == "שני" {
+			got = &g.hints[i]
+			break
+		}
+	}
+	if got == nil || got.Reactions["suspicious"] != 1 {
+		t.Fatalf("round-2 hint reactions = %+v, want suspicious:1", got)
+	}
+}
+
 func TestVoting(t *testing.T) {
 	g := newGame(t, 4)
 	now := toVoting(t, g)

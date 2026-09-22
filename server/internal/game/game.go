@@ -455,10 +455,7 @@ func (g *Game) React(playerID string, hintIndex int, reactionID string, now time
 	if !g.policy.ValidReaction(reactionID) {
 		return ErrInvalidReaction
 	}
-	if len(g.hints) == 0 {
-		if g.phase != PhaseHints || hintIndex != 0 {
-			return ErrInvalidHint
-		}
+	if g.phase == PhaseHints && !g.hasHintThisRound() {
 		if g.pendingReactions == nil {
 			g.pendingReactions = map[string]int{}
 		}
@@ -678,7 +675,12 @@ func (g *Game) expire(at time.Time) {
 	case PhaseRoleReveal:
 		g.startTurn(0, at)
 	case PhaseHints:
-		g.hints = append(g.hints, Hint{PlayerID: g.order[g.turn], Missing: true, Round: g.round})
+		missing := Hint{PlayerID: g.order[g.turn], Missing: true, Round: g.round}
+		if len(g.pendingReactions) > 0 {
+			missing.Reactions = maps.Clone(g.pendingReactions)
+			g.pendingReactions = nil
+		}
+		g.hints = append(g.hints, missing)
 		g.startTurn(g.turn+1, at)
 	case PhaseHintBreak:
 		g.startTurn(g.turn+1, at)
@@ -882,6 +884,15 @@ func (g *Game) showElimination(id string, at time.Time) {
 // startRound opens another round of hints. The board is not cleared: hints
 // from earlier rounds stay up, labelled by round, and a hint may not repeat
 // one from any of them.
+func (g *Game) hasHintThisRound() bool {
+	for _, h := range g.hints {
+		if h.Round == g.round {
+			return true
+		}
+	}
+	return false
+}
+
 func (g *Game) startRound(at time.Time) {
 	g.lastEliminated = ""
 	g.pendingReactions = nil

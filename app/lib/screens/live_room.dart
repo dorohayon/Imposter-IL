@@ -1267,7 +1267,7 @@ class _HintsState extends State<_Hints> {
   String _word(PlayerInfo p, {required bool active}) {
     if (active) return '';
     for (final h in widget.game.hints.reversed) {
-      if (h.playerId == p.id && h.round == widget.game.round && !h.missing) {
+      if (h.playerId == p.id && h.round == widget.game.round) {
         return _hintText(h);
       }
     }
@@ -1288,7 +1288,7 @@ class _HintsState extends State<_Hints> {
     if (active) return ('כותב/ת רמז', AppColors.yellow, true);
     final said = [
       for (final h in widget.game.hints)
-        if (h.playerId == p.id) h,
+        if (h.playerId == p.id && !h.missing) h,
     ].length;
     if (said == 0) return ('ממתין/ה לתור', AppColors.muted, false);
     return (said == 1 ? '1 רמז' : '$said רמזים', AppColors.muted, false);
@@ -1583,18 +1583,20 @@ class _ParticipantCard extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(
-                height: 38,
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 38),
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: Text(
                     word,
-                    maxLines: 1,
+                    maxLines: 2,
+                    softWrap: true,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: AppColors.cream.withValues(alpha: out ? .5 : 1),
                       fontFamily: 'Secular One',
                       fontSize: 22,
+                      height: 1.1,
                     ),
                   ),
                 ),
