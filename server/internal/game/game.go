@@ -44,9 +44,10 @@ const (
 	// table can read the board before choosing (screen "עוברים להצבעה").
 	PhasePreVoting     Phase = "pre_voting"
 	PhaseVoting        Phase = "voting"
-	PhaseRunoffVoting  Phase = "runoff_voting"
-	PhaseImpostorGuess Phase = "impostor_guess"
-	PhaseEnded         Phase = "ended"
+	PhaseRunoffVoting      Phase = "runoff_voting"
+	PhaseEliminationReveal Phase = "elimination_reveal"
+	PhaseImpostorGuess     Phase = "impostor_guess"
+	PhaseEnded             Phase = "ended"
 )
 
 type Role string
@@ -131,6 +132,9 @@ type Config struct {
 	GuessDuration      time.Duration
 	// PreVotingDuration is how long the board is shown before voting opens.
 	PreVotingDuration time.Duration
+	// EliminationRevealDuration is how long the table sees who was voted out
+	// before the next hint round opens.
+	EliminationRevealDuration time.Duration
 	// HintBreakDuration is how long a new hint is held before the next turn.
 	HintBreakDuration time.Duration
 	ReconnectDuration time.Duration
@@ -147,9 +151,10 @@ func DefaultConfig() Config {
 		VoteDuration:       20 * time.Second,
 		RunoffVoteDuration: 15 * time.Second,
 		GuessDuration:      60 * time.Second,
-		PreVotingDuration:  5 * time.Second,
-		HintBreakDuration:  3 * time.Second,
-		ReconnectDuration:  30 * time.Second,
+		PreVotingDuration:         5 * time.Second,
+		EliminationRevealDuration: 15 * time.Second,
+		HintBreakDuration:         3 * time.Second,
+		ReconnectDuration:         30 * time.Second,
 	}
 }
 
@@ -212,7 +217,10 @@ type View struct {
 	// during a runoff, so players see who tied.
 	PreviousVotes map[string]int
 	MyVote        string
-	Result        *Result
+	// EliminatedPlayerID is set during elimination_reveal after a citizen was
+	// voted out.
+	EliminatedPlayerID string
+	Result             *Result
 }
 
 type player struct {
@@ -249,6 +257,8 @@ type Game struct {
 	voteRounds  []map[string]string
 	abstentions []int
 
+	lastEliminated string
+
 	result *Result
 }
 
@@ -262,7 +272,7 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 		return nil, fmt.Errorf("%w: category and secret word are required", ErrInvalidSetup)
 	case rng == nil || policy.HintInappropriate == nil || policy.ValidReaction == nil:
 		return nil, fmt.Errorf("%w: rng and every policy function are required", ErrInvalidSetup)
-	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0 || cfg.PreVotingDuration <= 0 || cfg.HintBreakDuration <= 0:
+	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0 || cfg.PreVotingDuration <= 0 || cfg.EliminationRevealDuration <= 0 || cfg.HintBreakDuration <= 0:
 		return nil, fmt.Errorf("%w: invalid durations", ErrInvalidSetup)
 	}
 	g := &Game{
@@ -574,6 +584,9 @@ func (g *Game) View(playerID string) (View, error) {
 	if g.phase == PhaseHints {
 		v.CurrentTurn = g.order[g.turn]
 	}
+	if g.phase == PhaseEliminationReveal {
+		v.EliminatedPlayerID = g.lastEliminated
+	}
 	if g.phase == PhaseRunoffVoting && len(g.voteRounds) > 0 {
 		// Only the players in the runoff. Counting every target would tell
 		// everyone how the group voted on someone who is not even a
@@ -655,6 +668,8 @@ func (g *Game) expire(at time.Time) {
 		g.startVoting(PhaseVoting, g.activeIDs(), at, g.cfg.VoteDuration)
 	case PhaseVoting, PhaseRunoffVoting:
 		g.tally(at)
+	case PhaseEliminationReveal:
+		g.startRound(at)
 	case PhaseImpostorGuess:
 		g.end(TeamCitizens, ReasonImpostorGuessTimeout)
 	}
@@ -779,14 +794,35 @@ func (g *Game) eliminate(id string, at time.Time) {
 	case citizens+impostors < MinPlayersToContinue:
 		g.end(TeamNone, ReasonNotEnoughPlayers)
 	default:
-		g.startRound(at)
+		g.showElimination(id, at)
 	}
+}
+
+// ContinueAfterElimination moves on from naming the voted-out citizen. Any
+// player still in the match may tap through before the timer ends.
+func (g *Game) ContinueAfterElimination(playerID string, now time.Time) error {
+	g.Tick(now)
+	if g.phase != PhaseEliminationReveal {
+		return ErrWrongPhase
+	}
+	if _, err := g.watcher(playerID); err != nil {
+		return err
+	}
+	g.startRound(now)
+	g.version++
+	return nil
+}
+
+func (g *Game) showElimination(id string, at time.Time) {
+	g.lastEliminated = id
+	g.setPhase(PhaseEliminationReveal, at, g.cfg.EliminationRevealDuration)
 }
 
 // startRound opens another round of hints. The board is not cleared: hints
 // from earlier rounds stay up, labelled by round, and a hint may not repeat
 // one from any of them.
 func (g *Game) startRound(at time.Time) {
+	g.lastEliminated = ""
 	g.round++
 	g.candidates = nil
 	g.votes = map[string]string{}

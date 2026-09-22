@@ -41,6 +41,39 @@ Map<String, dynamic> laterRound({
     );
 
 void main() {
+  testWidgets('elimination reveal matches the local screen', (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    api.channel.snapshot(
+      'game.state',
+      'game',
+      gameJson(
+        phase: 'elimination_reveal',
+        round: 1,
+        eliminatedPlayerId: 'p_3',
+        players: [
+          player('p_me', 'דור'),
+          player('p_2', 'נועה'),
+          player('p_3', 'יובל', status: 'eliminated'),
+          player('p_4', 'מאיה'),
+        ],
+      ),
+    );
+    await settle(tester);
+
+    expect(find.text('יובל הודח/ה'), findsOneWidget);
+    expect(find.text('יובל היה/הייתה אזרח/ית'), findsOneWidget);
+    expect(find.text('ממשיכים לסיבוב 2'), findsOneWidget);
+    expect(find.text('נשארו במשחק'), findsOneWidget);
+  });
+
   testWidgets('a later round says which round it is', (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);

@@ -527,44 +527,13 @@ class _LocalGameScreenState extends State<LocalGameScreen>
         label: 'ממשיכים לסיבוב ${_game.round + 1}',
         onPressed: () => _apply(_game.afterElimination),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 16),
-          Center(
-              child:
-                  AvatarView(asset: out.avatar, size: 110, eliminated: true)),
-          const SizedBox(height: 14),
-          Text(
-            '${out.name} הודח/ה',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge,
-          ),
-          const SizedBox(height: 12),
-          InfoCard(
-            label: 'התפקיד',
-            child: Text(
-              '${out.name} היה/הייתה אזרח/ית',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'המילה נשארת סודית — המשחק ממשיך.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, height: 1.45),
-          ),
-          const SizedBox(height: 16),
-          InfoCard(
-            label: 'נשארו במשחק',
-            child: Column(
-              children: [
-                for (final i in _game.activePlayers)
-                  _PlayerRow(player: _game.players[i]),
-              ],
-            ),
-          ),
+      child: EliminationRevealContent(
+        eliminatedName: out.name,
+        eliminatedAvatar: out.avatar,
+        roleLine: '${out.name} היה/הייתה אזרח/ית',
+        remaining: [
+          for (final i in _game.activePlayers)
+            (_game.players[i].name, _game.players[i].avatar),
         ],
       ),
     );

@@ -94,7 +94,7 @@ gcloud run deploy "$SERVICE" \
 	--timeout=3600 \
 	--memory=512Mi \
 	--cpu=1 \
-	--set-env-vars="TRUST_PROXY=1,METRICS_ADDR=,METRICS_TOKEN=$METRICS_TOKEN,DRAIN_TIMEOUT=8s,LOG_LEVEL=info,MIN_CLIENT_BUILD=${MIN_CLIENT_BUILD:-2},STAGING_BOTS=$STAGING_BOTS"
+	--set-env-vars="TRUST_PROXY=1,METRICS_ADDR=,METRICS_TOKEN=$METRICS_TOKEN,DRAIN_TIMEOUT=8s,LOG_LEVEL=info,MIN_CLIENT_BUILD=${MIN_CLIENT_BUILD:-3},STAGING_BOTS=$STAGING_BOTS"
 
 URL="$(gcloud run services describe "$SERVICE" --region="$REGION" --format='value(status.url)')"
 

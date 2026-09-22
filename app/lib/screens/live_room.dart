@@ -978,6 +978,8 @@ class _LiveGame extends StatelessWidget {
       'hints' || 'hint_break' => _Hints(game: game, onLeave: onLeave),
       'pre_voting' => _ToVoting(game: game, onLeave: onLeave),
       'voting' || 'runoff_voting' => _Voting(game: game, onLeave: onLeave),
+      'elimination_reveal' =>
+        _EliminationReveal(game: game, onLeave: onLeave),
       'impostor_guess' => _Guess(game: game, onLeave: onLeave),
       _ => _Result(game: game, onHome: onLeave),
     };
@@ -1062,6 +1064,50 @@ class _RoleReveal extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 9),
               child: StepCard(number: index + 1, text: tip),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Screen 17 online: a citizen was voted out; same layout as local pass-and-play.
+class _EliminationReveal extends StatelessWidget {
+  const _EliminationReveal({required this.game, required this.onLeave});
+
+  final GameView game;
+  final VoidCallback onLeave;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = SessionScope.of(context);
+    final out = game.player(game.eliminatedPlayerId);
+    if (out == null) {
+      return GameScaffold(
+        title: '',
+        showHeader: false,
+        onExit: onLeave,
+        child: const Center(child: Text('טוענים…')),
+      );
+    }
+    return GameScaffold(
+      title: '',
+      showHeader: false,
+      timer: _timer(game),
+      onExit: onLeave,
+      bottom: PrimaryButton(
+        label: 'ממשיכים לסיבוב ${game.round + 1}',
+        onPressed: () => runCommand(
+          context,
+          session.send('game.continueAfterElimination', {'gameId': game.id}),
+        ),
+      ),
+      child: EliminationRevealContent(
+        eliminatedName: out.nickname,
+        eliminatedAvatar: out.avatarAsset,
+        roleLine: '${out.nickname} היה/הייתה אזרח/ית',
+        remaining: [
+          for (final p in game.players)
+            if (p.status == 'active') (p.nickname, p.avatarAsset),
         ],
       ),
     );

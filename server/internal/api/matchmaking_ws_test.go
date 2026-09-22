@@ -86,7 +86,7 @@ func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
 
 	wantOK(t, human.w.command("confirm", "game.confirmRole", map[string]any{"gameId": gameID}))
 	// A match now runs several hint-and-vote rounds before it ends.
-	for step := 0; step < 120; step++ {
+	for step := 0; step < 160; step++ {
 		c.srv.runStagingBots()
 		c.srv.mu.Lock()
 		sess := c.srv.players[human.id]
@@ -145,6 +145,9 @@ func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
 			} else {
 				c.advance(15 * time.Second)
 			}
+			c.tickAll()
+		case game.PhaseEliminationReveal:
+			c.advance(15 * time.Second)
 			c.tickAll()
 		case game.PhaseImpostorGuess:
 			if view.Role == game.RoleImpostor {

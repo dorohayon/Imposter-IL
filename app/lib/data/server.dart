@@ -11,7 +11,7 @@ import 'package:flutter/foundation.dart';
 /// for years, so the server's MIN_CLIENT_BUILD is the only way to retire a
 /// build whose protocol it no longer speaks; without the header there would be
 /// no way to tell an old install to update instead of failing strangely.
-const clientBuild = 2;
+const clientBuild = 3;
 
 const productionServerUrl = 'https://imposter-eegbs6v5uq-uc.a.run.app';
 

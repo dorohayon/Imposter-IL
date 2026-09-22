@@ -470,6 +470,9 @@ func TestWSReconnectingIntoALaterRoundAsASpectator(t *testing.T) {
 	}
 	c.advance(20 * time.Second)
 	c.tick(roomID)
+	host.w.gameState(phase("elimination_reveal"))
+	c.advance(15 * time.Second)
+	c.tick(roomID)
 
 	g = host.w.gameState(func(g map[string]any) bool { return g["round"] == float64(2) })
 	if g["phase"] != "hints" {

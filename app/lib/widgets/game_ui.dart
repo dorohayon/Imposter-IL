@@ -738,6 +738,90 @@ class InfoCard extends StatelessWidget {
   }
 }
 
+/// Screen 17 / online elimination_reveal: who was voted out before the next
+/// hint round. Shared by local pass-and-play and network games.
+class EliminationRevealContent extends StatelessWidget {
+  const EliminationRevealContent({
+    required this.eliminatedName,
+    required this.eliminatedAvatar,
+    required this.roleLine,
+    required this.remaining,
+    super.key,
+  });
+
+  final String eliminatedName;
+  final String eliminatedAvatar;
+  final String roleLine;
+  final List<(String name, String avatar)> remaining;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 16),
+        Center(
+          child: AvatarView(
+            asset: eliminatedAvatar,
+            size: 110,
+            eliminated: true,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          '$eliminatedName הודח/ה',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineLarge,
+        ),
+        const SizedBox(height: 12),
+        InfoCard(
+          label: 'התפקיד',
+          child: Text(
+            roleLine,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+          ),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          'המילה נשארת סודית — המשחק ממשיך.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppColors.muted, height: 1.45),
+        ),
+        const SizedBox(height: 16),
+        InfoCard(
+          label: 'נשארו במשחק',
+          child: Column(
+            children: [
+              for (final (name, avatar) in remaining)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  child: Row(
+                    children: [
+                      AvatarView(asset: avatar, size: 30),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.cream,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class StepCard extends StatelessWidget {
   const StepCard(
       {required this.number,

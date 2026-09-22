@@ -381,6 +381,25 @@ func citizensWin(t *testing.T, g *Game, now time.Time) time.Time {
 	return now
 }
 
+func TestEliminationRevealCanContinueEarly(t *testing.T) {
+	g := newGame(t, 5)
+	now := toVoting(t, g)
+	out := citizens(g)[0]
+	voteAllFor(t, g, out, now)
+	now = now.Add(20 * time.Second)
+	g.Tick(now)
+	wantPhase(t, g, PhaseEliminationReveal)
+	v, _ := g.View(out)
+	if v.EliminatedPlayerID != out {
+		t.Fatalf("eliminated = %q, want %q", v.EliminatedPlayerID, out)
+	}
+	must(t, g.ContinueAfterElimination(g.order[1], now))
+	wantPhase(t, g, PhaseHints)
+	if g.round != 2 {
+		t.Fatalf("round = %d, want 2", g.round)
+	}
+}
+
 func TestVotingOutACitizenStartsAnotherRound(t *testing.T) {
 	g := newGame(t, 5) // four citizens and an impostor
 	now := toVoting(t, g)
@@ -395,6 +414,9 @@ func TestVotingOutACitizenStartsAnotherRound(t *testing.T) {
 	if got := g.players[out].status; got != StatusEliminated {
 		t.Fatalf("status = %q, want eliminated", got)
 	}
+	wantPhase(t, g, PhaseEliminationReveal)
+	now = now.Add(DefaultConfig().EliminationRevealDuration)
+	g.Tick(now)
 	if g.round != 2 {
 		t.Fatalf("round = %d, want 2", g.round)
 	}

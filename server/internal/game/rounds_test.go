@@ -52,6 +52,10 @@ func voteOut(t *testing.T, g *Game, target string, now time.Time) time.Time {
 	}
 	now = now.Add(DefaultConfig().VoteDuration)
 	g.Tick(now)
+	if g.phase == PhaseEliminationReveal {
+		now = now.Add(DefaultConfig().EliminationRevealDuration)
+		g.Tick(now)
+	}
 	return now
 }
 
@@ -210,7 +214,7 @@ func TestAViewCarriesTheRoundAndTheStatus(t *testing.T) {
 	confirmAll(t, g)
 	now := playRound(t, g, t0)
 	out := citizens(g)[0]
-	voteOut(t, g, out, now)
+	now = voteOut(t, g, out, now)
 
 	for _, id := range g.order {
 		v, err := g.View(id)
@@ -331,6 +335,10 @@ func TestASingleVoteResetsTheSilence(t *testing.T) {
 	must(t, g.Vote(voter, target, now))
 	now = now.Add(DefaultConfig().VoteDuration)
 	g.Tick(now)
+	if g.phase == PhaseEliminationReveal {
+		now = now.Add(DefaultConfig().EliminationRevealDuration)
+		g.Tick(now)
+	}
 	if g.result != nil {
 		t.Fatalf("a round with a vote in it ended the match: %+v", g.result)
 	}
