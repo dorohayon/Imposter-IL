@@ -1211,9 +1211,8 @@ class _HintsState extends State<_Hints> {
     final session = SessionScope.read(context);
     final messenger = ScaffoldMessenger.of(context);
     _pop(session.playerId ?? '', r.text);
-    final hintIndex = widget.game.hints.isEmpty
-        ? 0
-        : widget.game.hints.length - 1;
+    final hintIndex =
+        widget.game.hints.isEmpty ? 0 : widget.game.hints.length - 1;
     final code = await session.send('game.react', {
       'gameId': widget.game.id,
       'hintIndex': hintIndex,
