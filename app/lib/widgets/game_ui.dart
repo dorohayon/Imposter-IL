@@ -878,15 +878,12 @@ class StepCard extends StatelessWidget {
   }
 }
 
-/// Three dots that rise in turn, next to "כותב רמז...". The turn belongs to
-/// someone else for up to a minute, and without this the screen looks frozen
-/// rather than waiting.
+/// The dots after "כותב/ת רמז", counting up and starting over: `.` `..` `...`.
+/// A fixed width, so the text beside them does not shift as they come and go.
 class TypingDots extends StatefulWidget {
-  const TypingDots(
-      {this.color = AppColors.turquoise, this.size = 7, super.key});
+  const TypingDots({required this.colour, super.key});
 
-  final Color color;
-  final double size;
+  final Color colour;
 
   @override
   State<TypingDots> createState() => _TypingDotsState();
@@ -894,44 +891,32 @@ class TypingDots extends StatefulWidget {
 
 class _TypingDotsState extends State<TypingDots>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
+  late final _run = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1100),
+    duration: const Duration(milliseconds: 1200),
   )..repeat();
 
   @override
   void dispose() {
-    _controller.dispose();
+    _run.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < 3; i++)
-            Padding(
-              padding: EdgeInsets.only(left: i == 2 ? 0 : widget.size * .6),
-              child: Opacity(
-                // Each dot leads the next by a third of the cycle.
-                opacity: .35 +
-                    .65 *
-                        (1 - ((_controller.value * 3 - i) % 3).clamp(0, 1))
-                            .clamp(0, 1),
-                child: Container(
-                  width: widget.size,
-                  height: widget.size,
-                  decoration: BoxDecoration(
-                    color: widget.color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ),
-        ],
+    return SizedBox(
+      width: 14,
+      child: AnimatedBuilder(
+        animation: _run,
+        builder: (context, _) => Text(
+          '.' * (1 + (_run.value * 3).floor().clamp(0, 2)),
+          style: TextStyle(
+            color: widget.colour,
+            fontSize: 12,
+            height: 1.3,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
     );
   }
