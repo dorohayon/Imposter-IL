@@ -394,8 +394,22 @@ func (s *Server) runStagingBotsInGame(entry *roomEntry, now time.Time) {
 		// and it takes no turn and casts no vote.
 		reacted := s.botReact(entry, bot, view, now)
 		acted := false
+		if view.Phase == game.PhaseEliminationReveal {
+			for _, player := range view.Players {
+				if player.ID != id || player.RoleConfirmed {
+					continue
+				}
+				if player.Status != game.StatusActive && player.Status != game.StatusEliminated {
+					continue
+				}
+				acted = true
+				actionErr = entry.room.WithGame(now, func(g *game.Game) error {
+					return g.ContinueAfterElimination(id, now)
+				})
+			}
+		}
 		if !botStillPlaying(view, id) {
-			changed = changed || reacted
+			changed = changed || reacted || (acted && actionErr == nil)
 			continue
 		}
 		switch view.Phase {

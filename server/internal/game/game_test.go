@@ -381,6 +381,28 @@ func citizensWin(t *testing.T, g *Game, now time.Time) time.Time {
 	return now
 }
 
+func continueEliminationAllWatchers(t *testing.T, g *Game, now time.Time) {
+	t.Helper()
+	for _, id := range g.PlayerIDs() {
+		p := g.players[id]
+		if (p.status == StatusActive || p.status == StatusEliminated) && p.connected {
+			must(t, g.ContinueAfterElimination(id, now))
+		}
+	}
+}
+
+func TestEliminationRevealOneTapDoesNotAdvance(t *testing.T) {
+	g := newGame(t, 5)
+	now := toVoting(t, g)
+	out := citizens(g)[0]
+	voteAllFor(t, g, out, now)
+	now = now.Add(20 * time.Second)
+	g.Tick(now)
+	wantPhase(t, g, PhaseEliminationReveal)
+	must(t, g.ContinueAfterElimination(g.order[1], now))
+	wantPhase(t, g, PhaseEliminationReveal)
+}
+
 func TestEliminationRevealCanContinueEarly(t *testing.T) {
 	g := newGame(t, 5)
 	now := toVoting(t, g)
@@ -393,7 +415,7 @@ func TestEliminationRevealCanContinueEarly(t *testing.T) {
 	if v.EliminatedPlayerID != out {
 		t.Fatalf("eliminated = %q, want %q", v.EliminatedPlayerID, out)
 	}
-	must(t, g.ContinueAfterElimination(g.order[1], now))
+	continueEliminationAllWatchers(t, g, now)
 	wantPhase(t, g, PhaseHints)
 	if g.round != 2 {
 		t.Fatalf("round = %d, want 2", g.round)

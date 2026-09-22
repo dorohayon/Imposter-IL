@@ -1089,17 +1089,25 @@ class _EliminationReveal extends StatelessWidget {
         child: const Center(child: Text('טוענים…')),
       );
     }
+    final ready = game.player(session.playerId)?.roleConfirmed ?? false;
     return GameScaffold(
       title: '',
-      showHeader: false,
+      showHeader: true,
       timer: _timer(game),
       onExit: onLeave,
       bottom: PrimaryButton(
-        label: 'ממשיכים לסיבוב ${game.round + 1}',
-        onPressed: () => runCommand(
-          context,
-          session.send('game.continueAfterElimination', {'gameId': game.id}),
-        ),
+        label: ready
+            ? 'ממתינים לשאר השחקנים'
+            : 'ממשיכים לסיבוב ${game.round + 1}',
+        onPressed: ready
+            ? null
+            : () => runCommand(
+                  context,
+                  session.send(
+                    'game.continueAfterElimination',
+                    {'gameId': game.id},
+                  ),
+                ),
       ),
       child: EliminationRevealContent(
         eliminatedName: out.nickname,

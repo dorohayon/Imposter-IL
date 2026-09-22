@@ -218,10 +218,12 @@ class _LocalGameScreenState extends State<LocalGameScreen>
             style: Theme.of(context).textTheme.headlineLarge,
           ),
           const SizedBox(height: 8),
-          const Text(
-            'אף אחד אחר לא מסתכל על המסך.',
+          Text(
+            forVoting
+                ? 'אף אחד אחר לא מסתכל על המסך.'
+                : 'רק ${_current.name} מסתכל על המסך. השאר מחכים שנייה.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, height: 1.45),
+            style: const TextStyle(color: AppColors.muted, height: 1.45),
           ),
         ],
       ),

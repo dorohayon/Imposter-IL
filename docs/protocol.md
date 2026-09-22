@@ -200,7 +200,6 @@
 | `room.start` | `{ roomId }` | `not_room_host`, `not_enough_players`, `room_in_game`, `content_unavailable` |
 | `room.leave` | `{ roomId }` | — |
 | `game.confirmRole` | `{ gameId }` | `wrong_phase` |
-| `game.continueAfterElimination` | `{ gameId }` | `wrong_phase` |
 | `game.submitHint` | `{ gameId, text }` | `not_your_turn`, `wrong_phase`, `hint_empty`, `hint_not_one_word`, `hint_too_long`, `hint_inappropriate`, `hint_contains_secret`, `hint_duplicate` |
 | `game.react` | `{ gameId, hintIndex, reactionId }` | `invalid_hint`, `invalid_reaction`, `wrong_phase` |
 | `game.vote` | `{ gameId, targetPlayerId }` | `self_vote`, `invalid_vote_target`, `wrong_phase` |
@@ -278,8 +277,7 @@
 }
 ```
 
-- `phase`: `role_reveal` | `hints` | `hint_break` | `pre_voting` | `voting` | `runoff_voting` | `elimination_reveal` | `impostor_guess` | `ended`.
-- `eliminatedPlayerId` מופיע ב־`elimination_reveal` אחרי הדחת אזרח; התפקיד שמוצג הוא אזרח בלבד (מתחזה שנתפס עובר ל־`impostor_guess`).
+- `phase`: `role_reveal` | `hints` | `hint_break` | `pre_voting` | `voting` | `runoff_voting` | `impostor_guess` | `ended`.
 - `round` סופר סבבי רמזים־והצבעה מ־1. **שינוי לא תואם:** `eliminated`, `none` ו־`abandoned` אינם מוכרים לגרסאות ישנות, ולכן `clientBuild` עלה ל־2 והשרת נפרס עם `MIN_CLIENT_BUILD=2`. התקנה ישנה מקבלת `426 client_too_old` ומסך עדכון. משחק ממשיך בסבבים עד שאחד הצדדים מנצח.
 - `secretWord` חסר אצל המתחזה עד `ended`.
 - `players` לפי סדר התורות. `status`: `active` | `eliminated` | `left` | `removed`. `eliminated` הוא שחקן שהודח בהצבעה: הוא צופה וממשיך להגיב, אינו מקבל תור ואינו מצביע, והתוצאה שלו היא של הקבוצה שלו.

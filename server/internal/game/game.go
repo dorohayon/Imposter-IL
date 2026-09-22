@@ -386,7 +386,7 @@ func (g *Game) ConfirmRole(playerID string, now time.Time) error {
 	}
 	if !p.confirmed {
 		p.confirmed = true
-		g.maybeFinishRoleReveal(now)
+		g.maybeAdvanceTransition(now)
 		g.version++
 	}
 	return nil
@@ -518,8 +518,8 @@ func (g *Game) Disconnect(playerID string, now time.Time) error {
 	switch {
 	case g.phase == PhaseHints && g.order[g.turn] == playerID:
 		g.awaitReconnect(now)
-	case g.phase == PhaseRoleReveal:
-		g.maybeFinishRoleReveal(now)
+	case g.phase == PhaseRoleReveal || g.phase == PhaseEliminationReveal:
+		g.maybeAdvanceTransition(now)
 	}
 	g.version++
 	return nil
@@ -675,13 +675,51 @@ func (g *Game) expire(at time.Time) {
 	}
 }
 
-func (g *Game) maybeFinishRoleReveal(at time.Time) {
+func (g *Game) resetAcks() {
 	for _, p := range g.players {
-		if p.status == StatusActive && p.connected && !p.confirmed {
+		p.confirmed = false
+	}
+}
+
+// maybeAdvanceTransition leaves a synchronized screen once every required
+// connected player has acknowledged, or expire() will leave on the timer.
+func (g *Game) maybeAdvanceTransition(at time.Time) {
+	switch g.phase {
+	case PhaseRoleReveal:
+		if !g.allConnectedAcked(activePlayersOnly) {
 			return
 		}
+		g.startTurn(0, at)
+	case PhaseEliminationReveal:
+		if !g.allConnectedAcked(watchersOnly) {
+			return
+		}
+		g.startRound(at)
 	}
-	g.startTurn(0, at)
+}
+
+const (
+	activePlayersOnly = false
+	watchersOnly      = true
+)
+
+// allConnectedAcked reports whether every connected player who must
+// acknowledge this transition has. Active-only for role reveal; active and
+// eliminated spectators for the other holds.
+func (g *Game) allConnectedAcked(watchers bool) bool {
+	for _, p := range g.players {
+		if watchers {
+			if p.status != StatusActive && p.status != StatusEliminated {
+				continue
+			}
+		} else if p.status != StatusActive {
+			continue
+		}
+		if p.connected && !p.confirmed {
+			return false
+		}
+	}
+	return true
 }
 
 // startTurn gives the turn to the next active player at or after index i, or
@@ -798,8 +836,8 @@ func (g *Game) eliminate(id string, at time.Time) {
 	}
 }
 
-// ContinueAfterElimination moves on from naming the voted-out citizen. Any
-// player still in the match may tap through before the timer ends.
+// ContinueAfterElimination moves on from naming the voted-out citizen once
+// every connected watcher has tapped, or the timer expires.
 func (g *Game) ContinueAfterElimination(playerID string, now time.Time) error {
 	g.Tick(now)
 	if g.phase != PhaseEliminationReveal {
@@ -808,13 +846,18 @@ func (g *Game) ContinueAfterElimination(playerID string, now time.Time) error {
 	if _, err := g.watcher(playerID); err != nil {
 		return err
 	}
-	g.startRound(now)
-	g.version++
+	p := g.players[playerID]
+	if !p.confirmed {
+		p.confirmed = true
+		g.maybeAdvanceTransition(now)
+		g.version++
+	}
 	return nil
 }
 
 func (g *Game) showElimination(id string, at time.Time) {
 	g.lastEliminated = id
+	g.resetAcks()
 	g.setPhase(PhaseEliminationReveal, at, g.cfg.EliminationRevealDuration)
 }
 
@@ -860,8 +903,8 @@ func (g *Game) removeAll(ids []string, status PlayerStatus, at time.Time) {
 		g.end(TeamImpostor, ReasonImpostorParity)
 	case len(g.activeIDs()) < MinPlayersToContinue:
 		g.end(TeamNone, ReasonNotEnoughPlayers)
-	case g.phase == PhaseRoleReveal:
-		g.maybeFinishRoleReveal(at)
+	case g.phase == PhaseRoleReveal || g.phase == PhaseEliminationReveal:
+		g.maybeAdvanceTransition(at)
 	case removedCurrentTurn:
 		g.startTurn(g.turn+1, at)
 	}
