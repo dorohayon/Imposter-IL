@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>מי המתחזה? · מצבי חיפוש שחקנים</title>
+  <style>
+    @font-face { font-family: Rubik; src: url('../app/assets/fonts/Rubik-Regular.ttf'); font-weight: 400; }
+    @font-face { font-family: Rubik; src: url('../app/assets/fonts/Rubik-Bold.ttf'); font-weight: 700; }
+    @font-face { font-family: Secular; src: url('../app/assets/fonts/SecularOne-Regular.ttf'); }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f2efe8; color: #14132b; font-family: Rubik, sans-serif; }
+    .intro { max-width: 1040px; margin: auto; padding: 28px 22px 8px; }
+    .intro h1 { margin: 0 0 8px; font: 32px Secular, sans-serif; }
+    .intro p { max-width: 760px; margin: 0; line-height: 1.6; }
+    .gallery { max-width: 1740px; margin: auto; padding: 26px 16px 54px; display: flex; align-items: flex-start; justify-content: center; flex-wrap: wrap; gap: 28px; }
+    .variant { width: min(390px, 100%); }
+    .variant h2 { min-height: 46px; margin: 0 0 10px; font: 19px/1.3 Secular, sans-serif; }
+    .phone { width: 390px; max-width: 100%; height: 844px; overflow: hidden; display: flex; flex-direction: column; border-radius: 34px; background: #14132b; color: #fff8e7; box-shadow: 0 20px 38px #14132b3b; }
+    .system { height: 38px; flex: none; display: flex; align-items: center; justify-content: space-between; direction: ltr; padding: 0 26px; color: #fff8e7c9; font: 13px Rubik; }
+    .header { min-height: 66px; flex: none; display: grid; grid-template-columns: 50px 1fr 50px; align-items: center; gap: 8px; padding: 6px 22px 4px; }
+    .header h3 { grid-column: 2; margin: 0; text-align: center; font: 26px/1.15 Secular; }
+    .exit { grid-column: 1; width: 46px; height: 46px; display: grid; place-items: center; border: 1px solid #ff6b6b66; border-radius: 14px; background: #ff6b6b25; color: #ffb7b7; font: 25px Rubik; }
+    .body { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 8px 22px 18px; }
+    .status { min-height: 102px; flex: none; display: grid; grid-template-columns: minmax(0, 1fr) 70px; align-items: center; gap: 13px; padding: 14px 15px; border: 1px solid #2dd4bf55; border-radius: 20px; background: #2dd4bf12; }
+    .status-copy { min-width: 0; }
+    .status-copy strong { display: block; margin-bottom: 5px; color: #2dd4bf; font: 18px/1.25 Secular; }
+    .status-copy span { display: block; color: #fff8e7b8; font: 13px/1.45 Rubik; }
+    .timer { width: 68px; height: 68px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle, #14132b 59%, transparent 61%), conic-gradient(#ffd447 0 300deg, #4c485f 300deg 360deg); color: #ffd447; direction: ltr; font: 20px Secular; }
+    .timer.fast { background: radial-gradient(circle, #14132b 59%, transparent 61%), conic-gradient(#ffd447 0 74deg, #4c485f 74deg 360deg); font-size: 29px; }
+    .group-head { min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 2px 3px; }
+    .group-head strong { font: 17px Secular; }
+    .count { color: #2dd4bf; font: 14px Rubik; }
+    .players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .player { min-width: 0; height: 60px; display: flex; align-items: center; gap: 9px; padding: 8px 9px; border-radius: 15px; background: #fff8e712; }
+    .player.empty { border: 1px dashed #fff8e73d; background: #fff8e708; color: #fff8e777; }
+    .avatar { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 50%; object-fit: contain; background: #302741; }
+    .search { width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center; border: 2px solid #6c687a; border-radius: 50%; font-size: 21px; }
+    .identity { min-width: 0; display: grid; gap: 2px; }
+    .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 15px Secular; }
+    .me { color: #2dd4bf; font: 11px Rubik; }
+    .empty-label { min-width: 0; font: 12px/1.3 Rubik; }
+    .stay { margin: 13px 0 10px; color: #ffd447; text-align: center; font: 14px/1.35 Rubik; }
+    .cancel { width: 100%; height: 54px; margin-top: auto; flex: none; border: 2px solid #ff6b6bb8; border-radius: 18px; background: transparent; color: #ff9b9b; font: 17px Rubik; }
+    .countdown .status { border-color: #ffd44766; background: #ffd44712; }
+    .countdown .status-copy strong { color: #ffd447; }
+    .new-player { box-shadow: inset 0 0 0 2px #2dd4bf88; }
+    .no-match .body { align-items: center; text-align: center; padding-inline: 26px; }
+    .no-match .art { display: block; width: 230px; height: 230px; object-fit: contain; margin: 28px auto 12px; filter: drop-shadow(0 14px 20px #0005); }
+    .no-match h3 { margin: 0 0 10px; max-width: 330px; font: 28px/1.25 Secular; }
+    .no-match p { max-width: 305px; margin: 0; color: #fff8e7b8; font: 15px/1.55 Rubik; }
+    .actions { width: 100%; display: grid; gap: 12px; margin-top: auto; }
+    .primary, .secondary { width: 100%; height: 58px; border-radius: 18px; font: 18px Secular; }
+    .primary { border: 0; background: #ffd447; box-shadow: 0 7px 0 #d9a900; color: #14132b; }
+    .secondary { border: 1px solid #fff8e755; background: transparent; color: #fff8e7; }
+    .note { margin: 12px 2px 0; color: #4a4252; font: 13px/1.5 Rubik; }
+    @media (max-width: 410px) { .gallery { padding-inline: 6px; } .phone { border-radius: 22px; } }
+  </style>
+</head>
+<body>
+  <header class="intro">
+    <h1>חיפוש שחקנים · ארבעה מצבים</h1>
+    <p>הרחבת Design V1 למסכים 05–06. ארבעת המצבים משתמשים באותו מבנה, באווטארים ובאיור הקיים, ומתאימים ל־390×844 ללא גלילה.</p>
+  </header>
+
+  <main class="gallery">
+    <section class="variant">
+      <h2>01 · פחות מארבעה · searching</h2>
+      <div class="phone">
+        <div class="system"><span>9:41</span><span>●●●　▰</span></div>
+        <header class="header"><button class="exit" aria-label="ביטול חיפוש">×</button><h3>מרכיבים קבוצת שחקנים</h3></header>
+        <div class="body">
+          <div class="status">
+            <div class="status-copy"><strong>עוד 2 שחקנים כדי להתחיל</strong><span>ממשיכים לחפש שחקנים מתאימים בקטגוריות שבחרתם.</span></div>
+            <div class="timer" aria-label="דקה וארבעים ושתיים שניות">1:42</div>
+          </div>
+          <div class="group-head"><strong>הקבוצה שלך</strong><span class="count">2 מתוך 8</span></div>
+          <div class="players">
+            <div class="player"><img class="avatar" src="../assets/avatars/avatar-m06-magnifying-glass.webp" alt=""><div class="identity"><span class="name">דור</span><span class="me">אתם</span></div></div>
+            <div class="player new-player"><img class="avatar" src="../assets/avatars/avatar-f02-camera.webp" alt=""><div class="identity"><span class="name">נועה</span></div></div>
+            <div class="player empty"><span class="search">⌕</span><span class="empty-label">מחפשים שחקן...</span></div>
+            <div class="player empty"><span class="search">⌕</span><span class="empty-label">מחפשים שחקן...</span></div>
+            <div class="player empty"><span class="search">⌕</span><span class="empty-label">מחפשים שחקן...</span></div>
+            <div class="player empty"><span class="search">⌕</span><span class="empty-label">מחפשים שחקן...</span></div>
+            <div class="player empty"><span class="search">⌕</span><span class="empty-label">מחפשים שחקן...</span></div>
+            <div class="player empty"><span class="search">⌕</span><span class="empty-label">מחפשים שחקן...</span></div>
+          </div>
+          <p class="stay">נא לא לעזוב עמוד זה.</p>
+          <button class="cancel">ביטול חיפוש</button>
+        </div>
+      </div>
+      <p class="note">הטיימר מציג את הזמן שנותר עד שלא נמצאה התאמה.</p>
+    </section>
+
+    <section class="variant">
+      <h2>02 · ארבעה עד חמישה · waiting_for_more</h2>
+      <div class="phone">
+        <div class="system"><span>9:41</span><span>●●●　▰</span></div>
+        <header class="header"><button class="exit" aria-label="ביטול חיפוש">×</button><h3>מרכיבים קבוצת שחקנים</h3></header>
+        <div class="body">
+          <div class="status">
+            <div class="status-copy"><strong>יש מספיק שחקנים!</strong><span>מחכים לשחקנים נוספים ומתחילים כשהזמן מסתיים.</span></div>
+            <div class="timer" aria-label="28 שניות">28</div>
+          </div>
+          <div class="group-head"><strong>הקבוצה שלך</strong><span class="count">4 מתוך 8</span></div>
+          <div class="players">
+            <div class="player"><img class="avatar" src="../assets/avatars/avatar-m06-magnifying-glass.webp" alt=""><div class="identity"><span class="name">דור</span><span class="me">אתם</span></div></div>
+            <div class="player"><img class="avatar" src="../assets/avatars/avatar-m02-binoculars.webp" alt=""><div class="identity"><span class="name">יואב</span></div></div>
+            <div class="player"><img class="avatar" src="../assets/avatars/avatar-f02-camera.webp" alt=""><div class="identity"><span class="name">אריאל</span></div></div>
+            <div class="player new-player"><img class="avatar" src="../assets/avatars/avatar-f03-headphones.webp" alt=""><div class="identity"><span class="name">רועי</span></div></div>
+            <div class="player empty"><span class="search">⌕</span><span class="empty-label">מחפשים שחקן...</span></div>
+            <div class="player empty"><span class="search">⌕</span><span class="empty-label">מחפשים שחקן...</span></div>
+            <div class="player empty"><span class="search">⌕</span><span class="empty-label">מחפשים שחקן...</span></div>
+            <div class="player empty"><span class="search">⌕</span><span class="empty-label">מחפשים שחקן...</span></div>
+          </div>
+          <p class="stay">נא לא לעזוב עמוד זה.</p>
+          <button class="cancel">ביטול חיפוש</button>
+        </div>
+      </div>
+      <p class="note">ממתינים עד 30 שניות מהשחקן הרביעי; הספירה מתחלפת כשמגיע השישי.</p>
+    </section>
+
+    <section class="variant">
+      <h2>03 · שישה עד שמונה · countdown</h2>
+      <div class="phone countdown">
+        <div class="system"><span>9:41</span><span>●●●　▰</span></div>
+        <header class="header"><button class="exit" aria-label="ביטול חיפוש">×</button><h3>מרכיבים קבוצת שחקנים</h3></header>
+        <div class="body">
+          <div class="status">
+            <div class="status-copy"><strong>הקבוצה מוכנה!</strong><span>המשחק מתחיל בעוד רגע.</span></div>
+            <div class="timer fast" aria-label="5 שניות">5</div>
+          </div>
+          <div class="group-head"><strong>הקבוצה שלך</strong><span class="count">6 מתוך 8</span></div>
+          <div class="players">
+            <div class="player"><img class="avatar" src="../assets/avatars/avatar-m06-magnifying-glass.webp" alt=""><div class="identity"><span class="name">דור</span><span class="me">אתם</span></div></div>
+            <div class="player"><img class="avatar" src="../assets/avatars/avatar-m02-binoculars.webp" alt=""><div class="identity"><span class="name">יואב</span></div></div>
+            <div class="player"><img class="avatar" src="../assets/avatars/avatar-f02-camera.webp" alt=""><div class="identity"><span class="name">אריאל</span></div></div>
+            <div class="player"><img class="avatar" src="../assets/avatars/avatar-f03-headphones.webp" alt=""><div class="identity"><span class="name">רועי</span></div></div>
+            <div class="player"><img class="avatar" src="../assets/avatars/avatar-m01-flashlight.webp" alt=""><div class="identity"><span class="name">ליאור</span></div></div>
+            <div class="player new-player"><img class="avatar" src="../assets/avatars/avatar-f06-laptop.webp" alt=""><div class="identity"><span class="name">מאיה</span></div></div>
+            <div class="player empty"><span class="search">⌕</span><span class="empty-label">מחפשים שחקן...</span></div>
+            <div class="player empty"><span class="search">⌕</span><span class="empty-label">מחפשים שחקן...</span></div>
+          </div>
+          <p class="stay">נא לא לעזוב עמוד זה.</p>
+          <button class="cancel">ביטול חיפוש</button>
+        </div>
+      </div>
+      <p class="note">ספירה סמכותית של 5 שניות; המשחק מתחיל אוטומטית.</p>
+    </section>
+
+    <section class="variant">
+      <h2>04 · לא נמצאה התאמה · matchmaking.noMatch</h2>
+      <div class="phone no-match">
+        <div class="system"><span>9:41</span><span>●●●　▰</span></div>
+        <div class="body">
+          <img class="art" src="../assets/illustrations/no-category-match.webp" alt="בלשים שלא מצאו התאמה למשחק">
+          <h3>לא נמצא משחק בקטגוריות שבחרתם</h3>
+          <p>אפשר לנסות שוב עם אותן קטגוריות, או לבחור קטגוריות אחרות.</p>
+          <div class="actions">
+            <button class="primary">ניסיון נוסף</button>
+            <button class="secondary">בחירת קטגוריות אחרות</button>
+          </div>
+        </div>
+      </div>
+      <p class="note">האיור כבר קיים בפרויקט. החיפוש הסתיים, לכן הודעת “נא לא לעזוב” אינה מוצגת כאן.</p>
+    </section>
+  </main>
+</body>
+</html>
