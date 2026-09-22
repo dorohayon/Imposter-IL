@@ -57,7 +57,8 @@ func (s *Server) botProfile(taken []*session) (nickname, avatar string) {
 }
 
 const (
-	// How long a bot appearsconst (
+	// How long staging bots take to join a search, spread at random within.
+	stagingBotJoinWindow = 10 * time.Second
 	// How long a bot appears to spend writing a hint, and deciding a vote.
 	stagingBotWriteSeconds = 10
 	stagingBotVoteSeconds  = 4
@@ -168,12 +169,29 @@ func botHintPool(view game.View) []string {
 	return stagingBotHints
 }
 
-// rebalanceStagingBots fills a forming online match to four players, then
-// yields seats as real players arrive. No bots remain without a real player.
-// The server lock is held by every caller.
-func (s *Server) rebalanceStagingBots(entry *roomEntry, categories []string, now time.Time) {
+// stagingBotsDesired is how many bots should sit in a forming match. One human
+// may get the full staging roster so the search screen can be tried; once more
+// people arrive, bots yield down to the minimum needed to start.
+func stagingBotsDesired(stagingBots, humans int) int {
+	if humans == 0 || stagingBots == 0 {
+		return 0
+	}
+	capacity := matchmaking.MaxPlayers - humans
+	desired := min(stagingBots, capacity)
+	if humans >= 2 {
+		desired = min(desired, max(matchmaking.MinPlayers-humans, 0))
+	}
+	return desired
+}
+
+// rebalanceStagingBots fills a forming online match, then yields seats as real
+// players arrive. Bots join one at a time on a random schedule within ten
+// seconds so the search screen does not populate in a single frame. No bots
+// remain without a real player. The server lock is held by every caller.
+func (s *Server) rebalanceStagingBots(entry *roomEntry, categories []string, now time.Time) bool {
 	if s.stagingBots == 0 || !s.searching(entry) {
-		return
+		entry.stagingBotJoinAt = nil
+		return false
 	}
 	members := entry.room.View().Members
 	var bots []*session
@@ -185,18 +203,36 @@ func (s *Server) rebalanceStagingBots(entry *roomEntry, categories []string, now
 			humans++
 		}
 	}
-	desired := min(s.stagingBots, max(matchmaking.MinPlayers-humans, 0))
+	desired := stagingBotsDesired(s.stagingBots, humans)
 	if humans == 0 {
 		desired = 0
+		entry.stagingBotJoinAt = nil
 	}
+	changed := false
 	for len(bots) > desired {
 		bot := bots[len(bots)-1]
 		bots = bots[:len(bots)-1]
 		_ = entry.room.Leave(bot.playerID, now)
 		bot.roomID = ""
 		delete(s.players, bot.playerID)
+		changed = true
 	}
-	for len(bots) < desired {
+	if len(bots)+len(entry.stagingBotJoinAt) > desired {
+		entry.stagingBotJoinAt = entry.stagingBotJoinAt[:max(desired-len(bots), 0)]
+	}
+	need := desired - len(bots) - len(entry.stagingBotJoinAt)
+	for range need {
+		offset := time.Duration(s.rng.Int64N(int64(stagingBotJoinWindow) + 1))
+		entry.stagingBotJoinAt = append(entry.stagingBotJoinAt, now.Add(offset))
+	}
+	slices.SortFunc(entry.stagingBotJoinAt, func(a, b time.Time) int {
+		return a.Compare(b)
+	})
+	for len(entry.stagingBotJoinAt) > 0 && !entry.stagingBotJoinAt[0].After(now) {
+		entry.stagingBotJoinAt = entry.stagingBotJoinAt[1:]
+		if len(bots) >= desired {
+			continue
+		}
 		nickname, avatar := s.botProfile(bots)
 		s.botSequence++
 		id := fmt.Sprintf("p_bot_%d", s.botSequence)
@@ -216,7 +252,9 @@ func (s *Server) rebalanceStagingBots(entry *roomEntry, categories []string, now
 		}
 		s.players[id] = bot
 		bots = append(bots, bot)
+		changed = true
 	}
+	return changed
 }
 
 // removeGameBotsWithoutHumans ends an abandoned bot-only game immediately.
@@ -294,6 +332,15 @@ func (s *Server) runStagingBots() {
 	defer s.mu.Unlock()
 	if s.stagingBots == 0 {
 		return
+	}
+	now := s.now()
+	for _, entry := range slices.Clone(s.publicRooms) {
+		if s.searching(entry) {
+			if s.rebalanceStagingBots(entry, s.sharedCategories(entry), now) {
+				s.lobbyChanged(entry, now)
+				s.publish(entry)
+			}
+		}
 	}
 	for _, entry := range slices.Clone(s.publicRooms) {
 		s.removeGameBotsWithoutHumans(entry, s.now())

@@ -22,17 +22,18 @@ func (c *client) searcher(name string, categories ...string) *wsPlayer {
 
 func TestStagingBotsFillYieldAndNeverWaitAlone(t *testing.T) {
 	c := newClient(t)
-	c.srv.EnableStagingBots(3)
+	c.srv.EnableStagingBots(5)
 	first := c.searcher("דור", "animals")
-	state := first.w.searchState(searchPlayers(4))
+	c.advanceStagingBots(stagingBotJoinWindow)
+	state := first.w.searchState(searchPlayers(6))
 	botNames := 0
 	for _, raw := range state["players"].([]any) {
 		if name := raw.(map[string]any)["nickname"].(string); strings.HasPrefix(name, "בוט") {
 			botNames++
 		}
 	}
-	if botNames != 3 {
-		t.Fatalf("players = %v, want one human and three named bots", state["players"])
+	if botNames != 5 {
+		t.Fatalf("players = %v, want one human and five named bots", state["players"])
 	}
 
 	second := c.searcher("נועה", "animals")
@@ -74,9 +75,9 @@ func TestStagingBotsFillYieldAndNeverWaitAlone(t *testing.T) {
 
 func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
 	c := newClient(t)
-	c.srv.EnableStagingBots(3)
+	c.srv.EnableStagingBots(5)
 	human := c.searcher("דור", "animals")
-	human.w.searchState(searchPlayers(4))
+	c.waitStagingSearchPlayers(4)
 	c.advance(30 * time.Second)
 	c.tickAll()
 	session := human.w.sessionState(func(state map[string]any) bool { return state["activity"] == "game" })
@@ -177,6 +178,42 @@ func (w *wsClient) searchState(ok func(state map[string]any) bool) map[string]an
 
 func searchPlayers(n int) func(map[string]any) bool {
 	return func(s map[string]any) bool { return len(s["players"].([]any)) == n }
+}
+
+func searchAtLeast(n int) func(map[string]any) bool {
+	return func(s map[string]any) bool { return len(s["players"].([]any)) >= n }
+}
+
+// advanceStagingBots moves the clock and runs the staging loop so scheduled
+// search bots can join, as the server's Run loop would in production.
+func (c *client) advanceStagingBots(window time.Duration) {
+	const step = 350 * time.Millisecond
+	for elapsed := time.Duration(0); elapsed <= window; elapsed += step {
+		c.advance(step)
+		c.srv.runStagingBots()
+		c.tickAll()
+	}
+}
+
+func (c *client) stagingSearchPlayerCount() int {
+	c.srv.mu.Lock()
+	defer c.srv.mu.Unlock()
+	for _, entry := range c.srv.publicRooms {
+		return len(entry.room.View().Members)
+	}
+	return 0
+}
+
+func (c *client) waitStagingSearchPlayers(n int) {
+	for step := 0; step < 40; step++ {
+		if c.stagingSearchPlayerCount() >= n {
+			return
+		}
+		c.advance(350 * time.Millisecond)
+		c.srv.runStagingBots()
+		c.tickAll()
+	}
+	c.t.Fatalf("search did not reach %d players", n)
 }
 
 // tickAll applies every room's due deadlines, as the room timers would.
@@ -435,9 +472,9 @@ func TestMatchmakingPlayAgainStaysTogetherEvenWithDifferentCategories(t *testing
 // Bots react so that a single real player can see reactions arrive.
 func TestStagingBotsReactToTheHintOnTheBoard(t *testing.T) {
 	c := newClient(t)
-	c.srv.EnableStagingBots(3)
+	c.srv.EnableStagingBots(5)
 	human := c.searcher("דור", "animals")
-	human.w.searchState(searchPlayers(4))
+	c.waitStagingSearchPlayers(4)
 	c.advance(30 * time.Second)
 	c.tickAll()
 	session := human.w.sessionState(func(state map[string]any) bool { return state["activity"] == "game" })
