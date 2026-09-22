@@ -978,8 +978,7 @@ class _LiveGame extends StatelessWidget {
       'hints' || 'hint_break' => _Hints(game: game, onLeave: onLeave),
       'pre_voting' => _ToVoting(game: game, onLeave: onLeave),
       'voting' || 'runoff_voting' => _Voting(game: game, onLeave: onLeave),
-      'elimination_reveal' =>
-        _EliminationReveal(game: game, onLeave: onLeave),
+      'elimination_reveal' => _EliminationReveal(game: game, onLeave: onLeave),
       'impostor_guess' => _Guess(game: game, onLeave: onLeave),
       _ => _Result(game: game, onHome: onLeave),
     };
@@ -1096,9 +1095,8 @@ class _EliminationReveal extends StatelessWidget {
       timer: _timer(game),
       onExit: onLeave,
       bottom: PrimaryButton(
-        label: ready
-            ? 'ממתינים לשאר השחקנים'
-            : 'ממשיכים לסיבוב ${game.round + 1}',
+        label:
+            ready ? 'ממתינים לשאר השחקנים' : 'ממשיכים לסיבוב ${game.round + 1}',
         onPressed: ready
             ? null
             : () => runCommand(

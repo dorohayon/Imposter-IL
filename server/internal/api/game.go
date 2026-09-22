@@ -248,10 +248,10 @@ type gameJSON struct {
 	AwaitingReconnect   bool             `json:"awaitingReconnect"`
 	Hints               []hintJSON       `json:"hints"`
 	VoteCandidates      []string         `json:"voteCandidates"`
-	PreviousVotes        map[string]int   `json:"previousVotes,omitempty"`
-	EliminatedPlayerID   *string          `json:"eliminatedPlayerId,omitempty"`
-	MyVote               *string          `json:"myVote"`
-	Result               *resultJSON      `json:"result"`
+	PreviousVotes       map[string]int   `json:"previousVotes,omitempty"`
+	EliminatedPlayerID  *string          `json:"eliminatedPlayerId,omitempty"`
+	MyVote              *string          `json:"myVote"`
+	Result              *resultJSON      `json:"result"`
 }
 
 func optional[T comparable](v T) *T {
@@ -275,9 +275,9 @@ func (s *Server) gameJSON(gameID string, v game.View, profiles map[string]player
 		AwaitingReconnect:   v.Reconnecting,
 		Hints:               []hintJSON{},
 		VoteCandidates:      append([]string{}, v.Candidates...),
-		PreviousVotes:      v.PreviousVotes,
-		EliminatedPlayerID: optional(v.EliminatedPlayerID),
-		MyVote:             optional(v.MyVote),
+		PreviousVotes:       v.PreviousVotes,
+		EliminatedPlayerID:  optional(v.EliminatedPlayerID),
+		MyVote:              optional(v.MyVote),
 	}
 	if !v.Deadline.IsZero() {
 		deadline := v.Deadline.UTC()

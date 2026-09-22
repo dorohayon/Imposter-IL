@@ -42,8 +42,8 @@ const (
 	PhaseHintBreak Phase = "hint_break"
 	// PhasePreVoting is the beat between the last hint and the vote, so the
 	// table can read the board before choosing (screen "עוברים להצבעה").
-	PhasePreVoting     Phase = "pre_voting"
-	PhaseVoting        Phase = "voting"
+	PhasePreVoting         Phase = "pre_voting"
+	PhaseVoting            Phase = "voting"
 	PhaseRunoffVoting      Phase = "runoff_voting"
 	PhaseEliminationReveal Phase = "elimination_reveal"
 	PhaseImpostorGuess     Phase = "impostor_guess"
@@ -146,11 +146,11 @@ type Config struct {
 // DefaultConfig returns the approved durations. Private rooms override HintDuration.
 func DefaultConfig() Config {
 	return Config{
-		RoleRevealTimeout:  20 * time.Second,
-		HintDuration:       60 * time.Second,
-		VoteDuration:       20 * time.Second,
-		RunoffVoteDuration: 15 * time.Second,
-		GuessDuration:      60 * time.Second,
+		RoleRevealTimeout:         20 * time.Second,
+		HintDuration:              60 * time.Second,
+		VoteDuration:              20 * time.Second,
+		RunoffVoteDuration:        15 * time.Second,
+		GuessDuration:             60 * time.Second,
 		PreVotingDuration:         5 * time.Second,
 		EliminationRevealDuration: 15 * time.Second,
 		HintBreakDuration:         3 * time.Second,

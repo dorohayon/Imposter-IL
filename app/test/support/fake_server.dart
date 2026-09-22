@@ -215,8 +215,7 @@ Map<String, dynamic> gameJson({
       'hints': hints,
       'voteCandidates': candidates,
       'previousVotes': previousVotes,
-      if (eliminatedPlayerId != null)
-        'eliminatedPlayerId': eliminatedPlayerId,
+      if (eliminatedPlayerId != null) 'eliminatedPlayerId': eliminatedPlayerId,
       'myVote': myVote,
       'result': result,
     };
