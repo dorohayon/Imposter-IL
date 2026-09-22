@@ -61,10 +61,23 @@ Player _player(PlayerInfo info, String? me, {String? hint}) => Player(
 
 /// Counts down to a server deadline in the top-left timer circle.
 class LiveCountdown extends StatefulWidget {
-  const LiveCountdown({required this.deadline, this.large = false, super.key});
+  const LiveCountdown({
+    required this.deadline,
+    this.large = false,
+    this.size,
+    this.clock = false,
+    super.key,
+  });
 
   final DateTime deadline;
   final bool large;
+
+  /// Overrides the badge's own size, for a dial that is part of a card rather
+  /// than the header circle.
+  final double? size;
+
+  /// Reads a wait of minutes as "1:42" instead of counting 102 seconds.
+  final bool clock;
 
   @override
   State<LiveCountdown> createState() => _LiveCountdownState();
@@ -110,10 +123,15 @@ class _LiveCountdownState extends State<LiveCountdown> {
     final remaining = total == null || total.inMilliseconds <= 0
         ? null
         : left.inMilliseconds / total.inMilliseconds;
-    if (!widget.large) {
-      return TimerBadge(seconds: shown, remaining: remaining);
-    }
-    return TimerBadge(seconds: shown, remaining: remaining, size: 120);
+    final label = widget.clock && shown >= 60
+        ? '${shown ~/ 60}:${(shown % 60).toString().padLeft(2, '0')}'
+        : null;
+    return TimerBadge(
+      seconds: shown,
+      remaining: remaining,
+      size: widget.size ?? (widget.large ? 120 : 52),
+      label: label,
+    );
   }
 }
 
@@ -419,154 +437,264 @@ class _Search extends StatelessWidget {
   final MatchmakingView search;
   final VoidCallback onCancel;
 
+  /// The minimum a game can start with, which is what "two more players" counts
+  /// towards. Above it the wait is for a fuller table, not for a game at all.
+  static const _minimum = 4;
+
   @override
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
     final count = search.players.length;
-    final found = count == 1
-        ? 'נמצא שחקן אחד מתוך ${search.maxPlayers}'
-        : 'נמצאו $count מתוך ${search.maxPlayers} שחקנים';
-    final missing = search.maxPlayers - count;
-    final status = switch (search.status) {
-      'waiting_for_more' when missing > 0 =>
-        'מחכים עד 30 שניות ל$missing שחקנים נוספים. ב${search.maxPlayers} שחקנים נתחיל מיד.',
-      'waiting_for_more' => 'מחכים עד 30 שניות לשחקנים נוספים.',
-      'countdown' => 'המשחק מתחיל בעוד רגע.',
-      _ => 'המשחק יתחיל כשיהיו לפחות 4 שחקנים.',
+    final missing = _minimum - count;
+    // Screens 05a to 05c: one card that says where the search has got to, in
+    // the colour of how close it is.
+    final (Color accent, String headline, String body) =
+        switch (search.status) {
+      'countdown' => (
+          AppColors.yellow,
+          'הקבוצה מוכנה!',
+          'המשחק מתחיל בעוד רגע.',
+        ),
+      'waiting_for_more' => (
+          AppColors.turquoise,
+          'יש מספיק שחקנים!',
+          'מחכים כמה שניות לשחקנים נוספים ומתחילים כשהזמן מסתיים.',
+        ),
+      _ when missing == 1 => (
+          AppColors.turquoise,
+          'עוד שחקן אחד כדי להתחיל',
+          'ממשיכים לחפש שחקנים מתאימים בקטגוריות שבחרתם.',
+        ),
+      _ when missing > 1 => (
+          AppColors.turquoise,
+          'עוד $missing שחקנים כדי להתחיל',
+          'ממשיכים לחפש שחקנים מתאימים בקטגוריות שבחרתם.',
+        ),
+      _ => (
+          AppColors.turquoise,
+          'מחפשים שחקנים',
+          'ממשיכים לחפש שחקנים מתאימים בקטגוריות שבחרתם.',
+        ),
     };
+
     return GameScaffold(
-      // Screen 05 keeps the timer at the foot of the screen beside the line
-      // that explains it, rather than in the header circle: here the wait is
-      // the message, not a deadline to race.
-      title: 'מרכיבים צוות חקירה',
+      title: 'מרכיבים קבוצת שחקנים',
       onExit: onCancel,
       bottom: PrimaryButton(
-          label: 'ביטול חיפוש',
-          variant: ButtonVariant.danger,
-          onPressed: onCancel),
+        label: 'ביטול חיפוש',
+        variant: ButtonVariant.danger,
+        onPressed: onCancel,
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
             decoration: BoxDecoration(
-              color: AppColors.turquoise.withValues(alpha: .14),
-              borderRadius: BorderRadius.circular(999),
-              border:
-                  Border.all(color: AppColors.turquoise.withValues(alpha: .42)),
+              color: accent.withValues(alpha: .1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: accent.withValues(alpha: .42)),
             ),
-            child: Text(
-              found,
-              style: const TextStyle(
-                color: AppColors.turquoise,
-                fontFamily: 'Secular One',
-                fontSize: 18,
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        headline,
+                        style: TextStyle(
+                          color: accent,
+                          fontFamily: 'Secular One',
+                          fontSize: 18,
+                          height: 1.25,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        body,
+                        style: TextStyle(
+                          color: AppColors.cream.withValues(alpha: .78),
+                          fontSize: 13,
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (search.deadline case final deadline?) ...[
+                  const SizedBox(width: 13),
+                  // The wait moved out of the header circle and into the card
+                  // that explains it: here the clock is the message.
+                  LiveCountdown(deadline: deadline, size: 68, clock: true),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 14),
-          // Above the list, not below it: at the foot of a full roster it sat
-          // past the fold and had to be scrolled to.
+          const SizedBox(height: 12),
           Row(
             children: [
-              if (search.deadline != null) ...[
-                LiveCountdown(deadline: search.deadline!),
-                const SizedBox(width: 12),
-              ],
-              Expanded(
+              const Expanded(
                 child: Text(
-                  status,
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 15,
-                    height: 1.4,
-                  ),
+                  'הקבוצה שלך',
+                  style: TextStyle(fontFamily: 'Secular One', fontSize: 17),
+                ),
+              ),
+              Text(
+                '$count מתוך ${search.maxPlayers}',
+                style: const TextStyle(
+                  color: AppColors.turquoise,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
+          // Two columns, so eight seats fit without scrolling past the fold.
+          LayoutBuilder(
+            builder: (context, box) => Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (var i = 0; i < search.maxPlayers; i++)
+                  SizedBox(
+                    width: (box.maxWidth - 8) / 2,
+                    child: i < count
+                        ? _Seat(
+                            player: search.players[i],
+                            isMe: search.players[i].id == session.playerId,
+                            // The newest arrival is ringed, so a seat filling
+                            // up is visible without counting the roster again.
+                            justJoined: i == count - 1,
+                          )
+                        : const _EmptySeat(),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          // Leaving the screen leaves the queue, and the players already found
+          // go back to waiting.
           const Text(
             'נא לא לעזוב עמוד זה.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.yellow,
               fontSize: 14,
-              fontWeight: FontWeight.w600,
+              height: 1.35,
             ),
           ),
-          const SizedBox(height: 14),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: search.maxPlayers,
-            separatorBuilder: (_, __) => const SizedBox(height: 7),
-            itemBuilder: (context, index) {
-              if (index >= count) {
-                return Container(
-                  height: 56,
-                  padding: const EdgeInsets.symmetric(horizontal: 11),
-                  decoration: BoxDecoration(
-                    color: AppColors.cream.withValues(alpha: .035),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                        color: AppColors.cream.withValues(alpha: .12)),
+        ],
+      ),
+    );
+  }
+}
+
+/// A seat someone is already sitting in.
+class _Seat extends StatelessWidget {
+  const _Seat({
+    required this.player,
+    required this.isMe,
+    required this.justJoined,
+  });
+
+  final PlayerInfo player;
+  final bool isMe;
+  final bool justJoined;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.cream.withValues(alpha: .07),
+        borderRadius: BorderRadius.circular(15),
+        border: justJoined && !isMe
+            ? Border.all(
+                color: AppColors.turquoise.withValues(alpha: .6), width: 2)
+            : null,
+      ),
+      child: Row(
+        children: [
+          AvatarView(asset: player.avatarAsset, size: 42),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  player.nickname,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'Secular One',
+                    fontSize: 15,
+                    height: 1.2,
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFF5C586E),
-                            width: 2,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.search_rounded,
-                          color: AppColors.muted,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'מחפשים שחקן...',
-                        style: TextStyle(color: AppColors.muted, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              final player = search.players[index];
-              return Container(
-                height: 56,
-                padding: const EdgeInsets.symmetric(horizontal: 11),
-                decoration: BoxDecoration(
-                  color: AppColors.cream.withValues(alpha: .07),
-                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Row(
-                  children: [
-                    AvatarView(asset: player.avatarAsset, size: 40),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        player.nickname,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
+                if (isMe)
+                  const Text(
+                    'אתם',
+                    style: TextStyle(
+                      color: AppColors.turquoise,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
                     ),
-                    if (player.id == session.playerId)
-                      const Text(
-                        'אתם',
-                        style:
-                            TextStyle(color: AppColors.turquoise, fontSize: 12),
-                      ),
-                  ],
-                ),
-              );
-            },
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A seat still being searched for.
+class _EmptySeat extends StatelessWidget {
+  const _EmptySeat();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.cream.withValues(alpha: .03),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: AppColors.cream.withValues(alpha: .24)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF6C687A), width: 2),
+            ),
+            child: Icon(
+              Icons.search_rounded,
+              size: 19,
+              color: AppColors.cream.withValues(alpha: .5),
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              'מחפשים שחקן...',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: AppColors.cream.withValues(alpha: .6),
+                fontSize: 12,
+                height: 1.3,
+              ),
+            ),
           ),
         ],
       ),
@@ -850,6 +978,7 @@ class _LiveGame extends StatelessWidget {
       'hints' || 'hint_break' => _Hints(game: game, onLeave: onLeave),
       'pre_voting' => _ToVoting(game: game, onLeave: onLeave),
       'voting' || 'runoff_voting' => _Voting(game: game, onLeave: onLeave),
+      'elimination_reveal' => _EliminationReveal(game: game, onLeave: onLeave),
       'impostor_guess' => _Guess(game: game, onLeave: onLeave),
       _ => _Result(game: game, onHome: onLeave),
     };
@@ -934,6 +1063,57 @@ class _RoleReveal extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 9),
               child: StepCard(number: index + 1, text: tip),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Screen 17 online: a citizen was voted out; same layout as local pass-and-play.
+class _EliminationReveal extends StatelessWidget {
+  const _EliminationReveal({required this.game, required this.onLeave});
+
+  final GameView game;
+  final VoidCallback onLeave;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = SessionScope.of(context);
+    final out = game.player(game.eliminatedPlayerId);
+    if (out == null) {
+      return GameScaffold(
+        title: '',
+        showHeader: false,
+        onExit: onLeave,
+        child: const Center(child: Text('טוענים…')),
+      );
+    }
+    final ready = game.player(session.playerId)?.roleConfirmed ?? false;
+    return GameScaffold(
+      title: '',
+      showHeader: true,
+      timer: _timer(game),
+      onExit: onLeave,
+      bottom: PrimaryButton(
+        label:
+            ready ? 'ממתינים לשאר השחקנים' : 'ממשיכים לסיבוב ${game.round + 1}',
+        onPressed: ready
+            ? null
+            : () => runCommand(
+                  context,
+                  session.send(
+                    'game.continueAfterElimination',
+                    {'gameId': game.id},
+                  ),
+                ),
+      ),
+      child: EliminationRevealContent(
+        eliminatedName: out.nickname,
+        eliminatedAvatar: out.avatarAsset,
+        roleLine: '${out.nickname} היה/הייתה אזרח/ית',
+        remaining: [
+          for (final p in game.players)
+            if (p.status == 'active') (p.nickname, p.avatarAsset),
         ],
       ),
     );
@@ -1031,9 +1211,11 @@ class _HintsState extends State<_Hints> {
     final session = SessionScope.read(context);
     final messenger = ScaffoldMessenger.of(context);
     _pop(session.playerId ?? '', r.text);
+    final hintIndex =
+        widget.game.hints.isEmpty ? 0 : widget.game.hints.length - 1;
     final code = await session.send('game.react', {
       'gameId': widget.game.id,
-      'hintIndex': widget.game.hints.length - 1,
+      'hintIndex': hintIndex,
       'reactionId': r.id,
     });
     if (code == null) return;
@@ -1084,7 +1266,7 @@ class _HintsState extends State<_Hints> {
   String _word(PlayerInfo p, {required bool active}) {
     if (active) return '';
     for (final h in widget.game.hints.reversed) {
-      if (h.playerId == p.id && h.round == widget.game.round && !h.missing) {
+      if (h.playerId == p.id && h.round == widget.game.round) {
         return _hintText(h);
       }
     }
@@ -1105,7 +1287,7 @@ class _HintsState extends State<_Hints> {
     if (active) return ('כותב/ת רמז', AppColors.yellow, true);
     final said = [
       for (final h in widget.game.hints)
-        if (h.playerId == p.id) h,
+        if (h.playerId == p.id && !h.missing) h,
     ].length;
     if (said == 0) return ('ממתין/ה לתור', AppColors.muted, false);
     return (said == 1 ? '1 רמז' : '$said רמזים', AppColors.muted, false);
@@ -1294,7 +1476,7 @@ class _HintsState extends State<_Hints> {
               MediaQuery.viewInsetsOf(context).bottom == 0)
             _ReactionDock(
               reactions: session.reactions,
-              onReact: game.hints.isEmpty ? null : _react,
+              onReact: _react,
             ),
         ],
       ),
@@ -1400,18 +1582,20 @@ class _ParticipantCard extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(
-                height: 38,
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 38),
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: Text(
                     word,
-                    maxLines: 1,
+                    maxLines: 2,
+                    softWrap: true,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: AppColors.cream.withValues(alpha: out ? .5 : 1),
                       fontFamily: 'Secular One',
                       fontSize: 22,
+                      height: 1.1,
                     ),
                   ),
                 ),

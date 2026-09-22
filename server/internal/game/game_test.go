@@ -320,19 +320,50 @@ func TestImpostorHintIsNotCheckedAgainstTheSecret(t *testing.T) {
 func TestReactionsAreUnlimitedDuringNextTurn(t *testing.T) {
 	g := newGame(t, 4)
 	confirmAll(t, g)
-	wantErr(t, g.React(g.order[1], 0, "suspicious", t0), ErrInvalidHint)
+	must(t, g.React(g.order[1], 0, "suspicious", t0))
 	must(t, g.SubmitHint(g.order[0], "גדול", t0))
+	if n := g.hints[0].Reactions["suspicious"]; n != 1 {
+		t.Fatalf("pre-hint reaction = %d, want 1", n)
+	}
 	// Reacting works while the hint is held, and after the next turn opens.
 	for range 5 {
 		must(t, g.React(g.order[2], 0, "suspicious", t0))
 	}
 	g.Tick(t0.Add(3 * time.Second))
 	wantErr(t, g.React(g.order[2], 0, "free text", t0), ErrInvalidReaction)
-	if n := g.hints[0].Reactions["suspicious"]; n != 5 {
-		t.Fatalf("reactions = %d, want 5", n)
+	if n := g.hints[0].Reactions["suspicious"]; n != 6 {
+		t.Fatalf("reactions = %d, want 6 (1 before hint + 5 during hold)", n)
 	}
 	if g.order[g.turn] != g.order[1] {
 		t.Fatal("reactions must not block the next turn")
+	}
+}
+
+func TestPreHintReactionsBeforeFirstHintOfLaterRound(t *testing.T) {
+	g := newGame(t, 4)
+	confirmAll(t, g)
+	must(t, g.SubmitHint(g.order[0], "ראשון", t0))
+	g.Tick(t0.Add(3 * time.Second))
+	g.round = 2
+	g.startTurn(0, t0.Add(3*time.Second))
+	last := len(g.hints) - 1
+	must(t, g.React(g.order[1], last, "suspicious", t0.Add(3*time.Second)))
+	if g.hints[last].Reactions != nil {
+		t.Fatalf("reaction must not attach to the previous round's hint: %+v", g.hints[last].Reactions)
+	}
+	if g.pendingReactions["suspicious"] != 1 {
+		t.Fatalf("pending = %v, want one suspicious", g.pendingReactions)
+	}
+	must(t, g.SubmitHint(g.order[0], "שני", t0.Add(3*time.Second)))
+	var got *Hint
+	for i := range g.hints {
+		if g.hints[i].Round == 2 && g.hints[i].Text == "שני" {
+			got = &g.hints[i]
+			break
+		}
+	}
+	if got == nil || got.Reactions["suspicious"] != 1 {
+		t.Fatalf("round-2 hint reactions = %+v, want suspicious:1", got)
 	}
 }
 
@@ -381,6 +412,47 @@ func citizensWin(t *testing.T, g *Game, now time.Time) time.Time {
 	return now
 }
 
+func continueEliminationAllWatchers(t *testing.T, g *Game, now time.Time) {
+	t.Helper()
+	for _, id := range g.PlayerIDs() {
+		p := g.players[id]
+		if (p.status == StatusActive || p.status == StatusEliminated) && p.connected {
+			must(t, g.ContinueAfterElimination(id, now))
+		}
+	}
+}
+
+func TestEliminationRevealOneTapDoesNotAdvance(t *testing.T) {
+	g := newGame(t, 5)
+	now := toVoting(t, g)
+	out := citizens(g)[0]
+	voteAllFor(t, g, out, now)
+	now = now.Add(20 * time.Second)
+	g.Tick(now)
+	wantPhase(t, g, PhaseEliminationReveal)
+	must(t, g.ContinueAfterElimination(g.order[1], now))
+	wantPhase(t, g, PhaseEliminationReveal)
+}
+
+func TestEliminationRevealCanContinueEarly(t *testing.T) {
+	g := newGame(t, 5)
+	now := toVoting(t, g)
+	out := citizens(g)[0]
+	voteAllFor(t, g, out, now)
+	now = now.Add(20 * time.Second)
+	g.Tick(now)
+	wantPhase(t, g, PhaseEliminationReveal)
+	v, _ := g.View(out)
+	if v.EliminatedPlayerID != out {
+		t.Fatalf("eliminated = %q, want %q", v.EliminatedPlayerID, out)
+	}
+	continueEliminationAllWatchers(t, g, now)
+	wantPhase(t, g, PhaseHints)
+	if g.round != 2 {
+		t.Fatalf("round = %d, want 2", g.round)
+	}
+}
+
 func TestVotingOutACitizenStartsAnotherRound(t *testing.T) {
 	g := newGame(t, 5) // four citizens and an impostor
 	now := toVoting(t, g)
@@ -395,6 +467,9 @@ func TestVotingOutACitizenStartsAnotherRound(t *testing.T) {
 	if got := g.players[out].status; got != StatusEliminated {
 		t.Fatalf("status = %q, want eliminated", got)
 	}
+	wantPhase(t, g, PhaseEliminationReveal)
+	now = now.Add(DefaultConfig().EliminationRevealDuration)
+	g.Tick(now)
 	if g.round != 2 {
 		t.Fatalf("round = %d, want 2", g.round)
 	}

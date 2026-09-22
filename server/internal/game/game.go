@@ -42,11 +42,12 @@ const (
 	PhaseHintBreak Phase = "hint_break"
 	// PhasePreVoting is the beat between the last hint and the vote, so the
 	// table can read the board before choosing (screen "עוברים להצבעה").
-	PhasePreVoting     Phase = "pre_voting"
-	PhaseVoting        Phase = "voting"
-	PhaseRunoffVoting  Phase = "runoff_voting"
-	PhaseImpostorGuess Phase = "impostor_guess"
-	PhaseEnded         Phase = "ended"
+	PhasePreVoting         Phase = "pre_voting"
+	PhaseVoting            Phase = "voting"
+	PhaseRunoffVoting      Phase = "runoff_voting"
+	PhaseEliminationReveal Phase = "elimination_reveal"
+	PhaseImpostorGuess     Phase = "impostor_guess"
+	PhaseEnded             Phase = "ended"
 )
 
 type Role string
@@ -131,6 +132,9 @@ type Config struct {
 	GuessDuration      time.Duration
 	// PreVotingDuration is how long the board is shown before voting opens.
 	PreVotingDuration time.Duration
+	// EliminationRevealDuration is how long the table sees who was voted out
+	// before the next hint round opens.
+	EliminationRevealDuration time.Duration
 	// HintBreakDuration is how long a new hint is held before the next turn.
 	HintBreakDuration time.Duration
 	ReconnectDuration time.Duration
@@ -142,14 +146,15 @@ type Config struct {
 // DefaultConfig returns the approved durations. Private rooms override HintDuration.
 func DefaultConfig() Config {
 	return Config{
-		RoleRevealTimeout:  20 * time.Second,
-		HintDuration:       60 * time.Second,
-		VoteDuration:       20 * time.Second,
-		RunoffVoteDuration: 15 * time.Second,
-		GuessDuration:      60 * time.Second,
-		PreVotingDuration:  5 * time.Second,
-		HintBreakDuration:  3 * time.Second,
-		ReconnectDuration:  30 * time.Second,
+		RoleRevealTimeout:         20 * time.Second,
+		HintDuration:              60 * time.Second,
+		VoteDuration:              20 * time.Second,
+		RunoffVoteDuration:        15 * time.Second,
+		GuessDuration:             60 * time.Second,
+		PreVotingDuration:         5 * time.Second,
+		EliminationRevealDuration: 5 * time.Second,
+		HintBreakDuration:         3 * time.Second,
+		ReconnectDuration:         30 * time.Second,
 	}
 }
 
@@ -212,7 +217,10 @@ type View struct {
 	// during a runoff, so players see who tied.
 	PreviousVotes map[string]int
 	MyVote        string
-	Result        *Result
+	// EliminatedPlayerID is set during elimination_reveal after a citizen was
+	// voted out.
+	EliminatedPlayerID string
+	Result             *Result
 }
 
 type player struct {
@@ -240,6 +248,8 @@ type Game struct {
 	turn         int
 	reconnecting bool
 	hints        []Hint
+	// Reactions sent before the first hint of a round attach when that hint lands.
+	pendingReactions map[string]int
 
 	candidates []string
 	// silentVotes counts voting phases in a row that nobody voted in. One is a
@@ -248,6 +258,8 @@ type Game struct {
 	votes       map[string]string
 	voteRounds  []map[string]string
 	abstentions []int
+
+	lastEliminated string
 
 	result *Result
 }
@@ -262,7 +274,7 @@ func New(cfg Config, policy Policy, playerIDs []string, category, secretWord str
 		return nil, fmt.Errorf("%w: category and secret word are required", ErrInvalidSetup)
 	case rng == nil || policy.HintInappropriate == nil || policy.ValidReaction == nil:
 		return nil, fmt.Errorf("%w: rng and every policy function are required", ErrInvalidSetup)
-	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0 || cfg.PreVotingDuration <= 0 || cfg.HintBreakDuration <= 0:
+	case cfg.HintDuration <= 0 || cfg.VoteDuration <= 0 || cfg.RunoffVoteDuration <= 0 || cfg.GuessDuration <= 0 || cfg.ReconnectDuration <= 0 || cfg.RoleRevealTimeout <= 0 || cfg.PreVotingDuration <= 0 || cfg.EliminationRevealDuration <= 0 || cfg.HintBreakDuration <= 0:
 		return nil, fmt.Errorf("%w: invalid durations", ErrInvalidSetup)
 	}
 	g := &Game{
@@ -376,7 +388,7 @@ func (g *Game) ConfirmRole(playerID string, now time.Time) error {
 	}
 	if !p.confirmed {
 		p.confirmed = true
-		g.maybeFinishRoleReveal(now)
+		g.maybeAdvanceTransition(now)
 		g.version++
 	}
 	return nil
@@ -415,7 +427,12 @@ func (g *Game) SubmitHint(playerID, text string, now time.Time) error {
 			return ErrHintDuplicate
 		}
 	}
-	g.hints = append(g.hints, Hint{PlayerID: playerID, Text: text, Round: g.round})
+	h := Hint{PlayerID: playerID, Text: text, Round: g.round}
+	if len(g.pendingReactions) > 0 {
+		h.Reactions = maps.Clone(g.pendingReactions)
+		g.pendingReactions = nil
+	}
+	g.hints = append(g.hints, h)
 	// Every submitted hint is held, the last one included: it is the one the
 	// table votes on, so it needs reading most.
 	g.setPhase(PhaseHintBreak, now, g.cfg.HintBreakDuration)
@@ -435,11 +452,19 @@ func (g *Game) React(playerID string, hintIndex int, reactionID string, now time
 	if g.phase == PhaseRoleReveal || g.phase == PhaseEnded {
 		return ErrWrongPhase
 	}
-	if hintIndex < 0 || hintIndex >= len(g.hints) || g.hints[hintIndex].Missing {
-		return ErrInvalidHint
-	}
 	if !g.policy.ValidReaction(reactionID) {
 		return ErrInvalidReaction
+	}
+	if g.phase == PhaseHints && !g.hasHintThisRound() {
+		if g.pendingReactions == nil {
+			g.pendingReactions = map[string]int{}
+		}
+		g.pendingReactions[reactionID]++
+		g.version++
+		return nil
+	}
+	if hintIndex < 0 || hintIndex >= len(g.hints) || g.hints[hintIndex].Missing {
+		return ErrInvalidHint
 	}
 	h := &g.hints[hintIndex]
 	if h.Reactions == nil {
@@ -508,8 +533,8 @@ func (g *Game) Disconnect(playerID string, now time.Time) error {
 	switch {
 	case g.phase == PhaseHints && g.order[g.turn] == playerID:
 		g.awaitReconnect(now)
-	case g.phase == PhaseRoleReveal:
-		g.maybeFinishRoleReveal(now)
+	case g.phase == PhaseRoleReveal || g.phase == PhaseEliminationReveal:
+		g.maybeAdvanceTransition(now)
 	}
 	g.version++
 	return nil
@@ -573,6 +598,9 @@ func (g *Game) View(playerID string) (View, error) {
 	}
 	if g.phase == PhaseHints {
 		v.CurrentTurn = g.order[g.turn]
+	}
+	if g.phase == PhaseEliminationReveal {
+		v.EliminatedPlayerID = g.lastEliminated
 	}
 	if g.phase == PhaseRunoffVoting && len(g.voteRounds) > 0 {
 		// Only the players in the runoff. Counting every target would tell
@@ -647,7 +675,12 @@ func (g *Game) expire(at time.Time) {
 	case PhaseRoleReveal:
 		g.startTurn(0, at)
 	case PhaseHints:
-		g.hints = append(g.hints, Hint{PlayerID: g.order[g.turn], Missing: true, Round: g.round})
+		missing := Hint{PlayerID: g.order[g.turn], Missing: true, Round: g.round}
+		if len(g.pendingReactions) > 0 {
+			missing.Reactions = maps.Clone(g.pendingReactions)
+			g.pendingReactions = nil
+		}
+		g.hints = append(g.hints, missing)
 		g.startTurn(g.turn+1, at)
 	case PhaseHintBreak:
 		g.startTurn(g.turn+1, at)
@@ -655,18 +688,58 @@ func (g *Game) expire(at time.Time) {
 		g.startVoting(PhaseVoting, g.activeIDs(), at, g.cfg.VoteDuration)
 	case PhaseVoting, PhaseRunoffVoting:
 		g.tally(at)
+	case PhaseEliminationReveal:
+		g.startRound(at)
 	case PhaseImpostorGuess:
 		g.end(TeamCitizens, ReasonImpostorGuessTimeout)
 	}
 }
 
-func (g *Game) maybeFinishRoleReveal(at time.Time) {
+func (g *Game) resetAcks() {
 	for _, p := range g.players {
-		if p.status == StatusActive && p.connected && !p.confirmed {
+		p.confirmed = false
+	}
+}
+
+// maybeAdvanceTransition leaves a synchronized screen once every required
+// connected player has acknowledged, or expire() will leave on the timer.
+func (g *Game) maybeAdvanceTransition(at time.Time) {
+	switch g.phase {
+	case PhaseRoleReveal:
+		if !g.allConnectedAcked(activePlayersOnly) {
 			return
 		}
+		g.startTurn(0, at)
+	case PhaseEliminationReveal:
+		if !g.allConnectedAcked(watchersOnly) {
+			return
+		}
+		g.startRound(at)
 	}
-	g.startTurn(0, at)
+}
+
+const (
+	activePlayersOnly = false
+	watchersOnly      = true
+)
+
+// allConnectedAcked reports whether every connected player who must
+// acknowledge this transition has. Active-only for role reveal; active and
+// eliminated spectators for the other holds.
+func (g *Game) allConnectedAcked(watchers bool) bool {
+	for _, p := range g.players {
+		if watchers {
+			if p.status != StatusActive && p.status != StatusEliminated {
+				continue
+			}
+		} else if p.status != StatusActive {
+			continue
+		}
+		if p.connected && !p.confirmed {
+			return false
+		}
+	}
+	return true
 }
 
 // startTurn gives the turn to the next active player at or after index i, or
@@ -779,14 +852,50 @@ func (g *Game) eliminate(id string, at time.Time) {
 	case citizens+impostors < MinPlayersToContinue:
 		g.end(TeamNone, ReasonNotEnoughPlayers)
 	default:
-		g.startRound(at)
+		g.showElimination(id, at)
 	}
+}
+
+// ContinueAfterElimination moves on from naming the voted-out citizen once
+// every connected watcher has tapped, or the timer expires.
+func (g *Game) ContinueAfterElimination(playerID string, now time.Time) error {
+	g.Tick(now)
+	if g.phase != PhaseEliminationReveal {
+		return ErrWrongPhase
+	}
+	if _, err := g.watcher(playerID); err != nil {
+		return err
+	}
+	p := g.players[playerID]
+	if !p.confirmed {
+		p.confirmed = true
+		g.maybeAdvanceTransition(now)
+		g.version++
+	}
+	return nil
+}
+
+func (g *Game) showElimination(id string, at time.Time) {
+	g.lastEliminated = id
+	g.resetAcks()
+	g.setPhase(PhaseEliminationReveal, at, g.cfg.EliminationRevealDuration)
 }
 
 // startRound opens another round of hints. The board is not cleared: hints
 // from earlier rounds stay up, labelled by round, and a hint may not repeat
 // one from any of them.
+func (g *Game) hasHintThisRound() bool {
+	for _, h := range g.hints {
+		if h.Round == g.round {
+			return true
+		}
+	}
+	return false
+}
+
 func (g *Game) startRound(at time.Time) {
+	g.lastEliminated = ""
+	g.pendingReactions = nil
 	g.round++
 	g.candidates = nil
 	g.votes = map[string]string{}
@@ -824,8 +933,8 @@ func (g *Game) removeAll(ids []string, status PlayerStatus, at time.Time) {
 		g.end(TeamImpostor, ReasonImpostorParity)
 	case len(g.activeIDs()) < MinPlayersToContinue:
 		g.end(TeamNone, ReasonNotEnoughPlayers)
-	case g.phase == PhaseRoleReveal:
-		g.maybeFinishRoleReveal(at)
+	case g.phase == PhaseRoleReveal || g.phase == PhaseEliminationReveal:
+		g.maybeAdvanceTransition(at)
 	case removedCurrentTurn:
 		g.startTurn(g.turn+1, at)
 	}
