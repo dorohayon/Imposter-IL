@@ -214,7 +214,7 @@ func TestAViewCarriesTheRoundAndTheStatus(t *testing.T) {
 	confirmAll(t, g)
 	now := playRound(t, g, t0)
 	out := citizens(g)[0]
-	now = voteOut(t, g, out, now)
+	voteOut(t, g, out, now)
 
 	for _, id := range g.order {
 		v, err := g.View(id)

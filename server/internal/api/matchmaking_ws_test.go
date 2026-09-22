@@ -183,10 +183,6 @@ func searchPlayers(n int) func(map[string]any) bool {
 	return func(s map[string]any) bool { return len(s["players"].([]any)) == n }
 }
 
-func searchAtLeast(n int) func(map[string]any) bool {
-	return func(s map[string]any) bool { return len(s["players"].([]any)) >= n }
-}
-
 // advanceStagingBots moves the clock and runs the staging loop so scheduled
 // search bots can join, as the server's Run loop would in production.
 func (c *client) advanceStagingBots(window time.Duration) {
