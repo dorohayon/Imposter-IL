@@ -198,6 +198,7 @@ class GameView {
     required this.hints,
     required this.voteCandidates,
     required this.previousVotes,
+    required this.eliminatedPlayerId,
     required this.myVote,
     required this.result,
   });
@@ -222,6 +223,7 @@ class GameView {
         for (final e in (json['previousVotes'] as Map? ?? const {}).entries)
           e.key as String: e.value as int,
       },
+      eliminatedPlayerId: json['eliminatedPlayerId'] as String?,
       myVote: json['myVote'] as String?,
       result: result == null ? null : GameResult.fromJson(result),
     );
@@ -244,6 +246,7 @@ class GameView {
 
   /// Votes per candidate in the round before a runoff.
   final Map<String, int> previousVotes;
+  final String? eliminatedPlayerId;
   final String? myVote;
   final GameResult? result;
 

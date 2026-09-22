@@ -8,7 +8,26 @@ import (
 
 	"github.com/dorohayon/Imposter-IL/server/internal/content"
 	"github.com/dorohayon/Imposter-IL/server/internal/game"
+	"github.com/dorohayon/Imposter-IL/server/internal/matchmaking"
 )
+
+func TestStagingBotsDesired(t *testing.T) {
+	if stagingBotsDesired(5, 1) != 5 {
+		t.Fatal("one human should get the full staging roster")
+	}
+	if stagingBotsDesired(5, 2) != 2 {
+		t.Fatal("two humans should yield down to two bots")
+	}
+	if stagingBotsDesired(5, 4) != 0 {
+		t.Fatal("four humans need no bots")
+	}
+	if stagingBotsDesired(0, 1) != 0 {
+		t.Fatal("disabled staging stays off")
+	}
+	if stagingBotsDesired(5, 1) > matchmaking.MaxPlayers-1 {
+		t.Fatal("staging bots must leave room for the human")
+	}
+}
 
 // The wiring, which the content package cannot see: which pool a bot reaches
 // for is decided by whether the game handed it a secret word, and the game

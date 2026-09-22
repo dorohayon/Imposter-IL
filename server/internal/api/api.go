@@ -111,6 +111,8 @@ type roomEntry struct {
 	timers       matchmaking.Timers
 	lobbyVersion uint64     // rises when the searchers or timers change
 	settled      *game.Game // the finished game whose players were released
+	// stagingBotJoinAt schedules the next bot joins while humans search alone.
+	stagingBotJoinAt []time.Time
 
 	// stateVersion numbers the snapshots sent for this room: room.state and
 	// game.state each take the next value, so it rises on any published change,
@@ -188,14 +190,16 @@ func NewServer(now func() time.Time, policy game.Policy, pickWord PickWord) *Ser
 }
 
 // EnableStagingBots lets one real online player reach the four-player minimum
-// without an external always-on worker. At most three are allowed so a match
-// can never form without a real player. Leave disabled in production.
+// without an external always-on worker. Up to five may join a search so the
+// forming table can be exercised; a match still needs a real player. Leave
+// disabled in production.
 func (s *Server) EnableStagingBots(count int) {
 	if count < 0 {
 		count = 0
 	}
-	if count >= matchmaking.MinPlayers {
-		count = matchmaking.MinPlayers - 1
+	const maxStagingBots = 5
+	if count > maxStagingBots {
+		count = maxStagingBots
 	}
 	s.mu.Lock()
 	s.stagingBots = count

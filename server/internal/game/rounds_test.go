@@ -52,6 +52,10 @@ func voteOut(t *testing.T, g *Game, target string, now time.Time) time.Time {
 	}
 	now = now.Add(DefaultConfig().VoteDuration)
 	g.Tick(now)
+	if g.phase == PhaseEliminationReveal {
+		now = now.Add(DefaultConfig().EliminationRevealDuration)
+		g.Tick(now)
+	}
 	return now
 }
 
@@ -331,6 +335,10 @@ func TestASingleVoteResetsTheSilence(t *testing.T) {
 	must(t, g.Vote(voter, target, now))
 	now = now.Add(DefaultConfig().VoteDuration)
 	g.Tick(now)
+	if g.phase == PhaseEliminationReveal {
+		now = now.Add(DefaultConfig().EliminationRevealDuration)
+		g.Tick(now)
+	}
 	if g.result != nil {
 		t.Fatalf("a round with a vote in it ended the match: %+v", g.result)
 	}
