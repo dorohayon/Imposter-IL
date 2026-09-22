@@ -1631,7 +1631,7 @@ class _ParticipantCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            if (active) TypingDots(colour: colour),
+                            if (active) TypingDots(color: colour),
                           ],
                         ),
                       ),
