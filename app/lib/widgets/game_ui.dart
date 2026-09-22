@@ -197,10 +197,15 @@ class TimerBadge extends StatelessWidget {
     this.color,
     this.remaining,
     this.size = 52,
+    this.label,
     super.key,
   });
 
   final int seconds;
+
+  /// Shown instead of the seconds, for a wait long enough to read as a clock
+  /// ("1:42") rather than a count.
+  final String? label;
 
   /// Defaults to yellow, and to coral in the last seconds.
   final Color? color;
@@ -228,10 +233,10 @@ class TimerBadge extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              '$seconds',
+              label ?? '$seconds',
               style: TextStyle(
                 color: ring,
-                fontSize: size * .38,
+                fontSize: size * (label == null ? .38 : .28),
                 fontWeight: FontWeight.w900,
               ),
             ),

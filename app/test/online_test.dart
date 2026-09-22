@@ -95,12 +95,15 @@ void main() {
     pushSearch(channel, 'searching', 2);
     await settle(tester);
     expect(find.byType(LiveRoomScreen), findsOneWidget);
-    expect(find.text('נמצאו 2 מתוך 8 שחקנים'), findsOneWidget);
+    // Screen 05a: the card counts what is still missing to a game at all.
+    expect(find.text('2 מתוך 8'), findsOneWidget);
+    expect(find.text('עוד 2 שחקנים כדי להתחיל'), findsOneWidget);
     expect(
-      find.text('המשחק יתחיל כשיהיו לפחות 4 שחקנים.'),
+      find.text('ממשיכים לחפש שחקנים מתאימים בקטגוריות שבחרתם.'),
       findsOneWidget,
     );
     expect(find.text('מחפשים שחקן...'), findsNWidgets(6));
+    expect(find.text('נא לא לעזוב עמוד זה.'), findsOneWidget);
 
     // Join order is shared by everyone; the current player is identified by ID.
     channel.event('matchmaking.state', {
@@ -109,22 +112,27 @@ void main() {
       'stateVersion': ++_searchVersion,
     });
     await settle(tester);
-    final meLabelY = tester.getCenter(find.text('אתם')).dy;
+    // The seats sit two to a row now, so "אתם" is placed by which column it
+    // is in, not which line.
+    final meLabelX = tester.getCenter(find.text('אתם')).dx;
     expect(
-        (meLabelY - tester.getCenter(find.text('דור')).dy).abs(), lessThan(2));
-    expect((meLabelY - tester.getCenter(find.text('נועה')).dy).abs(),
-        greaterThan(20));
+        (meLabelX - tester.getCenter(find.text('דור')).dx).abs(), lessThan(30));
+    expect((meLabelX - tester.getCenter(find.text('נועה')).dx).abs(),
+        greaterThan(60));
 
     pushSearch(channel, 'waiting_for_more', 4);
     await settle(tester);
-    // Screen 05 names how many are still missing, beside the timer.
+    // Screen 05b: enough to play, still waiting for a fuller table.
+    expect(find.text('יש מספיק שחקנים!'), findsOneWidget);
     expect(
-      find.text('מחכים עד 30 שניות ל4 שחקנים נוספים. ב8 שחקנים נתחיל מיד.'),
+      find.text('מחכים לשחקנים נוספים ומתחילים כשהזמן מסתיים.'),
       findsOneWidget,
     );
 
     pushSearch(channel, 'countdown', 6);
     await settle(tester);
+    // Screen 05c.
+    expect(find.text('הקבוצה מוכנה!'), findsOneWidget);
     expect(find.text('המשחק מתחיל בעוד רגע.'), findsOneWidget);
 
     await tapLive(tester, 'ביטול חיפוש');
@@ -155,7 +163,7 @@ void main() {
         {'playerId': 'p_me', 'activity': 'matchmaking', 'roomId': 'r_pub2'});
     pushSearch(channel, 'searching', 1);
     await settle(tester);
-    expect(find.text('נמצא שחקן אחד מתוך 8'), findsOneWidget);
+    expect(find.text('1 מתוך 8'), findsOneWidget);
 
     channel.event('matchmaking.noMatch', {
       'categoryIds': ['food'],
@@ -213,7 +221,7 @@ void main() {
       'stateVersion': 5002,
     });
     await settle(tester);
-    expect(find.text('נמצאו 3 מתוך 8 שחקנים'), findsOneWidget);
+    expect(find.text('3 מתוך 8'), findsOneWidget);
   });
 
   testWidgets('"הכול" stands alone, and no categories blocks the search',
