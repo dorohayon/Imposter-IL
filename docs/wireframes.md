@@ -10,6 +10,11 @@
 [`wireframes/tie-announcement.html`](../wireframes/tie-announcement.html). זהו
 עיצוב הרחבה נפרד מ־29 המסכים המקוריים ומ־22 מסכי המשחק המקומי.
 
+ארבעת המצבים של חיפוש השחקנים מוצגים ב־
+[`wireframes/matchmaking-states.html`](../wireframes/matchmaking-states.html):
+פחות מארבעה, המתנה עם 4–5, ספירת התחלה עם 6–8, ולא נמצאה התאמה. האפיון
+המחייב נמצא ב־[`matchmaking-screen-design.md`](matchmaking-screen-design.md).
+
 ## מסכים ומצבים
 
 1. כניסה ראשונה.
