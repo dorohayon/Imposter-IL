@@ -320,16 +320,19 @@ func TestImpostorHintIsNotCheckedAgainstTheSecret(t *testing.T) {
 func TestReactionsAreUnlimitedDuringNextTurn(t *testing.T) {
 	g := newGame(t, 4)
 	confirmAll(t, g)
-	wantErr(t, g.React(g.order[1], 0, "suspicious", t0), ErrInvalidHint)
+	must(t, g.React(g.order[1], 0, "suspicious", t0))
 	must(t, g.SubmitHint(g.order[0], "גדול", t0))
+	if n := g.hints[0].Reactions["suspicious"]; n != 1 {
+		t.Fatalf("pre-hint reaction = %d, want 1", n)
+	}
 	// Reacting works while the hint is held, and after the next turn opens.
 	for range 5 {
 		must(t, g.React(g.order[2], 0, "suspicious", t0))
 	}
 	g.Tick(t0.Add(3 * time.Second))
 	wantErr(t, g.React(g.order[2], 0, "free text", t0), ErrInvalidReaction)
-	if n := g.hints[0].Reactions["suspicious"]; n != 5 {
-		t.Fatalf("reactions = %d, want 5", n)
+	if n := g.hints[0].Reactions["suspicious"]; n != 6 {
+		t.Fatalf("reactions = %d, want 6 (1 before hint + 5 during hold)", n)
 	}
 	if g.order[g.turn] != g.order[1] {
 		t.Fatal("reactions must not block the next turn")

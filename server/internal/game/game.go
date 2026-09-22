@@ -42,8 +42,8 @@ const (
 	PhaseHintBreak Phase = "hint_break"
 	// PhasePreVoting is the beat between the last hint and the vote, so the
 	// table can read the board before choosing (screen "עוברים להצבעה").
-	PhasePreVoting         Phase = "pre_voting"
-	PhaseVoting            Phase = "voting"
+	PhasePreVoting     Phase = "pre_voting"
+	PhaseVoting        Phase = "voting"
 	PhaseRunoffVoting      Phase = "runoff_voting"
 	PhaseEliminationReveal Phase = "elimination_reveal"
 	PhaseImpostorGuess     Phase = "impostor_guess"
@@ -146,13 +146,13 @@ type Config struct {
 // DefaultConfig returns the approved durations. Private rooms override HintDuration.
 func DefaultConfig() Config {
 	return Config{
-		RoleRevealTimeout:         20 * time.Second,
-		HintDuration:              60 * time.Second,
-		VoteDuration:              20 * time.Second,
-		RunoffVoteDuration:        15 * time.Second,
-		GuessDuration:             60 * time.Second,
+		RoleRevealTimeout:  20 * time.Second,
+		HintDuration:       60 * time.Second,
+		VoteDuration:       20 * time.Second,
+		RunoffVoteDuration: 15 * time.Second,
+		GuessDuration:      60 * time.Second,
 		PreVotingDuration:         5 * time.Second,
-		EliminationRevealDuration: 15 * time.Second,
+		EliminationRevealDuration: 5 * time.Second,
 		HintBreakDuration:         3 * time.Second,
 		ReconnectDuration:         30 * time.Second,
 	}
@@ -248,6 +248,8 @@ type Game struct {
 	turn         int
 	reconnecting bool
 	hints        []Hint
+	// Reactions sent before the first hint of a round attach when that hint lands.
+	pendingReactions map[string]int
 
 	candidates []string
 	// silentVotes counts voting phases in a row that nobody voted in. One is a
@@ -425,7 +427,12 @@ func (g *Game) SubmitHint(playerID, text string, now time.Time) error {
 			return ErrHintDuplicate
 		}
 	}
-	g.hints = append(g.hints, Hint{PlayerID: playerID, Text: text, Round: g.round})
+	h := Hint{PlayerID: playerID, Text: text, Round: g.round}
+	if len(g.pendingReactions) > 0 {
+		h.Reactions = maps.Clone(g.pendingReactions)
+		g.pendingReactions = nil
+	}
+	g.hints = append(g.hints, h)
 	// Every submitted hint is held, the last one included: it is the one the
 	// table votes on, so it needs reading most.
 	g.setPhase(PhaseHintBreak, now, g.cfg.HintBreakDuration)
@@ -445,11 +452,22 @@ func (g *Game) React(playerID string, hintIndex int, reactionID string, now time
 	if g.phase == PhaseRoleReveal || g.phase == PhaseEnded {
 		return ErrWrongPhase
 	}
-	if hintIndex < 0 || hintIndex >= len(g.hints) || g.hints[hintIndex].Missing {
-		return ErrInvalidHint
-	}
 	if !g.policy.ValidReaction(reactionID) {
 		return ErrInvalidReaction
+	}
+	if len(g.hints) == 0 {
+		if g.phase != PhaseHints || hintIndex != 0 {
+			return ErrInvalidHint
+		}
+		if g.pendingReactions == nil {
+			g.pendingReactions = map[string]int{}
+		}
+		g.pendingReactions[reactionID]++
+		g.version++
+		return nil
+	}
+	if hintIndex < 0 || hintIndex >= len(g.hints) || g.hints[hintIndex].Missing {
+		return ErrInvalidHint
 	}
 	h := &g.hints[hintIndex]
 	if h.Reactions == nil {
@@ -866,6 +884,7 @@ func (g *Game) showElimination(id string, at time.Time) {
 // one from any of them.
 func (g *Game) startRound(at time.Time) {
 	g.lastEliminated = ""
+	g.pendingReactions = nil
 	g.round++
 	g.candidates = nil
 	g.votes = map[string]string{}

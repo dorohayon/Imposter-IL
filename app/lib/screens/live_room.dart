@@ -1211,9 +1211,12 @@ class _HintsState extends State<_Hints> {
     final session = SessionScope.read(context);
     final messenger = ScaffoldMessenger.of(context);
     _pop(session.playerId ?? '', r.text);
+    final hintIndex = widget.game.hints.isEmpty
+        ? 0
+        : widget.game.hints.length - 1;
     final code = await session.send('game.react', {
       'gameId': widget.game.id,
-      'hintIndex': widget.game.hints.length - 1,
+      'hintIndex': hintIndex,
       'reactionId': r.id,
     });
     if (code == null) return;
@@ -1474,7 +1477,7 @@ class _HintsState extends State<_Hints> {
               MediaQuery.viewInsetsOf(context).bottom == 0)
             _ReactionDock(
               reactions: session.reactions,
-              onReact: game.hints.isEmpty ? null : _react,
+              onReact: _react,
             ),
         ],
       ),
