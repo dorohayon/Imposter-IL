@@ -458,7 +458,7 @@ class _Search extends StatelessWidget {
       'waiting_for_more' => (
           AppColors.turquoise,
           'יש מספיק שחקנים!',
-          'מחכים לשחקנים נוספים ומתחילים כשהזמן מסתיים.',
+          'מחכים כמה שניות לשחקנים נוספים ומתחילים כשהזמן מסתיים.',
         ),
       _ when missing == 1 => (
           AppColors.turquoise,

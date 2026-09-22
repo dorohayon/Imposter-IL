@@ -28,7 +28,7 @@ class OnlineChoiceScreen extends StatelessWidget {
             illustration: 'assets/illustrations/matchmaking-team.webp',
             title: 'משחק מהיר',
             description:
-                'בוחרים קטגוריות, מצטרפים לשחקנים אחרים לפי הקטגוריות שבחרתם.',
+                'בוחרים קטגוריות, ומצטרפים לשחקנים ברשת שבחרו באותם קטגוריות.',
             notes: const ['4–8 שחקנים'],
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(

@@ -125,7 +125,7 @@ void main() {
     // Screen 05b: enough to play, still waiting for a fuller table.
     expect(find.text('יש מספיק שחקנים!'), findsOneWidget);
     expect(
-      find.text('מחכים לשחקנים נוספים ומתחילים כשהזמן מסתיים.'),
+      find.text('מחכים כמה שניות לשחקנים נוספים ומתחילים כשהזמן מסתיים.'),
       findsOneWidget,
     );
 
