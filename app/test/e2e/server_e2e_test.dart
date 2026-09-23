@@ -10,8 +10,11 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
+import 'package:imposter_il/monetization/monetization.dart';
 import 'package:imposter_il/state/game_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../support/fake_monetization.dart';
 
 final _server = Platform.environment['IMPOSTER_E2E_SERVER'];
 
@@ -179,5 +182,51 @@ void main() {
         ? 'set IMPOSTER_E2E_SERVER to run against a server'
         : false,
     timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'the real server serves the pricing model and takes the store proofs',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final api = ApiClient(Uri.parse(_server!));
+      final session = GameSession(api);
+      addTearDown(session.dispose);
+      await session.signIn('דור', 'avatar-m04-detective-hat');
+
+      final store = FakeStore(owned: {'category_sports'});
+      final m = Monetization(
+        store: store,
+        ads: FakeAds(),
+        api: api,
+        settle: Duration.zero,
+      );
+      addTearDown(m.dispose);
+      await m.start();
+      await m.refresh();
+      // The server's default model, as the app reads it.
+      await until(session, () => m.config.freeCategoryIds.isNotEmpty);
+      expect(m.config.freeCategoryIds, ['food', 'animals', 'places']);
+      expect(m.isUnlocked('sports'), isTrue, reason: 'the store says so');
+
+      // No verifier is configured on a test server, so the proof is
+      // reported as unverifiable, and without enforcement play goes on.
+      final json = await api
+          .request('POST', '/v1/entitlements', token: session.token, body: {
+        'purchases': [
+          {
+            'platform': store.platform,
+            'productId': 'category_sports',
+            'verificationData': 'token',
+          },
+        ],
+      });
+      expect(json['results'], [
+        {'productId': 'category_sports', 'status': 'unverifiable'},
+      ]);
+      await until(session, () => session.connected);
+      await ok(session.startSearch(['sports']));
+      await ok(session.cancelSearch());
+    },
+    skip: _server == null ? 'IMPOSTER_E2E_SERVER is not set' : false,
   );
 }

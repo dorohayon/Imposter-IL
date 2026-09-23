@@ -2,9 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- No tracking, no data broker, no ad identifier. The nickname and avatar
-	     go to the game server to show other players in the room, and are not
-	     linked to an identity. Wins and losses never leave the device. -->
+	<!-- This manifest covers the app's own code: no tracking and no data
+	     broker. The nickname and avatar go to the game server to show other
+	     players in the room, and purchase proofs go there to unlock categories
+	     online; neither is linked to an identity. Wins and losses never leave
+	     the device. The Google Mobile Ads SDK ships its own manifest, which
+	     Xcode merges into the app's privacy report (docs/monetization.md). -->
 	<key>NSPrivacyTracking</key>
 	<false/>
 	<key>NSPrivacyTrackingDomains</key>
@@ -14,6 +17,18 @@
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePurchaseHistory</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>

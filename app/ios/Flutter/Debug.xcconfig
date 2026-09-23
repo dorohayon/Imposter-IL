@@ -1,1 +1,5 @@
 #include "Generated.xcconfig"
+
+// AdMob app id (docs/monetization.md). Google's sample id serves test ads
+// only; replace it with the real one before release.
+ADMOB_APP_ID = ca-app-pub-3940256099942544~1458002511

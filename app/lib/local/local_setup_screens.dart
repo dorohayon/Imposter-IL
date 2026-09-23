@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../models/player.dart';
+import '../monetization/monetization.dart';
+import '../monetization/monetization_config.dart';
+import '../monetization/purchase_sheet.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'local_game.dart';
@@ -101,6 +104,7 @@ class _LocalPlayersScreenState extends State<LocalPlayersScreen> {
     final problems = _problems;
     return GameScaffold(
       title: 'משחק במכשיר אחד',
+      bannerPlacement: BannerPlacement.localPlayers,
       bottom: PrimaryButton(
         label: 'המשך להגדרות',
         onPressed: problems.any((problem) => problem != null)
@@ -258,6 +262,12 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
 
   static const _times = <int?>[20, 30, 45, 60, null];
 
+  void _toggle(String id) {
+    final next = _categories == null ? <String>{id} : {..._categories!};
+    if (!next.remove(id)) next.add(id);
+    _categories = next;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -268,23 +278,27 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
     _hintSeconds = widget.initialHintSeconds;
   }
 
-  List<String> get _chosen => _categories == null
-      ? [for (final c in localCategories) c.id]
-      : _categories!.toList();
-
   @override
   Widget build(BuildContext context) {
+    final money = MonetizationScope.of(context);
+    // The same entitlements as online: a category that locked again (a
+    // subscription ended, a refund) drops out, including one carried over
+    // from the previous match by "משחק נוסף".
+    final picked = _categories?.where(money.isUnlocked).toSet();
+    final chosen = picked?.toList() ??
+        money.unlocked([for (final c in localCategories) c.id]);
     return GameScaffold(
       title: 'הגדרות המשחק',
+      bannerPlacement: BannerPlacement.localRules,
       bottom: PrimaryButton(
         label: 'מתחילים',
-        onPressed: _categories?.isEmpty ?? false
+        onPressed: chosen.isEmpty
             ? null
             : () => Navigator.of(context).pushReplacement(
                   MaterialPageRoute<void>(
                     builder: (_) => LocalGameScreen(
                       players: widget.players,
-                      categoryIds: _chosen,
+                      categoryIds: chosen,
                       hintSeconds: _hintSeconds,
                     ),
                   ),
@@ -293,8 +307,23 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('קטגוריות',
-              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+          Row(
+            children: [
+              const Text('קטגוריות',
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+              const SizedBox(width: 10),
+              if (!money.premium)
+                Expanded(
+                  child: Text(
+                    categoryCount(
+                        money, [for (final c in localCategories) c.id]),
+                    textAlign: TextAlign.end,
+                    style:
+                        const TextStyle(color: AppColors.muted, fontSize: 13),
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -308,17 +337,25 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
                 }),
               ),
               for (final c in localCategories)
-                _Chip(
-                  label: c.name,
-                  selected: _categories?.contains(c.id) ?? false,
-                  onTap: () => setState(() {
-                    final next = _categories == null
-                        ? <String>{c.id}
-                        : {..._categories!};
-                    if (!next.remove(c.id)) next.add(c.id);
-                    _categories = next;
-                  }),
-                ),
+                if (money.isUnlocked(c.id))
+                  _Chip(
+                    label: c.name,
+                    selected: picked?.contains(c.id) ?? false,
+                    onTap: () => setState(() => _toggle(c.id)),
+                  )
+                else
+                  LockedChip(
+                    label: c.name,
+                    onTap: () => openLockedCategory(
+                      context,
+                      categoryId: c.id,
+                      categoryName: c.name,
+                      // "הכול" already includes it once it opens.
+                      onSelect: () {
+                        if (_categories != null) setState(() => _toggle(c.id));
+                      },
+                    ),
+                  ),
             ],
           ),
           const SizedBox(height: 20),
@@ -345,10 +382,10 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
                 _SummaryRow('שחקנים', '${widget.players.length}'),
                 _SummaryRow(
                   'קטגוריות',
-                  _categories == null
+                  picked == null
                       ? 'הכול'
                       : localCategories
-                          .where((c) => _categories!.contains(c.id))
+                          .where((c) => picked.contains(c.id))
                           .map((c) => c.name)
                           .join(', '),
                 ),

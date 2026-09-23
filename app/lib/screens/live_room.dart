@@ -8,6 +8,8 @@ import 'package:share_plus/share_plus.dart';
 import '../data/invite.dart';
 import '../data/models.dart';
 import '../models/player.dart';
+import '../monetization/monetization.dart';
+import '../monetization/monetization_config.dart';
 import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
@@ -478,6 +480,7 @@ class _Search extends StatelessWidget {
     };
 
     return GameScaffold(
+      bannerPlacement: BannerPlacement.search,
       title: 'מרכיבים קבוצת שחקנים',
       onExit: onCancel,
       bottom: PrimaryButton(
@@ -739,6 +742,7 @@ class _Lobby extends StatelessWidget {
     ].join(', ');
 
     return GameScaffold(
+      bannerPlacement: BannerPlacement.lobby,
       title: host == null ? 'חדר פרטי' : 'החדר של ${host.nickname}',
       onExit: onLeave,
       timer: room.hostReconnectDeadline == null
@@ -1664,8 +1668,9 @@ class _ParticipantCard extends StatelessWidget {
   }
 }
 
-/// C02 and C05: the clue field, its counter and the send button, in a frame
-/// that turns coral when the clue was refused.
+/// C02 and C05: one row with the clue field, its counter and a compact send
+/// button, in a frame that turns coral when the clue was refused. The reason
+/// then sits under the row, so the card stays short while typing.
 class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
@@ -1685,99 +1690,185 @@ class _Composer extends StatelessWidget {
   Widget build(BuildContext context) {
     final bad = error != null;
     final accent = bad ? AppColors.coral : AppColors.yellow;
+    final count = controller.text.characters.length;
+    final narrow = MediaQuery.sizeOf(context).width < 360;
+    const counterStyle = TextStyle(color: Color(0x8C14132B), fontSize: 11);
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: accent.withValues(alpha: bad ? .12 : .1),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(15),
         border: Border.all(color: accent, width: 2),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
               Expanded(
-                child: Text(
-                  'הרמז שלך · מילה אחת',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: bad ? const Color(0xFFFFB7B7) : AppColors.yellow,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                child: Semantics(
+                  label: 'הרמז שלך · מילה אחת',
+                  child: TextField(
+                    controller: controller,
+                    maxLength: 25,
+                    autofocus: false,
+                    textAlign: TextAlign.start,
+                    style: const TextStyle(
+                      color: AppColors.night,
+                      fontFamily: 'Secular One',
+                      fontSize: 19,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'הרמז שלכם',
+                      counterText: '',
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(11),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(11),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(11),
+                        borderSide: BorderSide.none,
+                      ),
+                      suffixIconConstraints:
+                          const BoxConstraints(minWidth: 0, minHeight: 0),
+                      suffixIcon: Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 12),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Narrow phones keep the count and drop the
+                            // reminder, which the field's label still says.
+                            if (!bad && !narrow)
+                              const Text('מילה אחת · ', style: counterStyle),
+                            LtrText('$count/25', style: counterStyle),
+                          ],
+                        ),
+                      ),
+                    ),
+                    onChanged: (_) => onChanged(),
+                    onSubmitted: (_) => onSubmit(),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              LtrText(
-                '${controller.text.characters.length}/25',
-                style: const TextStyle(color: AppColors.muted, fontSize: 13),
-              ),
+              const SizedBox(width: 6),
+              _SendButton(onPressed: busy || bad ? null : onSubmit),
             ],
           ),
-          const SizedBox(height: 9),
-          TextField(
-            controller: controller,
-            maxLength: 25,
-            autofocus: false,
-            textAlign: TextAlign.start,
-            style: const TextStyle(
-              color: AppColors.night,
-              fontSize: 21,
-              fontWeight: FontWeight.w800,
-            ),
-            decoration: const InputDecoration(
-              hintText: 'הרמז שלכם',
-              counterText: '',
-            ),
-            onChanged: (_) => onChanged(),
-            onSubmitted: (_) => onSubmit(),
-          ),
-          if (error != null) ...[
-            const SizedBox(height: 9),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 20,
-                  height: 20,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: AppColors.coral,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text(
-                    '!',
-                    style: TextStyle(
-                      color: Color(0xFF3B1214),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+          if (error != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(5, 5, 5, 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 18,
+                    height: 18,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: AppColors.coral,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Text(
+                      '!',
+                      style: TextStyle(
+                        color: Color(0xFF3B1214),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '$error הרמז לא נשלח.',
-                    style: const TextStyle(
-                      color: Color(0xFFFFD9D9),
-                      fontSize: 13,
-                      height: 1.35,
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      '$error הרמז לא נשלח.',
+                      style: const TextStyle(
+                        color: Color(0xFFFFD9D9),
+                        fontSize: 12.5,
+                        height: 1.35,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ],
-          const SizedBox(height: 9),
-          PrimaryButton(
-            label: 'שליחת רמז',
-            variant: ButtonVariant.confirm,
-            onPressed: busy || bad ? null : onSubmit,
-          ),
         ],
+      ),
+    );
+  }
+}
+
+/// "שליחה" beside the clue field. Short on screen; its accessible name is
+/// still the approved action, "שליחת רמז".
+class _SendButton extends StatelessWidget {
+  const _SendButton({required this.onPressed});
+
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    final ink = enabled
+        ? const Color(0xFF0E2B2A)
+        : AppColors.cream.withValues(alpha: .45);
+    return Tooltip(
+      message: 'שליחת רמז',
+      excludeFromSemantics: true,
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        label: 'שליחת רמז',
+        excludeSemantics: true,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: enabled
+                ? AppColors.turquoise
+                : AppColors.turquoise.withValues(alpha: .25),
+            borderRadius: BorderRadius.circular(11),
+            boxShadow: enabled
+                ? const [
+                    BoxShadow(color: Color(0xFF17A395), offset: Offset(0, 3)),
+                  ]
+                : null,
+          ),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: onPressed,
+              borderRadius: BorderRadius.circular(11),
+              child: SizedBox(
+                height: 44,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'שליחה',
+                        style: TextStyle(
+                          color: ink,
+                          fontFamily: 'Secular One',
+                          fontSize: 17,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      // Forward in a Hebrew layout, which points left.
+                      Icon(Icons.arrow_forward_rounded, size: 17, color: ink),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -2429,56 +2520,194 @@ class _GuessState extends State<_Guess> {
               ),
             )
           : null,
-      child: Column(
-        children: [
-          const Illustration(
-            'assets/illustrations/role-impostor.webp',
-            height: 170,
-          ),
-          Text(
-            'עוד אפשר לנצח',
-            style: Theme.of(context).textTheme.headlineLarge,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 10),
-          if (game.isImpostor) ...[
-            const Text(
-              'נחשו את המילה הסודית. יש לכם ניסיון אחד.',
-              style: TextStyle(color: AppColors.muted, fontSize: 17),
+      child: game.isImpostor
+          ? _ImpostorGuess(game: game, guess: _guess)
+          : Column(
+              children: [
+                const Illustration(
+                  'assets/illustrations/role-impostor.webp',
+                  height: 170,
+                ),
+                Text(
+                  'עוד אפשר לנצח',
+                  style: Theme.of(context).textTheme.headlineLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'המתחזה נתפס ועכשיו הוא מנסה לנחש את המילה.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.muted, fontSize: 17),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _guess,
-              textAlign: TextAlign.start,
-              style: const TextStyle(
-                color: AppColors.night,
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
+    );
+  }
+}
+
+/// Screen 14 for the impostor: a short header, then everything the others
+/// said — the only evidence there is for the word — and the guess.
+class _ImpostorGuess extends StatelessWidget {
+  const _ImpostorGuess({required this.game, required this.guess});
+
+  final GameView game;
+  final TextEditingController guess;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = SessionScope.of(context);
+    final others = [
+      for (final p in game.players)
+        if (p.id != session.playerId) p,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            const Illustration(
+              'assets/illustrations/role-impostor.webp',
+              height: 72,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'עוד אפשר לנצח',
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineMedium
+                        ?.copyWith(fontSize: 24),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'ניחוש נכון של המילה הסודית מעניק לכם את הניצחון. יש לכם ניסיון אחד.',
+                    style: TextStyle(
+                        color: AppColors.muted, fontSize: 13, height: 1.5),
+                  ),
+                ],
               ),
-              decoration: const InputDecoration(hintText: 'מה המילה?'),
             ),
-            const SizedBox(height: 8),
-            // Screen 14 reassures the impostor that typing is private, and
-            // spells out what losing the clock costs.
-            const Text(
-              'הניחוש לא מוצג לשחקנים בזמן ההקלדה',
-              style: TextStyle(color: AppColors.muted, fontSize: 13),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            const Expanded(
+              child: Text(
+                'הרמזים של שאר השחקנים',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+              ),
             ),
-            const SizedBox(height: 14),
-            const Text(
-              'אם הזמן ייגמר או שהניחוש יהיה שגוי — האזרחים מנצחים.',
-              textAlign: TextAlign.center,
-              style:
-                  TextStyle(color: AppColors.muted, fontSize: 14, height: 1.4),
+            const SizedBox(width: 8),
+            Text(
+              'קטגוריה: ${game.category}',
+              style: const TextStyle(color: AppColors.muted, fontSize: 12),
             ),
-          ] else
-            const Text(
-              'המתחזה נתפס ועכשיו הוא מנסה לנחש את המילה.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, fontSize: 17),
-            ),
-        ],
-      ),
+          ],
+        ),
+        const SizedBox(height: 9),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: others.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            mainAxisExtent: 80,
+          ),
+          itemBuilder: (context, index) {
+            final p = others[index];
+            final said = _saidSoFar(game, session, p.id);
+            final spoke = said != null && said.isNotEmpty;
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              decoration: BoxDecoration(
+                color: AppColors.cream.withValues(alpha: .07),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(
+                  color: AppColors.cream.withValues(alpha: .12),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      AvatarView(asset: p.avatarAsset, size: 26),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: Text(
+                          p.nickname,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: AppColors.cream.withValues(alpha: .72),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    spoke ? said : 'לא נשלח רמז',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: spoke
+                        ? const TextStyle(
+                            fontFamily: 'Secular One',
+                            fontSize: 21,
+                            height: 1.1,
+                          )
+                        : const TextStyle(
+                            color: Color(0xFFFF9B9B),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: guess,
+          textAlign: TextAlign.start,
+          style: const TextStyle(
+            color: AppColors.night,
+            fontFamily: 'Secular One',
+            fontSize: 24,
+          ),
+          decoration: const InputDecoration(hintText: 'מה המילה?'),
+        ),
+        const SizedBox(height: 8),
+        // Screen 14 reassures the impostor that typing is private, and spells
+        // out what losing the clock costs.
+        const Text(
+          'הניחוש לא מוצג לשחקנים בזמן ההקלדה',
+          style: TextStyle(color: AppColors.muted, fontSize: 13),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.cream.withValues(alpha: .06),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Text(
+            'אם הזמן ייגמר או שהניחוש יהיה שגוי — האזרחים מנצחים.',
+            style: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.5),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -2499,6 +2728,21 @@ class _Result extends StatelessWidget {
 
   final GameView game;
   final VoidCallback onHome;
+
+  /// The full result has been seen and the player chose to go on: after a
+  /// match that was played to a winner, an interstitial comes first, then the
+  /// navigation. A match that was called off, stopped, interrupted by the
+  /// impostor leaving or lost to an error shows none. Search again only after
+  /// the ad, so a new match cannot start behind it.
+  Future<void> _continue(BuildContext context, VoidCallback next) async {
+    final result = game.result;
+    if (result != null &&
+        result.winner != null &&
+        result.reason != 'impostor_gone') {
+      await MonetizationScope.maybeRead(context)?.afterCompletedMatch();
+    }
+    if (context.mounted) next();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2534,13 +2778,19 @@ class _Result extends StatelessWidget {
         children: [
           PrimaryButton(
             label: 'משחק נוסף',
-            onPressed: () => runCommand(
+            onPressed: () => _continue(
               context,
-              session.send('game.playAgain', {'gameId': game.id}),
+              () => runCommand(
+                context,
+                session.send('game.playAgain', {'gameId': game.id}),
+              ),
             ),
           ),
           const SizedBox(height: 8),
-          TextButton(onPressed: onHome, child: const Text('חזרה למסך הבית')),
+          TextButton(
+            onPressed: () => _continue(context, onHome),
+            child: const Text('חזרה למסך הבית'),
+          ),
         ],
       ),
       child: Column(

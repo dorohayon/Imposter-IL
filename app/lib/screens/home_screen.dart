@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../monetization/ad_banner.dart';
+import '../monetization/monetization.dart';
+import '../monetization/monetization_config.dart';
 import '../state/game_session.dart';
 import 'live_room.dart';
 import 'onboarding_screen.dart';
@@ -26,6 +29,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadSavedLocalGame();
+    // Home is the first screen after the legal gate and onboarding, so the
+    // ad consent form (UMP) never covers either of them.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) MonetizationScope.read(context).startAds();
+    });
   }
 
   Future<void> _loadSavedLocalGame() async {
@@ -84,6 +92,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
+        // Only when there is a banner: an empty bottom bar would still take
+        // the bottom inset away from the buttons.
+        bottomNavigationBar: AdBanner.shows(context, BannerPlacement.home)
+            ? const AdBanner(BannerPlacement.home)
+            : null,
         body: SafeArea(
           // The design frame is a fixed 390x844 whose content reaches the
           // bottom. On a taller phone a plain list stacks everything at the

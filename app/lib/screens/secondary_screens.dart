@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../monetization/monetization.dart';
+import '../monetization/monetization_config.dart';
 import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
@@ -14,6 +16,7 @@ class ProfileScreen extends StatelessWidget {
     final session = SessionScope.of(context);
     return GameScaffold(
       title: 'הפרופיל שלי',
+      bannerPlacement: BannerPlacement.profile,
       child: Column(
         children: [
           AvatarView(
@@ -110,8 +113,10 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
+    final money = MonetizationScope.of(context);
     return GameScaffold(
       title: 'הגדרות',
+      bannerPlacement: BannerPlacement.settings,
       child: Column(
         children: [
           const _SettingsRow(
@@ -150,6 +155,18 @@ class SettingsScreen extends StatelessWidget {
               MaterialPageRoute<void>(builder: (_) => const PrivacyScreen()),
             ),
           ),
+          const SizedBox(height: 10),
+          const _RestoreRow(),
+          // Required by Google's consent rules where they apply (EEA, UK):
+          // a way back to the ad privacy choice.
+          if (money.privacyOptionsRequired) ...[
+            const SizedBox(height: 10),
+            _LinkRow(
+              title: 'העדפות פרטיות לפרסומות',
+              value: '',
+              onTap: money.showPrivacyOptions,
+            ),
+          ],
           const SizedBox(height: 36),
           const Text(
             'מי המתחזה? · גרסה 1.0',
@@ -173,6 +190,45 @@ class SettingsScreen extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Restore outside the purchase popup: a player on a new phone whose
+/// Premium hides every lock has no locked category to tap.
+class _RestoreRow extends StatefulWidget {
+  const _RestoreRow();
+
+  @override
+  State<_RestoreRow> createState() => _RestoreRowState();
+}
+
+class _RestoreRowState extends State<_RestoreRow> {
+  bool _busy = false;
+
+  Future<void> _restore() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    final result = await MonetizationScope.read(context).restoreAll();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    messenger.showSnackBar(SnackBar(
+      content: Text(switch (result) {
+        RestoreResult.found => 'הרכישות שוחזרו.',
+        RestoreResult.none => 'לא נמצאו רכישות קודמות בחשבון החנות הזה.',
+        RestoreResult.failed =>
+          'השחזור לא הושלם. בדקו את החיבור לאינטרנט ונסו שוב.',
+      }),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final money = MonetizationScope.of(context);
+    return _LinkRow(
+      title: _busy ? 'משחזרים רכישות…' : 'שחזור רכישות',
+      value: money.premium ? 'פרימיום' : '',
+      onTap: _busy ? null : _restore,
     );
   }
 }
@@ -294,6 +350,7 @@ class HowToPlayScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return GameScaffold(
       title: 'איך משחקים?',
+      bannerPlacement: BannerPlacement.howToPlay,
       accent: const Color(0xFF2A2455),
       bottom: PrimaryButton(
         label: 'הבנתי',

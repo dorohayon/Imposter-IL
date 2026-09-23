@@ -3,6 +3,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'data/invite.dart';
 import 'data/server.dart';
+import 'monetization/ads.dart';
+import 'monetization/monetization.dart';
+import 'monetization/store.dart';
 import 'screens/home_screen.dart';
 import 'screens/private_flow.dart';
 import 'screens/legal_screens.dart';
@@ -12,15 +15,25 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final session = GameSession(ApiClient(defaultServerUrl()));
+  final api = ApiClient(defaultServerUrl());
+  final session = GameSession(api);
+  final monetization =
+      Monetization(store: PluginStore(), ads: AdMobAds(), api: api);
   await session.restore();
-  runApp(ImposterApp(session: session));
+  await monetization.start();
+  monetization.attach(session);
+  runApp(ImposterApp(session: session, monetization: monetization));
 }
 
 class ImposterApp extends StatefulWidget {
-  const ImposterApp({required this.session, super.key});
+  const ImposterApp({
+    required this.session,
+    required this.monetization,
+    super.key,
+  });
 
   final GameSession session;
+  final Monetization monetization;
 
   @override
   State<ImposterApp> createState() => _ImposterAppState();
@@ -46,6 +59,13 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
   /// A link that arrives while the app is already open. The platform delivers
   /// both this and the launch route as plain route strings, which is why no
   /// plugin is involved.
+  /// Back in the foreground, the store may have renewed, refunded or
+  /// expired something meanwhile.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) widget.monetization.resumed();
+  }
+
   @override
   Future<bool> didPushRouteInformation(RouteInformation info) async =>
       _openInvite(info.uri.toString());
@@ -66,29 +86,32 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return SessionScope(
-      session: widget.session,
-      child: MaterialApp(
-        navigatorKey: _navigator,
-        // The trailing "?" is a neutral character, so in the LTR context of the
-        // task switcher it would sit on the wrong side. \u200f (RLM) pins it.
-        title: 'מי המתחזה?\u200f',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.dark,
-        // Hebrew everywhere: RTL layout and Hebrew text in built-in widgets.
-        locale: const Locale('he'),
-        supportedLocales: const [Locale('he')],
-        localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        // builder wraps the Navigator, so an unsupported build is covered
-        // wherever the player happens to be — home is not enough, since
-        // client_too_old can arrive while they are deep in a pushed route.
-        builder: (context, child) => SessionScope.of(context).needsUpdate
-            ? const UpdateRequiredScreen()
-            : child!,
-        // Legal acknowledgement is outside onboarding: no guest session and no
-        // user-written nickname reaches the server before the current Terms are
-        // accepted. Bumping legalVersion gates returning installs as well.
-        home: const LegalGate(child: _Start()),
+    return MonetizationScope(
+      monetization: widget.monetization,
+      child: SessionScope(
+        session: widget.session,
+        child: MaterialApp(
+          navigatorKey: _navigator,
+          // The trailing "?" is a neutral character, so in the LTR context of the
+          // task switcher it would sit on the wrong side. \u200f (RLM) pins it.
+          title: 'מי המתחזה?\u200f',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.dark,
+          // Hebrew everywhere: RTL layout and Hebrew text in built-in widgets.
+          locale: const Locale('he'),
+          supportedLocales: const [Locale('he')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          // builder wraps the Navigator, so an unsupported build is covered
+          // wherever the player happens to be — home is not enough, since
+          // client_too_old can arrive while they are deep in a pushed route.
+          builder: (context, child) => SessionScope.of(context).needsUpdate
+              ? const UpdateRequiredScreen()
+              : child!,
+          // Legal acknowledgement is outside onboarding: no guest session and no
+          // user-written nickname reaches the server before the current Terms are
+          // accepted. Bumping legalVersion gates returning installs as well.
+          home: const LegalGate(child: _Start()),
+        ),
       ),
     );
   }

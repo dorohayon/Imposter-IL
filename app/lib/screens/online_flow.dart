@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../monetization/monetization.dart';
+import '../monetization/monetization_config.dart';
+import '../monetization/purchase_sheet.dart';
 import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
@@ -21,8 +24,23 @@ const _allId = '';
 String searchErrorMessage(String code) => switch (code) {
       'already_in_activity' => 'כבר הצטרפתם למשחק או לחדר אחר.',
       'content_unavailable' => 'אי אפשר להתחיל משחק כרגע. נסו שוב בעוד רגע.',
+      'category_locked' => lockedCategoryMessage,
       _ => connectionMessage(code),
     };
+
+/// The server refused a category this device believes it owns, and a fresh
+/// sync did not help.
+const lockedCategoryMessage =
+    'אחת הקטגוריות נעולה. אפשר לשחזר רכישות מחלון הפתיחה של הקטגוריה.';
+
+/// "אפשר לבחור כמה קטגוריות", with how many are open (design 04).
+String categoryHint(Monetization m, Iterable<String> ids) {
+  const base = 'אפשר לבחור כמה קטגוריות';
+  if (m.premium) return base;
+  final open = m.unlocked(ids).length;
+  final onlyFree = ids.where(m.isUnlocked).every(m.isFree);
+  return '$base · $open ${onlyFree ? 'פתוחות בחינם' : 'פתוחות'}';
+}
 
 /// Online play: choose categories, then search on the server.
 class CategorySelectionScreen extends StatefulWidget {
@@ -58,6 +76,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
+    final money = MonetizationScope.of(context);
     final categories = session.categories;
     if (categories.isEmpty &&
         (session.contentError != null || session.contentLoaded)) {
@@ -73,11 +92,13 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
       );
     }
     final allIds = [for (final c in categories) c.id];
-    // null is "הכול": every category, shown as that one tile rather than by
-    // lighting all of them up. A non-null set is an explicit choice and may be
-    // empty, which disables the search button.
+    // null is "הכול": every open category, shown as that one tile rather than
+    // by lighting all of them up. A non-null set is an explicit choice and may
+    // be empty, which disables the search button. A category that locked
+    // again meanwhile (a subscription ended) drops out of the choice.
     final all = _selected == null;
-    final selected = _selected ?? const <String>{};
+    final selected = {...?_selected}
+      ..removeWhere((id) => !money.isUnlocked(id));
 
     void toggle(String id) => setState(() {
           if (id == _allId) {
@@ -102,6 +123,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
 
     return GameScaffold(
       title: 'בחירת קטגוריות',
+      bannerPlacement: BannerPlacement.categories,
       bottom: PrimaryButton(
         label: _busy ? 'מחפשים משחק...' : 'חפש משחק',
         // Nothing chosen means nothing to search for.
@@ -109,7 +131,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
             ? null
             : () => _search([
                   for (final id in allIds)
-                    if (all || selected.contains(id)) id,
+                    if (all ? money.isUnlocked(id) : selected.contains(id)) id,
                 ]),
       ),
       child: categories.isEmpty
@@ -131,9 +153,17 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'אפשר לבחור כמה קטגוריות',
-                  style: TextStyle(color: AppColors.muted, fontSize: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        categoryHint(money, allIds),
+                        style: const TextStyle(
+                            color: AppColors.muted, fontSize: 14),
+                      ),
+                    ),
+                    if (money.premium) const PremiumBadge(),
+                  ],
                 ),
                 const SizedBox(height: 14),
                 GridView.builder(
@@ -148,8 +178,25 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                   ),
                   itemBuilder: (context, index) {
                     final tile = tiles[index];
+                    final locked =
+                        tile.id != _allId && !money.isUnlocked(tile.id);
+                    if (locked) {
+                      return LockedCategoryTile(
+                        name: tile.name,
+                        onTap: () => openLockedCategory(
+                          context,
+                          categoryId: tile.id,
+                          categoryName: tile.name,
+                          // "הכול" already includes it once it opens.
+                          onSelect: () {
+                            if (!all) toggle(tile.id);
+                          },
+                        ),
+                      );
+                    }
                     final isSelected =
                         tile.id == _allId ? all : selected.contains(tile.id);
+                    final purchased = !isSelected && money.isPurchased(tile.id);
                     return Semantics(
                       selected: isSelected,
                       button: true,
@@ -173,6 +220,28 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                           ),
                           child: Stack(
                             children: [
+                              if (purchased)
+                                const Align(
+                                  alignment: AlignmentDirectional.topStart,
+                                  child: _PurchasedTag(),
+                                ),
+                              if (tile.id == _allId)
+                                Align(
+                                  alignment: AlignmentDirectional.bottomEnd,
+                                  child: Text(
+                                    money.premium
+                                        ? 'כל הקטגוריות'
+                                        : 'כל הפתוחות',
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? AppColors.night
+                                              .withValues(alpha: .7)
+                                          : AppColors.muted,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
                               Align(
                                 alignment: AlignmentDirectional.topEnd,
                                 child: Icon(
@@ -208,6 +277,134 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                 ),
               ],
             ),
+    );
+  }
+}
+
+/// "פרימיום", next to the category hint for Premium players (design 04).
+class PremiumBadge extends StatelessWidget {
+  const PremiumBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.yellow.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.yellow.withValues(alpha: .5)),
+      ),
+      child: const Text(
+        'פרימיום',
+        style: TextStyle(
+          color: AppColors.yellow,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+}
+
+/// A category that is visible but locked: a lock, a dimmed name and
+/// "לפתיחה". Tapping it opens the purchase popup (design 04).
+class LockedCategoryTile extends StatelessWidget {
+  const LockedCategoryTile({
+    required this.name,
+    required this.onTap,
+    super.key,
+  });
+
+  final String name;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '$name — נעולה, לחצו לפתיחה',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: AppColors.cream.withValues(alpha: .035),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppColors.cream.withValues(alpha: .1),
+              width: 2,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Align(
+                alignment: AlignmentDirectional.topEnd,
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: AppColors.yellow.withValues(alpha: .14),
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(
+                      color: AppColors.yellow.withValues(alpha: .45),
+                    ),
+                  ),
+                  child: const Icon(Icons.lock_rounded,
+                      color: AppColors.yellow, size: 15),
+                ),
+              ),
+              Align(
+                alignment: AlignmentDirectional.bottomStart,
+                child: Text(
+                  name,
+                  style: TextStyle(
+                    color: AppColors.cream.withValues(alpha: .62),
+                    fontFamily: 'Secular One',
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+              const Align(
+                alignment: AlignmentDirectional.bottomEnd,
+                child: Text(
+                  'לפתיחה',
+                  style: TextStyle(
+                    color: AppColors.yellow,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PurchasedTag extends StatelessWidget {
+  const _PurchasedTag();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.turquoise.withValues(alpha: .14),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.turquoise.withValues(alpha: .4)),
+      ),
+      child: const Text(
+        '✓ נרכשה',
+        style: TextStyle(
+          color: Color(0xFF8FF3E6),
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 }

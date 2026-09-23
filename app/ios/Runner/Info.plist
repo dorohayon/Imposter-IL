@@ -85,5 +85,19 @@
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
+	<!-- AdMob (docs/monetization.md). The id comes from the xcconfig files. -->
+	<key>GADApplicationIdentifier</key>
+	<string>$(ADMOB_APP_ID)</string>
+	<!-- Shown only if the consent message configured in AdMob asks for
+	     tracking permission. Declining changes nothing in the game. -->
+	<key>NSUserTrackingUsageDescription</key>
+	<string>ההרשאה מאפשרת להציג פרסומות שמתאימות לך יותר. אפשר לסרב, והמשחק יעבוד בדיוק אותו דבר.</string>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
 </dict>
 </plist>

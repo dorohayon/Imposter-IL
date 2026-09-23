@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../models/player.dart';
+import '../monetization/ad_banner.dart';
 import '../theme/app_theme.dart';
 
 /// The button styles of the design system (design/claude/design-system.md).
@@ -348,11 +349,16 @@ class GameScaffold extends StatelessWidget {
     this.showHeader = true,
     this.titleLabel,
     this.scrollable = true,
+    this.bannerPlacement,
     super.key,
   });
 
   final String title;
   final Widget child;
+
+  /// The ad banner strip under the primary button, on the non-game screens
+  /// the design allows one (BannerPlacement). Nothing for Premium players.
+  final String? bannerPlacement;
 
   /// A small line above the title, such as the clue screen's "קטגוריה".
   final String? titleLabel;
@@ -379,17 +385,29 @@ class GameScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
+    final banner =
+        bannerPlacement != null && AdBanner.shows(context, bannerPlacement!);
     final scaffold = Scaffold(
       // Transparent only when the DecoratedBox below paints the accent
       // gradient. Without that, nothing paints behind the scaffold and the
       // screen goes black as soon as the route transition disposes whatever
       // was underneath.
       backgroundColor: accent == null ? AppColors.night : Colors.transparent,
-      bottomNavigationBar: bottom == null
+      bottomNavigationBar: bottom == null && !banner
           ? null
-          : SafeArea(
-              minimum: const EdgeInsets.fromLTRB(24, 8, 24, 22),
-              child: bottom!,
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (bottom != null)
+                  SafeArea(
+                    // The banner takes the bottom inset, 16px below the button.
+                    bottom: !banner,
+                    minimum: EdgeInsets.fromLTRB(24, 8, 24, banner ? 16 : 22),
+                    child: bottom!,
+                  ),
+                if (banner) AdBanner(bannerPlacement!),
+              ],
             ),
       body: SafeArea(
         child: Column(

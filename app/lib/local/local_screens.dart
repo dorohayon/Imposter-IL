@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../models/player.dart';
+import '../monetization/monetization.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'local_game.dart';
@@ -607,6 +608,14 @@ class _LocalGameScreenState extends State<LocalGameScreen>
 
   // ---- the end -----------------------------------------------------------
 
+  /// A one-device match only reaches its result by being played to a winner,
+  /// so the interstitial always follows it (L20, L21) — after the full result,
+  /// once the players chose to go on. Leaving mid-match never reaches here.
+  Future<void> _afterMatch() async {
+    if (!mounted) return;
+    await MonetizationScope.maybeRead(context)?.afterCompletedMatch();
+  }
+
   Widget _result() {
     final impostor = _game.players[_game.impostor];
     final citizensWon = _game.outcome == LocalOutcome.citizensWin;
@@ -622,6 +631,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
             onPressed: () async {
               final navigator = Navigator.of(context);
               await LocalStore.clear();
+              await _afterMatch();
               if (!mounted) return;
               navigator.pushReplacement(
                 MaterialPageRoute<void>(
@@ -644,6 +654,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
             onPressed: () async {
               final navigator = Navigator.of(context);
               await LocalStore.clear();
+              await _afterMatch();
               if (mounted) navigator.popUntil((r) => r.isFirst);
             },
           ),
