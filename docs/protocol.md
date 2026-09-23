@@ -35,7 +35,9 @@
 | Method | Path | תיאור |
 | --- | --- | --- |
 | `GET` | `/healthz` | בדיקת חיות |
+| `GET` | `/v1/config` | מודל התמחור: קטגוריות חינמיות, מזהי מוצרים ופרסומות (ציבורי) |
 | `POST` | `/v1/sessions` | יצירת שחקן אורח |
+| `POST` | `/v1/entitlements` | הוכחות הרכישה מהחנות; מחזיר מה פתוח לשחקן |
 | `PATCH` | `/v1/sessions/me` | עריכת כינוי או אווטאר |
 | `GET` | `/v1/categories` | רשימת קטגוריות |
 | `GET` | `/v1/reactions` | רשימת התגובות |
@@ -49,6 +51,56 @@
 ```json
 { "status": "ok" }
 ```
+
+### `GET /v1/config`
+
+ציבורי, בלי session: האפליקציה צריכה אותו גם לפני הכניסה וגם במשחק במכשיר אחד. נקבע ב־`MONETIZATION_CONFIG` בשרת, ולכן משתנה בלי גרסת אפליקציה (`docs/monetization.md`). אין בו מחירים — הם מגיעים מהחנות, מקומיים.
+
+```json
+{
+  "monetization": {
+    "freeCategoryIds": ["food", "animals", "places"],
+    "products": {
+      "categoryPrefix": "category_",
+      "premiumMonthly": "premium_monthly",
+      "premiumLifetime": "premium_lifetime"
+    },
+    "purchasesEnabled": true,
+    "serverEnforcement": false,
+    "ads": {
+      "enabled": true,
+      "bannerPlacements": ["home", "categories", "search", "…"],
+      "interstitialEnabled": true,
+      "interstitialMinIntervalSeconds": 0,
+      "maxAdContentRating": "PG",
+      "units": { "android": { "banner": "…", "interstitial": "…" }, "ios": { "…": "…" } }
+    }
+  }
+}
+```
+
+מזהה המוצר של קטגוריה הוא `categoryPrefix` ואחריו מזהה הקטגוריה, למשל `category_sports`.
+
+### `POST /v1/entitlements`
+
+```json
+{ "purchases": [ { "platform": "ios", "productId": "category_sports", "verificationData": "…" } ] }
+```
+
+`verificationData` הוא ה־JWS החתום של StoreKit 2 ב־iOS ו־purchase token ב־Android. הרשימה היא כל מה שהחנות אומרת שהמכשיר מחזיק עכשיו, ולכן היא **מחליפה** את מה שה־session החזיק: החזר כספי או מנוי שפג יוצאים ממנה. עד 20 הוכחות.
+
+`200`:
+
+```json
+{
+  "entitlements": { "premium": true, "lifetime": false, "premiumUntil": "2026-10-23T09:00:00Z", "categoryIds": ["sports"] },
+  "results": [ { "productId": "category_sports", "status": "granted" } ]
+}
+```
+
+`status` הוא `granted`, `rejected` (הוכחה מזויפת, לאפליקציה או מוצר אחרים, הוחזרה, בוטלה או לא שולמה) או `unverifiable` (אין בשרת מאמת לפלטפורמה). שגיאות: `401 session_not_found`, `422 invalid_purchases` (יותר מ־20), `429 rate_limited` (10 לדקה לכל session ו־120 לכל IP), `503 verification_unavailable` — אי אפשר היה לשאול את החנות, ומה שה־session החזיק נשאר.
+
+כש־`serverEnforcement` פעיל, קטגוריה שאינה חינמית ואינה בבעלות השחקן נדחית ב־`403 category_locked` ביצירת חדר, וב־`category_locked` ב־`matchmaking.join` וב־`room.updateSettings`. בחדר פרטי רק הקטגוריות שבחר המנהל נבדקות, מול הרכישות שלו; המצטרפים אינם צריכים דבר. `game.playAgain` ברשת ממשיך עם הקטגוריות שהשחקן כבר התקבל איתן.
 
 ### `POST /v1/sessions`
 
@@ -105,7 +157,7 @@
 { "maxPlayers": 8, "hintSeconds": 15, "categoryIds": ["…"] }
 ```
 
-`maxPlayers` בין 4 ל־8. `hintSeconds` אחד מ־30, 60, 90. `categoryIds` אינו ריק ומכיל רק מזהים מ־`GET /v1/categories`. תשובה `201` עם `{ "room": Room }`, והשחקן הוא המנהל. שגיאות: `422 invalid_room_settings`, `409 already_in_activity`.
+`maxPlayers` בין 4 ל־8. `hintSeconds` אחד מ־30, 60, 90. `categoryIds` אינו ריק ומכיל רק מזהים מ־`GET /v1/categories`. תשובה `201` עם `{ "room": Room }`, והשחקן הוא המנהל. שגיאות: `422 invalid_room_settings`, `409 already_in_activity`, `403 category_locked`.
 
 ### `POST /v1/rooms/join`
 
@@ -193,9 +245,9 @@
 
 | `type` | `payload` | שגיאות אפשריות |
 | --- | --- | --- |
-| `matchmaking.join` | `{ categoryIds }` | `already_in_activity`, `invalid_categories`, `content_unavailable` |
+| `matchmaking.join` | `{ categoryIds }` | `already_in_activity`, `invalid_categories`, `content_unavailable`, `category_locked` |
 | `matchmaking.cancel` | `{}` | — |
-| `room.updateSettings` | `{ roomId, maxPlayers, hintSeconds, categoryIds }` | `not_room_host`, `room_settings_locked`, `invalid_room_settings`, `room_in_game` |
+| `room.updateSettings` | `{ roomId, maxPlayers, hintSeconds, categoryIds }` | `not_room_host`, `room_settings_locked`, `invalid_room_settings`, `room_in_game`, `category_locked` |
 | `room.kick` | `{ roomId, playerId }` | `not_room_host`, `cannot_kick_self`, `room_in_game`, `unknown_player` |
 | `room.start` | `{ roomId }` | `not_room_host`, `not_enough_players`, `room_in_game`, `content_unavailable` |
 | `room.leave` | `{ roomId }` | — |

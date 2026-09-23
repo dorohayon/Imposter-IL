@@ -14,6 +14,7 @@
 - [משחק ברשת ו־Matchmaking](docs/matchmaking.md)
 - [ניתוקים ומקרי קצה](docs/disconnections-and-edge-cases.md)
 - [החלטות מאושרות](docs/decisions.md)
+- [מודל ההכנסות — קטגוריות, פרימיום ופרסומות](docs/monetization.md)
 - [שאלות פתוחות](docs/open-decisions.md)
 - [כיוון עיצובי](docs/design-direction.md)
 - [Wireframes וכל מצבי המסכים](docs/wireframes.md)
@@ -31,6 +32,7 @@
 - Wireframe: גרסה מעודכנת עם 29 מסכים ומצבי מערכת
 - משחק במכשיר אחד: אפיון, 22 Wireframes ושני איורים מוכנים; המימוש וה־High Fidelity עדיין פתוחים
 - עיצוב: 29 מסכים, מערכת עיצוב ו־Prototype תחת [`design/claude/`](design/claude/); האפליקציה מותאמת למסכים, למעט בדיקה על מכשיר
+- מודל הכנסות: שלוש קטגוריות חינמיות, חלון רכישה (קטגוריה, פרימיום חודשי, פרימיום לכל החיים), באנרים ומודעה במסך מלא; אימות רכישות בשרת (`docs/monetization.md`)
 - מצב שאלה: מחוץ ל־MVP ויתוכנן בהמשך
 - כיוון עיצובי: נקבע; 12 אווטארים ו־14 אילוסטרציות נמצאים תחת `assets/`
 - שרת Go: מנוע משחק, חדרים פרטיים, Matchmaking, REST ו־WebSocket, 6 קטגוריות תוכן ורשימת תגובות
