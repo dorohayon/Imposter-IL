@@ -20,6 +20,7 @@ import (
 	"github.com/dorohayon/Imposter-IL/server/internal/content"
 	"github.com/dorohayon/Imposter-IL/server/internal/game"
 	"github.com/dorohayon/Imposter-IL/server/internal/matchmaking"
+	"github.com/dorohayon/Imposter-IL/server/internal/monetization"
 	"github.com/dorohayon/Imposter-IL/server/internal/room"
 )
 
@@ -65,6 +66,10 @@ type session struct {
 	// another player has the turn, so they cannot share botActAt.
 	botReactAt time.Time
 	botReacted int // hints the bot has already had its chance to react to
+
+	// What the store proofs this device sent last prove it owns
+	// (POST /v1/entitlements). Checked only under ServerEnforcement.
+	entitlements monetization.Entitlements
 
 	// The categories and start time of the player's latest online search.
 	searchCategories []string
@@ -156,6 +161,13 @@ type Server struct {
 	sessionLimit *limiter // guest creation, per IP
 	joinLimit    *limiter // room-code attempts, per IP
 	commandLimit *limiter // WebSocket commands, per session
+	// entitlementLimit and entitlementIPLimit bound purchase verification,
+	// per session and per IP (monetization.go).
+	entitlementLimit   *limiter
+	entitlementIPLimit *limiter
+
+	money     monetization.Config
+	verifiers map[string]monetization.Verifier
 
 	metrics metrics
 
@@ -184,6 +196,10 @@ func NewServer(now func() time.Time, policy game.Policy, pickWord PickWord) *Ser
 		sessionLimit: newLimiter(sessionsPerMinute, sessionsBurst),
 		joinLimit:    newLimiter(joinsPerMinute, joinsBurst),
 		commandLimit: newLimiter(commandsPerMinute, commandsBurst),
+
+		entitlementLimit:   newLimiter(entitlementsPerMin, entitlementsBurst),
+		entitlementIPLimit: newLimiter(entitlementsPerMinPerIP, entitlementsBurstPerIP),
+		money:              monetization.Default(),
 	}
 	s.newCode = func() string { return room.NewCode(s.rng) }
 	return s
@@ -242,6 +258,8 @@ func (s *Server) gate(next http.HandlerFunc) http.HandlerFunc {
 
 func (s *Server) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v1/sessions", s.gate(s.createSession))
+	mux.HandleFunc("GET /v1/config", s.gate(s.getConfig))
+	mux.HandleFunc("POST /v1/entitlements", s.gate(s.syncEntitlements))
 	mux.HandleFunc("GET /v1/categories", s.gate(s.withSession(listCategories)))
 	mux.HandleFunc("GET /v1/reactions", s.gate(s.withSession(listReactions)))
 	mux.HandleFunc("PATCH /v1/sessions/me", s.gate(s.withSession(s.updateSession)))
@@ -457,6 +475,10 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 	rm, err := room.New(code, sess.playerID, settings, s.policy, s.rng, now)
 	if err != nil || !content.ValidIDs(req.CategoryIDs) {
 		writeError(w, errInvalidSettings)
+		return
+	}
+	if !s.categoriesAllowed(sess, req.CategoryIDs, now) {
+		writeError(w, errCategoryLocked)
 		return
 	}
 	s.leave(previous, sess, now)

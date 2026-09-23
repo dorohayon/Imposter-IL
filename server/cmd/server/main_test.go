@@ -153,3 +153,33 @@ func TestInvitePageIsServed(t *testing.T) {
 		}
 	}
 }
+
+func TestMonetizationFromEnv(t *testing.T) {
+	t.Setenv("MONETIZATION_CONFIG", "")
+	t.Setenv("APPLE_BUNDLE_ID", "")
+	t.Setenv("GOOGLE_PLAY_PACKAGE", "")
+	cfg, verifiers, err := monetizationFromEnv()
+	if err != nil || len(verifiers) != 0 || cfg.ServerEnforcement {
+		t.Fatalf("defaults: %+v %v %v", cfg, verifiers, err)
+	}
+
+	t.Setenv("MONETIZATION_CONFIG", `{"freeCategoryIds":["sports"],"serverEnforcement":true}`)
+	t.Setenv("APPLE_BUNDLE_ID", "com.imposter.il")
+	cfg, verifiers, err = monetizationFromEnv()
+	if err != nil || !cfg.ServerEnforcement || cfg.FreeCategoryIDs[0] != "sports" || verifiers["ios"] == nil {
+		t.Fatalf("override: %+v %v %v", cfg, verifiers, err)
+	}
+
+	// A config or key that does not parse must stop the server, not fall
+	// back to defaults and quietly change what players pay for.
+	t.Setenv("MONETIZATION_CONFIG", `{"freeCategoryIds":["cars"]}`)
+	if _, _, err := monetizationFromEnv(); err == nil {
+		t.Fatal("invalid config accepted")
+	}
+	t.Setenv("MONETIZATION_CONFIG", "")
+	t.Setenv("GOOGLE_PLAY_PACKAGE", "com.imposter.il")
+	t.Setenv("GOOGLE_PLAY_SERVICE_ACCOUNT", "{}")
+	if _, _, err := monetizationFromEnv(); err == nil {
+		t.Fatal("broken service account accepted")
+	}
+}

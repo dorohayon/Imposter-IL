@@ -214,6 +214,24 @@ Worth alerting on, in rough order of how much they hurt:
 
 Logs are JSON on stdout: `sudo docker compose -f /var/imposter/docker-compose.yml logs -f server`.
 
+## Monetization settings
+
+The pricing model is server configuration, so it changes without an app
+release (`docs/monetization.md`). On Cloud Run, a JSON value needs a delimiter
+other than the comma, and the Play key belongs in Secret Manager:
+
+```sh
+gcloud run services update imposter --region us-central1 \
+  --update-env-vars='^@^MONETIZATION_CONFIG={"freeCategoryIds":["food","animals","places"]}'
+gcloud run services update imposter --region us-central1 \
+  --update-env-vars=APPLE_BUNDLE_ID=<bundle id>,GOOGLE_PLAY_PACKAGE=<package> \
+  --set-secrets=GOOGLE_PLAY_SERVICE_ACCOUNT=play-verifier:latest
+```
+
+A config that does not parse, or names a key the server does not know, stops
+the server at startup instead of running on defaults. Turn on
+`serverEnforcement` only with both verifiers set and `MIN_CLIENT_BUILD=4`.
+
 ## Checklist before the first real deploy
 
 - [ ] `DOMAIN` resolves to the VM, so Caddy can issue a certificate

@@ -24,6 +24,11 @@ func (s *Server) matchmakingCommand(sess *session, typ string, p commandPayload,
 		if sess.gameID != "" || s.currentRoom(sess) != nil {
 			return "already_in_activity"
 		}
+		// Checked here and not in joinSearch: a player continuing after a
+		// match keeps the categories they were admitted with.
+		if content.ValidIDs(p.CategoryIDs) && !s.categoriesAllowed(sess, p.CategoryIDs, now) {
+			return "category_locked"
+		}
 		return s.joinSearch(sess, nil, p.CategoryIDs, now)
 	case "matchmaking.cancel":
 		if entry := s.currentRoom(sess); entry != nil && s.searching(entry) {

@@ -95,6 +95,8 @@ func (s *Server) reap() {
 	s.sessionLimit.sweep(now, BucketIdle)
 	s.joinLimit.sweep(now, BucketIdle)
 	s.commandLimit.sweep(now, BucketIdle)
+	s.entitlementLimit.sweep(now, BucketIdle)
+	s.entitlementIPLimit.sweep(now, BucketIdle)
 
 	if s.metrics.reapedRooms > 0 || s.metrics.reapedSess > 0 {
 		slog.Debug("reaped",

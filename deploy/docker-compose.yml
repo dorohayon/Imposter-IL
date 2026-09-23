@@ -21,6 +21,11 @@ services:
       # Raise to retire old app builds; see docs/protocol.md.
       MIN_CLIENT_BUILD: "${MIN_CLIENT_BUILD:-0}"
       STAGING_BOTS: "${STAGING_BOTS:-0}"
+      # Pricing model and store verification; docs/monetization.md.
+      MONETIZATION_CONFIG: "${MONETIZATION_CONFIG:-}"
+      APPLE_BUNDLE_ID: "${APPLE_BUNDLE_ID:-}"
+      GOOGLE_PLAY_PACKAGE: "${GOOGLE_PLAY_PACKAGE:-}"
+      GOOGLE_PLAY_SERVICE_ACCOUNT: "${GOOGLE_PLAY_SERVICE_ACCOUNT:-}"
     ports:
       # Metrics on loopback only: the counters say how many games and players
       # exist. The game port is never published — Caddy reaches it over the
