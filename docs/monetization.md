@@ -245,7 +245,7 @@ POST /v1/rooms · matchmaking.join · room.updateSettings ──► 403 category
   באמצע משחק ולא אחת אחרי השנייה. ✓ אחרי תוצאה, כשהשחקן בחר להמשיך.
 - באנר לא צמוד לכפתורים ולא במסכי משחק פעיל. ✓ 16 פיקסלים מתחת לכפתור, רק
   במסכים שמחוץ למשחק.
-- **app-ads.txt** באתר המפתח שמופיע בדפי החנויות. נדרש דומיין (`TASKS.md`).
+- **app-ads.txt** באתר המפתח שמופיע בדפי החנויות: `https://imposteril.github.io/app-ads.txt` (`site/app-ads.txt`). ממתין למזהה ה־publisher של AdMob.
 
 ## גרסאות
 

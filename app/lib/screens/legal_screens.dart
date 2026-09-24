@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../data/server.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 
@@ -12,16 +11,15 @@ const legalVersion = '1.1';
 const legalDate = '23 בספטמבר 2026';
 const legalAcceptedVersionKey = 'legal.acceptedVersion';
 
-/// Public copies for App Store Connect / Google Play and for anyone who wants
-/// to read the documents without installing the app. The game server serves
-/// them from the host it already has a certificate for: GitHub Pages cannot
-/// publish a private repository without a paid plan, and a second host would
-/// be one more thing to keep in step with these screens.
+/// Public copies for App Store Connect, Google Play and anyone who wants to
+/// read the documents without installing the app. They are built from site/
+/// in the repository and published to GitHub Pages (docs/legal.md), so they
+/// do not depend on where the game server runs.
+const publicSite = 'https://imposteril.github.io';
 const privacyPath = '/privacy/';
 const termsPath = '/terms/';
 
-/// The public address of a document on whichever server this build talks to.
-Uri publicLegalUrl(String path) => defaultServerUrl().resolve(path);
+Uri publicLegalUrl(String path) => Uri.parse(publicSite).resolve(path);
 
 class LegalGate extends StatefulWidget {
   const LegalGate({required this.child, super.key});

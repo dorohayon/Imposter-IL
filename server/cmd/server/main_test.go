@@ -89,38 +89,26 @@ func TestMetricsNotPublicByDefault(t *testing.T) {
 	}
 }
 
-// The stores need the privacy policy to be reachable by a browser, which sends
-// no X-Client-Build header, so the documents must sit outside the version gate
-// as well as answer at all.
-func TestLegalPagesAreServed(t *testing.T) {
+// The documents moved to the public site (docs/legal.md). Old builds and
+// store listings still carry the server's addresses, so a browser — which
+// sends no X-Client-Build header — must be sent on, not refused.
+func TestLegalPagesRedirectToTheSite(t *testing.T) {
 	srv := api.NewServer(time.Now, content.Policy(), content.Pick)
 	srv.RequireClientBuild(999)
 	mux := newMuxFor(srv)
 
 	for path, want := range map[string]string{
-		"/privacy/":  "מדיניות פרטיות",
-		"/terms/":    "תנאי שימוש",
-		"/legal/":    "מידע משפטי",
-		"/style.css": "font-family",
+		"/privacy/": "https://imposteril.github.io/privacy/",
+		"/terms/":   "https://imposteril.github.io/terms/",
+		"/legal/":   "https://imposteril.github.io/",
+		// Without the trailing slash the mux redirects first; it still lands.
+		"/privacy": "/privacy/",
 	} {
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
-		if rec.Code != http.StatusOK {
-			t.Errorf("GET %s = %d, want 200", path, rec.Code)
-			continue
+		if rec.Code/100 != 3 || rec.Header().Get("Location") != want {
+			t.Errorf("GET %s = %d %q, want a redirect to %s", path, rec.Code, rec.Header().Get("Location"), want)
 		}
-		if !strings.Contains(rec.Body.String(), want) {
-			t.Errorf("GET %s does not contain %q", path, want)
-		}
-	}
-
-	// The pretty URL without the trailing slash has to land somewhere, so a
-	// store listing can carry either form.
-	rec := httptest.NewRecorder()
-	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/privacy", nil))
-	if rec.Code/100 != 3 || rec.Header().Get("Location") != "/privacy/" {
-		t.Errorf("GET /privacy = %d %q, want a redirect to /privacy/",
-			rec.Code, rec.Header().Get("Location"))
 	}
 }
 

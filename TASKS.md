@@ -90,7 +90,11 @@
       ושווייץ, והסבר IDFA ל־iOS.
 - [ ] להוסיף את רשימת ה־SKAdNetwork המלאה של Google ל־`Info.plist` (כרגע רק
       `cstr6suwn9`).
-- [ ] `app-ads.txt` באתר המפתח שבדפי החנויות. תלוי בדומיין משלנו.
+- [x] אתר ציבורי ב־`https://imposteril.github.io` (בית, תמיכה, פרטיות, תנאים,
+      `app-ads.txt`), נבנה מ־`site/` ומתפרסם ב־`.github/workflows/site.yml`.
+- [ ] להכניס ל־`site/app-ads.txt` את השורה עם מזהה ה־publisher של AdMob.
+- [ ] בדפי החנויות: אתר מפתח `https://imposteril.github.io`, מדיניות פרטיות
+      `/privacy/`, ו־Support URL ב־App Store Connect `/support/`.
 - [ ] להפעיל אכיפה בשרת: `APPLE_BUNDLE_ID`, `GOOGLE_PLAY_PACKAGE`,
       `GOOGLE_PLAY_SERVICE_ACCOUNT` (Secret Manager), `MIN_CLIENT_BUILD=4`,
       ואז `serverEnforcement: true` (`deploy/README.md`).
@@ -231,7 +235,7 @@
 
 - [ ] App Links ב־https במקום דף הביניים של ההזמנה. דורש את טביעת האצבע של
       מפתח החתימה ל־Android ואת ה־Team ID ל־iOS, ולכן חסום עד שיהיו.
-- [ ] דומיין משלנו מול Cloud Run, כדי שכתובות המסמכים המשפטיים לא יהיו תלויות
-      בכתובת של שרת המשחק (`docs/legal.md`).
+- [x] כתובות המסמכים המשפטיים אינן תלויות עוד בשרת המשחק: הן ב־
+      `https://imposteril.github.io`, והשרת מפנה אליהן.
 - [ ] בוטים שמגיבים לפי מה שנאמר ולא באקראי, ואז שקילת התגובות כאות בהצבעה.
 - [ ] מצב שאלות. לא לפני שה־MVP של מצב המילים הושק.
