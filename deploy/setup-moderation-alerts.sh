@@ -33,12 +33,11 @@ fi
 case "$channel" in projects/*/notificationChannels/*) ;; *) echo "no notification channel: $channel" >&2; exit 1 ;; esac
 echo "notification channel: $channel"
 
-if gcloud alpha monitoring policies list --format='value(displayName)' 2>/dev/null | grep -qxF "$NAME"; then
-	echo "alert policy already exists"
-else
-	policy="$(mktemp)"
-	trap 'rm -f "$policy"' EXIT
-	python3 - "$policy" "$NAME" "$FILTER" "$channel" <<'EOF'
+# The policy is written out every run and applied to the existing one, so a
+# changed EMAIL, SERVICE or filter takes effect instead of being skipped.
+policy="$(mktemp)"
+trap 'rm -f "$policy"' EXIT
+python3 - "$policy" "$NAME" "$FILTER" "$channel" <<'EOF'
 import json, sys
 path, name, log_filter, channel = sys.argv[1:]
 json.dump({
@@ -57,9 +56,17 @@ json.dump({
     }],
     "alertStrategy": {"notificationRateLimit": {"period": "300s"}, "autoClose": "86400s"},
     "notificationChannels": [channel],
+    "enabled": True,
 }, open(path, "w"))
 EOF
+existing="$(gcloud alpha monitoring policies list --format='value(name,displayName)' 2>/dev/null |
+	awk -F'\t' -v name="$NAME" '$2 == name { print $1; exit }')"
+if [ -n "$existing" ]; then
+	gcloud alpha monitoring policies update "$existing" --policy-from-file="$policy" --format='value(name)'
+	echo "alert policy updated"
+else
 	gcloud alpha monitoring policies create --policy-from-file="$policy" --format='value(name)'
+	echo "alert policy created"
 fi
 
 cat <<EOF
