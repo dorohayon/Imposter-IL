@@ -239,6 +239,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     return GameScaffold(
       title: '',
       showHeader: false,
+      accent: const Color(0xFF3A3470),
       bottom: PrimaryButton(
         label: 'אני ${impostor.name} — הציגו לי',
         onPressed: () => _apply(_game.reveal),
