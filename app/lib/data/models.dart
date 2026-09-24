@@ -129,6 +129,7 @@ class HintView {
     required this.round,
     required this.missing,
     required this.reactions,
+    this.hidden = false,
   });
 
   factory HintView.fromJson(Map<String, dynamic> json) => HintView(
@@ -137,6 +138,7 @@ class HintView {
         round: json['round'] as int? ?? 1,
         missing: json['missing'] as bool? ?? false,
         reactions: (json['reactions'] as Map? ?? const {}).cast<String, int>(),
+        hidden: json['hidden'] as bool? ?? false,
       );
 
   final String playerId;
@@ -147,6 +149,10 @@ class HintView {
   final int round;
   final bool missing;
   final Map<String, int> reactions;
+
+  /// Withheld by the server: enough players in the game reported its author
+  /// that nobody else is shown what they write.
+  final bool hidden;
 }
 
 class GameResult {
@@ -263,6 +269,10 @@ class GameView {
     }
     return null;
   }
+
+  /// Whether the server hides this player's clues from the whole table.
+  bool hiddenForAll(String playerId) =>
+      hints.any((h) => h.playerId == playerId && h.hidden);
 
   HintView? hintOf(String playerId) {
     for (final h in hints) {

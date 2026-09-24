@@ -232,6 +232,22 @@ A config that does not parse, or names a key the server does not know, stops
 the server at startup instead of running on defaults. Turn on
 `serverEnforcement` only with both verifiers set and `MIN_CLIENT_BUILD=4`.
 
+## Production today: Cloud Run
+
+Production runs on Cloud Run, deployed with `./deploy/setup-cloudrun.sh`. The
+script replaces every environment variable, so pass the current ones through:
+`METRICS_TOKEN` (read it from `gcloud run services describe imposter`),
+`STAGING_BOTS` and `MIN_CLIENT_BUILD`.
+
+`.github/workflows/deploy.yml` (a `server-v*` tag) is the VM path from
+`setup-gcp.sh`. It needs a `GCP_SA_KEY` secret this repository does not have, so
+it deploys nothing until the VM path is adopted.
+
+## Moderation alerts
+
+`./deploy/setup-moderation-alerts.sh` emails `imposteril36@gmail.com` whenever a
+player is reported (docs/moderation.md). It is safe to re-run.
+
 ## Checklist before the first real deploy
 
 - [ ] `DOMAIN` resolves to the VM, so Caddy can issue a certificate

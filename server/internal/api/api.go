@@ -105,6 +105,10 @@ type roomEntry struct {
 	// emptySince is when the last member left, for the reaper.
 	emptySince time.Time
 
+	// reported records, for the room's current game, who reported whom:
+	// reported player -> reporters. Reset when a game begins.
+	reported map[string]map[string]bool
+
 	// categoriesBy is the player whose purchases the private room's categories
 	// were checked against: its creator, or whoever last changed them.
 	categoriesBy string

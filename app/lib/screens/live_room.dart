@@ -1203,7 +1203,7 @@ class _HintsState extends State<_Hints> {
   void _onReaction(String playerId, String reactionId) {
     final session = _session;
     if (!mounted || session == null || !session.showReactions) return;
-    if (playerId == session.playerId || session.muted.contains(playerId)) {
+    if (playerId == session.playerId || session.hides(playerId)) {
       return;
     }
     for (final r in session.reactions) {
@@ -1302,7 +1302,7 @@ class _HintsState extends State<_Hints> {
   /// A reported player's hints are hidden wherever they are shown.
   String _hintText(HintView h) {
     if (h.missing) return 'לא נשלח רמז';
-    return SessionScope.read(context).muted.contains(h.playerId)
+    return h.hidden || SessionScope.read(context).hides(h.playerId)
         ? 'הוסתר'
         : h.text;
   }
@@ -2025,7 +2025,7 @@ class _HintHistorySheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Read live: reporting from this sheet has to hide the clue under it.
-    final hidden = SessionScope.of(context).muted.contains(player.id);
+    final hidden = SessionScope.of(context).hides(player.id);
     final canReport = reportable && !hidden;
     final first = hints.isEmpty ? 0 : hints.first.$2.round;
     final last = hints.isEmpty ? 0 : hints.last.$2.round;
@@ -2365,7 +2365,7 @@ class _Voting extends StatefulWidget {
 String? _saidSoFar(GameView game, GameSession session, String id) {
   final said = game.hintsOf(id);
   if (said.isEmpty) return null;
-  if (session.muted.contains(id)) return 'הוסתר';
+  if (session.hides(id)) return 'הוסתר';
   final words = [
     for (final h in said)
       if (!h.missing) h.text,
@@ -3047,7 +3047,7 @@ Future<void> _reportHint(
     builder: (context) => AlertDialog(
       title: const Text('לדווח על הרמז?'),
       content: Text(
-        'הרמז יישלח לבדיקה, ולא תראו יותר רמזים של $nickname במכשיר הזה.',
+        'הרמז יישלח לבדיקה ונטפל בו בתוך 24 שעות. לא תראו יותר רמזים של $nickname במכשיר הזה.',
       ),
       actions: [
         TextButton(
@@ -3069,7 +3069,7 @@ Future<void> _reportHint(
     SnackBar(
       content: Text(
         code == null
-            ? 'הדיווח נשלח. הרמזים האלה יוסתרו.'
+            ? 'תודה, הדיווח התקבל ויטופל. הרמזים של השחקן יוסתרו במכשיר שלכם.'
             : 'הרמזים האלה יוסתרו, אבל הדיווח לא נשלח. ${commandMessage(code)}',
       ),
     ),
