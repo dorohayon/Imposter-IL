@@ -10,15 +10,6 @@ import 'live_room.dart';
 import 'private_flow.dart';
 import 'secondary_screens.dart';
 
-const _categoryIcons = {
-  'food': Icons.restaurant_rounded,
-  'animals': Icons.pets_rounded,
-  'sports': Icons.sports_soccer_rounded,
-  'professions': Icons.work_rounded,
-  'places': Icons.public_rounded,
-  'objects': Icons.umbrella_rounded,
-};
-
 const _allId = '';
 
 String searchErrorMessage(String code) => switch (code) {
@@ -112,13 +103,8 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
         });
 
     final tiles = [
-      (id: _allId, name: 'הכול', icon: Icons.auto_awesome_rounded),
-      for (final c in categories)
-        (
-          id: c.id,
-          name: c.name,
-          icon: _categoryIcons[c.id] ?? Icons.category_rounded,
-        ),
+      (id: _allId, name: 'הכול'),
+      for (final c in categories) (id: c.id, name: c.name),
     ];
 
     return GameScaffold(
@@ -242,18 +228,11 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                                     ),
                                   ),
                                 ),
-                              Align(
-                                alignment: AlignmentDirectional.topEnd,
-                                child: Icon(
-                                  isSelected
-                                      ? Icons.check_circle_rounded
-                                      : tile.icon,
-                                  color: isSelected
-                                      ? AppColors.night
-                                      : AppColors.turquoise,
-                                  size: 24,
+                              if (isSelected)
+                                const Align(
+                                  alignment: AlignmentDirectional.topStart,
+                                  child: _SelectedCategoryCheck(),
                                 ),
-                              ),
                               Align(
                                 alignment: AlignmentDirectional.bottomStart,
                                 child: Text(
@@ -294,13 +273,20 @@ class PremiumBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: AppColors.yellow.withValues(alpha: .5)),
       ),
-      child: const Text(
-        'פרימיום',
-        style: TextStyle(
-          color: AppColors.yellow,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_rounded, size: 12, color: AppColors.yellow),
+          SizedBox(width: 5),
+          Text(
+            'פרימיום',
+            style: TextStyle(
+              color: AppColors.yellow,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -381,6 +367,24 @@ class LockedCategoryTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SelectedCategoryCheck extends StatelessWidget {
+  const _SelectedCategoryCheck();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 22,
+      height: 22,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.night,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: const Icon(Icons.check_rounded, size: 14, color: AppColors.yellow),
     );
   }
 }
