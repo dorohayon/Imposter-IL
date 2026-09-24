@@ -120,20 +120,30 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           IconButton.filledTonal(
                             tooltip: 'הגדרות',
+                            style: IconButton.styleFrom(
+                              side: BorderSide(
+                                color: AppColors.cream.withValues(alpha: .16),
+                              ),
+                            ),
                             onPressed: () =>
                                 _open(context, const SettingsScreen()),
-                            icon: const Icon(Icons.settings_rounded),
+                            icon: const Icon(Icons.settings_rounded, size: 21),
                           ),
                           const Spacer(),
                           IconButton.filledTonal(
                             tooltip: 'פרופיל',
+                            style: IconButton.styleFrom(
+                              side: BorderSide(
+                                color: AppColors.cream.withValues(alpha: .16),
+                              ),
+                            ),
                             onPressed: () => _open(
                               context,
                               session.signedIn
                                   ? const ProfileScreen()
                                   : const OnboardingScreen(),
                             ),
-                            icon: const Icon(Icons.person_rounded),
+                            icon: const Icon(Icons.person_rounded, size: 21),
                           ),
                         ],
                       ),
@@ -158,11 +168,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Spacer(),
                       PrimaryButton(
                         label: 'משחק ברשת',
+                        icon: Icons.language_rounded,
                         onPressed: () => _openOnline(context, session),
                       ),
                       const SizedBox(height: 12),
                       PrimaryButton(
                         label: 'משחק במכשיר אחד',
+                        icon: Icons.smartphone_rounded,
                         variant: ButtonVariant.secondary,
                         onPressed: () =>
                             _open(context, const LocalPlayersScreen()),
