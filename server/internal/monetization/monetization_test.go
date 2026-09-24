@@ -391,6 +391,46 @@ func TestGoogleVerifierProducts(t *testing.T) {
 	}
 }
 
+func TestGoogleVerifierCachesAnswersButNotOutages(t *testing.T) {
+	var calls atomic.Int32
+	down := true
+	v, _ := googleVerifier(t, func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/tokens/flaky") && down:
+			w.WriteHeader(http.StatusServiceUnavailable)
+		case strings.HasSuffix(r.URL.Path, "/tokens/good"), strings.HasSuffix(r.URL.Path, "/tokens/flaky"):
+			_, _ = w.Write([]byte(`{"purchaseState":0}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+	ctx := context.Background()
+	for range 5 {
+		if _, err := v.Verify(ctx, "category_sports", "good", false, now); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := v.Verify(ctx, "category_sports", "forged", false, now); !errors.Is(err, ErrInvalidProof) {
+			t.Fatal(err)
+		}
+	}
+	if n := calls.Load(); n != 2 {
+		t.Fatalf("Play called %d times for two proofs sent five times, want 2", n)
+	}
+	if _, err := v.Verify(ctx, "category_sports", "good", false, now.Add(cacheTTL)); err != nil || calls.Load() != 3 {
+		t.Fatalf("after the TTL: err %v, calls %d, want a fresh call", err, calls.Load())
+	}
+
+	// An outage is not remembered: the next try asks again.
+	if _, err := v.Verify(ctx, "category_sports", "flaky", false, now); !errors.Is(err, ErrUnavailable) {
+		t.Fatal(err)
+	}
+	down = false
+	if _, err := v.Verify(ctx, "category_sports", "flaky", false, now); err != nil {
+		t.Fatalf("after the outage: %v", err)
+	}
+}
+
 func TestGoogleVerifierSubscriptions(t *testing.T) {
 	expiry := now.Add(10 * 24 * time.Hour).Truncate(time.Second)
 	body := func(state string, at time.Time) string {

@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
@@ -157,6 +160,15 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           const _RestoreRow(),
+          // Subscribers manage and cancel in the store; this takes them there.
+          if (money.monthlyActive) ...[
+            const SizedBox(height: 10),
+            _LinkRow(
+              title: 'ניהול המנוי',
+              value: 'פרימיום חודשי',
+              onTap: () => openSubscriptions(money.config.premiumMonthly),
+            ),
+          ],
           // Required by Google's consent rules where they apply (EEA, UK):
           // a way back to the ad privacy choice.
           if (money.privacyOptionsRequired) ...[
@@ -193,6 +205,20 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
+
+/// The store's own subscription page: where a subscriber changes or cancels.
+/// Opens the store app, or its web page if the app is missing.
+Future<bool> Function(Uri) openExternal =
+    (uri) => launchUrl(uri, mode: LaunchMode.externalApplication);
+
+Future<void> openSubscriptions(String productId) => openExternal(
+      Platform.isIOS
+          ? Uri.parse('https://apps.apple.com/account/subscriptions')
+          : Uri.https('play.google.com', '/store/account/subscriptions', {
+              'sku': productId,
+              'package': 'com.imposteril.app',
+            }),
+    );
 
 /// Restore outside the purchase popup: a player on a new phone whose
 /// Premium hides every lock has no locked category to tap.

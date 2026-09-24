@@ -6,6 +6,7 @@ import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/screens/legal_screens.dart';
 import 'package:imposter_il/screens/live_room.dart';
 import 'package:imposter_il/screens/online_flow.dart';
+import 'package:imposter_il/screens/secondary_screens.dart';
 
 import 'support/fake_monetization.dart';
 import 'support/fake_server.dart';
@@ -443,6 +444,37 @@ void main() {
     expect(find.text('פרימיום'), findsOneWidget);
     expect(_banner, findsNothing, reason: 'Premium came back, ads went');
   });
+
+  testWidgets('a subscriber can manage the subscription from Settings',
+      (tester) async {
+    final opened = <Uri>[];
+    final original = openExternal;
+    openExternal = (uri) async {
+      opened.add(uri);
+      return true;
+    };
+    addTearDown(() => openExternal = original);
+
+    await startAtHomeWith(tester, store: FakeStore(owned: {monthly}));
+    await tapTooltip(tester, 'הגדרות');
+    await tapText(tester, 'ניהול המנוי');
+    expect(opened.single.host, anyOf('play.google.com', 'apps.apple.com'));
+    if (opened.single.host == 'play.google.com') {
+      expect(opened.single.queryParameters,
+          {'sku': 'premium_monthly', 'package': 'com.imposteril.app'});
+    }
+  });
+
+  for (final (who, owned) in [
+    ('a free player', <String>{}),
+    ('a lifetime owner', {lifetime}),
+  ]) {
+    testWidgets('$who gets no subscription row', (tester) async {
+      await startAtHomeWith(tester, store: FakeStore(owned: owned));
+      await tapTooltip(tester, 'הגדרות');
+      expect(find.text('ניהול המנוי'), findsNothing);
+    });
+  }
 
   group('design fixes', () {
     testWidgets('the clue card is one short row', (tester) async {

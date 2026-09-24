@@ -76,6 +76,9 @@ func (s *Server) syncEntitlements(w http.ResponseWriter, r *http.Request) {
 		writeError(w, errInvalidEntitlementRq)
 		return
 	}
+	// A device owns at most one purchase of each product, so one proof per
+	// product is all a request needs; the rest cannot multiply store calls.
+	req.Purchases = oneProofPerProduct(req.Purchases)
 	token, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 
 	s.mu.Lock()
@@ -133,6 +136,19 @@ func (s *Server) syncEntitlements(w http.ResponseWriter, r *http.Request) {
 		"entitlements": entitlementsJSON(granted, now),
 		"results":      results,
 	})
+}
+
+func oneProofPerProduct(proofs []purchaseProof) []purchaseProof {
+	seen := map[[2]string]bool{}
+	out := proofs[:0]
+	for _, p := range proofs {
+		key := [2]string{p.Platform, p.ProductID}
+		if !seen[key] {
+			seen[key] = true
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 func entitlementsJSON(e monetization.Entitlements, now time.Time) map[string]any {

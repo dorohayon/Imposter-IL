@@ -44,7 +44,27 @@ type GoogleVerifier struct {
 	mu      sync.Mutex
 	token   string
 	expires time.Time
+
+	// Answers Play gave recently, so a device that sends the same proof on
+	// every launch costs one API call per cacheTTL, not one per launch. An
+	// outage is never cached.
+	cacheMu sync.Mutex
+	cache   map[string]cachedAnswer
+	// calls bounds concurrent requests to Google across all players.
+	calls chan struct{}
 }
+
+type cachedAnswer struct {
+	grant Grant
+	err   error
+	at    time.Time
+}
+
+const (
+	cacheTTL      = 10 * time.Minute
+	cacheMax      = 10_000
+	maxGoogleCall = 8
+)
 
 // NewGoogleVerifier reads a service account key file's JSON.
 func NewGoogleVerifier(packageName string, serviceAccountJSON []byte) (*GoogleVerifier, error) {
@@ -75,6 +95,7 @@ func NewGoogleVerifier(packageName string, serviceAccountJSON []byte) (*GoogleVe
 		email:       sa.ClientEmail,
 		key:         key,
 		tokenURL:    sa.TokenURI,
+		calls:       make(chan struct{}, maxGoogleCall),
 	}, nil
 }
 
@@ -82,6 +103,29 @@ func (v *GoogleVerifier) Verify(ctx context.Context, productID, token string, su
 	if token == "" {
 		return Grant{}, ErrInvalidProof
 	}
+	key := productID + "\x00" + token
+	v.cacheMu.Lock()
+	hit, ok := v.cache[key]
+	v.cacheMu.Unlock()
+	// A cached subscription period that has since ended is not reused.
+	if ok && now.Sub(hit.at) < cacheTTL && (hit.grant.Expires.IsZero() || now.Before(hit.grant.Expires)) {
+		return hit.grant, hit.err
+	}
+	grant, err := v.verify(ctx, productID, token, subscription, now)
+	if !errors.Is(err, ErrUnavailable) {
+		v.cacheMu.Lock()
+		if v.cache == nil || len(v.cache) >= cacheMax {
+			// ponytail: dropping the whole cache at the cap; an LRU if it
+			// is ever hit in practice.
+			v.cache = map[string]cachedAnswer{}
+		}
+		v.cache[key] = cachedAnswer{grant: grant, err: err, at: now}
+		v.cacheMu.Unlock()
+	}
+	return grant, err
+}
+
+func (v *GoogleVerifier) verify(ctx context.Context, productID, token string, subscription bool, now time.Time) (Grant, error) {
 	base := v.BaseURL + "/androidpublisher/v3/applications/" + url.PathEscape(v.PackageName) + "/purchases/"
 	if subscription {
 		var sub struct {
@@ -129,6 +173,12 @@ func (v *GoogleVerifier) Verify(ctx context.Context, productID, token string, su
 // get calls the API. A token Play does not know is invalid; anything else
 // going wrong is an outage, which must not cost a player their purchase.
 func (v *GoogleVerifier) get(ctx context.Context, endpoint string, now time.Time, dst any) error {
+	select {
+	case v.calls <- struct{}{}:
+		defer func() { <-v.calls }()
+	case <-ctx.Done():
+		return ErrUnavailable
+	}
 	access, err := v.accessToken(ctx, now)
 	if err != nil {
 		return err

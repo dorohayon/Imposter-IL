@@ -119,6 +119,7 @@ class Monetization extends ChangeNotifier {
   DateTime? _serverPremiumUntil;
   DateTime? _monthlyCheckedAt;
   static const _renewalWindow = Duration(days: 1);
+  static const _renewalRecheck = Duration(hours: 1);
   static const _undatedRecheck = Duration(hours: 6);
   bool _disposed = false;
 
@@ -275,9 +276,14 @@ class Monetization extends ChangeNotifier {
       return false;
     }
     final known = _serverPremiumUntil;
-    if (known != null) return !known.isAfter(now.add(_renewalWindow));
     final checked = _monthlyCheckedAt;
-    return checked == null || now.difference(checked) >= _undatedRecheck;
+    bool since(Duration d) => checked == null || now.difference(checked) >= d;
+    // Near the end, at most hourly until the renewal shows up: resuming the
+    // app ten times in a minute must not ask Google ten times.
+    if (known != null) {
+      return !known.isAfter(now.add(_renewalWindow)) && since(_renewalRecheck);
+    }
+    return since(_undatedRecheck);
   }
 
   /// What the server needs to hear about again: which product, and until

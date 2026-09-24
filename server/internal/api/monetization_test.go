@@ -180,6 +180,15 @@ func TestEntitlementProofResults(t *testing.T) {
 	status, body = c.do("POST", "/v1/entitlements", "", map[string]any{"purchases": []any{}})
 	c.wantError(http.StatusUnauthorized, "session_not_found", status, body)
 
+	// The same product twice counts once: a request cannot multiply calls.
+	status, body = c.syncPurchases(token,
+		proof("android", "category_sports", "good"),
+		proof("android", "category_sports", "good"),
+		proof("android", "category_sports", "good"))
+	if status != http.StatusOK || len(body["results"].([]any)) != 1 {
+		t.Fatalf("duplicates: %d %v", status, body)
+	}
+
 	many := make([]map[string]string, maxProofs+1)
 	for i := range many {
 		many[i] = proof("android", "category_sports", "good")

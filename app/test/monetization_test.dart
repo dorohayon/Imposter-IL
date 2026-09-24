@@ -381,6 +381,40 @@ void main() {
       expect(m.premium, isTrue);
     });
 
+    test('near a renewal, resuming again and again asks at most hourly',
+        () async {
+      final end = DateTime.utc(2026, 10, 24, 12);
+      var clock = end.subtract(const Duration(hours: 20));
+      final api = FakeApi()
+        ..responses['POST /v1/entitlements'] = {
+          'entitlements': {
+            'premium': true,
+            'premiumUntil': end.toIso8601String()
+          },
+        };
+      final session = GameSession(api);
+      addTearDown(session.dispose);
+      session.token = 'token-1';
+      final m = await started(
+          store: FakeStore(owned: {monthly}), api: api, clock: () => clock);
+      m.attach(session);
+      await flush();
+      int posts() =>
+          api.requests.where((r) => r.$2 == '/v1/entitlements').length;
+      final before = posts();
+      // Google has not renewed yet, so the server keeps the same end.
+      for (var i = 0; i < 10; i++) {
+        clock = clock.add(const Duration(minutes: 3));
+        await m.refresh();
+        await flush();
+      }
+      expect(posts(), before, reason: 'ten resumes inside the hour');
+      clock = clock.add(const Duration(hours: 1));
+      await m.refresh();
+      await flush();
+      expect(posts(), before + 1);
+    });
+
     test('an undated subscription is re-sent at most every few hours',
         () async {
       var clock = DateTime.utc(2026, 9, 24, 12);
