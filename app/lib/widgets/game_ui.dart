@@ -151,20 +151,27 @@ class _PrimaryButtonState extends State<PrimaryButton> {
                         ),
                       ],
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (widget.icon != null) ...[
-                    Icon(widget.icon, size: 22, color: contentColor),
-                    const SizedBox(width: 10),
-                  ],
-                  Text(
-                    widget.label,
-                    textAlign: TextAlign.center,
-                    style: contentStyle,
-                  ),
-                ],
-              ),
+              child: widget.icon == null
+                  ? Text(
+                      widget.label,
+                      textAlign: TextAlign.center,
+                      style: contentStyle,
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(widget.icon, size: 22, color: contentColor),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            widget.label,
+                            textAlign: TextAlign.center,
+                            style: contentStyle,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ),
         ),
