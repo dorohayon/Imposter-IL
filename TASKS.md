@@ -81,10 +81,13 @@
 - [ ] **חוסם — מוצרים בחנויות:** `category_<id>` לכל קטגוריה שאינה חינמית,
       `premium_monthly` (קבוצת מנויים, חודש, להפעיל Billing Grace Period)
       ו־`premium_lifetime`, בשתי החנויות, עם מחירים לכל מדינה.
-- [ ] **חוסם — AdMob:** חשבון, שתי אפליקציות, מזהי אפליקציה במקום מזהי הבדיקה
-      (`-PadmobAppId=…` ל־Android, `ADMOB_APP_ID` ב־`ios/Flutter/*.xcconfig`),
-      ומזהי יחידות ב־`MONETIZATION_CONFIG` (`ads.units`). בלעדיהם גרסת release
-      אינה מציגה פרסומות — לא נשברת.
+- [x] **AdMob:** חשבון (`pub-9035143252838544`), אפליקציות Android ו־iOS, מזהי
+      האפליקציה ב־`AndroidManifest.xml` וב־`Info.plist`, וארבע יחידות מודעה
+      בברירת המחדל של השרת (`monetization.Default`). גרסאות debug עדיין מבקשות
+      את יחידות הבדיקה של Google.
+- [ ] לפרוס את השרת, כדי שהיחידות יגיעו ל־`GET /v1/config`.
+- [ ] לחבר את שתי אפליקציות ה־AdMob לדפי החנויות אחרי הפרסום הראשון; עד אז
+      AdMob מגיש מעט מודעות או כלל לא.
 - [ ] **חוסם — הודעת הסכמה ב־AdMob** (Privacy & messaging): GDPR לאיחוד, בריטניה
       ושווייץ, והסבר IDFA ל־iOS.
 - [ ] להוסיף את רשימת ה־SKAdNetwork המלאה של Google ל־`Info.plist` (כרגע רק

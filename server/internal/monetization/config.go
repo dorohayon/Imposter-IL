@@ -63,7 +63,7 @@ type Ads struct {
 	MaxAdContentRating string `json:"maxAdContentRating"`
 	// Units are the AdMob ad unit ids per platform ("android", "ios"). Release
 	// builds show no ads without them; debug builds always use Google's test
-	// units.
+	// units. An override replaces the whole map.
 	Units map[string]AdUnits `json:"units"`
 }
 
@@ -96,7 +96,18 @@ func Default() Config {
 			BannerPlacements:    slices.Clone(BannerPlacements),
 			InterstitialEnabled: true,
 			MaxAdContentRating:  "PG",
-			Units:               map[string]AdUnits{},
+			// The AdMob units (publisher pub-9035143252838544). Not secrets:
+			// every build that shows an ad carries them.
+			Units: map[string]AdUnits{
+				"android": {
+					Banner:       "ca-app-pub-9035143252838544/5555882846",
+					Interstitial: "ca-app-pub-9035143252838544/5751238243",
+				},
+				"ios": {
+					Banner:       "ca-app-pub-9035143252838544/4438156576",
+					Interstitial: "ca-app-pub-9035143252838544/8466874805",
+				},
+			},
 		},
 	}
 }

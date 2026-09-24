@@ -38,10 +38,12 @@
                 <data android:scheme="imposteril" android:host="join"/>
             </intent-filter>
         </activity>
-        <!-- AdMob (docs/monetization.md). Set per build in build.gradle.kts. -->
+        <!-- AdMob app id (docs/monetization.md). Not a secret. Debug builds
+             still request Google's test ad units; the real units come from
+             the server. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="${admobAppId}"/>
+            android:value="ca-app-pub-9035143252838544~9971528166"/>
         <!-- Hands the link above to Flutter as a route. -->
         <meta-data android:name="flutter_deeplinking_enabled" android:value="true"/>
         <!-- Don't delete the meta-data below.

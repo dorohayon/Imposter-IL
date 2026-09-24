@@ -36,6 +36,14 @@ func TestDefaultConfig(t *testing.T) {
 	if c.ServerEnforcement {
 		t.Fatal("enforcement must stay off until the store verifiers are configured")
 	}
+	// Release builds show no ads without units, so both platforms need both.
+	for _, platform := range []string{"android", "ios"} {
+		u := c.Ads.Units[platform]
+		if !strings.HasPrefix(u.Banner, "ca-app-pub-9035143252838544/") ||
+			!strings.HasPrefix(u.Interstitial, "ca-app-pub-9035143252838544/") || u.Banner == u.Interstitial {
+			t.Errorf("%s units = %+v", platform, u)
+		}
+	}
 }
 
 func TestParse(t *testing.T) {

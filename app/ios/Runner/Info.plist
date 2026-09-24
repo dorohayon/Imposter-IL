@@ -85,9 +85,10 @@
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
-	<!-- AdMob (docs/monetization.md). The id comes from the xcconfig files. -->
+	<!-- AdMob app id (docs/monetization.md). Not a secret. Debug builds still
+	     request Google's test ad units; the real units come from the server. -->
 	<key>GADApplicationIdentifier</key>
-	<string>$(ADMOB_APP_ID)</string>
+	<string>ca-app-pub-9035143252838544~8790308438</string>
 	<!-- Shown only if the consent message configured in AdMob asks for
 	     tracking permission. Declining changes nothing in the game. -->
 	<key>NSUserTrackingUsageDescription</key>

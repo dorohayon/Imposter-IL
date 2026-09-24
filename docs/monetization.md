@@ -135,7 +135,7 @@ POST /v1/rooms · matchmaking.join · room.updateSettings ──► 403 category
 | `ads.interstitialEnabled` | `true` | מודעה במסך מלא אחרי משחק |
 | `ads.interstitialMinIntervalSeconds` | `0` | מרווח מינימלי בין מודעות במסך מלא |
 | `ads.maxAdContentRating` | `PG` | דירוג התוכן המרבי של AdMob |
-| `ads.units.android` / `ads.units.ios` | ריק | מזהי יחידות המודעה. גרסת release בלי מזהים אינה מציגה פרסומות; גרסת debug משתמשת תמיד במזהי הבדיקה של Google |
+| `ads.units.android` / `ads.units.ios` | יחידות ה־AdMob של `pub-9035143252838544` (באנר ומודעה במסך מלא לכל פלטפורמה) | מזהי יחידות המודעה. גרסת release בלי מזהים אינה מציגה פרסומות; גרסת debug משתמשת תמיד במזהי הבדיקה של Google |
 
 ## פרסומות
 
@@ -246,6 +246,16 @@ POST /v1/rooms · matchmaking.join · room.updateSettings ──► 403 category
 - באנר לא צמוד לכפתורים ולא במסכי משחק פעיל. ✓ 16 פיקסלים מתחת לכפתור, רק
   במסכים שמחוץ למשחק.
 - **app-ads.txt** באתר המפתח שמופיע בדפי החנויות: `https://imposteril.github.io/app-ads.txt` (`site/app-ads.txt`), עם מזהה ה־publisher `pub-9035143252838544`.
+
+## מזהי AdMob
+
+| | Android | iOS |
+| --- | --- | --- |
+| אפליקציה | `ca-app-pub-9035143252838544~9971528166` (`AndroidManifest.xml`) | `ca-app-pub-9035143252838544~8790308438` (`Info.plist`) |
+| באנר | `ca-app-pub-9035143252838544/5555882846` | `ca-app-pub-9035143252838544/4438156576` |
+| מסך מלא אחרי משחק | `ca-app-pub-9035143252838544/5751238243` | `ca-app-pub-9035143252838544/8466874805` |
+
+מזהי היחידות נמצאים בברירת המחדל של השרת ואפשר להחליף אותם ב־`MONETIZATION_CONFIG` בלי גרסה. מזהי האפליקציה נכנסים ל־build ולכן משתנים רק בגרסה חדשה.
 
 ## גרסאות
 

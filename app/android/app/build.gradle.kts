@@ -23,12 +23,6 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        // AdMob app id. Google's sample id serves test ads only; release builds
-        // pass the real one: flutter build appbundle -PadmobAppId=ca-app-pub-…~…
-        // (docs/monetization.md). The ad unit ids come from the server.
-        manifestPlaceholders["admobAppId"] =
-            (project.findProperty("admobAppId") as String?)
-                ?: "ca-app-pub-3940256099942544~3347511713"
     }
 
     buildTypes {
