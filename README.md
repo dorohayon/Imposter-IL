@@ -71,6 +71,29 @@ flutter analyze
 flutter test
 ```
 
+### Release signing
+
+גרסת release ל־Google Play נחתמת במפתח העלאה (upload key) שנמצא מחוץ ל־git.
+בלעדיו ה־build נופל למפתח ה־debug, ש־Play דוחה. פעם אחת:
+
+```sh
+keytool -genkeypair -v -keystore ~/imposter-upload.jks -keyalg RSA -keysize 2048 \
+  -validity 10000 -alias upload
+```
+
+ואז `app/android/key.properties` (מוחרג מ־git):
+
+```properties
+storeFile=/Users/<you>/imposter-upload.jks
+storePassword=…
+keyAlias=upload
+keyPassword=…
+```
+
+`flutter build appbundle --release` חותם בו. ב־Play Console מפעילים Play App
+Signing: Google מחזיקה את מפתח ההפצה, ומפתח ההעלאה ניתן לאיפוס אם יאבד. **גבו את
+הקובץ ואת הסיסמה** — בלעדיהם אי אפשר להעלות עדכון עד שהאיפוס מאושר.
+
 ### הרצה מול שרת מקומי
 
 ```sh

@@ -24,11 +24,7 @@ func (s *Server) startGame(sess *session, entry *roomEntry, now time.Time) strin
 	switch {
 	case v.HostID != sess.playerID:
 		return "not_room_host"
-	// The player who paid for the categories must still own them: a lapsed
-	// subscription or a refund stops the next game. A host who inherited
-	// the room did not choose them, and its settings are locked by then, so
-	// the room keeps what its creator opened.
-	case sess.playerID == entry.categoriesBy && !s.categoriesAllowed(sess, v.Settings.CategoryIDs, now):
+	case !s.roomCategoriesOpen(sess, entry, v, now):
 		return "category_locked"
 	case s.pickWord == nil:
 		return "content_unavailable"
@@ -46,6 +42,21 @@ func (s *Server) startGame(sess *session, entry *roomEntry, now time.Time) strin
 	s.beginGame(entry)
 	s.publish(entry)
 	return ""
+}
+
+// roomCategoriesOpen reports whether a private room's next game may use its
+// categories: the host starting it owns them, or the player who chose them is
+// still in the room and still owns them. A buyer's friends play the buyer's
+// categories while the buyer is there; once the buyer has left, or their
+// Premium lapsed, a free host cannot keep the room's paid categories going.
+func (s *Server) roomCategoriesOpen(host *session, entry *roomEntry, v room.View, now time.Time) bool {
+	ids := v.Settings.CategoryIDs
+	if s.categoriesAllowed(host, ids, now) {
+		return true
+	}
+	chooser := s.players[entry.categoriesBy]
+	return chooser != nil && slices.ContainsFunc(v.Members, func(m room.Member) bool { return m.ID == entry.categoriesBy }) &&
+		s.categoriesAllowed(chooser, ids, now)
 }
 
 func (s *Server) gameCommand(sess *session, typ string, p commandPayload, now time.Time) string {

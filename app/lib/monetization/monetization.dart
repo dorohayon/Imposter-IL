@@ -111,6 +111,15 @@ class Monetization extends ChangeNotifier {
   Future<void> _syncChain = Future.value();
   Future<void>? _queuedSync;
   bool _queuedForce = false;
+
+  /// When the server last dated a Play subscription, and when it last said
+  /// anything about one. Play keeps the purchase token across renewals, so
+  /// an unchanged proof still has to reach the server again as the period it
+  /// knows runs out.
+  DateTime? _serverPremiumUntil;
+  DateTime? _monthlyCheckedAt;
+  static const _renewalWindow = Duration(days: 1);
+  static const _undatedRecheck = Duration(hours: 6);
   bool _disposed = false;
 
   DateTime get now => _clock();
@@ -257,6 +266,20 @@ class Monetization extends ChangeNotifier {
     if (_collecting == null) unawaited(syncServer());
   }
 
+  /// Whether an undated (Play) subscription should be re-verified: its period
+  /// as the server knows it ends within a day, or the server has not dated
+  /// it for a while (no Google verifier, or an outage).
+  bool _playRenewalDue(Map<String, StorePurchase> found) {
+    final monthly = found[config.premiumMonthly];
+    if (monthly == null || _jwsExpiry(monthly.verificationData) != null) {
+      return false;
+    }
+    final known = _serverPremiumUntil;
+    if (known != null) return !known.isAfter(now.add(_renewalWindow));
+    final checked = _monthlyCheckedAt;
+    return checked == null || now.difference(checked) >= _undatedRecheck;
+  }
+
   /// What the server needs to hear about again: which product, and until
   /// when. StoreKit re-signs a transaction on every restore, so the raw JWS
   /// changes each time while nothing the server decides on does.
@@ -290,7 +313,9 @@ class Monetization extends ChangeNotifier {
     _proofs
       ..clear()
       ..addAll(found);
-    if (!setEquals(before, _proofKeys)) _proofsChanged = true;
+    if (!setEquals(before, _proofKeys) || _playRenewalDue(found)) {
+      _proofsChanged = true;
+    }
     ownedCategories = {
       for (final id in found.keys)
         if (config.categoryOf(id) case final category?) category,
@@ -386,6 +411,8 @@ class Monetization extends ChangeNotifier {
       // Play gives the app no expiry; the server's check does.
       final ent = json['entitlements'] as Map<String, dynamic>? ?? const {};
       final until = DateTime.tryParse(ent['premiumUntil'] as String? ?? '');
+      _serverPremiumUntil = until;
+      if (_proofs.containsKey(config.premiumMonthly)) _monthlyCheckedAt = now;
       if (until != null && _proofs.containsKey(config.premiumMonthly)) {
         premiumUntil = until;
         unawaited(_persist());

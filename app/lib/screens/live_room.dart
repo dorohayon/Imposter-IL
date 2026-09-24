@@ -34,8 +34,8 @@ const _commandErrors = {
   'self_vote': 'אי אפשר להצביע לעצמכם.',
   'invalid_vote_target': 'אי אפשר להצביע לשחקן הזה.',
   'network_error': 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
-  'category_locked':
-      'אחת הקטגוריות כבר לא פתוחה לכם. אפשר לחדש את הפרימיום או לשחזר רכישות.',
+  'category_locked': 'אחת הקטגוריות כבר לא פתוחה. אפשר לחדש את הפרימיום, '
+      'לשחזר רכישות או ליצור חדר חדש.',
 };
 
 /// Opens the system share sheet. Tests replace it.

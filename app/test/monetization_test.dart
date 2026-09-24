@@ -335,6 +335,78 @@ void main() {
       expect(posts(), before + 1);
     });
 
+    test('a Play renewal keeps its token and is re-verified near the end',
+        () async {
+      var clock = DateTime.utc(2026, 9, 24, 12);
+      final firstEnd = DateTime.utc(2026, 10, 24, 12);
+      final api = FakeApi()
+        ..responses['POST /v1/entitlements'] = {
+          'entitlements': {
+            'premium': true,
+            'premiumUntil': firstEnd.toIso8601String()
+          },
+        };
+      final store = FakeStore(owned: {monthly}); // Android: one token for good
+      final session = GameSession(api);
+      addTearDown(session.dispose);
+      session.token = 'token-1';
+      final m = await started(store: store, api: api, clock: () => clock);
+      m.attach(session);
+      await flush();
+      int posts() =>
+          api.requests.where((r) => r.$2 == '/v1/entitlements').length;
+      final before = posts();
+      expect(m.premiumUntil, firstEnd);
+
+      // Mid-period resumes send nothing.
+      clock = clock.add(const Duration(days: 10));
+      await m.refresh();
+      await flush();
+      expect(posts(), before);
+
+      // Hours before the period the server knows ends, the same token goes
+      // again, and Google's later expiry comes back.
+      final renewedEnd = firstEnd.add(const Duration(days: 30));
+      api.responses['POST /v1/entitlements'] = {
+        'entitlements': {
+          'premium': true,
+          'premiumUntil': renewedEnd.toIso8601String()
+        },
+      };
+      clock = firstEnd.subtract(const Duration(hours: 12));
+      await m.refresh();
+      await flush();
+      expect(posts(), before + 1);
+      expect(m.premiumUntil, renewedEnd);
+      expect(m.premium, isTrue);
+    });
+
+    test('an undated subscription is re-sent at most every few hours',
+        () async {
+      var clock = DateTime.utc(2026, 9, 24, 12);
+      final api = FakeApi(); // the server dates nothing (no Google verifier)
+      final session = GameSession(api);
+      addTearDown(session.dispose);
+      session.token = 'token-1';
+      final m = await started(
+          store: FakeStore(owned: {monthly}), api: api, clock: () => clock);
+      m.attach(session);
+      await flush();
+      int posts() =>
+          api.requests.where((r) => r.$2 == '/v1/entitlements').length;
+      final before = posts();
+      for (var i = 0; i < 5; i++) {
+        clock = clock.add(const Duration(minutes: 10));
+        await m.refresh();
+        await flush();
+      }
+      expect(posts(), before);
+      clock = clock.add(const Duration(hours: 6));
+      await m.refresh();
+      await flush();
+      expect(posts(), before + 1);
+    });
+
     test('a failing server is not retried on every session change', () async {
       final api = FakeApi()
         ..responses['POST /v1/entitlements'] =

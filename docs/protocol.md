@@ -100,7 +100,7 @@
 
 `status` הוא `granted`, `rejected` (הוכחה מזויפת, לאפליקציה או מוצר אחרים, הוחזרה, בוטלה או לא שולמה) או `unverifiable` (אין בשרת מאמת לפלטפורמה). שגיאות: `401 session_not_found`, `422 invalid_purchases` (יותר מ־20), `429 rate_limited` (10 לדקה לכל session ו־120 לכל IP), `503 verification_unavailable` — אי אפשר היה לשאול את החנות, ומה שה־session החזיק נשאר.
 
-כש־`serverEnforcement` פעיל, קטגוריה שאינה חינמית ואינה בבעלות השחקן נדחית ב־`403 category_locked` ביצירת חדר, וב־`category_locked` ב־`matchmaking.join` וב־`room.updateSettings`. בחדר פרטי רק הקטגוריות שבחר המנהל נבדקות, מול הרכישות שלו; המצטרפים אינם צריכים דבר. גם `game.playAgain` ברשת נבדק, כך שמנוי שפג עוצר את החיפוש הבא. `room.start` בודק שוב את הקטגוריות מול מי שבחר אותן; מנהל שקיבל את החדר בהעברה אינו נבדק.
+כש־`serverEnforcement` פעיל, קטגוריה שאינה חינמית ואינה בבעלות השחקן נדחית ב־`403 category_locked` ביצירת חדר, וב־`category_locked` ב־`matchmaking.join` וב־`room.updateSettings`. בחדר פרטי רק הקטגוריות שבחר המנהל נבדקות, מול הרכישות שלו; המצטרפים אינם צריכים דבר. גם `game.playAgain` ברשת נבדק, כך שמנוי שפג עוצר את החיפוש הבא. `room.start` בודק שוב: המנהל שמתחיל מחזיק בקטגוריות, או שמי שבחר אותן עדיין בחדר ומחזיק בהן.
 
 ### `POST /v1/sessions`
 
