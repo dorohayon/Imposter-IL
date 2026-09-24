@@ -46,8 +46,8 @@ type GoogleVerifier struct {
 	expires time.Time
 
 	// Answers Play gave recently, so a device that sends the same proof on
-	// every launch costs one API call per cacheTTL, not one per launch. An
-	// outage is never cached.
+	// every launch costs one API call per cacheTTL, not one per launch.
+	// Rejections are kept for rejectedTTL; an outage is never cached.
 	cacheMu sync.Mutex
 	cache   map[string]cachedAnswer
 	// calls bounds concurrent requests to Google across all players.
@@ -61,7 +61,11 @@ type cachedAnswer struct {
 }
 
 const (
-	cacheTTL      = 10 * time.Minute
+	cacheTTL = 10 * time.Minute
+	// A rejection is kept only briefly: a subscription keeps its token when
+	// it recovers from on hold or paused, and a player who just fixed their
+	// payment must not wait out the full TTL.
+	rejectedTTL   = time.Minute
 	cacheMax      = 10_000
 	maxGoogleCall = 8
 )
@@ -107,8 +111,12 @@ func (v *GoogleVerifier) Verify(ctx context.Context, productID, token string, su
 	v.cacheMu.Lock()
 	hit, ok := v.cache[key]
 	v.cacheMu.Unlock()
+	ttl := cacheTTL
+	if hit.err != nil {
+		ttl = rejectedTTL
+	}
 	// A cached subscription period that has since ended is not reused.
-	if ok && now.Sub(hit.at) < cacheTTL && (hit.grant.Expires.IsZero() || now.Before(hit.grant.Expires)) {
+	if ok && now.Sub(hit.at) < ttl && (hit.grant.Expires.IsZero() || now.Before(hit.grant.Expires)) {
 		return hit.grant, hit.err
 	}
 	grant, err := v.verify(ctx, productID, token, subscription, now)

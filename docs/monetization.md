@@ -86,7 +86,7 @@ POST /v1/rooms · matchmaking.join · room.updateSettings ──► 403 category
   התעודות, חתימת ES256, bundle id, מזהה המוצר, `revocationDate` ו־`expiresDate`.
   השרשרת נבדקת לפי מועד החתימה, כמו הספרייה של Apple במצב לא מקוון.
 - **הגנה על המכסה של Google:** בקשה אחת מכילה לכל היותר הוכחה אחת לכל מוצר, תשובות
-  של Google נשמרות בזיכרון 10 דקות (תקלה אינה נשמרת), ולא יותר מ־8 פניות ל־Google
+  של Google נשמרות בזיכרון 10 דקות, דחייה רק דקה — מנוי שחזר מ־on hold שומר על אותו token ולא צריך לחכות — ותקלה אינה נשמרת, ולא יותר מ־8 פניות ל־Google
   בו־זמנית. בנוסף: 10 סנכרונים לדקה לכל session ו־120 לכל IP.
 - **Google:** purchase token נבדק מול Google Play Developer API
   (`purchases.products` ו־`purchases.subscriptionsv2`) בחשבון שירות. `ACTIVE`,

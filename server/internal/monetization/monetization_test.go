@@ -421,6 +421,11 @@ func TestGoogleVerifierCachesAnswersButNotOutages(t *testing.T) {
 		t.Fatalf("after the TTL: err %v, calls %d, want a fresh call", err, calls.Load())
 	}
 
+	// A rejection is remembered only for a minute.
+	if _, err := v.Verify(ctx, "category_sports", "forged", false, now.Add(rejectedTTL)); !errors.Is(err, ErrInvalidProof) || calls.Load() != 4 {
+		t.Fatalf("after a minute: err %v, calls %d, want a fresh call", err, calls.Load())
+	}
+
 	// An outage is not remembered: the next try asks again.
 	if _, err := v.Verify(ctx, "category_sports", "flaky", false, now); !errors.Is(err, ErrUnavailable) {
 		t.Fatal(err)
@@ -466,6 +471,26 @@ func TestGoogleVerifierSubscriptions(t *testing.T) {
 		if _, err := v.Verify(ctx, "premium_monthly", token, true, now); !errors.Is(err, ErrInvalidProof) {
 			t.Errorf("%s: err = %v, want ErrInvalidProof", token, err)
 		}
+	}
+}
+
+// A subscription keeps its token when a failed payment is fixed: on hold one
+// minute, active the next. The rejection must not outlive the recovery.
+func TestGoogleSubscriptionRecoversOnTheSameToken(t *testing.T) {
+	expiry := now.Add(30 * 24 * time.Hour).Truncate(time.Second)
+	state := "SUBSCRIPTION_STATE_ON_HOLD"
+	v, _ := googleVerifier(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"subscriptionState":"` + state + `","lineItems":[{"productId":"premium_monthly","expiryTime":"` +
+			expiry.Format(time.RFC3339) + `"}]}`))
+	})
+	ctx := context.Background()
+	if _, err := v.Verify(ctx, "premium_monthly", "same-token", true, now); !errors.Is(err, ErrInvalidProof) {
+		t.Fatalf("on hold: %v", err)
+	}
+	state = "SUBSCRIPTION_STATE_ACTIVE" // the payment went through
+	got, err := v.Verify(ctx, "premium_monthly", "same-token", true, now.Add(rejectedTTL))
+	if err != nil || !got.Expires.Equal(expiry) {
+		t.Fatalf("recovered: %+v %v", got, err)
 	}
 }
 
