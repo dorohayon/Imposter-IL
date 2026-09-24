@@ -299,6 +299,42 @@ void main() {
           api.requests.where((r) => r.$2 == '/v1/entitlements').length, before);
     });
 
+    test('a resume that finds the same purchases sends nothing', () async {
+      final api = FakeApi();
+      final store =
+          FakeStore(owned: {'category_sports', monthly}, platform: 'ios');
+      final session = GameSession(api);
+      addTearDown(session.dispose);
+      session.token = 'token-1';
+      var signed = 0;
+      // StoreKit signs the same transaction again on every restore.
+      String jws() => storeKitJws(monthly,
+          expires: DateTime(2030), signedAt: DateTime(2026, 9, 1 + signed++));
+      store.proofs[monthly] = jws();
+      final m = await started(store: store, api: api);
+      m.attach(session);
+      await flush();
+      int posts() =>
+          api.requests.where((r) => r.$2 == '/v1/entitlements').length;
+      final before = posts();
+      expect(before, greaterThan(0));
+
+      for (var i = 0; i < 5; i++) {
+        store.proofs[monthly] = jws();
+        m.resumed();
+        await flush();
+        await m.refresh();
+        await flush();
+      }
+      expect(posts(), before, reason: 'nothing the server decides on changed');
+
+      // A real change is sent, once.
+      store.owned.add('category_objects');
+      await m.refresh();
+      await flush();
+      expect(posts(), before + 1);
+    });
+
     test('a failing server is not retried on every session change', () async {
       final api = FakeApi()
         ..responses['POST /v1/entitlements'] =

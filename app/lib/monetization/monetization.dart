@@ -253,12 +253,24 @@ class Monetization extends ChangeNotifier {
     }
     unawaited(_persist());
     _notify();
-    unawaited(syncServer());
+    // A restore in progress syncs once, when it has the whole answer.
+    if (_collecting == null) unawaited(syncServer());
   }
 
+  /// What the server needs to hear about again: which product, and until
+  /// when. StoreKit re-signs a transaction on every restore, so the raw JWS
+  /// changes each time while nothing the server decides on does.
+  String _proofKey(StorePurchase p) =>
+      '${p.productId}|${_jwsExpiry(p.verificationData)?.millisecondsSinceEpoch ?? p.verificationData}';
+
+  Set<String> get _proofKeys => {for (final p in _proofs.values) _proofKey(p)};
+
   void _grant(StorePurchase p) {
+    final before = _proofs[p.productId];
+    if (before == null || _proofKey(before) != _proofKey(p)) {
+      _proofsChanged = true;
+    }
     _proofs[p.productId] = p;
-    _proofsChanged = true;
     if (p.productId == config.premiumLifetime) {
       lifetime = true;
     } else if (p.productId == config.premiumMonthly) {
@@ -274,10 +286,11 @@ class Monetization extends ChangeNotifier {
   /// Everything the store listed, and nothing else: a refunded category or a
   /// lapsed subscription is simply no longer there.
   void _replaceWith(Map<String, StorePurchase> found) {
+    final before = _proofKeys;
     _proofs
       ..clear()
       ..addAll(found);
-    _proofsChanged = true;
+    if (!setEquals(before, _proofKeys)) _proofsChanged = true;
     ownedCategories = {
       for (final id in found.keys)
         if (config.categoryOf(id) case final category?) category,

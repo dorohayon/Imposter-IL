@@ -366,6 +366,22 @@ void main() {
       expect(api.channel.commands('game.playAgain'), hasLength(1));
     });
 
+    testWidgets('a second tap while the ad is up does nothing', (tester) async {
+      final (api, _, ads) = await _freePlayer(tester);
+      ads.holdOpen = true;
+      await openCreatedRoom(tester, api);
+      await _game(tester, api, _ended('citizens', 'impostor_guess_wrong'));
+
+      await tapLive(tester, 'משחק נוסף');
+      await tapLive(tester, 'משחק נוסף');
+      await tapLive(tester, 'חזרה למסך הבית');
+      expect(ads.shown, 1);
+      ads.close();
+      await settle(tester);
+      expect(api.channel.commands('game.playAgain'), hasLength(1));
+      expect(api.channel.commands('game.leave'), isEmpty);
+    });
+
     testWidgets('going home after a match shows the ad first too',
         (tester) async {
       final (api, _, ads) = await _freePlayer(tester);

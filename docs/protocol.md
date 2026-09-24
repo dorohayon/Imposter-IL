@@ -100,7 +100,7 @@
 
 `status` הוא `granted`, `rejected` (הוכחה מזויפת, לאפליקציה או מוצר אחרים, הוחזרה, בוטלה או לא שולמה) או `unverifiable` (אין בשרת מאמת לפלטפורמה). שגיאות: `401 session_not_found`, `422 invalid_purchases` (יותר מ־20), `429 rate_limited` (10 לדקה לכל session ו־120 לכל IP), `503 verification_unavailable` — אי אפשר היה לשאול את החנות, ומה שה־session החזיק נשאר.
 
-כש־`serverEnforcement` פעיל, קטגוריה שאינה חינמית ואינה בבעלות השחקן נדחית ב־`403 category_locked` ביצירת חדר, וב־`category_locked` ב־`matchmaking.join` וב־`room.updateSettings`. בחדר פרטי רק הקטגוריות שבחר המנהל נבדקות, מול הרכישות שלו; המצטרפים אינם צריכים דבר. `game.playAgain` ברשת ממשיך עם הקטגוריות שהשחקן כבר התקבל איתן.
+כש־`serverEnforcement` פעיל, קטגוריה שאינה חינמית ואינה בבעלות השחקן נדחית ב־`403 category_locked` ביצירת חדר, וב־`category_locked` ב־`matchmaking.join` וב־`room.updateSettings`. בחדר פרטי רק הקטגוריות שבחר המנהל נבדקות, מול הרכישות שלו; המצטרפים אינם צריכים דבר. גם `game.playAgain` ברשת נבדק, כך שמנוי שפג עוצר את החיפוש הבא. `room.start` בודק שוב את הקטגוריות מול מי שבחר אותן; מנהל שקיבל את החדר בהעברה אינו נבדק.
 
 ### `POST /v1/sessions`
 
@@ -249,7 +249,7 @@
 | `matchmaking.cancel` | `{}` | — |
 | `room.updateSettings` | `{ roomId, maxPlayers, hintSeconds, categoryIds }` | `not_room_host`, `room_settings_locked`, `invalid_room_settings`, `room_in_game`, `category_locked` |
 | `room.kick` | `{ roomId, playerId }` | `not_room_host`, `cannot_kick_self`, `room_in_game`, `unknown_player` |
-| `room.start` | `{ roomId }` | `not_room_host`, `not_enough_players`, `room_in_game`, `content_unavailable` |
+| `room.start` | `{ roomId }` | `not_room_host`, `not_enough_players`, `room_in_game`, `content_unavailable`, `category_locked` |
 | `room.leave` | `{ roomId }` | — |
 | `game.confirmRole` | `{ gameId }` | `wrong_phase` |
 | `game.submitHint` | `{ gameId, text }` | `not_your_turn`, `wrong_phase`, `hint_empty`, `hint_not_one_word`, `hint_too_long`, `hint_inappropriate`, `hint_contains_secret`, `hint_duplicate` |
@@ -258,7 +258,7 @@
 | `game.submitGuess` | `{ gameId, text }` | `not_impostor`, `wrong_phase` |
 | `game.report` | `{ gameId, playerId, hintIndex?, reason? }` | `invalid_message` (שחקן חסר, דיווח עצמי או שחקן שאינו במשחק), `game_not_found`. הדיווח נרשם ונספר בשרת; אין מסך מודרציה. האפליקציה מסתירה מאותו רגע את הרמזים של המדווח במכשיר הזה. |
 | `game.leave` | `{ gameId }` | — (יציאה לבית: לפני הסוף זו יציאה יזומה והפסד; ממסך התוצאות אינה נחשבת. בשני המקרים השחקן יוצא גם מהחדר) |
-| `game.playAgain` | `{ gameId }` | `wrong_phase` (לפני `ended`). בחדר פרטי מחזיר את השחקן ללובי: `session.state` עם `activity: "room"` |
+| `game.playAgain` | `{ gameId }` | `wrong_phase` (לפני `ended`), `category_locked` (ברשת). בחדר פרטי מחזיר את השחקן ללובי: `session.state` עם `activity: "room"` |
 
 שגיאות כלליות לכל הודעה: `unknown_player`, `player_not_active`, `game_not_found`, `room_not_found`, `rate_limited`, `invalid_message`, `internal_error`.
 

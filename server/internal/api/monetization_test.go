@@ -227,3 +227,59 @@ func TestOnlineSearchAndRoomSettingsNeedTheCategories(t *testing.T) {
 	wantReplyError(t, w.command("settings-locked", "room.updateSettings", settings("objects")), "category_locked")
 	wantOK(t, w.command("settings-ok", "room.updateSettings", settings("sports", "animals")))
 }
+
+// "משחק נוסף" online searches again through joinSearch, so it is where a
+// lapsed subscription has to stop: a player cannot keep a paid category by
+// never leaving the result screen.
+func TestLapsedEntitlementCannotSearchAgain(t *testing.T) {
+	c := enforcingClient(t, fakeStore{
+		"monthly-token": {grant: monetization.Grant{ProductID: "premium_monthly", Expires: t0.Add(time.Hour)}},
+	})
+	token, _ := c.session("דור")
+	c.syncPurchases(token, proof("android", "premium_monthly", "monthly-token"))
+	c.advance(2 * time.Hour)
+
+	c.srv.mu.Lock()
+	code := c.srv.joinSearch(c.srv.sessions[token], nil, []string{"sports"}, c.srv.now())
+	c.srv.mu.Unlock()
+	if code != "category_locked" {
+		t.Fatalf("joinSearch after the period ended = %q, want category_locked", code)
+	}
+}
+
+// A private room is checked again when its game starts, against the player
+// who chose its categories; a host who only inherited the room is not.
+func TestPrivateRoomStartRechecksWhoChoseTheCategories(t *testing.T) {
+	c := enforcingClient(t, fakeStore{
+		"monthly-token": {grant: monetization.Grant{ProductID: "premium_monthly", Expires: t0.Add(time.Hour)}},
+	})
+	hostToken, _ := c.session("מנהל")
+	c.syncPurchases(hostToken, proof("android", "premium_monthly", "monthly-token"))
+	status, body := c.roomWith(hostToken, "sports")
+	if status != http.StatusCreated {
+		t.Fatalf("create room: %d %v", status, body)
+	}
+	room := body["room"].(map[string]any)
+	roomID, code := room["roomId"].(string), room["code"].(string)
+	host := &wsPlayer{token: hostToken, w: c.dial(hostToken)}
+	var guests []*wsPlayer
+	for i := range 3 {
+		token, id := c.session(fmt.Sprintf("אורח%d", i+1))
+		if status, body := c.join(token, code); status != http.StatusOK {
+			t.Fatalf("join: %d %v", status, body)
+		}
+		guests = append(guests, &wsPlayer{id: id, token: token, w: c.dial(token)})
+	}
+
+	c.advance(2 * time.Hour) // the host's Premium lapses in the lobby
+	wantReplyError(t, host.w.command("start", "room.start", map[string]any{"roomId": roomID}), "category_locked")
+
+	// The host leaves; the room passes on with the categories it was opened with.
+	wantOK(t, host.w.command("leave", "room.leave", map[string]any{"roomId": roomID}))
+	newHost := guests[0]
+	newHost.w.roomState(func(r map[string]any) bool { return r["hostPlayerId"] == newHost.id })
+	c.syncPurchases(guests[1].token) // guests own nothing
+	wantReplyError(t, guests[1].w.command("not-host", "room.start", map[string]any{"roomId": roomID}), "not_room_host")
+	// Three players remain: the rules, not the purchase, are what stop it now.
+	wantReplyError(t, newHost.w.command("start", "room.start", map[string]any{"roomId": roomID}), "not_enough_players")
+}

@@ -616,6 +616,10 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     await MonetizationScope.maybeRead(context)?.afterCompletedMatch();
   }
 
+  /// Set from the first tap on a result button until the screen is gone: a
+  /// second tap while the ad is up must not navigate twice.
+  bool _continuing = false;
+
   Widget _result() {
     final impostor = _game.players[_game.impostor];
     final citizensWon = _game.outcome == LocalOutcome.citizensWin;
@@ -628,35 +632,41 @@ class _LocalGameScreenState extends State<LocalGameScreen>
         children: [
           PrimaryButton(
             label: 'משחק נוסף',
-            onPressed: () async {
-              final navigator = Navigator.of(context);
-              await LocalStore.clear();
-              await _afterMatch();
-              if (!mounted) return;
-              navigator.pushReplacement(
-                MaterialPageRoute<void>(
-                  builder: (_) => LocalRulesScreen(
-                    players: [
-                      for (final p in _game.players)
-                        LocalPlayer(name: p.name, avatar: p.avatar),
-                    ],
-                    initialCategoryIds: _game.categoryIds,
-                    initialHintSeconds: _game.hintSeconds,
-                  ),
-                ),
-              );
-            },
+            onPressed: _continuing
+                ? null
+                : () async {
+                    setState(() => _continuing = true);
+                    final navigator = Navigator.of(context);
+                    await LocalStore.clear();
+                    await _afterMatch();
+                    if (!mounted) return;
+                    navigator.pushReplacement(
+                      MaterialPageRoute<void>(
+                        builder: (_) => LocalRulesScreen(
+                          players: [
+                            for (final p in _game.players)
+                              LocalPlayer(name: p.name, avatar: p.avatar),
+                          ],
+                          initialCategoryIds: _game.categoryIds,
+                          initialHintSeconds: _game.hintSeconds,
+                        ),
+                      ),
+                    );
+                  },
           ),
           const SizedBox(height: 10),
           PrimaryButton(
             label: 'חזרה למסך הבית',
             variant: ButtonVariant.quiet,
-            onPressed: () async {
-              final navigator = Navigator.of(context);
-              await LocalStore.clear();
-              await _afterMatch();
-              if (mounted) navigator.popUntil((r) => r.isFirst);
-            },
+            onPressed: _continuing
+                ? null
+                : () async {
+                    setState(() => _continuing = true);
+                    final navigator = Navigator.of(context);
+                    await LocalStore.clear();
+                    await _afterMatch();
+                    if (mounted) navigator.popUntil((r) => r.isFirst);
+                  },
           ),
         ],
       ),

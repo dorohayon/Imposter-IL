@@ -68,6 +68,12 @@ func NewAppleVerifier(bundleID string) AppleVerifier {
 }
 
 type appleTransaction struct {
+	// Environment is "Production" or "Sandbox". Sandbox has to pass: App
+	// Review buys in Sandbox against the production server, for every
+	// release. The cost is that TestFlight testers' free purchases open
+	// categories online too (docs/monetization.md). Anything else — a local
+	// StoreKit test — is refused.
+	Environment    string `json:"environment"`
 	BundleID       string `json:"bundleId"`
 	ProductID      string `json:"productId"`
 	SignedDate     int64  `json:"signedDate"`
@@ -81,7 +87,8 @@ func (v AppleVerifier) Verify(_ context.Context, productID, data string, _ bool,
 		return Grant{}, err
 	}
 	switch {
-	case tx.BundleID != v.BundleID, tx.ProductID != productID, tx.RevocationDate != 0:
+	case tx.Environment != "Production" && tx.Environment != "Sandbox",
+		tx.BundleID != v.BundleID, tx.ProductID != productID, tx.RevocationDate != 0:
 		return Grant{}, ErrInvalidProof
 	case tx.ExpiresDate == 0:
 		return Grant{ProductID: productID}, nil

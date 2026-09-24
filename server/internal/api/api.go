@@ -105,6 +105,10 @@ type roomEntry struct {
 	// emptySince is when the last member left, for the reaper.
 	emptySince time.Time
 
+	// categoriesBy is the player whose purchases the private room's categories
+	// were checked against: its creator, or whoever last changed them.
+	categoriesBy string
+
 	// profiles are the nickname and avatar of everyone dealt into the room's
 	// game, captured when it started. A finished game still has to name its
 	// players on the result screen, and by then a session may be gone — a
@@ -482,7 +486,7 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 		return
 	}
 	s.leave(previous, sess, now)
-	entry := &roomEntry{id: "r_" + crand.Text(), code: code, room: rm}
+	entry := &roomEntry{id: "r_" + crand.Text(), code: code, room: rm, categoriesBy: sess.playerID}
 	s.roomsByID[entry.id], s.roomsCode[code] = entry, entry
 	sess.roomID = entry.id
 	sess.leaveGame()

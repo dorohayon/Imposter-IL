@@ -24,11 +24,6 @@ func (s *Server) matchmakingCommand(sess *session, typ string, p commandPayload,
 		if sess.gameID != "" || s.currentRoom(sess) != nil {
 			return "already_in_activity"
 		}
-		// Checked here and not in joinSearch: a player continuing after a
-		// match keeps the categories they were admitted with.
-		if content.ValidIDs(p.CategoryIDs) && !s.categoriesAllowed(sess, p.CategoryIDs, now) {
-			return "category_locked"
-		}
 		return s.joinSearch(sess, nil, p.CategoryIDs, now)
 	case "matchmaking.cancel":
 		if entry := s.currentRoom(sess); entry != nil && s.searching(entry) {
@@ -92,6 +87,10 @@ func (s *Server) joinSearch(sess *session, previous *roomEntry, categories []str
 		return "server_draining"
 	case !content.ValidIDs(categories):
 		return "invalid_categories"
+	// Here, so "משחק נוסף" is checked too: a subscription that lapsed or a
+	// purchase refunded since the last match no longer opens its categories.
+	case !s.categoriesAllowed(sess, categories, now):
+		return "category_locked"
 	case !s.contentReady():
 		return "content_unavailable"
 	}

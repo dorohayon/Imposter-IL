@@ -156,7 +156,7 @@ Monetization fakeMonetization(
 
 /// A StoreKit 2 signed transaction as the app sees it. Only the payload
 /// matters on the device; the server checks the signature.
-String storeKitJws(String productId, {DateTime? expires}) {
+String storeKitJws(String productId, {DateTime? expires, DateTime? signedAt}) {
   String part(Map<String, Object?> json) =>
       base64Url.encode(utf8.encode(jsonEncode(json))).replaceAll('=', '');
   return [
@@ -164,6 +164,7 @@ String storeKitJws(String productId, {DateTime? expires}) {
     part({
       'productId': productId,
       if (expires != null) 'expiresDate': expires.millisecondsSinceEpoch,
+      if (signedAt != null) 'signedDate': signedAt.millisecondsSinceEpoch,
     }),
     'sig',
   ].join('.');

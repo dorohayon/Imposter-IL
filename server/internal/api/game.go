@@ -24,6 +24,12 @@ func (s *Server) startGame(sess *session, entry *roomEntry, now time.Time) strin
 	switch {
 	case v.HostID != sess.playerID:
 		return "not_room_host"
+	// The player who paid for the categories must still own them: a lapsed
+	// subscription or a refund stops the next game. A host who inherited
+	// the room did not choose them, and its settings are locked by then, so
+	// the room keeps what its creator opened.
+	case sess.playerID == entry.categoriesBy && !s.categoriesAllowed(sess, v.Settings.CategoryIDs, now):
+		return "category_locked"
 	case s.pickWord == nil:
 		return "content_unavailable"
 	}

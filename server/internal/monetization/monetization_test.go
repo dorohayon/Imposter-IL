@@ -213,9 +213,10 @@ func (p applePKI) sign(t *testing.T, payload map[string]any) string {
 
 func transaction(product string, extra map[string]any) map[string]any {
 	tx := map[string]any{
-		"bundleId":   "com.imposter.il",
-		"productId":  product,
-		"signedDate": now.Add(-time.Minute).UnixMilli(),
+		"environment": "Production",
+		"bundleId":    "com.imposter.il",
+		"productId":   product,
+		"signedDate":  now.Add(-time.Minute).UnixMilli(),
 	}
 	for k, v := range extra {
 		tx[k] = v
@@ -238,6 +239,12 @@ func TestAppleVerifier(t *testing.T) {
 		pki.sign(t, transaction("premium_monthly", map[string]any{"expiresDate": expires.UnixMilli()})), true, now)
 	if err != nil || !got.Expires.Equal(expires) {
 		t.Fatalf("subscription: %+v %v", got, err)
+	}
+
+	// App Review buys in Sandbox against the production server.
+	if _, err := v.Verify(ctx, "category_sports",
+		pki.sign(t, transaction("category_sports", map[string]any{"environment": "Sandbox"})), false, now); err != nil {
+		t.Fatalf("sandbox: %v", err)
 	}
 
 	// A lifetime purchase signed long ago is still good after the leaf
@@ -274,6 +281,8 @@ func TestAppleVerifier(t *testing.T) {
 		"period over":           {v, "premium_monthly", pki.sign(t, transaction("premium_monthly", map[string]any{"expiresDate": now.Add(-time.Second).UnixMilli()}))},
 		"untrusted chain":       {v, "category_sports", stranger.sign(t, transaction("category_sports", nil))},
 		"leaf without apple id": {noLeafV, "category_sports", noLeafOID.sign(t, transaction("category_sports", nil))},
+		"local StoreKit test":   {v, "category_sports", pki.sign(t, transaction("category_sports", map[string]any{"environment": "Xcode"}))},
+		"no environment":        {v, "category_sports", pki.sign(t, transaction("category_sports", map[string]any{"environment": ""}))},
 		"not a jws":             {v, "category_sports", "abc"},
 		"empty":                 {v, "category_sports", ""},
 		"unsigned alg":          {v, "category_sports", swapHeader(t, valid, map[string]any{"alg": "none", "x5c": pki.chain})},

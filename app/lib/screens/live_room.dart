@@ -34,6 +34,8 @@ const _commandErrors = {
   'self_vote': 'אי אפשר להצביע לעצמכם.',
   'invalid_vote_target': 'אי אפשר להצביע לשחקן הזה.',
   'network_error': 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
+  'category_locked':
+      'אחת הקטגוריות כבר לא פתוחה לכם. אפשר לחדש את הפרימיום או לשחזר רכישות.',
 };
 
 /// Opens the system share sheet. Tests replace it.
@@ -2723,25 +2725,46 @@ const _resultReasons = {
       'הוא לא נספר לאף אחד — לא כניצחון ולא כהפסד.',
 };
 
-class _Result extends StatelessWidget {
+class _Result extends StatefulWidget {
   const _Result({required this.game, required this.onHome});
 
   final GameView game;
   final VoidCallback onHome;
+
+  @override
+  State<_Result> createState() => _ResultState();
+}
+
+class _ResultState extends State<_Result> {
+  /// Set from the first tap until the continuation is done: a second tap
+  /// while the ad is up must not send a second command or navigation.
+  bool _continuing = false;
+
+  GameView get game => widget.game;
+  VoidCallback get onHome => widget.onHome;
 
   /// The full result has been seen and the player chose to go on: after a
   /// match that was played to a winner, an interstitial comes first, then the
   /// navigation. A match that was called off, stopped, interrupted by the
   /// impostor leaving or lost to an error shows none. Search again only after
   /// the ad, so a new match cannot start behind it.
-  Future<void> _continue(BuildContext context, VoidCallback next) async {
+  Future<void> _continue(
+    BuildContext context,
+    FutureOr<void> Function() next,
+  ) async {
+    if (_continuing) return;
+    setState(() => _continuing = true);
     final result = game.result;
     if (result != null &&
         result.winner != null &&
         result.reason != 'impostor_gone') {
       await MonetizationScope.maybeRead(context)?.afterCompletedMatch();
     }
-    if (context.mounted) next();
+    if (!context.mounted) return;
+    await next();
+    // "משחק נוסף" keeps this screen until the next state arrives; if the
+    // command failed, the player can try again.
+    if (mounted) setState(() => _continuing = false);
   }
 
   @override
@@ -2778,17 +2801,19 @@ class _Result extends StatelessWidget {
         children: [
           PrimaryButton(
             label: 'משחק נוסף',
-            onPressed: () => _continue(
-              context,
-              () => runCommand(
-                context,
-                session.send('game.playAgain', {'gameId': game.id}),
-              ),
-            ),
+            onPressed: _continuing
+                ? null
+                : () => _continue(
+                      context,
+                      () => runCommand(
+                        context,
+                        session.send('game.playAgain', {'gameId': game.id}),
+                      ),
+                    ),
           ),
           const SizedBox(height: 8),
           TextButton(
-            onPressed: () => _continue(context, onHome),
+            onPressed: _continuing ? null : () => _continue(context, onHome),
             child: const Text('חזרה למסך הבית'),
           ),
         ],
