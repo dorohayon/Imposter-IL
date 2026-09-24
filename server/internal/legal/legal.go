@@ -1,36 +1,27 @@
-// Package legal serves the public Terms of Use and Privacy Policy.
+// Package legal sends the addresses the game server used to publish the Terms
+// of Use and Privacy Policy on to the public site, https://imposteril.github.io,
+// which is built from site/ in this repository (docs/legal.md).
 //
-// The app stores require a publicly reachable privacy policy URL, and GitHub
-// Pages cannot publish a private repository without a paid plan. The game
-// server already has a public HTTPS hostname and certificate, so the documents
-// ride on it: no second host to pay for, to deploy, or to leave behind when
-// the documents change.
+// Builds up to 3 link to the documents on whichever server they talk to, and
+// store listings may still carry these URLs, so they keep answering: a
+// permanent redirect rather than a second copy to keep in step.
 package legal
 
-import (
-	"embed"
-	"io/fs"
-	"net/http"
-)
+import "net/http"
 
-//go:embed site
-var site embed.FS
+// Site is where the documents live now.
+const Site = "https://imposteril.github.io"
 
-// Routes serves the documents. The store listings link /privacy and /terms;
-// /legal is the landing page that links to both. A request without the
-// trailing slash is redirected to it by the mux.
-//
-// They are registered outside the API's gate on purpose: a browser sends no
-// X-Client-Build header, and a store reviewer reading the policy is not a
-// player to rate-limit.
+// Routes registers the old addresses. They sit outside the API's gate on
+// purpose: a browser sends no X-Client-Build header.
 func Routes(mux *http.ServeMux) {
-	pages, err := fs.Sub(site, "site")
-	if err != nil {
-		panic(err) // The files are embedded, so this cannot fail at runtime.
+	for from, to := range map[string]string{
+		"GET /privacy/": "/privacy/",
+		"GET /terms/":   "/terms/",
+		"GET /legal/":   "/",
+	} {
+		mux.HandleFunc(from, func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, Site+to, http.StatusMovedPermanently)
+		})
 	}
-	files := http.FileServerFS(pages)
-	mux.Handle("GET /privacy/", files)
-	mux.Handle("GET /terms/", files)
-	mux.Handle("GET /style.css", files)
-	mux.Handle("GET /legal/", http.StripPrefix("/legal", files))
 }

@@ -8,16 +8,22 @@ import 'package:imposter_il/widgets/game_ui.dart';
 import 'package:imposter_il/state/game_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'fake_monetization.dart';
 import 'fake_server.dart';
 
 /// Starts the real app against [api] on the narrowest supported phone
 /// (320px), so layout overflows fail the tests too. Existing tests are about
 /// post-consent product flows, so they start with the current legal version
 /// accepted; legal-gate tests can override the key explicitly.
+///
+/// Unless a test is about monetization, the player owns lifetime Premium:
+/// every category open and no ads, as the flows under test always assumed.
 Future<GameSession> startApp(
   WidgetTester tester,
   FakeApi api, {
   Map<String, Object> saved = const {},
+  FakeStore? store,
+  FakeAds? ads,
 }) async {
   tester.view.physicalSize = const Size(320, 640);
   tester.view.devicePixelRatio = 1;
@@ -30,21 +36,39 @@ Future<GameSession> startApp(
   final session =
       GameSession(api, reconnectDelay: const Duration(milliseconds: 50));
   addTearDown(session.dispose);
+  final monetization = fakeMonetization(api, store: store, ads: ads);
+  addTearDown(monetization.dispose);
   await session.restore();
-  await tester.pumpWidget(ImposterApp(session: session));
+  await monetization.start();
+  monetization.attach(session);
+  await tester.pumpWidget(
+    ImposterApp(session: session, monetization: monetization),
+  );
   await tester.pumpAndSettle();
   return session;
 }
 
 /// Starts the app and passes onboarding.
-Future<GameSession> startAtHome(WidgetTester tester, [FakeApi? api]) async {
-  final session = await startApp(tester, api ?? FakeApi());
+Future<GameSession> startAtHomeWith(
+  WidgetTester tester, {
+  FakeApi? api,
+  FakeStore? store,
+  FakeAds? ads,
+}) async {
+  final session =
+      await startApp(tester, api ?? FakeApi(), store: store, ads: ads);
   if (!session.signedIn) {
     await tapTooltip(tester, 'פרופיל');
     await tester.enterText(find.byType(TextField), 'דור');
     await tapText(tester, 'ממשיכים');
   }
   expect(find.byType(HomeScreen), findsOneWidget);
+  return session;
+}
+
+/// Starts the app and passes onboarding.
+Future<GameSession> startAtHome(WidgetTester tester, [FakeApi? api]) async {
+  final session = await startAtHomeWith(tester, api: api);
   await tester.ensureVisible(find.byTooltip('הגדרות'));
   await tester.pumpAndSettle();
   return session;

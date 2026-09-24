@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/server.dart';
+import '../monetization/monetization.dart';
+import '../monetization/monetization_config.dart';
+import '../monetization/purchase_sheet.dart';
 import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
@@ -11,6 +14,8 @@ import 'live_room.dart';
 
 String connectionMessage(String code) => switch (code) {
       'network_error' => 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
+      'category_locked' =>
+        'אחת הקטגוריות נעולה. אפשר לשחזר רכישות מחלון הפתיחה של הקטגוריה.',
       _ => 'משהו השתבש. נסו שוב בעוד רגע.',
     };
 
@@ -25,6 +30,7 @@ class FriendsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return GameScaffold(
       title: 'משחק עם חברים',
+      bannerPlacement: BannerPlacement.friends,
       child: Column(
         children: [
           const Illustration(
@@ -145,6 +151,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
 
   Future<void> _create() async {
     final session = SessionScope.read(context);
+    final money = MonetizationScope.read(context);
     setState(() => _busy = true);
     try {
       await session.createRoom(
@@ -152,7 +159,9 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         hintSeconds: hintSeconds,
         categoryIds: [
           for (final c in session.categories)
-            if (_selected?.contains(c.id) ?? true) c.id, // null is "הכול"
+            // null is "הכול": every category the host has open.
+            if (money.isUnlocked(c.id) && (_selected?.contains(c.id) ?? true))
+              c.id,
         ],
       );
       if (mounted) _openRoom(context);
@@ -177,11 +186,14 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   @override
   Widget build(BuildContext context) {
     final categories = SessionScope.of(context).categories;
-    // null is "הכול": every category, shown as that one chip rather than by
-    // selecting all of them. A non-null set may be empty, which blocks
-    // creating the room — the server needs at least one category.
+    final money = MonetizationScope.of(context);
+    // null is "הכול": every open category, shown as that one chip rather than
+    // by selecting all of them. A non-null set may be empty, which blocks
+    // creating the room — the server needs at least one category. The host's
+    // purchases decide what the room may use; guests need none.
     final all = _selected == null;
-    final selected = _selected ?? const <String>{};
+    final selected = {...?_selected}
+      ..removeWhere((id) => !money.isUnlocked(id));
     final loaded = categories.isNotEmpty;
 
     void toggle(String id) => setState(() {
@@ -193,6 +205,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
 
     return GameScaffold(
       title: 'יצירת חדר',
+      bannerPlacement: BannerPlacement.createRoom,
       bottom: PrimaryButton(
         label: _busy ? 'יוצרים חדר...' : 'יצירת חדר',
         onPressed:
@@ -230,9 +243,23 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
             onSelected: (value) => setState(() => hintSeconds = value),
           ),
           const SizedBox(height: 22),
-          const Text(
-            'קטגוריות',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          Row(
+            children: [
+              const Text(
+                'קטגוריות',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(width: 10),
+              if (loaded && !money.premium)
+                Expanded(
+                  child: Text(
+                    categoryCount(money, [for (final c in categories) c.id]),
+                    textAlign: TextAlign.end,
+                    style:
+                        const TextStyle(color: AppColors.muted, fontSize: 13),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 8),
           if (!loaded)
@@ -262,11 +289,24 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                       setState(() => _selected = all ? <String>{} : null),
                 ),
                 for (final c in categories)
-                  FilterChip(
-                    label: Text(c.name),
-                    selected: selected.contains(c.id),
-                    onSelected: (_) => toggle(c.id),
-                  ),
+                  if (money.isUnlocked(c.id))
+                    FilterChip(
+                      label: Text(c.name),
+                      selected: selected.contains(c.id),
+                      onSelected: (_) => toggle(c.id),
+                    )
+                  else
+                    LockedChip(
+                      label: c.name,
+                      onTap: () => openLockedCategory(
+                        context,
+                        categoryId: c.id,
+                        categoryName: c.name,
+                        onSelect: () {
+                          if (!all) toggle(c.id);
+                        },
+                      ),
+                    ),
               ],
             ),
           const SizedBox(height: 18),
@@ -404,6 +444,7 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
     final ready = code.text.length == 6 && !_busy;
     return GameScaffold(
       title: 'הצטרפות לחדר',
+      bannerPlacement: BannerPlacement.joinRoom,
       bottom: PrimaryButton(
         label: _error == null ? 'הצטרפות' : 'ניסיון נוסף',
         onPressed: ready ? _join : null,

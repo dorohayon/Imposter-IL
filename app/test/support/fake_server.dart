@@ -101,6 +101,34 @@ class FakeApi extends ApiClient {
         {'id': 'objects', 'name': 'חפצים'},
       ],
     },
+    'GET /v1/config': {
+      'monetization': {
+        'freeCategoryIds': ['food', 'animals', 'places'],
+        'products': {
+          'categoryPrefix': 'category_',
+          'premiumMonthly': 'premium_monthly',
+          'premiumLifetime': 'premium_lifetime',
+        },
+        'purchasesEnabled': true,
+        'serverEnforcement': false,
+        'ads': {
+          'enabled': true,
+          'bannerPlacements': [
+            'home', 'categories', 'search', 'friends', 'create_room', //
+            'join_room', 'lobby', 'profile', 'settings', 'how_to_play',
+            'local_players', 'local_rules',
+          ],
+          'interstitialEnabled': true,
+          'interstitialMinIntervalSeconds': 0,
+          'maxAdContentRating': 'PG',
+          'units': <String, dynamic>{},
+        },
+      },
+    },
+    'POST /v1/entitlements': {
+      'entitlements': {'premium': false, 'lifetime': false, 'categoryIds': []},
+      'results': <Object>[],
+    },
     'GET /v1/reactions': {
       'reactions': [
         {'id': 'laugh', 'text': '😂'},

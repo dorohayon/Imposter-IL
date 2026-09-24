@@ -10,6 +10,7 @@
 - **Hosting**: מכונה אחת ב־Google Compute Engine (`e2-micro`, `us-central1`, ה־Free Tier), עם Caddy ל־TLS. הנימוק והחלופות: [`production-architecture-review.md`](production-architecture-review.md), והנוהל המלא ב־[`deploy/README.md`](../deploy/README.md). התכונה שפוסלת מארחים: הפלטפורמה לא יכולה לעצור את התהליך בזמן שהיא בוחרת, כי המשחקים בזיכרון וצריכים חלון כיבוי מסודר — ולכן Cloud Run ו־Lambda אינם מתאימים.
 - **מסד נתונים**: אין, ואין צורך בו. הניצחונות וההפסדים במכשיר, ומשחק פעיל אינו שווה דבר אחרי הפעלה מחדש.
 - Analytics טרם נבחר. דיווח קריסות באפליקציה טרם נבחר.
+- **רכישות ופרסומות**: StoreKit 2 ו־Google Play Billing 8 דרך `in_app_purchase`, ו־Google AdMob עם UMP דרך `google_mobile_ads`. השרת מאמת רכישות בלי מסד נתונים (`monetization.md`).
 
 ## מבנה המאגר
 
@@ -23,6 +24,7 @@ Imposter-IL/
 │   ├── internal/room/    # חדר פרטי — עוטף משחקים, גם הוא ללא תקשורת
 │   ├── internal/matchmaking/ # כללי ההתחלה של משחק ברשת: טיימרים וקטגוריות משותפות
 │   ├── internal/content/ # הקטגוריות, המילים והתגובות שאושרו
+│   ├── internal/monetization/ # מודל ההכנסות, זכאויות ואימות רכישות Apple ו־Google
 │   └── internal/api/     # REST ו־WebSocket: sessions אורח, חדרים ו־Snapshots, בזיכרון
 ├── assets/               # אווטארים ואילוסטרציות
 ├── deploy/               # Caddy, docker compose ונוהל ההרצה ב־GCE
@@ -31,7 +33,7 @@ Imposter-IL/
 └── .github/workflows/    # CI
 ```
 
-חבילות שיתווספו בשרת כשיגיע תורן, ולא לפני כן: `internal/store`. ההיערכות להרצה על יותר ממופע אחד מתוארת ב־[`production-architecture-review.md`](production-architecture-review.md) (Stage 1): מנוע המשחק אינו משתנה שם, רק הניתוב. ה־WebSocket נמצא ב־`internal/api` לצד ה־REST, כי שניהם עובדים על אותם sessions וחדרים. תלות חיצונית יחידה: `github.com/coder/websocket`.
+חבילות שיתווספו בשרת כשיגיע תורן, ולא לפני כן: `internal/store`. ההיערכות להרצה על יותר ממופע אחד מתוארת ב־[`production-architecture-review.md`](production-architecture-review.md) (Stage 1): מנוע המשחק אינו משתנה שם, רק הניתוב. ה־WebSocket נמצא ב־`internal/api` לצד ה־REST, כי שניהם עובדים על אותם sessions וחדרים. תלות חיצונית יחידה: `github.com/coder/websocket` (אימות הרכישות בספרייה הסטנדרטית בלבד).
 
 ## עקרונות
 
@@ -57,6 +59,7 @@ Imposter-IL/
 | `internal/room` | חדר פרטי: קוד, רשימת שחקנים, מנהל, הסרה, נעילת הגדרות, העברת ניהול ומשחק נוסף. |
 | `internal/content` | הקטגוריות, המילים והתגובות שאושרו, בחירת מילה, בדיקת מזהים ורשימת המילים החסומות לרמזים ולכינויים. |
 | `internal/api` | REST ו־WebSocket: sessions אורח (כינוי ואווטאר), קטגוריות ותגובות, יצירת חדר עם קוד ייחודי והצטרפות לפי קוד, חיבור אחד לכל session, idempotency, ping, פקודות חדר ומשחק, טיימרים ושליחת `session.state`, `room.state`, `game.state` ו־`game.reaction`. מחזיק הכול בזיכרון מאחורי מנעול אחד. |
+| `internal/monetization` | הגדרת מודל ההכנסות (`MONETIZATION_CONFIG`), כללי הזכאות לקטגוריות ולפרימיום, ואימות הוכחות רכישה: JWS של StoreKit 2 מול Apple Root CA - G3, ו־purchase token מול Google Play Developer API. ללא אחסון; התוצאה נשמרת על ה־session (`docs/monetization.md`). |
 | `internal/matchmaking` | כללי ההתחלה של משחק ברשת (30 שניות מ־4, 5 שניות מ־6, 2 דקות ל־`לא נמצא משחק מתאים`) וחיתוך קטגוריות. `internal/api` מחזיק את קבוצות החיפוש. |
 
 ### ארכיטקטורת Flutter
@@ -66,6 +69,7 @@ Imposter-IL/
 - `lib/widgets/game_ui.dart` — רכיבי מערכת העיצוב: כפתורים עם מצבי לחיצה, טיימר בעיגול, כרטיס שחקן, אווטאר ובאנר מצב (`design/claude/design-system.md`).
 - `lib/state/game_session.dart` — `GameSession` (`ChangeNotifier`) שמוזרק דרך `SessionScope` (`InheritedNotifier`), בלי ספריית ניהול State. מחזיק את זהות האורח (נשמרת ב־`shared_preferences`), לולאת חיבור מחדש, תשובות לפקודות, ה־Snapshot האחרון של החדר והמשחק, התעלמות מ־`stateVersion` ישן, והיסט השעון מול `serverTime`. שם נשמרים גם ניצחונות והפסדים (במכשיר בלבד; כל משחק נספר פעם אחת לפי מזהה) והגדרות הרטט והתגובות.
 - `lib/screens/live_room.dart` — מסך אחד שמחליף לפי ה־Snapshot בין חיפוש משחק ברשת (כולל `לא נמצא משחק מתאים`), לובי של חדר פרטי ושלבי המשחק, כולל מסכי הוצאה, תקלה בשרת והודעת חיבור מחדש.
+- `lib/monetization/` — `Monetization` (`ChangeNotifier` דרך `MonetizationScope`): הגדרה מרחוק, מה פתוח לשחקן, מטמון לא־מקוון, שחזור שקט מהחנות, שליחת ההוכחות לשרת, חלון הרכישה, באנרים ומודעה במסך מלא. החנות והפרסומות מאחורי `StoreGateway` ו־`AdsGateway` (`in_app_purchase`, `google_mobile_ads`), ובבדיקות מזויפים.
 - ניווט ב־`Navigator` הרגיל. בדיקות Widget משתמשות בשרת מדומה (`test/support/fake_server.dart`), ובדיקות ה־End-to-End (`test/e2e`) מריצות את שכבת ה־session מול השרת האמיתי, בחדר פרטי ובמשחק ברשת.
 
 ## State Machines

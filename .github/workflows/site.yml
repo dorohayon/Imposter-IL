@@ -1,0 +1,31 @@
+name: site
+
+# Publishes site/ — home, support, privacy, terms and app-ads.txt — to
+# https://imposteril.github.io (docs/legal.md). That repository is output only:
+# edit site/ here, and the app's legal test keeps it aligned with the app.
+on:
+  push:
+    branches: [main]
+    paths: [site/**, .github/workflows/site.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned to commit SHAs: this job holds a write key to the public site.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
+        with:
+          # Write deploy key on imposteril/imposteril.github.io; the private
+          # half is this repository's SITE_DEPLOY_KEY secret.
+          deploy_key: ${{ secrets.SITE_DEPLOY_KEY }}
+          external_repository: imposteril/imposteril.github.io
+          publish_branch: main
+          publish_dir: ./site
+          user_name: Imposter IL
+          user_email: imposteril36@gmail.com
+          full_commit_message: Publish site from ${{ github.repository }}@${{ github.sha }}

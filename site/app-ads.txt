@@ -1,0 +1,2 @@
+# app-ads.txt for מי המתחזה? (Imposter IL) — Google AdMob.
+google.com, pub-9035143252838544, DIRECT, f08c47fec0942fa0

@@ -19,6 +19,7 @@ import (
 	"github.com/dorohayon/Imposter-IL/server/internal/content"
 	"github.com/dorohayon/Imposter-IL/server/internal/invite"
 	"github.com/dorohayon/Imposter-IL/server/internal/legal"
+	"github.com/dorohayon/Imposter-IL/server/internal/monetization"
 )
 
 // Environment:
@@ -33,6 +34,10 @@ import (
 //	MIN_CLIENT_BUILD  oldest app build served (default 0: every client)
 //	STAGING_BOTS   server-side online bots (0-5; default 0, never enable in prod)
 //	LOG_LEVEL      debug | info | warn | error (default info)
+//	MONETIZATION_CONFIG  JSON over monetization.Default() (docs/monetization.md)
+//	APPLE_BUNDLE_ID      verify StoreKit 2 purchases for this bundle id
+//	GOOGLE_PLAY_PACKAGE  verify Play purchases for this package name, with
+//	GOOGLE_PLAY_SERVICE_ACCOUNT  the service account key file's JSON (a secret)
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel()})))
 
@@ -40,6 +45,16 @@ func main() {
 	if bots, err := strconv.Atoi(os.Getenv("STAGING_BOTS")); err == nil && bots > 0 {
 		srv.EnableStagingBots(bots)
 		slog.Warn("staging bots enabled", "count", min(bots, 5))
+	}
+	cfg, verifiers, err := monetizationFromEnv()
+	if err != nil {
+		slog.Error("monetization", "err", err)
+		os.Exit(1)
+	}
+	srv.SetMonetization(cfg, verifiers)
+	if cfg.ServerEnforcement && len(verifiers) < 2 {
+		slog.Warn("serverEnforcement is on without both store verifiers: purchases on the unverified platform are refused online",
+			"verifiers", len(verifiers))
 	}
 	srv.TrustProxy(os.Getenv("TRUST_PROXY") == "1")
 	if os.Getenv("RATE_LIMITS") == "off" {
@@ -77,6 +92,31 @@ func main() {
 		slog.Error("shutdown", "err", err)
 	}
 	slog.Info("stopped")
+}
+
+// monetizationFromEnv reads the pricing model and the store credentials. A
+// config that does not parse stops the server: running on defaults would
+// quietly change what players are charged for.
+func monetizationFromEnv() (monetization.Config, map[string]monetization.Verifier, error) {
+	cfg := monetization.Default()
+	if raw := os.Getenv("MONETIZATION_CONFIG"); raw != "" {
+		var err error
+		if cfg, err = monetization.Parse([]byte(raw)); err != nil {
+			return cfg, nil, err
+		}
+	}
+	verifiers := map[string]monetization.Verifier{}
+	if bundle := os.Getenv("APPLE_BUNDLE_ID"); bundle != "" {
+		verifiers["ios"] = monetization.NewAppleVerifier(bundle)
+	}
+	if pkg := os.Getenv("GOOGLE_PLAY_PACKAGE"); pkg != "" {
+		google, err := monetization.NewGoogleVerifier(pkg, []byte(os.Getenv("GOOGLE_PLAY_SERVICE_ACCOUNT")))
+		if err != nil {
+			return cfg, nil, err
+		}
+		verifiers["android"] = google
+	}
+	return cfg, verifiers, nil
 }
 
 // drain lets the games already in progress finish before the process exits.

@@ -126,19 +126,22 @@
 </sc-if>
 
 <sc-if value="{{ atMatchmaking }}" hint-placeholder-val="{{ false }}">
-<div data-screen-label="matchmaking" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:10px 22px 22px;gap:11px">
-<div style="text-align:center;flex:none"><div style="font:400 25px/1.15 'Secular One',sans-serif;color:#FFF8E7">מרכיבים צוות חקירה</div><div style="margin-top:7px;display:inline-flex;align-items:center;gap:7px;background:rgba(45,212,191,.15);border:1px solid rgba(45,212,191,.45);border-radius:999px;padding:6px 13px"><span style="font:500 13px/1 Rubik,sans-serif;color:#8FF3E6">נמצאו</span><span style="font:400 17px/1 'Secular One',sans-serif;color:#2DD4BF">6 מתוך 8</span></div></div>
-<div style="display:flex;flex-direction:column;gap:6px;flex:none">
-<sc-for list="{{ foundPlayers }}" as="p" hint-placeholder-count="6">
-<div style="display:flex;align-items:center;gap:11px;background:rgba(255,248,231,.06);border-radius:13px;padding:6px 10px"><div style="width:40px;height:40px;border-radius:50%;background:#241F45;overflow:hidden;flex:none"><div style="width:100%;height:100%;background-image:url({{ p.src }});background-size:cover;background-position:center"></div></div><span style="flex:1;font:500 15px/1.2 Rubik,sans-serif;color:#FFF8E7">{{ p.name }}</span><span style="font:500 12px/1 Rubik,sans-serif;color:#2DD4BF">{{ p.tag }}</span></div>
-</sc-for>
-<div style="display:flex;align-items:center;gap:11px;border-radius:13px;padding:6px 10px;border:1px dashed rgba(255,248,231,.22)"><div style="width:40px;height:40px;border-radius:50%;background:rgba(255,248,231,.07);display:flex;align-items:center;justify-content:center;font:400 19px/1 'Secular One',sans-serif;color:rgba(255,248,231,.38);flex:none">?</div><span style="font:400 14px/1.2 Rubik,sans-serif;color:rgba(255,248,231,.45)">מחפשים שחקן…</span></div>
-<div style="display:flex;align-items:center;gap:11px;border-radius:13px;padding:6px 10px;border:1px dashed rgba(255,248,231,.22)"><div style="width:40px;height:40px;border-radius:50%;background:rgba(255,248,231,.07);display:flex;align-items:center;justify-content:center;font:400 19px/1 'Secular One',sans-serif;color:rgba(255,248,231,.38);flex:none">?</div><span style="font:400 14px/1.2 Rubik,sans-serif;color:rgba(255,248,231,.45)">מחפשים שחקן…</span></div>
+<div data-screen-label="matchmaking" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:4px 22px 18px">
+<div style="flex:none;text-align:center;padding:2px 0 8px;font:400 25px/1.15 'Secular One',sans-serif;color:#FFF8E7">מרכיבים קבוצת שחקנים</div>
+<div style="flex:none;display:grid;grid-template-columns:minmax(0,1fr) 68px;align-items:center;gap:13px;padding:14px 15px;border:1px solid rgba(255,212,71,.45);border-radius:20px;background:rgba(255,212,71,.1)">
+<div style="min-width:0"><div style="margin-bottom:5px;font:400 18px/1.25 'Secular One',sans-serif;color:#FFD447">הקבוצה מוכנה!</div><div style="font:400 13px/1.45 Rubik,sans-serif;color:rgba(255,248,231,.78)">המשחק מתחיל בעוד רגע.</div></div>
+<div style="width:68px;height:68px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;border:3px solid #FFD447;direction:ltr;font:400 26px/1 'Secular One',sans-serif;color:#FFD447">{{ timer }}</div>
 </div>
-<div style="background:rgba(255,212,71,.12);border:1px solid rgba(255,212,71,.38);border-radius:14px;padding:9px 11px;display:flex;align-items:center;gap:10px;flex:none"><div style="width:42px;height:42px;border-radius:50%;border:3px solid #FFD447;display:flex;align-items:center;justify-content:center;font:400 16px/1 'Secular One',sans-serif;color:#FFD447;flex:none">{{ timer }}</div><span style="font:500 13px/1.4 Rubik,sans-serif;color:#FFF0C2">מחכים עד 30 שניות. אם לא יצטרפו עוד שחקנים, מתחילים עם מי שיש.</span></div>
-<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center"><img src="assets/illustrations/matchmaking-team.webp" alt="" style="max-height:150px;max-width:64%;height:100%;object-fit:contain;display:block"></div>
-<button onClick="{{ goReveal }}" style="height:58px;border:none;border-radius:18px;background:#FFD447;font:400 21px/1 'Secular One',sans-serif;color:#14132B;box-shadow:0 7px 0 #D9A900;cursor:pointer;flex:none">מתחילים עכשיו</button>
-<button onClick="{{ goCategories }}" style="height:46px;border:none;border-radius:15px;background:transparent;font:500 15px/1 Rubik,sans-serif;color:rgba(255,248,231,.6);cursor:pointer;flex:none">ביטול חיפוש</button>
+<div style="flex:none;min-height:42px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 2px 4px"><span style="font:400 17px/1 'Secular One',sans-serif;color:#FFF8E7">הקבוצה שלך</span><span style="font:500 14px/1 Rubik,sans-serif;color:#2DD4BF">6 מתוך 8</span></div>
+<div style="flex:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<sc-for list="{{ foundPlayers }}" as="p" hint-placeholder-count="6">
+<div style="min-width:0;height:60px;display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:15px;background:rgba(255,248,231,.07)"><div style="width:42px;height:42px;flex:0 0 42px;border-radius:50%;background:#302741;overflow:hidden"><div style="width:100%;height:100%;background-image:url({{ p.src }});background-size:cover;background-position:center"></div></div><div style="min-width:0;display:grid;gap:2px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:400 15px/1.2 'Secular One',sans-serif;color:#FFF8E7">{{ p.name }}</span><span style="font:500 11px/1 Rubik,sans-serif;color:#2DD4BF">{{ p.tag }}</span></div></div>
+</sc-for>
+<div style="min-width:0;height:60px;display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:15px;background:rgba(255,248,231,.03);border:1px dashed rgba(255,248,231,.24)"><span style="width:42px;height:42px;flex:0 0 42px;display:flex;align-items:center;justify-content:center;border:2px solid #6C687A;border-radius:50%"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,248,231,.5)" stroke-width="2" style="width:19px;height:19px"><circle cx="10.5" cy="10.5" r="6.5"></circle><line x1="15.4" y1="15.4" x2="20" y2="20" stroke-linecap="round"></line></svg></span><span style="min-width:0;font:400 12px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.6)">מחפשים שחקן...</span></div>
+<div style="min-width:0;height:60px;display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:15px;background:rgba(255,248,231,.03);border:1px dashed rgba(255,248,231,.24)"><span style="width:42px;height:42px;flex:0 0 42px;display:flex;align-items:center;justify-content:center;border:2px solid #6C687A;border-radius:50%"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,248,231,.5)" stroke-width="2" style="width:19px;height:19px"><circle cx="10.5" cy="10.5" r="6.5"></circle><line x1="15.4" y1="15.4" x2="20" y2="20" stroke-linecap="round"></line></svg></span><span style="min-width:0;font:400 12px/1.3 Rubik,sans-serif;color:rgba(255,248,231,.6)">מחפשים שחקן...</span></div>
+</div>
+<p style="margin:14px 0 10px;flex:none;font:400 14px/1.35 Rubik,sans-serif;color:#FFD447;text-align:center">נא לא לעזוב עמוד זה.</p>
+<button onClick="{{ goCategories }}" style="width:100%;height:54px;margin-top:auto;flex:none;border:2px solid rgba(255,107,107,.72);border-radius:18px;background:transparent;font:500 17px/1 Rubik,sans-serif;color:#FF9B9B;cursor:pointer">ביטול חיפוש</button>
 </div>
 </sc-if>
 
@@ -429,9 +432,15 @@ class Component extends DCLogic {
   ];
   allAvatars = ['avatar-m04-detective-hat','avatar-m06-magnifying-glass','avatar-f01-notebook','avatar-f02-camera','avatar-f03-headphones','avatar-m01-flashlight','avatar-f04-map','avatar-m03-evidence-bag','avatar-m02-binoculars','avatar-f05-fingerprint-kit','avatar-m05-badge','avatar-f06-laptop'];
   allCats = ['אוכל רחוב','מקומות בארץ','סרטים','חיות','מקצועות','ספורט','חפצים בבית','מוזיקה'];
-  durations = { matchmaking: 30, clues: 15, voting: 20, caught: 15, guess: 15, reconnect: 30 };
+  durations = { matchmaking: 5, clues: 15, voting: 20, caught: 15, guess: 15, reconnect: 30 };
 
-  componentDidMount() { this.tick = setInterval(() => this.setState(s => ({ t: s.t > 0 ? s.t - 1 : 0 })), 1000); }
+  componentDidMount() {
+    this.tick = setInterval(() => this.setState(s => {
+      const t = s.t > 0 ? s.t - 1 : 0;
+      if (s.screen === 'matchmaking' && t === 0) { setTimeout(() => this.go('reveal'), 0); }
+      return { t };
+    }), 1000);
+  }
   componentWillUnmount() { clearInterval(this.tick); clearTimeout(this.handoff); this.botTimers.forEach(clearTimeout); }
 
   go = (screen, extra) => {
@@ -605,7 +614,7 @@ class Component extends DCLogic {
       profile: ['הפרופיל שלי', 'כינוי, אווטאר וניצחונות והפסדים בלבד — אין ניקוד.'],
       settings: ['הגדרות', 'מתגים פעילים לצלילים, רטט ותגובות.'],
       categories: ['בחירת קטגוריות', 'בחירה מרובה. מכאן יוצאים לחיפוש שחקנים.'],
-      matchmaking: ['חיפוש שחקנים', '6 מתוך 8, המתנה של עד 30 שניות.'],
+      matchmaking: ['מרכיבים קבוצת שחקנים', '6 מתוך 8 — ספירה לאחור והמשחק מתחיל אוטומטית.'],
       nomatch: ['אין התאמה בקטגוריות', 'מסלול חזרה לבחירת קטגוריות או לחדר פרטי.'],
       reveal: [imp ? 'חשיפת תפקיד — מתחזה' : 'חשיפת תפקיד — אזרח', imp ? 'קטגוריה בלבד, בלי המילה הסודית.' : 'קטגוריה ומילה סודית.'],
       clues: ['סבב רמזים', 'טיימר 15 שניות בעיגול בפינה השמאלית העליונה, יציאה בימין.'],

@@ -124,4 +124,5 @@ func (s *Server) DisableRateLimits() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.sessionLimit, s.joinLimit, s.commandLimit = newLimiter(0, 0), newLimiter(0, 0), newLimiter(0, 0)
+	s.entitlementLimit, s.entitlementIPLimit = newLimiter(0, 0), newLimiter(0, 0)
 }

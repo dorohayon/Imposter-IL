@@ -14,6 +14,7 @@
 - [משחק ברשת ו־Matchmaking](docs/matchmaking.md)
 - [ניתוקים ומקרי קצה](docs/disconnections-and-edge-cases.md)
 - [החלטות מאושרות](docs/decisions.md)
+- [מודל ההכנסות — קטגוריות, פרימיום ופרסומות](docs/monetization.md)
 - [שאלות פתוחות](docs/open-decisions.md)
 - [כיוון עיצובי](docs/design-direction.md)
 - [Wireframes וכל מצבי המסכים](docs/wireframes.md)
@@ -31,6 +32,7 @@
 - Wireframe: גרסה מעודכנת עם 29 מסכים ומצבי מערכת
 - משחק במכשיר אחד: אפיון, 22 Wireframes ושני איורים מוכנים; המימוש וה־High Fidelity עדיין פתוחים
 - עיצוב: 29 מסכים, מערכת עיצוב ו־Prototype תחת [`design/claude/`](design/claude/); האפליקציה מותאמת למסכים, למעט בדיקה על מכשיר
+- מודל הכנסות: שלוש קטגוריות חינמיות, חלון רכישה (קטגוריה, פרימיום חודשי, פרימיום לכל החיים), באנרים ומודעה במסך מלא; אימות רכישות בשרת (`docs/monetization.md`)
 - מצב שאלה: מחוץ ל־MVP ויתוכנן בהמשך
 - כיוון עיצובי: נקבע; 12 אווטארים ו־14 אילוסטרציות נמצאים תחת `assets/`
 - שרת Go: מנוע משחק, חדרים פרטיים, Matchmaking, REST ו־WebSocket, 6 קטגוריות תוכן ורשימת תגובות
@@ -69,6 +71,29 @@ flutter analyze
 flutter test
 ```
 
+### Release signing
+
+גרסת release ל־Google Play נחתמת במפתח העלאה (upload key) שנמצא מחוץ ל־git.
+בלעדיו ה־build נופל למפתח ה־debug, ש־Play דוחה. פעם אחת:
+
+```sh
+keytool -genkeypair -v -keystore ~/imposter-upload.jks -keyalg RSA -keysize 2048 \
+  -validity 10000 -alias upload
+```
+
+ואז `app/android/key.properties` (מוחרג מ־git):
+
+```properties
+storeFile=/Users/<you>/imposter-upload.jks
+storePassword=…
+keyAlias=upload
+keyPassword=…
+```
+
+`flutter build appbundle --release` חותם בו. ב־Play Console מפעילים Play App
+Signing: Google מחזיקה את מפתח ההפצה, ומפתח ההעלאה ניתן לאיפוס אם יאבד. **גבו את
+הקובץ ואת הסיסמה** — בלעדיהם אי אפשר להעלות עדכון עד שהאיפוס מאושר.
+
 ### הרצה מול שרת מקומי
 
 ```sh
@@ -76,7 +101,7 @@ cd server && go run ./cmd/server   # טרמינל אחד
 cd app && flutter run                                     # טרמינל שני
 ```
 
-האפליקציה מתחברת כברירת מחדל ל־`http://10.0.2.2:8080` באמולטור Android ול־`http://localhost:8080` בסימולטור iOS. לשרת אחר: `flutter run --dart-define=IMPOSTER_SERVER=http://HOST:PORT`. בגרסת debug מותרים http ו־ws לא מוצפנים לשרת מקומי. מזהה האפליקציה `com.example.imposter_il` זמני, ויש להחליף אותו לפני פרסום.
+האפליקציה מתחברת כברירת מחדל ל־`http://10.0.2.2:8080` באמולטור Android ול־`http://localhost:8080` בסימולטור iOS. לשרת אחר: `flutter run --dart-define=IMPOSTER_SERVER=http://HOST:PORT`. בגרסת debug מותרים http ו־ws לא מוצפנים לשרת מקומי. מזהה האפליקציה הוא `com.imposteril.app` בשתי הפלטפורמות, והוא סופי.
 
 בדיקות ה־End-to-End מריצות ארבעה שחקנים במשחק פרטי מלא, וארבעה שחקנים שמוצאים זה את זה במשחק ברשת, מול השרת:
 

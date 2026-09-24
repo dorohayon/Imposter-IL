@@ -9,11 +9,13 @@ import 'package:imposter_il/local/local_screens.dart';
 import 'package:imposter_il/local/local_setup_screens.dart';
 import 'package:imposter_il/local/local_store.dart';
 import 'package:imposter_il/models/player.dart';
+import 'package:imposter_il/monetization/monetization.dart';
 import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/theme/app_theme.dart';
 import 'package:imposter_il/widgets/game_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/fake_monetization.dart';
 import 'support/fake_server.dart';
 import 'support/helpers.dart';
 
@@ -57,11 +59,17 @@ Future<void> _pumpGame(WidgetTester tester, LocalGame game) async {
   tester.view.physicalSize = const Size(320, 640);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
+  final monetization = fakeMonetization(FakeApi());
+  addTearDown(monetization.dispose);
+  await monetization.start();
   await tester.pumpWidget(
-    MaterialApp(
-      key: UniqueKey(),
-      theme: AppTheme.dark,
-      home: LocalGameScreen(resumed: game),
+    MonetizationScope(
+      monetization: monetization,
+      child: MaterialApp(
+        key: UniqueKey(),
+        theme: AppTheme.dark,
+        home: LocalGameScreen(resumed: game),
+      ),
     ),
   );
   await tester.pump();
@@ -344,8 +352,12 @@ void main() {
       everyElement(
         predicate<(String, String, Object?)>(
           (request) =>
+              // Background monetization calls are not the local game's.
+              request.$2 == '/v1/config' ||
+              request.$2 == '/v1/entitlements' ||
               request.$1 == 'GET' &&
-              (request.$2 == '/v1/categories' || request.$2 == '/v1/reactions'),
+                  (request.$2 == '/v1/categories' ||
+                      request.$2 == '/v1/reactions'),
         ),
       ),
     );

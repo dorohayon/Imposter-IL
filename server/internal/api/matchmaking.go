@@ -87,6 +87,10 @@ func (s *Server) joinSearch(sess *session, previous *roomEntry, categories []str
 		return "server_draining"
 	case !content.ValidIDs(categories):
 		return "invalid_categories"
+	// Here, so "משחק נוסף" is checked too: a subscription that lapsed or a
+	// purchase refunded since the last match no longer opens its categories.
+	case !s.categoriesAllowed(sess, categories, now):
+		return "category_locked"
 	case !s.contentReady():
 		return "content_unavailable"
 	}

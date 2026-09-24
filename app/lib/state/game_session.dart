@@ -62,6 +62,11 @@ class GameSession extends ChangeNotifier {
   bool vibrationOn = true;
   bool showReactions = true;
 
+  /// Sends this device's purchases to the server again. Set by Monetization;
+  /// used when the server refuses a category as locked, which means it has
+  /// not seen a purchase the device has.
+  Future<void> Function()? resyncEntitlements;
+
   /// Set by the clue screen so a reaction can pop from the card of whoever
   /// sent it. Only one screen shows reactions, so one slot is enough.
   void Function(String playerId, String reactionId)? onReaction;
@@ -391,16 +396,19 @@ class GameSession extends ChangeNotifier {
     required int hintSeconds,
     required List<String> categoryIds,
   }) async {
-    final json = await api.request(
-      'POST',
-      '/v1/rooms',
-      token: token,
-      body: {
-        'maxPlayers': maxPlayers,
-        'hintSeconds': hintSeconds,
-        'categoryIds': categoryIds,
-      },
-    );
+    final body = {
+      'maxPlayers': maxPlayers,
+      'hintSeconds': hintSeconds,
+      'categoryIds': categoryIds,
+    };
+    Map<String, dynamic> json;
+    try {
+      json = await api.request('POST', '/v1/rooms', token: token, body: body);
+    } on ApiException catch (e) {
+      if (e.code != 'category_locked' || resyncEntitlements == null) rethrow;
+      await resyncEntitlements!();
+      json = await api.request('POST', '/v1/rooms', token: token, body: body);
+    }
     _enterRoom(json['room'] as Map<String, dynamic>);
   }
 
@@ -476,7 +484,11 @@ class GameSession extends ChangeNotifier {
     activity = 'matchmaking'; // until session.state confirms it
     search = null;
     _notify();
-    final code = await send('matchmaking.join', {'categoryIds': categoryIds});
+    var code = await send('matchmaking.join', {'categoryIds': categoryIds});
+    if (code == 'category_locked' && resyncEntitlements != null) {
+      await resyncEntitlements!();
+      code = await send('matchmaking.join', {'categoryIds': categoryIds});
+    }
     if (code != null) {
       activity = 'none';
       noMatchCategories = retryOf; // keep the no-match screen to try again

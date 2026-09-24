@@ -389,7 +389,13 @@ func (s *Server) roomCommand(sess *session, typ string, p commandPayload, now ti
 		if !content.ValidIDs(p.CategoryIDs) {
 			return "invalid_room_settings"
 		}
+		if !s.categoriesAllowed(sess, p.CategoryIDs, now) {
+			return "category_locked"
+		}
 		err = entry.room.UpdateSettings(sess.playerID, room.Settings{MaxPlayers: p.MaxPlayers, HintSeconds: p.HintSeconds, CategoryIDs: p.CategoryIDs}, now)
+		if err == nil {
+			entry.categoriesBy = sess.playerID
+		}
 	case "room.kick":
 		if err = entry.room.Kick(sess.playerID, p.PlayerID, now); err == nil {
 			if kicked := s.players[p.PlayerID]; kicked != nil {

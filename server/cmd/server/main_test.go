@@ -89,38 +89,26 @@ func TestMetricsNotPublicByDefault(t *testing.T) {
 	}
 }
 
-// The stores need the privacy policy to be reachable by a browser, which sends
-// no X-Client-Build header, so the documents must sit outside the version gate
-// as well as answer at all.
-func TestLegalPagesAreServed(t *testing.T) {
+// The documents moved to the public site (docs/legal.md). Old builds and
+// store listings still carry the server's addresses, so a browser — which
+// sends no X-Client-Build header — must be sent on, not refused.
+func TestLegalPagesRedirectToTheSite(t *testing.T) {
 	srv := api.NewServer(time.Now, content.Policy(), content.Pick)
 	srv.RequireClientBuild(999)
 	mux := newMuxFor(srv)
 
 	for path, want := range map[string]string{
-		"/privacy/":  "מדיניות פרטיות",
-		"/terms/":    "תנאי שימוש",
-		"/legal/":    "מידע משפטי",
-		"/style.css": "font-family",
+		"/privacy/": "https://imposteril.github.io/privacy/",
+		"/terms/":   "https://imposteril.github.io/terms/",
+		"/legal/":   "https://imposteril.github.io/",
+		// Without the trailing slash the mux redirects first; it still lands.
+		"/privacy": "/privacy/",
 	} {
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
-		if rec.Code != http.StatusOK {
-			t.Errorf("GET %s = %d, want 200", path, rec.Code)
-			continue
+		if rec.Code/100 != 3 || rec.Header().Get("Location") != want {
+			t.Errorf("GET %s = %d %q, want a redirect to %s", path, rec.Code, rec.Header().Get("Location"), want)
 		}
-		if !strings.Contains(rec.Body.String(), want) {
-			t.Errorf("GET %s does not contain %q", path, want)
-		}
-	}
-
-	// The pretty URL without the trailing slash has to land somewhere, so a
-	// store listing can carry either form.
-	rec := httptest.NewRecorder()
-	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/privacy", nil))
-	if rec.Code/100 != 3 || rec.Header().Get("Location") != "/privacy/" {
-		t.Errorf("GET /privacy = %d %q, want a redirect to /privacy/",
-			rec.Code, rec.Header().Get("Location"))
 	}
 }
 
@@ -151,5 +139,35 @@ func TestInvitePageIsServed(t *testing.T) {
 		if rec.Code != http.StatusNotFound {
 			t.Errorf("GET /join/%s = %d, want 404", code, rec.Code)
 		}
+	}
+}
+
+func TestMonetizationFromEnv(t *testing.T) {
+	t.Setenv("MONETIZATION_CONFIG", "")
+	t.Setenv("APPLE_BUNDLE_ID", "")
+	t.Setenv("GOOGLE_PLAY_PACKAGE", "")
+	cfg, verifiers, err := monetizationFromEnv()
+	if err != nil || len(verifiers) != 0 || cfg.ServerEnforcement {
+		t.Fatalf("defaults: %+v %v %v", cfg, verifiers, err)
+	}
+
+	t.Setenv("MONETIZATION_CONFIG", `{"freeCategoryIds":["sports"],"serverEnforcement":true}`)
+	t.Setenv("APPLE_BUNDLE_ID", "com.imposter.il")
+	cfg, verifiers, err = monetizationFromEnv()
+	if err != nil || !cfg.ServerEnforcement || cfg.FreeCategoryIDs[0] != "sports" || verifiers["ios"] == nil {
+		t.Fatalf("override: %+v %v %v", cfg, verifiers, err)
+	}
+
+	// A config or key that does not parse must stop the server, not fall
+	// back to defaults and quietly change what players pay for.
+	t.Setenv("MONETIZATION_CONFIG", `{"freeCategoryIds":["cars"]}`)
+	if _, _, err := monetizationFromEnv(); err == nil {
+		t.Fatal("invalid config accepted")
+	}
+	t.Setenv("MONETIZATION_CONFIG", "")
+	t.Setenv("GOOGLE_PLAY_PACKAGE", "com.imposter.il")
+	t.Setenv("GOOGLE_PLAY_SERVICE_ACCOUNT", "{}")
+	if _, _, err := monetizationFromEnv(); err == nil {
+		t.Fatal("broken service account accepted")
 	}
 }

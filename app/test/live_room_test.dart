@@ -197,10 +197,10 @@ void main() {
     channel.snapshot(
         'game.state', 'game', gameJson(phase: 'hints', turn: 'p_me'));
     await settle(tester);
-    expect(find.text('הרמז שלך · מילה אחת'), findsOneWidget);
+    expect(_clueField, findsOneWidget);
     channel.errors['game.submitHint'] = 'hint_contains_secret';
     await tester.enterText(find.byType(TextField), 'הפיל');
-    await tapLive(tester, 'שליחת רמז');
+    await tapLive(tester, 'שליחה');
     expect(
       find.text('הרמז מכיל את המילה הסודית. בחרו מילה אחרת. הרמז לא נשלח.'),
       findsOneWidget,
@@ -219,7 +219,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    await tapLive(tester, 'שליחת רמז');
+    await tapLive(tester, 'שליחה');
     expect(channel.commands('game.submitHint').last['payload'],
         {'gameId': 'g_1', 'text': 'חדק'});
 
@@ -787,7 +787,7 @@ void main() {
           },
         ]));
     await settle(tester);
-    expect(find.text('הרמז שלך · מילה אחת'), findsOneWidget);
+    expect(_clueField, findsOneWidget);
     expect(find.text('גבינה'), findsOneWidget);
     // My own card is the active one now (C02), so it says so too.
     expect(find.text('כותב/ת רמז'), findsOneWidget);
@@ -811,6 +811,12 @@ void main() {
         ]));
     await settle(tester);
     expect(find.text('עוברים להצבעה'), findsOneWidget);
-    expect(find.text('הרמז שלך · מילה אחת'), findsNothing);
+    expect(_clueField, findsNothing);
   });
 }
+
+/// The clue field, by the accessible label that replaced its visible one.
+final _clueField = find.byWidgetPredicate(
+  (widget) =>
+      widget is Semantics && widget.properties.label == 'הרמז שלך · מילה אחת',
+);
