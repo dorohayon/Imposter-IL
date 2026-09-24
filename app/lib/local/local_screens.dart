@@ -697,8 +697,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
             citizensWon ? 'האזרחים ניצחו!' : 'המתחזה ניצח!',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color:
-                      citizensWon ? AppColors.turquoise : AppColors.yellow,
+                  color: citizensWon ? AppColors.turquoise : AppColors.yellow,
                 ),
           ),
           const SizedBox(height: 10),
