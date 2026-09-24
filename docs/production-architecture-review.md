@@ -487,9 +487,8 @@ accounts, leaderboards, friends, purchases, or an anti-cheat/abuse history.
 
 ### Store identity and compliance
 
-- [ ] **Real application id / bundle id.** `com.example.imposter_il` is a placeholder; Google
-      Play **rejects** `com.example.*` outright. Pick e.g. `il.imposter.game` and set it on both
-      platforms. This is irreversible after first publish.
+- [x] **Real application id / bundle id: `com.imposteril.app`** on both platforms. Irreversible
+      after the first Play upload.
 - [ ] **Release signing.** `app/android/app/build.gradle.kts` signs release with the *debug* key.
       Create an upload keystore, enrol in Play App Signing, store the keystore + password in a
       password manager and in CI secrets (losing it means never updating the app again).

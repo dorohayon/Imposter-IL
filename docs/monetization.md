@@ -100,7 +100,7 @@ POST /v1/rooms · matchmaking.join · room.updateSettings ──► 403 category
 **`serverEnforcement` כבוי כברירת מחדל**, כי אין עדיין חשבונות מפתח ולכן אין
 מאמתים. להפעלה:
 
-1. `APPLE_BUNDLE_ID`, `GOOGLE_PLAY_PACKAGE` ו־`GOOGLE_PLAY_SERVICE_ACCOUNT` (סוד:
+1. `APPLE_BUNDLE_ID=com.imposteril.app`, `GOOGLE_PLAY_PACKAGE=com.imposteril.app` ו־`GOOGLE_PLAY_SERVICE_ACCOUNT` (סוד:
    קובץ ה־JSON של חשבון שירות עם הרשאת "View financial data" ב־Play Console).
 2. `MIN_CLIENT_BUILD=4`. גרסה ישנה שולחת את כל שש הקטגוריות ב־`הכול`, ובלי
    השער הזה היא הייתה מקבלת `category_locked` במקום מסך עדכון.

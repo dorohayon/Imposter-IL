@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.imposter_il"
+    namespace = "com.imposteril.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,9 +15,8 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        // Placeholder until the real package name is chosen (TASKS.md, P2).
-        applicationId = "com.example.imposter_il"
+        // Final: Google Play never allows it to change after the first upload.
+        applicationId = "com.imposteril.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

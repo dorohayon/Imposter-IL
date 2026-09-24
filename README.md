@@ -78,7 +78,7 @@ cd server && go run ./cmd/server   # טרמינל אחד
 cd app && flutter run                                     # טרמינל שני
 ```
 
-האפליקציה מתחברת כברירת מחדל ל־`http://10.0.2.2:8080` באמולטור Android ול־`http://localhost:8080` בסימולטור iOS. לשרת אחר: `flutter run --dart-define=IMPOSTER_SERVER=http://HOST:PORT`. בגרסת debug מותרים http ו־ws לא מוצפנים לשרת מקומי. מזהה האפליקציה `com.example.imposter_il` זמני, ויש להחליף אותו לפני פרסום.
+האפליקציה מתחברת כברירת מחדל ל־`http://10.0.2.2:8080` באמולטור Android ול־`http://localhost:8080` בסימולטור iOS. לשרת אחר: `flutter run --dart-define=IMPOSTER_SERVER=http://HOST:PORT`. בגרסת debug מותרים http ו־ws לא מוצפנים לשרת מקומי. מזהה האפליקציה הוא `com.imposteril.app` בשתי הפלטפורמות, והוא סופי.
 
 בדיקות ה־End-to-End מריצות ארבעה שחקנים במשחק פרטי מלא, וארבעה שחקנים שמוצאים זה את זה במשחק ברשת, מול השרת:
 
