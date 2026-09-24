@@ -549,6 +549,11 @@ class GameSession extends ChangeNotifier {
     return code;
   }
 
+  /// Whether this player's clues are hidden here: reported from this device,
+  /// or reported by enough of the table that the server withholds them.
+  bool hides(String playerId) =>
+      muted.contains(playerId) || (game?.hiddenForAll(playerId) ?? false);
+
   /// Forgets every report made on this device, so those hints show again.
   Future<void> clearMuted() async {
     muted = {};

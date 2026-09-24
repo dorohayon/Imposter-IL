@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"log/slog"
 	"math/rand/v2"
 	"slices"
 	"time"
@@ -118,24 +117,17 @@ func (s *Server) gameCommand(sess *session, typ string, p commandPayload, now ti
 		sess.leaveGame()
 		s.sendSessionState(sess)
 	case "game.report":
-		// Reporting is required of any app showing user-written text to
-		// strangers (App Store 1.2, Play UGC). There is no moderation queue
-		// and no accounts to ban, so a report is recorded and counted; the
-		// app also stops showing that player's text on the reporter's device.
+		// Required of any app showing user-written text to strangers (App
+		// Store 1.2, Play UGC). See moderation.go: the report is logged with
+		// what was reported, and enough reporters hide the player for all.
 		target := entry.room.Game()
 		if p.PlayerID == "" || p.PlayerID == id || target == nil ||
 			!slices.Contains(target.PlayerIDs(), p.PlayerID) {
 			return "invalid_message"
 		}
-		s.metrics.reports++
-		// Ids and the hint index only. The app sends no reason, and logging a
-		// free-text field no client fills is an open door: any client could
-		// write anything, at any length, straight into the operational logs
-		// that the privacy policy describes as report metadata.
-		slog.Warn("player reported",
-			"gameId", sess.gameID, "byPlayerId", id, "playerId", p.PlayerID,
-			"hintIndex", p.HintIndex)
-		return "" // nothing in the game changed, so nothing to publish
+		if !s.report(entry, sess, p.PlayerID, p.HintIndex) {
+			return "" // nothing anyone sees changed, so nothing to publish
+		}
 
 	case "game.playAgain":
 		v, viewErr := sess.game.View(id)
@@ -220,7 +212,7 @@ func (s *Server) sendGameState(player *session, stateVersion uint64, now time.Ti
 		return
 	}
 	if v, err := player.game.View(player.playerID); err == nil {
-		s.queue(player.conn, message("game.state", now, map[string]any{"stateVersion": stateVersion, "game": s.gameJSON(player.gameID, v, player.gameRoom.profiles)}))
+		s.queue(player.conn, message("game.state", now, map[string]any{"stateVersion": stateVersion, "game": s.gameJSON(player.playerID, player.gameID, v, player.gameRoom)}))
 	}
 }
 
@@ -240,6 +232,9 @@ type hintJSON struct {
 	Round     int            `json:"round"`
 	Missing   bool           `json:"missing"`
 	Reactions map[string]int `json:"reactions"`
+	// Hidden: reported by enough players in this game that its text is
+	// withheld from everyone else (moderation.go).
+	Hidden bool `json:"hidden,omitempty"`
 }
 
 type resultJSON struct {
@@ -279,7 +274,9 @@ func optional[T comparable](v T) *T {
 	return &v
 }
 
-func (s *Server) gameJSON(gameID string, v game.View, profiles map[string]playerProfile) gameJSON {
+// gameJSON is viewerID's snapshot of the game gameID in entry.
+func (s *Server) gameJSON(viewerID, gameID string, v game.View, entry *roomEntry) gameJSON {
+	profiles := entry.profiles
 	out := gameJSON{
 		GameID:              gameID,
 		Round:               v.Round,
@@ -317,7 +314,12 @@ func (s *Server) gameJSON(gameID string, v game.View, profiles map[string]player
 		if reactions == nil {
 			reactions = map[string]int{}
 		}
-		out.Hints = append(out.Hints, hintJSON{PlayerID: h.PlayerID, Text: h.Text, Round: h.Round, Missing: h.Missing, Reactions: reactions})
+		hint := hintJSON{PlayerID: h.PlayerID, Text: h.Text, Round: h.Round, Missing: h.Missing, Reactions: reactions}
+		// Hidden for everyone but its author, who is not told.
+		if h.PlayerID != viewerID && gameID == entry.gameID && entry.hiddenForAll(h.PlayerID) {
+			hint.Text, hint.Hidden = "", true
+		}
+		out.Hints = append(out.Hints, hint)
 	}
 	if r := v.Result; r != nil {
 		out.Result = &resultJSON{

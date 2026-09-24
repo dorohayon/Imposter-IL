@@ -256,7 +256,7 @@
 | `game.react` | `{ gameId, hintIndex, reactionId }` | `invalid_hint`, `invalid_reaction`, `wrong_phase` |
 | `game.vote` | `{ gameId, targetPlayerId }` | `self_vote`, `invalid_vote_target`, `wrong_phase` |
 | `game.submitGuess` | `{ gameId, text }` | `not_impostor`, `wrong_phase` |
-| `game.report` | `{ gameId, playerId, hintIndex?, reason? }` | `invalid_message` (שחקן חסר, דיווח עצמי או שחקן שאינו במשחק), `game_not_found`. הדיווח נרשם ונספר בשרת; אין מסך מודרציה. האפליקציה מסתירה מאותו רגע את הרמזים של המדווח במכשיר הזה. |
+| `game.report` | `{ gameId, playerId, hintIndex?, reason? }` | `invalid_message` (שחקן חסר, דיווח עצמי או שחקן שאינו במשחק), `game_not_found`. הדיווח נרשם בלוג עם הרמז והכינוי (`docs/moderation.md`); `reason` אינו נרשם. האפליקציה מסתירה מאותו רגע את הרמזים של המדווח במכשיר הזה. כששני שחקנים שונים או יותר דיווחו על אותו שחקן באותו משחק, ה־`game.state` של כל השאר נושא את הרמזים שלו עם `hidden: true` וטקסט ריק. |
 | `game.leave` | `{ gameId }` | — (יציאה לבית: לפני הסוף זו יציאה יזומה והפסד; ממסך התוצאות אינה נחשבת. בשני המקרים השחקן יוצא גם מהחדר) |
 | `game.playAgain` | `{ gameId }` | `wrong_phase` (לפני `ended`), `category_locked` (ברשת). בחדר פרטי מחזיר את השחקן ללובי: `session.state` עם `activity: "room"` |
 

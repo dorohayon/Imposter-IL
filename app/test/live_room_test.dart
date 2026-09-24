@@ -657,6 +657,57 @@ void main() {
     expect(find.text('גסות'), findsNothing);
     expect(find.text('הוסתר'), findsNWidgets(2));
     expect(find.byTooltip('דיווח על הרמז'), findsNothing);
+    // The player is told what happens to the report.
+    expect(
+      find.text(
+          'תודה, הדיווח התקבל ויטופל. הרמזים של השחקן יוסתרו במכשיר שלכם.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a clue the server hid for the table shows as hidden',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    final channel = api.channel;
+    channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1'
+    });
+    // Two other players reported p_2; this device reported nobody.
+    final hints = [
+      {
+        'playerId': 'p_2',
+        'text': '',
+        'hidden': true,
+        'missing': false,
+        'reactions': <String, dynamic>{}
+      },
+      {
+        'playerId': 'p_3',
+        'text': 'חדק',
+        'missing': false,
+        'reactions': <String, dynamic>{}
+      },
+    ];
+    channel.snapshot('game.state', 'game',
+        gameJson(phase: 'hints', turn: 'p_4', hints: hints));
+    await settle(tester);
+    expect(find.text('הוסתר'), findsOneWidget);
+    expect(find.text('חדק'), findsOneWidget);
+
+    // The vote weighs what was said, and a hidden player said nothing shown.
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(
+            phase: 'voting', hints: hints, candidates: ['p_2', 'p_3', 'p_4']));
+    await settle(tester);
+    expect(find.text('הוסתר'), findsOneWidget);
+    expect(find.text('חדק'), findsOneWidget);
   });
 
   testWidgets('the board is held before voting opens', (tester) async {

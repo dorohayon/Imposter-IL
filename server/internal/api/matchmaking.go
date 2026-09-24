@@ -262,6 +262,7 @@ func (s *Server) publishSearch(entry *roomEntry, now time.Time) {
 // beginGame gives every player of the room's new game its id and session state.
 func (s *Server) beginGame(entry *roomEntry) {
 	entry.gameID = "g_" + crand.Text()
+	entry.reported = nil
 	g := entry.room.Game()
 	entry.profiles = map[string]playerProfile{}
 	for _, id := range g.PlayerIDs() {

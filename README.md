@@ -15,6 +15,7 @@
 - [ניתוקים ומקרי קצה](docs/disconnections-and-edge-cases.md)
 - [החלטות מאושרות](docs/decisions.md)
 - [מודל ההכנסות — קטגוריות, פרימיום ופרסומות](docs/monetization.md)
+- [מודרציה של תוכן שחקנים](docs/moderation.md)
 - [שאלות פתוחות](docs/open-decisions.md)
 - [כיוון עיצובי](docs/design-direction.md)
 - [Wireframes וכל מצבי המסכים](docs/wireframes.md)
