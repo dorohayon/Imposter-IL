@@ -192,9 +192,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     return GameScaffold(
       title: '',
       showHeader: false,
-      accent: forVoting
-          ? const Color(0xFF42203C)
-          : const Color(0xFF3A3470),
+      accent: forVoting ? const Color(0xFF42203C) : const Color(0xFF3A3470),
       bottom: PrimaryButton(
         label: forVoting
             ? 'אני ${_current.name} — להצבעה'
@@ -274,9 +272,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     return GameScaffold(
       title: '',
       showHeader: false,
-      accent: impostor
-          ? const Color(0xFF4A2A8C)
-          : const Color(0xFF1B4F4A),
+      accent: impostor ? const Color(0xFF4A2A8C) : const Color(0xFF1B4F4A),
       bottom: PrimaryButton(
         label: 'הבנתי — הסתירו',
         onPressed: () => _apply(() => _game.roleSeen(player)),
@@ -637,9 +633,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       title: '',
       showHeader: false,
       showBack: false,
-      accent: citizensWon
-          ? const Color(0xFF14514A)
-          : const Color(0xFF4A2A8C),
+      accent: citizensWon ? const Color(0xFF14514A) : const Color(0xFF4A2A8C),
       bottom: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
