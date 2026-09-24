@@ -92,7 +92,7 @@
       `cstr6suwn9`).
 - [x] אתר ציבורי ב־`https://imposteril.github.io` (בית, תמיכה, פרטיות, תנאים,
       `app-ads.txt`), נבנה מ־`site/` ומתפרסם ב־`.github/workflows/site.yml`.
-- [ ] להכניס ל־`site/app-ads.txt` את השורה עם מזהה ה־publisher של AdMob.
+- [x] `site/app-ads.txt` עם מזהה ה־publisher של AdMob (`pub-9035143252838544`).
 - [ ] בדפי החנויות: אתר מפתח `https://imposteril.github.io`, מדיניות פרטיות
       `/privacy/`, ו־Support URL ב־App Store Connect `/support/`.
 - [ ] להפעיל אכיפה בשרת: `APPLE_BUNDLE_ID`, `GOOGLE_PLAY_PACKAGE`,

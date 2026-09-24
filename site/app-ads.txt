@@ -1,3 +1,2 @@
-# app-ads.txt for מי המתחזה? (Imposter IL)
-# Replace this with the AdMob line once the publisher id exists:
-# google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+# app-ads.txt for מי המתחזה? (Imposter IL) — Google AdMob.
+google.com, pub-9035143252838544, DIRECT, f08c47fec0942fa0
