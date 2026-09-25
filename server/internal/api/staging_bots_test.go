@@ -33,9 +33,12 @@ func TestStagingBotsDesired(t *testing.T) {
 // for is decided by whether the game handed it a secret word, and the game
 // hands one only to citizens.
 func TestBotsReachForThePoolTheirRoleAllows(t *testing.T) {
-	const word = "פיצה"
-	citizen := game.View{Category: "אוכל", SecretWord: word}
-	own := content.CitizenHints(word)
+	const (
+		category = "אוכל ושתייה"
+		word     = "פיצה"
+	)
+	citizen := game.View{Category: category, SecretWord: word}
+	own := content.CitizenHints(category, word)
 	got := botHintPool(citizen)
 	// The word's own hints come first; the broad pool trails them, because a
 	// match runs several rounds and six hints run out.
@@ -45,19 +48,19 @@ func TestBotsReachForThePoolTheirRoleAllows(t *testing.T) {
 
 	// An impostor's View carries no secret word, so the same call cannot
 	// return the word's pool even though the process is holding the word.
-	impostor := game.View{Category: "אוכל"}
+	impostor := game.View{Category: category}
 	got = botHintPool(impostor)
-	for _, hint := range content.CitizenHints(word) {
-		if slices.Contains(got, hint) && !slices.Contains(content.ImpostorHints("אוכל", nil), hint) {
+	for _, hint := range content.CitizenHints(category, word) {
+		if slices.Contains(got, hint) && !slices.Contains(content.ImpostorHints(category, nil), hint) {
 			t.Errorf("an impostor bot was offered %q, which only the word's pool has", hint)
 		}
 	}
-	if !slices.Equal(got, content.ImpostorHints("אוכל", nil)) {
+	if !slices.Equal(got, content.ImpostorHints(category, nil)) {
 		t.Errorf("an impostor bot with an empty board got %v, want the category pool", got)
 	}
 
 	// With hints on the board it may narrow, but only using the board.
-	board := game.View{Category: "אוכל", Hints: []game.Hint{
+	board := game.View{Category: category, Hints: []game.Hint{
 		{PlayerID: "p1", Text: "מתוק"},
 		{PlayerID: "p2", Text: "קר", Missing: true},
 	}}
@@ -73,7 +76,7 @@ func TestBotsReachForThePoolTheirRoleAllows(t *testing.T) {
 // the same board must produce the same votes whatever the round is underneath.
 func TestVotingIsIndependentOfTheSecretWordAndTheRoles(t *testing.T) {
 	srv := NewServer(time.Now, content.Policy(), content.Pick)
-	pool := content.CitizenHints("פיצה")
+	pool := content.CitizenHints("אוכל ושתייה", "פיצה")
 	hints := []game.Hint{
 		{PlayerID: "p1", Text: pool[0]},
 		{PlayerID: "p2", Text: pool[1]},
@@ -96,9 +99,9 @@ func TestVotingIsIndependentOfTheSecretWordAndTheRoles(t *testing.T) {
 
 	// A citizen bot holding the word, and an impostor bot holding none. Same
 	// board, so the same votes — the reading has no parameter for either.
-	citizen := tally(game.View{Category: "אוכל", SecretWord: "פיצה", Hints: hints, Role: game.RoleCitizen})
-	impostor := tally(game.View{Category: "אוכל", Hints: hints, Role: game.RoleImpostor})
-	other := tally(game.View{Category: "אוכל", SecretWord: "סושי", Hints: hints, Role: game.RoleCitizen})
+	citizen := tally(game.View{Category: "אוכל ושתייה", SecretWord: "פיצה", Hints: hints, Role: game.RoleCitizen})
+	impostor := tally(game.View{Category: category, Hints: hints, Role: game.RoleImpostor})
+	other := tally(game.View{Category: "אוכל ושתייה", SecretWord: "סושי", Hints: hints, Role: game.RoleCitizen})
 	for id := range citizen {
 		for name, got := range map[string]float64{"impostor": impostor[id], "another word": other[id]} {
 			if math.Abs(got-citizen[id]) > 0.02 {
