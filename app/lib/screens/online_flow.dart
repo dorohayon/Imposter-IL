@@ -10,27 +10,6 @@ import 'live_room.dart';
 import 'private_flow.dart';
 import 'secondary_screens.dart';
 
-const _categoryIcons = {
-  'food': Icons.restaurant_rounded,
-  'home': Icons.home_rounded,
-  'school_students': Icons.school_rounded,
-  'work_office': Icons.work_rounded,
-  'technology_digital': Icons.devices_rounded,
-  'travel_vacation': Icons.flight_takeoff_rounded,
-  'places': Icons.public_rounded,
-  'dating_relationships': Icons.favorite_rounded,
-  'nightlife': Icons.nightlife_rounded,
-  'weddings_events': Icons.celebration_rounded,
-  'fashion_grooming': Icons.checkroom_rounded,
-  'gaming': Icons.sports_esports_rounded,
-  'music': Icons.music_note_rounded,
-  'nostalgia': Icons.history_rounded,
-  'israeli_slang': Icons.forum_rounded,
-  'idf_service': Icons.military_tech_rounded,
-  'film_tv': Icons.movie_rounded,
-  'sports': Icons.fitness_center_rounded,
-};
-
 const _allId = '';
 
 String searchErrorMessage(String code) => switch (code) {
@@ -124,13 +103,8 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
         });
 
     final tiles = [
-      (id: _allId, name: 'הכול', icon: Icons.auto_awesome_rounded),
-      for (final c in categories)
-        (
-          id: c.id,
-          name: c.name,
-          icon: _categoryIcons[c.id] ?? Icons.category_rounded,
-        ),
+      (id: _allId, name: 'הכול'),
+      for (final c in categories) (id: c.id, name: c.name),
     ];
 
     return GameScaffold(
@@ -254,18 +228,11 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                                     ),
                                   ),
                                 ),
-                              Align(
-                                alignment: AlignmentDirectional.topEnd,
-                                child: Icon(
-                                  isSelected
-                                      ? Icons.check_circle_rounded
-                                      : tile.icon,
-                                  color: isSelected
-                                      ? AppColors.night
-                                      : AppColors.turquoise,
-                                  size: 24,
+                              if (isSelected)
+                                const Align(
+                                  alignment: AlignmentDirectional.topStart,
+                                  child: _SelectedCategoryCheck(),
                                 ),
-                              ),
                               Align(
                                 alignment: AlignmentDirectional.bottomStart,
                                 child: Text(
@@ -306,13 +273,20 @@ class PremiumBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: AppColors.yellow.withValues(alpha: .5)),
       ),
-      child: const Text(
-        'פרימיום',
-        style: TextStyle(
-          color: AppColors.yellow,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_rounded, size: 12, color: AppColors.yellow),
+          SizedBox(width: 5),
+          Text(
+            'פרימיום',
+            style: TextStyle(
+              color: AppColors.yellow,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -393,6 +367,24 @@ class LockedCategoryTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SelectedCategoryCheck extends StatelessWidget {
+  const _SelectedCategoryCheck();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 22,
+      height: 22,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.night,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: const Icon(Icons.check_rounded, size: 14, color: AppColors.yellow),
     );
   }
 }
