@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/invite.dart';
 import 'data/server.dart';
@@ -70,17 +71,39 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
   Future<bool> didPushRouteInformation(RouteInformation info) async =>
       _openInvite(info.uri.toString());
 
+  /// An invitation that arrived while new Terms were still to be accepted.
+  String? _pendingInvite;
+
+  void _joinRoom(String code) => _navigator.currentState?.push(
+        MaterialPageRoute<void>(builder: (_) => JoinRoomScreen(code: code)),
+      );
+
+  void _openPendingInvite() {
+    final code = _pendingInvite;
+    _pendingInvite = null;
+    if (code != null) _joinRoom(code);
+  }
+
   bool _openInvite(String? route) {
     final code = roomCodeFromLink(route);
     // Nothing is pushed over onboarding or the legal gate: a player id only
     // exists once both are behind us, so this cannot smuggle anyone past
     // consent. Without one the invitation page still shows the code to type.
     if (code == null || widget.session.playerId == null) return false;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _navigator.currentState?.push(
-        MaterialPageRoute<void>(builder: (_) => JoinRoomScreen(code: code)),
-      );
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // A returning player has an id but may still owe the re-acceptance of
+      // new Terms; the gate is below this route, so check it here too, and
+      // keep the invitation for when they accept.
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getString(legalAcceptedVersionKey) != legalVersion) {
+        _pendingInvite = code;
+        return;
+      }
+      _joinRoom(code);
     });
+    // A warm link arrives with no frame pending; without one the push waits
+    // for whatever next repaints the screen.
+    WidgetsBinding.instance.scheduleFrame();
     return true;
   }
 
@@ -110,7 +133,8 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
           // Legal acknowledgement is outside onboarding: no guest session and no
           // user-written nickname reaches the server before the current Terms are
           // accepted. Bumping legalVersion gates returning installs as well.
-          home: const LegalGate(child: _Start()),
+          home:
+              LegalGate(onAccepted: _openPendingInvite, child: const _Start()),
         ),
       ),
     );

@@ -56,10 +56,10 @@ docker push "$IMAGE"
 # A token so the counters are readable: Cloud Run has no shell, so the
 # loopback metrics listener the VM uses is unreachable here.
 METRICS_TOKEN="${METRICS_TOKEN:-$(head -c 24 /dev/urandom | base64 | tr -d '/+=')}"
-# Cloud Run is the beta/staging target. Three in-process bots fill an online
-# search to four after the first real player arrives, but do not keep an idle
-# instance awake. Override with STAGING_BOTS=0 for production behavior.
-STAGING_BOTS="${STAGING_BOTS:-5}"
+# This script deploys production. Bots are off unless asked for: with them
+# on, real players are silently matched against server actors. For a
+# testers-only beta, run it with STAGING_BOTS=5.
+STAGING_BOTS="${STAGING_BOTS:-0}"
 
 step "deploying"
 # The flags that matter, and why:
@@ -78,6 +78,9 @@ step "deploying"
 #   timeout=3600      Cloud Run's maximum. A WebSocket is cut at this age; the
 #                     app reconnects, and a game lasts ~4 minutes, so this is
 #                     rarely reached mid-game.
+#   GOMEMLIMIT        Go does not read the container's memory cap; without a
+#                     soft limit the GC lets the heap run into the 512 MiB
+#                     OOM kill, which ends every game on the only instance.
 #   cpu-throttling    Left ON (the default). Cloud Run allocates CPU while a
 #                     request is in flight, and every connected player holds an
 #                     open WebSocket, so the game's timers keep firing whenever
@@ -94,7 +97,7 @@ gcloud run deploy "$SERVICE" \
 	--timeout=3600 \
 	--memory=512Mi \
 	--cpu=1 \
-	--set-env-vars="TRUST_PROXY=1,METRICS_ADDR=,METRICS_TOKEN=$METRICS_TOKEN,DRAIN_TIMEOUT=8s,LOG_LEVEL=info,MIN_CLIENT_BUILD=${MIN_CLIENT_BUILD:-3},STAGING_BOTS=$STAGING_BOTS"
+	--set-env-vars="TRUST_PROXY=1,METRICS_ADDR=,METRICS_TOKEN=$METRICS_TOKEN,DRAIN_TIMEOUT=8s,GOMEMLIMIT=400MiB,LOG_LEVEL=info,MIN_CLIENT_BUILD=${MIN_CLIENT_BUILD:-3},STAGING_BOTS=$STAGING_BOTS"
 
 URL="$(gcloud run services describe "$SERVICE" --region="$REGION" --format='value(status.url)')"
 

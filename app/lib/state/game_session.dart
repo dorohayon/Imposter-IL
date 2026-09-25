@@ -51,6 +51,11 @@ class GameSession extends ChangeNotifier {
   String? _pendingGameLeave;
   bool _pendingGameLeaveInFlight = false;
 
+  /// A search cancelled while offline. The server keeps a dropped searcher's
+  /// place for 30 seconds, so the cancel is sent again once reconnected.
+  bool _pendingSearchCancel = false;
+  bool _pendingSearchCancelInFlight = false;
+
   /// While disconnected: when the server stops holding this player's turn
   /// (docs/decisions.md, 30 seconds), for the reconnecting overlay.
   DateTime? reconnectDeadline;
@@ -213,12 +218,16 @@ class GameSession extends ChangeNotifier {
 
   /// The server no longer knows the token (a restart loses every session).
   /// A new session with the same nickname and avatar replaces it.
-  Future<void> _replaceLostSession() async {
-    if (activity != 'none') sessionLost = true;
+  ///
+  /// [silently] is for a token another device now holds: nothing failed, so
+  /// the server-error screen would be wrong.
+  Future<void> _replaceLostSession({bool silently = false}) async {
+    if (!silently && activity != 'none') sessionLost = true;
     // A restarted server cannot confirm an old leave and must never turn that
     // infrastructure failure into a local loss.
     _pendingGameLeave = null;
     _pendingGameLeaveInFlight = false;
+    _pendingSearchCancel = false;
     _clearActivity();
     final json = await api.request(
       'POST',
@@ -237,15 +246,34 @@ class GameSession extends ChangeNotifier {
   Future<void> _connectLoop() async {
     if (_loopRunning) return;
     _loopRunning = true;
+    var failures = 0;
     while (!_disposed && signedIn) {
       try {
         final channel = await api.connect(token!);
         _channel = channel;
+        failures = 0;
         connected = true;
         reconnectDeadline = null;
         _notify();
         await for (final message in channel.messages) {
           _onMessage(message);
+        }
+        if (channel.closeReason == replacedByNewConnection) {
+          // The same token connected from another phone (a backup restored
+          // onto a new one). There is no login, so this device simply becomes
+          // a new guest with the same nickname and avatar; reconnecting with
+          // the old token would only take the connection back and forth.
+          _channel = null;
+          connected = false;
+          _failPending();
+          try {
+            await _replaceLostSession(silently: true);
+          } on ApiException {
+            // Unreachable for now; the loop retries with the old token and
+            // gets here again if the other device still holds it.
+          }
+          _notify();
+          continue;
         }
       } on Object {
         // Could not connect: check whether the session itself is gone.
@@ -268,22 +296,35 @@ class GameSession extends ChangeNotifier {
       _failPending();
       _notify();
       if (_disposed) break;
-      await Future<void>.delayed(reconnectDelay);
+      // Back off (x1, x2, x4) with jitter, so a restarted server is not hit by
+      // every client in the same instant — except while a game holds the
+      // player's seat: those 30 seconds are theirs to get back in.
+      final backoff = reconnectDeadline != null
+          ? reconnectDelay
+          : reconnectDelay * (1 << (failures < 2 ? failures : 2));
+      failures++;
+      await Future<void>.delayed(
+        backoff + reconnectDelay * _random.nextDouble(),
+      );
     }
     _loopRunning = false;
   }
 
-  /// When the server gives up on a dropped player: it holds only their hint
-  /// turn, and removes them on a third disconnect. Otherwise there is no
-  /// deadline. A turn that comes up while offline is not known here.
+  /// How long a dropped player has before the drop counts: 30 seconds in any
+  /// phase (docs/decisions.md). A hint turn keeps its own clock while they
+  /// are away, so during their turn it may be less. A turn that comes up
+  /// while offline is not known here.
   DateTime? _holdDeadline() {
     final current = activity == 'game' ? game : null;
     final me = current?.player(playerId);
     if (current == null || me == null || current.phase == 'ended') return null;
+    final hold = serverNow.add(const Duration(seconds: 30));
+    final turnEnds = current.deadline;
     final myTurn =
         current.phase == 'hints' && current.currentTurnPlayerId == playerId;
-    if (!myTurn && me.disconnects + 1 < 3) return null;
-    return serverNow.add(const Duration(seconds: 30));
+    return myTurn && turnEnds != null && turnEnds.isBefore(hold)
+        ? turnEnds
+        : hold;
   }
 
   void _onMessage(Map<String, dynamic> message) {
@@ -300,6 +341,14 @@ class GameSession extends ChangeNotifier {
             ?.complete(error?['code'] as String?);
         return;
       case 'session.state':
+        if (_pendingSearchCancel) {
+          if (payload['activity'] == 'matchmaking') {
+            // Still searching on the server: stay home and cancel it there.
+            unawaited(_retryPendingSearchCancel());
+            return;
+          }
+          _pendingSearchCancel = false;
+        }
         final outcomeGameId = payload['lastGameId'] as String?;
         final outcome = payload['lastGameOutcome'] as String?;
         if (outcomeGameId != null && outcome != null) {
@@ -343,6 +392,12 @@ class GameSession extends ChangeNotifier {
             (payload['categoryIds'] as List? ?? const []).cast<String>();
       case 'room.kicked':
         kicked = true;
+      case 'game.aborted':
+        // The server ended the game on its side (a recovered crash, or a
+        // shutdown that outlasted draining): screen 29, no loss recorded.
+        // The session.state that follows sends the player home, and without
+        // this they got there silently, with no word of what happened.
+        sessionLost = true;
       case 'game.reaction':
         // The only message that names who reacted; game.state carries counts
         // alone. Nothing to store, so the screen animates it and it is gone.
@@ -441,6 +496,17 @@ class GameSession extends ChangeNotifier {
   Future<String?> leaveGame() =>
       _leave('game.leave', 'gameId', gameId ?? game?.id);
 
+  Future<void> _retryPendingSearchCancel() async {
+    if (!_pendingSearchCancel || _pendingSearchCancelInFlight || !connected) {
+      return;
+    }
+    _pendingSearchCancelInFlight = true;
+    final code = await send('matchmaking.cancel', {});
+    _pendingSearchCancelInFlight = false;
+    // The server's cancel always succeeds; a network error keeps it pending.
+    if (code == null) _pendingSearchCancel = false;
+  }
+
   Future<void> _retryPendingGameLeave() async {
     final id = _pendingGameLeave;
     if (id == null || _pendingGameLeaveInFlight || !connected) return;
@@ -468,6 +534,16 @@ class GameSession extends ChangeNotifier {
       return null;
     }
     final code = id == null ? null : await send(type, {key: id});
+    // The host started the next game while this leave was on its way: the
+    // player is in that game now. Show it, where they can still leave, rather
+    // than a home screen that leaves an unseen player sitting at the table.
+    if (type == 'game.leave' &&
+        code == 'game_not_found' &&
+        activity == 'game' &&
+        gameId != null &&
+        gameId != id) {
+      return 'room_in_game';
+    }
     // Not found means the server no longer has the player there.
     if (code != null && code != 'room_not_found' && code != 'game_not_found') {
       return code;
@@ -498,11 +574,12 @@ class GameSession extends ChangeNotifier {
   }
 
   /// Cancels the online search once the server confirms it. Without a
-  /// connection the search is already cancelled, since disconnecting cancels
-  /// it on the server.
+  /// connection it is cancelled here at once and again on the server after
+  /// reconnecting, since the server holds a dropped searcher's place.
   Future<String?> cancelSearch() async {
     final code = await send('matchmaking.cancel', {});
     if (code != null && connected) return code;
+    if (code != null) _pendingSearchCancel = true;
     _clearActivity();
     _notify();
     return null;

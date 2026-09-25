@@ -442,12 +442,8 @@ func TestParityIsCheckedHoweverTheCitizensWent(t *testing.T) {
 			t.Fatalf("three players ended the match: %+v", g.result)
 		}
 		// The other is removed after a third disconnect: one citizen left.
-		for i := 0; i < MaxDisconnects; i++ {
-			must(t, g.Disconnect(c[1], now))
-			if i < MaxDisconnects-1 {
-				must(t, g.Reconnect(c[1], now))
-			}
-		}
+		g.players[c[1]].disconnects = MaxDisconnects - 1
+		must(t, g.Disconnect(c[1], now))
 		now = now.Add(DefaultConfig().ReconnectDuration)
 		g.Tick(now)
 		wantResult(t, g, TeamImpostor, ReasonImpostorParity)
@@ -468,4 +464,66 @@ func TestParityIsCheckedHoweverTheCitizensWent(t *testing.T) {
 		must(t, g.Leave(c[1], now))
 		wantResult(t, g, TeamImpostor, ReasonImpostorParity)
 	})
+}
+
+// Votes for a player who then walks out are deleted, but the round was not
+// silent: it must not count toward calling the match off.
+func TestVotesForALeaverDoNotMakeTheRoundSilent(t *testing.T) {
+	g := newGame(t, 6)
+	confirmAll(t, g)
+	now := playRound(t, g, t0)
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now) // round 1: nobody voted
+
+	now = playRound(t, g, now)
+	var citizens []string
+	for _, id := range g.PlayerIDs() {
+		if id != g.impostor {
+			citizens = append(citizens, id)
+		}
+	}
+	target := citizens[0]
+	for _, voter := range citizens[1:3] {
+		if err := g.Vote(voter, target, now); err != nil {
+			t.Fatalf("vote: %v", err)
+		}
+	}
+	if err := g.Leave(target, now); err != nil {
+		t.Fatalf("leave: %v", err)
+	}
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now)
+	if g.result != nil && g.result.Reason == ReasonAbandoned {
+		t.Fatalf("a round with votes was counted as silent and called the match off")
+	}
+}
+
+// A reaction after round 2's first turn was skipped waits for that round's
+// first real hint; it does not land on the last hint of round 1.
+func TestReactionAfterASkippedFirstTurnStaysInItsRound(t *testing.T) {
+	g := newGame(t, 4)
+	confirmAll(t, g)
+	now := playRound(t, g, t0)
+	now = now.Add(DefaultConfig().VoteDuration)
+	g.Tick(now) // silent vote: round 2
+	if g.round != 2 {
+		t.Fatalf("round = %d, want 2", g.round)
+	}
+	before := len(g.hints)
+	for i := 0; len(g.hints) == before && i < 300; i++ {
+		now = now.Add(time.Second)
+		g.Tick(now) // until round 2's first turn runs out
+	}
+	last := len(g.hints) - 1
+	if h := g.hints[last]; !h.Missing || h.Round != 2 {
+		t.Fatalf("last hint = %+v, want round 2's first turn skipped", h)
+	}
+	prev := g.hints[last-1].Reactions["suspicious"]
+	must(t, g.React(g.order[2], last, "suspicious", now))
+	if g.hints[last-1].Reactions["suspicious"] != prev {
+		t.Fatal("the reaction landed on round 1's last hint")
+	}
+	if g.pendingReactions["suspicious"] != 1 {
+		t.Fatalf("pending = %v, want the reaction waiting for round 2's first hint", g.pendingReactions)
+	}
 }

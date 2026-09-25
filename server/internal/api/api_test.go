@@ -177,6 +177,8 @@ func TestCreateRoom(t *testing.T) {
 		c.wantError(422, "invalid_room_settings", status, body)
 	}
 
+	// Created over REST with no WebSocket yet: offline, with the host's
+	// reconnect clock running, until the socket attaches.
 	room := c.createRoom(token, 8)
 	p := players(room)[0].(map[string]any)
 	switch {
@@ -186,8 +188,8 @@ func TestCreateRoom(t *testing.T) {
 		room["hostPlayerId"] != id,
 		room["settingsLocked"] != false,
 		room["hostTransfer"] != nil,
-		room["hostReconnectDeadline"] != nil,
-		p["playerId"] != id || p["nickname"] != "דור" || p["avatarId"] != "avatar-m04-detective-hat" || p["connected"] != true,
+		room["hostReconnectDeadline"] == nil,
+		p["playerId"] != id || p["nickname"] != "דור" || p["avatarId"] != "avatar-m04-detective-hat" || p["connected"] != false,
 		p["joinedAt"] != "2026-09-15T12:00:00Z":
 		t.Fatalf("room = %v", room)
 	}

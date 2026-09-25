@@ -12,8 +12,7 @@ Play). אצלנו הטקסט הוא כינויים ורמזים. אין חשבו
 | **סינון.** כינוי ורמז נבדקים מול רשימת המילים החסומות לפני שמישהו רואה אותם. | `server/internal/content/blocked_words.txt` |
 | **דיווח.** כפתור `דיווח על הרמז` בהיסטוריית הרמזים של כל שחקן. | `app/lib/screens/live_room.dart` |
 | **הסתרה אצל המדווח.** הרמזים של מי שדווח מוסתרים מיד במכשיר של המדווח, מעכשיו והלאה. | `GameSession.muted` |
-| **הסתרה לכל השולחן.** כששני שחקנים שונים או יותר באותו משחק דיווחו על אותו שחקן, השרת מסתיר את הרמזים שלו מכל השאר עד סוף המשחק. הוא עצמו לא מקבל הודעה. | `server/internal/api/moderation.go` (`hideAfterReports`) |
-| **תיעוד.** כל דיווח נכתב ללוג תחת `player reported`, עם הרמז, הכינוי, מספר המדווחים והאם הוסתר לכולם. | Cloud Logging, 30 יום |
+| **תיעוד.** כל דיווח נכתב ללוג תחת `player reported`, עם הרמז, הכינוי ומספר המדווחים. | Cloud Logging, 30 יום |
 | **התראה.** מייל ל־`imposteril36@gmail.com` כשמגיע דיווח, לכל היותר פעם בחמש דקות, עם רשומת הדיווח. | `deploy/setup-moderation-alerts.sh` |
 
 ## השגרה — כמה דקות בשבוע
@@ -25,7 +24,7 @@ Play). אצלנו הטקסט הוא כינויים ורמזים. אין חשבו
    ```sh
    gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="imposter" AND jsonPayload.msg="player reported"' \
      --freshness=7d \
-     --format='table(timestamp, jsonPayload.nickname, jsonPayload.hint, jsonPayload.reporters, jsonPayload.hiddenForAll)'
+     --format='table(timestamp, jsonPayload.nickname, jsonPayload.hint, jsonPayload.reporters)'
    ```
 
    או ב־Cloud Console: Logging → Logs Explorer, עם אותו filter.
@@ -42,8 +41,9 @@ Play). אצלנו הטקסט הוא כינויים ורמזים. אין חשבו
 
 ## מה בכוונה אין
 
+- **הסתרה אוטומטית לכל השולחן.** בלי חשבונות, אדם אחד עם שני sessions יכול היה להשתיק כל שחקן. עומדים במינימום של החנויות (`docs/decisions.md`).
 - **חסימה קבועה של שחקן.** בלי חשבונות, שחקן יכול להיכנס מחדש בכינוי אחר. הסינון,
-  ההסתרה לכל השולחן והגבלות הקצב הם מה שאפשר לאכוף.
+  החסימה אצל המדווח והגבלות הקצב הם מה שאפשר לאכוף.
 - **תור מודרציה עם ממשק.** הלוג, המייל והפקודה למעלה הם התור. אם הכמויות יגדלו —
   זה הזמן למסך ניהול ולמסד נתונים.
 - **שדה טקסט חופשי בדיווח.** כל לקוח יכול היה לכתוב שם כל דבר ישר לתוך הלוגים; הלוג

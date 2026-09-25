@@ -19,10 +19,14 @@ import (
 
 const (
 	protocolVersion = 1
-	sendBuffer      = 64
+	sendBuffer      = 256 // a full buffer disconnects the player; leave room for reaction bursts
 	writeTimeout    = 10 * time.Second
 	replyCacheSize  = 100
 	replyCacheTTL   = 5 * time.Minute
+	// maxMessageID bounds what the reply cache keeps per entry. The app's ids
+	// are ~30 bytes; without a bound, 100 cached 64 KB ids pinned ~12 MiB per
+	// session and a single client could OOM the instance.
+	maxMessageID = 64
 )
 
 type conn struct {
@@ -65,17 +69,34 @@ func (s *Server) serveWS(w http.ResponseWriter, r *http.Request) {
 		cancel()
 		_ = ws.CloseNow()
 		s.mu.Lock()
+		defer s.mu.Unlock()
+		defer s.recoverRoom(s.roomsByID[sess.roomID], "detach")
 		s.metrics.wsConns--
 		s.detach(sess, c)
-		s.mu.Unlock()
 	}()
 
-	s.mu.Lock()
-	s.metrics.wsConns++
-	sess.lastSeen, sess.connected = s.now(), true
-	s.attach(sess, c)
-	interval := s.pingInterval
-	s.mu.Unlock()
+	var interval time.Duration
+	attached := func() bool {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		// A panic under the lock outside a recover would hold s.mu forever
+		// and freeze every game on the instance.
+		defer s.recoverRoom(s.roomsByID[sess.roomID], "attach")
+		s.metrics.wsConns++
+		// The reaper may have dropped the session during the upgrade; a
+		// socket on a session in no map would be an orphan nobody cleans up.
+		if s.sessions[token] != sess {
+			return false
+		}
+		sess.lastSeen, sess.connected = s.now(), true
+		s.attach(sess, c)
+		interval = s.pingInterval
+		return true
+	}()
+	if !attached {
+		_ = ws.Close(websocket.StatusPolicyViolation, "session_not_found")
+		return
+	}
 	s.safely("writeLoop", func() { s.writeLoop(c) })
 	s.safely("pingLoop", func() { pingLoop(c, interval) })
 	s.readLoop(sess, c)
@@ -133,7 +154,10 @@ func (s *Server) readLoop(sess *session, c *conn) {
 			return
 		}
 		var env envelope
-		if json.Unmarshal(data, &env) != nil || env.ID == "" || env.Type == "" {
+		if json.Unmarshal(data, &env) != nil || env.ID == "" || env.Type == "" || len(env.ID) > maxMessageID {
+			if len(env.ID) > maxMessageID {
+				env.ID = "" // not echoed back and never cached
+			}
 			s.queue(c, reply(env.ID, "invalid_message", time.Now()))
 			continue
 		}
@@ -144,28 +168,37 @@ func (s *Server) readLoop(sess *session, c *conn) {
 			_ = c.ws.Close(websocket.StatusPolicyViolation, "unsupported protocol version")
 			return
 		}
-		s.mu.Lock()
-		now := s.now()
-		sess.lastSeen = now
-		msg, ok := sess.replies.get(env.ID, now)
-		switch {
-		case ok:
-			// Replayed message id: the cached reply, command not run again.
-		case !s.commandLimit.allow(sess.playerID, now):
-			s.metrics.rateLimited++
-			s.countCommand("rate_limited")
-			msg = reply(env.ID, "rate_limited", now)
-			sess.replies.put(env.ID, msg, now)
-		default:
-			code := s.dispatchSafe(sess, env, now)
-			s.countCommand(code)
-			msg = reply(env.ID, code, now)
-			sess.replies.put(env.ID, msg, now)
-		}
-		s.queue(c, msg)
-		s.syncSession(sess)
-		s.mu.Unlock()
+		s.handleFrame(sess, c, env)
 	}
+}
+
+// handleFrame runs one command under the lock. Recovery covers the whole
+// locked block, not only dispatch: a panic in syncSession or queue would
+// otherwise hold s.mu forever and freeze the instance.
+func (s *Server) handleFrame(sess *session, c *conn, env envelope) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	defer s.recoverRoom(s.roomsByID[sess.roomID], "ws")
+	now := s.now()
+	sess.lastSeen = now
+	msg, ok := sess.replies.get(env.ID, now)
+	switch {
+	case ok:
+		// Replayed message id: the cached reply, command not run again.
+	case !s.commandLimit.allow(sess.playerID, now):
+		s.metrics.rateLimited++
+		s.countCommand("rate_limited")
+		// Not cached: the command never ran, so a retry with the same id
+		// must be able to run it once the bucket refills.
+		msg = reply(env.ID, "rate_limited", now)
+	default:
+		code := s.dispatchSafe(sess, env, now)
+		s.countCommand(code)
+		msg = reply(env.ID, code, now)
+		sess.replies.put(env.ID, msg, now)
+	}
+	s.queue(c, msg)
+	s.syncSession(sess)
 }
 
 // attach makes c the session's connection, replacing an older one without
@@ -176,6 +209,7 @@ func (s *Server) attach(sess *session, c *conn) {
 		go func() { _ = old.ws.Close(websocket.StatusPolicyViolation, "replaced by a new connection") }()
 	}
 	sess.conn = c
+	sess.searchGoneAt = time.Time{}
 	entry := s.currentRoom(sess)
 	s.sendSessionState(sess)
 	if entry != nil {
@@ -198,7 +232,10 @@ func (s *Server) detach(sess *session, c *conn) {
 	sess.conn = nil
 	if entry := s.currentRoom(sess); entry != nil {
 		if s.searching(entry) {
-			s.leaveSearch(sess, entry, s.now()) // closing the app cancels a search
+			// The place is kept for searchGrace; tickSearch ends the search
+			// if they are not back by then.
+			sess.searchGoneAt = s.now()
+			_ = entry.room.Disconnect(sess.playerID, s.now())
 		} else {
 			_ = entry.room.Disconnect(sess.playerID, s.now())
 		}
@@ -469,6 +506,12 @@ func (c *replyCache) put(id string, msg []byte, now time.Time) {
 	}
 	c.byID[id] = cachedReply{at: now, msg: msg}
 	c.order = append(c.order, cachedID{id: id, at: now})
+	c.prune(now)
+}
+
+// prune drops expired and excess replies. The reaper calls it too, so a
+// session that went quiet does not hold its last 100 replies for a day.
+func (c *replyCache) prune(now time.Time) {
 	for len(c.order) > 0 && (len(c.order) > replyCacheSize || now.Sub(c.order[0].at) >= replyCacheTTL) {
 		oldest := c.order[0]
 		if c.byID[oldest.id].at.Equal(oldest.at) { // not overwritten by a later use of the id

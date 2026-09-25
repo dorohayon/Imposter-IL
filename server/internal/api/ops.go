@@ -72,6 +72,18 @@ func (s *Server) activeGames() int {
 	return n
 }
 
+// AbortGames ends every room with a game in progress, telling its players the
+// server failed and no loss was recorded. For shutdown once draining ran out.
+func (s *Server) AbortGames() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, entry := range s.roomsByID {
+		if entry.room.Game() != nil && entry.room.View().Status == room.StatusInGame {
+			s.abortRoom(entry)
+		}
+	}
+}
+
 // ---------------------------------------------------------------- recovery
 
 // abortRoom drops a room and tells everyone in it that the server failed.

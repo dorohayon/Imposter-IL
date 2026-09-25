@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -170,15 +171,36 @@ func TestMetricsRender(t *testing.T) {
 func TestClientIPTrustsForwardedHeaderOnlyWhenTold(t *testing.T) {
 	c := newClient(t)
 	r := httptest.NewRequest("POST", "/v1/sessions", nil)
-	r.RemoteAddr = "203.0.113.9:4444"
+	r.RemoteAddr = "10.1.2.3:4444"
+	// The client forged the first hop; the proxy appended what it really saw.
 	r.Header.Set("X-Forwarded-For", "198.51.100.1, 203.0.113.9")
 
-	if got := c.srv.clientIP(r); got != "203.0.113.9" {
+	if got := c.srv.clientIP(r); got != "10.1.2.3" {
 		t.Fatalf("untrusted proxy: got %q, want the peer address", got)
 	}
 	c.srv.TrustProxy(true)
-	if got := c.srv.clientIP(r); got != "198.51.100.1" {
-		t.Fatalf("trusted proxy: got %q, want the forwarded client", got)
+	if got := c.srv.clientIP(r); got != "203.0.113.9" {
+		t.Fatalf("trusted proxy: got %q, want the address the proxy appended", got)
+	}
+}
+
+// A forged X-Forwarded-For must not buy a fresh rate-limit bucket per request.
+func TestForgedForwardedHeaderDoesNotBypassSessionLimit(t *testing.T) {
+	c := newClient(t)
+	c.srv.TrustProxy(true)
+	c.srv.sessionLimit = newLimiter(sessionsPerMinute, sessionsBurst)
+	limited := 0
+	for i := range sessionsBurst + 5 {
+		r := httptest.NewRequest("POST", "/v1/sessions", strings.NewReader(`{"nickname":"שחקן","avatarId":"avatar-m04-detective-hat"}`))
+		r.Header.Set("X-Forwarded-For", fmt.Sprintf("10.0.0.%d, 203.0.113.9", i))
+		w := httptest.NewRecorder()
+		c.srv.createSession(w, r)
+		if w.Code == http.StatusTooManyRequests {
+			limited++
+		}
+	}
+	if limited == 0 {
+		t.Fatal("rotating the forged first hop bypassed the per-IP session limit")
 	}
 }
 
@@ -309,4 +331,23 @@ func waitFor(t *testing.T, ok func() bool) {
 		time.Sleep(20 * time.Millisecond)
 	}
 	t.Fatal("condition not reached")
+}
+
+// When draining runs out, players get game.aborted with no loss rather than a
+// socket that simply dies.
+func TestAbortGamesTellsPlayersNoLossWasRecorded(t *testing.T) {
+	c := newClient(t)
+	roomID, players := c.roomWithPlayers(4)
+	gameID, _ := c.startGame(roomID, players)
+
+	c.srv.AbortGames()
+	for _, p := range players {
+		msg := p.w.next("game.aborted")["payload"].(map[string]any)
+		if msg["gameId"] != gameID || msg["lossRecorded"] != false {
+			t.Fatalf("game.aborted = %v", msg)
+		}
+	}
+	if n := c.srv.ActiveGames(); n != 0 {
+		t.Fatalf("%d games still active after AbortGames", n)
+	}
 }

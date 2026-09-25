@@ -100,6 +100,11 @@ class ApiClient {
         'X-Client-Build': '$clientBuild',
       },
     ).timeout(const Duration(seconds: 10));
+    // dart:io sends no pings by default, so a path that dies silently (Wi-Fi
+    // to cellular, a dead NAT mapping) left the game frozen with no
+    // reconnecting banner while the server was already counting a disconnect.
+    // A missed pong closes the socket and the session's loop reconnects.
+    socket.pingInterval = const Duration(seconds: 10);
     return _WebSocketChannel(socket);
   }
 }
@@ -112,12 +117,21 @@ abstract interface class RealtimeChannel {
   void send(Map<String, dynamic> message);
 
   Future<void> close();
+
+  /// Why the server closed the connection, once [messages] has ended.
+  String? get closeReason;
 }
+
+/// The server's close reason when the same player connected again elsewhere.
+const replacedByNewConnection = 'replaced by a new connection';
 
 class _WebSocketChannel implements RealtimeChannel {
   _WebSocketChannel(this._socket);
 
   final WebSocket _socket;
+
+  @override
+  String? get closeReason => _socket.closeReason;
 
   @override
   Stream<Map<String, dynamic>> get messages => _socket

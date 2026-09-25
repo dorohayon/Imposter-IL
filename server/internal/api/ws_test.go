@@ -354,3 +354,43 @@ func TestWSProfileChangeRaisesTheStateVersion(t *testing.T) {
 		}
 	}
 }
+
+// An oversized message id is refused and never cached: 100 cached 64 KB ids
+// used to pin ~12 MiB per session, enough for one client to OOM the instance.
+func TestWSOversizedMessageIDIsRefusedAndNotCached(t *testing.T) {
+	c := newClient(t)
+	token, _ := c.session("דור")
+	w := c.dial(token)
+
+	long := strings.Repeat("x", maxMessageID+1)
+	w.send(map[string]any{"v": 1, "id": long, "type": "game.react", "payload": map[string]any{}})
+	msg := w.next("reply")
+	wantReplyError(t, msg, "invalid_message")
+	if msg["replyTo"] != "" {
+		t.Fatalf("replyTo = %.20q..., want the oversized id not echoed", msg["replyTo"])
+	}
+	c.srv.mu.Lock()
+	cached := len(c.srv.sessions[token].replies.byID)
+	c.srv.mu.Unlock()
+	if cached != 0 {
+		t.Fatalf("%d replies cached for an oversized id", cached)
+	}
+}
+
+// The reaper empties a quiet session's reply cache instead of keeping its last
+// replies for the session's whole 24 h life.
+func TestReaperPrunesExpiredReplies(t *testing.T) {
+	c := newClient(t)
+	token, _ := c.session("דור")
+	w := c.dial(token)
+	wantReplyError(t, w.command("m1", "lobby.dance", map[string]any{}), "invalid_message")
+
+	c.advance(replyCacheTTL + time.Second)
+	c.srv.reap()
+	c.srv.mu.Lock()
+	cached := len(c.srv.sessions[token].replies.byID)
+	c.srv.mu.Unlock()
+	if cached != 0 {
+		t.Fatalf("%d expired replies still cached after a reap", cached)
+	}
+}

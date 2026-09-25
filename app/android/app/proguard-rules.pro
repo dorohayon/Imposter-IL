@@ -7,3 +7,8 @@
 # Google Mobile Ads SDK — and release builds crashed before the first frame
 # ("Failed to create an instance of androidx.work.impl.WorkDatabase").
 -keep class * extends androidx.room.RoomDatabase { <init>(); }
+
+# The same shape one class over: WorkManager builds each job's InputMerger by
+# reflection through its no-argument constructor, and R8 removed those too, so
+# every one-time job (the Mobile Ads SDK's offline ping buffering) failed.
+-keepclassmembers class * extends androidx.work.InputMerger { public <init>(); }

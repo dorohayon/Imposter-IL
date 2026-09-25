@@ -2,6 +2,7 @@ package game
 
 import (
 	"errors"
+	"fmt"
 	"math/rand/v2"
 	"slices"
 	"strings"
@@ -651,12 +652,15 @@ func TestDisconnectOnTurnSkipsAfterThirtySeconds(t *testing.T) {
 	confirmAll(t, g)
 	p := g.order[0]
 	must(t, g.Disconnect(p, t0.Add(5*time.Second)))
-	if !g.reconnecting || !g.Deadline().Equal(t0.Add(35*time.Second)) || g.players[p].disconnects != 1 {
-		t.Fatalf("want 30s reconnect window, got deadline %v", g.Deadline())
+	if !g.reconnecting || !g.Deadline().Equal(t0.Add(35*time.Second)) || g.players[p].disconnects != 0 {
+		t.Fatalf("want 30s reconnect window and no strike yet, got deadline %v", g.Deadline())
 	}
 	g.Tick(t0.Add(35 * time.Second))
 	if !g.hints[0].Missing || g.players[p].status != StatusActive || g.order[g.turn] != g.order[1] {
 		t.Fatal("first disconnect must skip the turn and keep the player")
+	}
+	if g.players[p].disconnects != 1 {
+		t.Fatalf("disconnects = %d, want 1 after 30 s away", g.players[p].disconnects)
 	}
 }
 
@@ -666,13 +670,14 @@ func TestTurnStartingWhileDisconnectedWaitsForReconnect(t *testing.T) {
 	confirmAll(t, g)
 	must(t, g.SubmitHint(g.order[0], "גדול", t0.Add(time.Second)))
 	g.Tick(t0.Add(4 * time.Second)) // past the hold on that hint
-	if !g.reconnecting || g.players[g.order[1]].disconnects != 1 {
+	if !g.reconnecting {
 		t.Fatal("turn of a disconnected player must wait for reconnect")
 	}
 	wantErr(t, g.SubmitHint(g.order[1], "x", t0.Add(2*time.Second)), ErrNotYourTurn)
+	turnEnds := g.turnDeadline
 	must(t, g.Reconnect(g.order[1], t0.Add(10*time.Second)))
-	if g.reconnecting || !g.Deadline().Equal(t0.Add(70*time.Second)) {
-		t.Fatalf("reconnect must restart the hint timer, deadline %v", g.Deadline())
+	if g.reconnecting || !g.Deadline().Equal(turnEnds) || !turnEnds.Before(t0.Add(70*time.Second)) {
+		t.Fatalf("reconnect must resume the turn's own clock, deadline %v", g.Deadline())
 	}
 	must(t, g.SubmitHint(g.order[1], "אפור", t0.Add(11*time.Second)))
 }
@@ -681,15 +686,17 @@ func TestThirdDisconnectRemovesWithLoss(t *testing.T) {
 	g := newGame(t, 5)
 	confirmAll(t, g)
 	p, now := g.order[0], t0
-	for range 2 {
+	// Each drop counts once the player has been away 30 s.
+	for range MaxDisconnects - 1 {
 		must(t, g.Disconnect(p, now))
-		now = now.Add(time.Second)
+		now = now.Add(30 * time.Second)
+		g.Tick(now)
 		must(t, g.Reconnect(p, now))
 	}
-	must(t, g.Disconnect(p, now))
-	if g.players[p].disconnects != MaxDisconnects {
-		t.Fatalf("disconnects = %d", g.players[p].disconnects)
+	if g.players[p].disconnects != MaxDisconnects-1 || g.players[p].status != StatusActive {
+		t.Fatalf("disconnects = %d, status %s", g.players[p].disconnects, g.players[p].status)
 	}
+	must(t, g.Disconnect(p, now))
 	g.Tick(now.Add(30 * time.Second))
 
 	if g.players[p].status != StatusRemoved {
@@ -700,8 +707,8 @@ func TestThirdDisconnectRemovesWithLoss(t *testing.T) {
 		wantResult(t, g, TeamCitizens, ReasonImpostorGone)
 	} else {
 		wantPhase(t, g, PhaseHints)
-		if g.order[g.turn] != g.order[1] {
-			t.Fatal("turn must move to the next player")
+		if g.order[g.turn] == p {
+			t.Fatal("a removed player must not hold the turn")
 		}
 	}
 	if v, _ := g.View(p); v.Players[0].Status != StatusRemoved {
@@ -718,8 +725,8 @@ func TestSimultaneousRemovalDeadlinesAreAppliedBeforeGameEnds(t *testing.T) {
 	for _, id := range []string{g.impostor, removedCitizen} {
 		p := g.players[id]
 		p.connected = false
-		p.disconnects = MaxDisconnects
-		p.removeAt = removeAt
+		p.disconnects = MaxDisconnects - 1
+		p.strikeAt = removeAt // the third drop counts now
 	}
 
 	g.Tick(removeAt)
@@ -732,15 +739,21 @@ func TestSimultaneousRemovalDeadlinesAreAppliedBeforeGameEnds(t *testing.T) {
 	}
 }
 
-func TestEveryDisconnectInTheGameCounts(t *testing.T) {
+// A blip on the network is not a strike: a drop counts only once the player
+// has been away for 30 seconds, in any phase.
+func TestADropCountsOnlyIfThePlayerStaysAway(t *testing.T) {
 	g := newGame(t, 5)
 	p := citizens(g)[0]
-	must(t, g.Disconnect(p, t0)) // role reveal
-	must(t, g.Reconnect(p, t0))
+	must(t, g.Disconnect(p, t0)) // role reveal, back within 30 s
+	must(t, g.Reconnect(p, t0.Add(5*time.Second)))
+	if g.players[p].disconnects != 0 {
+		t.Fatalf("disconnects = %d after a 5 s blip, want 0", g.players[p].disconnects)
+	}
 	now := toVoting(t, g)
-	must(t, g.Disconnect(p, now)) // voting
-	if g.players[p].disconnects != 2 {
-		t.Fatalf("disconnects = %d, want 2", g.players[p].disconnects)
+	must(t, g.Disconnect(p, now)) // voting, away for good
+	g.Tick(now.Add(30 * time.Second))
+	if g.players[p].disconnects != 1 {
+		t.Fatalf("disconnects = %d, want 1", g.players[p].disconnects)
 	}
 	g.Tick(now.Add(time.Minute))
 	if g.players[p].status != StatusActive {
@@ -750,7 +763,8 @@ func TestEveryDisconnectInTheGameCounts(t *testing.T) {
 	// End the match before the last disconnect, which must not be counted.
 	must(t, g.Leave(g.impostor, now.Add(time.Minute)))
 	must(t, g.Disconnect(p, now.Add(time.Minute))) // ended: not counted
-	if g.players[p].disconnects != 2 {
+	g.Tick(now.Add(2 * time.Minute))
+	if g.players[p].disconnects != 1 {
 		t.Fatal("disconnects after the game ended must not count")
 	}
 }
@@ -759,10 +773,7 @@ func TestThirdDisconnectOutsideTurnRemovesAfterThirtySeconds(t *testing.T) {
 	setup := func(t *testing.T) (*Game, string, time.Time) {
 		g := newGame(t, 5)
 		p := citizens(g)[0]
-		for range 2 {
-			must(t, g.Disconnect(p, t0))
-			must(t, g.Reconnect(p, t0))
-		}
+		g.players[p].disconnects = MaxDisconnects - 1
 		now := toVoting(t, g)
 		voteAllFor(t, g, g.impostor, now) // voting ends at +20s, guess runs until +80s
 		must(t, g.Disconnect(p, now))
@@ -1038,4 +1049,80 @@ func TestSkippedTurnIsNotHeld(t *testing.T) {
 	if g.order[g.turn] != g.order[1] {
 		t.Fatal("a skipped turn should move straight on")
 	}
+}
+
+// Reacting to "the last hint" right after a skipped turn lands on the last
+// hint somebody gave, instead of failing for the whole table.
+func TestReactionAfterASkippedTurnGoesToTheLastRealHint(t *testing.T) {
+	g := newGame(t, 4)
+	confirmAll(t, g)
+	must(t, g.SubmitHint(g.order[0], "חדק", t0))
+	g.Tick(t0.Add(6 * time.Second))  // the second turn starts
+	g.Tick(t0.Add(67 * time.Second)) // and runs out
+	if !g.hints[1].Missing {
+		t.Fatalf("hint 1 = %+v, want missing", g.hints[1])
+	}
+	must(t, g.React(g.order[2], 1, "suspicious", t0.Add(68*time.Second)))
+	if n := g.hints[0].Reactions["suspicious"]; n != 1 {
+		t.Fatalf("reactions on the last real hint = %d, want 1", n)
+	}
+}
+
+// Leaving and coming back during your own turn cannot buy time: the turn's
+// clock keeps running while you are away and resumes where it was.
+func TestReconnectCyclingCannotExtendTheTurn(t *testing.T) {
+	g := newGame(t, 4)
+	confirmAll(t, g)
+	p := g.order[0]
+	turnEnds := g.turnDeadline
+	now := t0
+	for range 10 {
+		now = now.Add(5 * time.Second)
+		must(t, g.Disconnect(p, now))
+		now = now.Add(time.Second)
+		must(t, g.Reconnect(p, now))
+		if g.phase == PhaseHints && g.order[g.turn] == p && g.Deadline().After(turnEnds) {
+			t.Fatalf("turn deadline moved to %v, past its own end %v", g.Deadline(), turnEnds)
+		}
+	}
+	g.Tick(turnEnds)
+	if g.order[g.turn] == p || !g.hints[0].Missing {
+		t.Fatal("the turn outlived its 60 s")
+	}
+}
+
+// Once the impostor is caught, only the guess decides: a citizen walking out
+// during it does not hand the impostor a parity win.
+func TestCitizenLeavingDuringTheGuessDoesNotDecideTheMatch(t *testing.T) {
+	g := newGame(t, 4)
+	now := toVoting(t, g)
+	voteAllFor(t, g, g.impostor, now)
+	g.Tick(now.Add(DefaultConfig().VoteDuration))
+	wantPhase(t, g, PhaseImpostorGuess)
+	must(t, g.Leave(citizens(g)[0], now.Add(21*time.Second)))
+	wantPhase(t, g, PhaseImpostorGuess)
+	must(t, g.SubmitGuess(g.impostor, "לא נכון", now.Add(22*time.Second)))
+	wantResult(t, g, TeamCitizens, ReasonImpostorGuessWrong)
+}
+
+// Symbols alone are no hint, and invisible characters can neither smuggle in
+// a second word nor split the secret word apart.
+func TestHintTextIsCleanedBeforeTheRules(t *testing.T) {
+	g := newGame(t, 4)
+	confirmAll(t, g)
+	var citizen string
+	for _, id := range g.order {
+		if id != g.impostor {
+			citizen = id
+			break
+		}
+	}
+	for g.order[g.turn] != citizen {
+		must(t, g.SubmitHint(g.order[g.turn], fmt.Sprintf("רמז%d", g.turn), t0))
+		g.Tick(t0.Add(10 * time.Second))
+	}
+	now := t0.Add(10 * time.Second)
+	wantErr(t, g.SubmitHint(citizen, "🙂!!", now), ErrHintEmpty)
+	wantErr(t, g.SubmitHint(citizen, "שתי⠀מילים", now), ErrHintNotOneWord)
+	wantErr(t, g.SubmitHint(citizen, "פי\u200bל", now), ErrHintContainsSecret)
 }

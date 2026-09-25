@@ -27,10 +27,11 @@ On the VM there is no such interception and `/healthz` is what Caddy polls.
 Same container image in all three. Moving between them is a different deploy
 script, not a code change.
 
-The Cloud Run beta enables `STAGING_BOTS=5`: once a real player searches, the
+Both setups default to `STAGING_BOTS=0`. For a testers-only beta, run the
+Cloud Run script with `STAGING_BOTS=5`: once a real player searches, the
 server fills the group to four with clearly named bots and runs their turns.
 They disappear when no real players remain, so they do not prevent scale to
-zero. The VM/production setup defaults to `STAGING_BOTS=0`.
+zero. Never leave it on once strangers can install the app.
 
 Cloud Run's one real cost: it decides when to stop the instance and gives it
 about ten seconds, so a deploy or a scale-down ends the games in flight. They

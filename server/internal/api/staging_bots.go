@@ -330,6 +330,8 @@ func (s *Server) botReact(entry *roomEntry, bot *session, view game.View, now ti
 func (s *Server) runStagingBots() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	// Runs on the reaper's goroutine: an unrecovered panic here ends the process.
+	defer s.recoverRoom(nil, "bots")
 	if s.stagingBots == 0 {
 		return
 	}

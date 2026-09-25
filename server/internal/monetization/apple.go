@@ -3,15 +3,22 @@ package monetization
 import (
 	"context"
 	"crypto/ecdsa"
+	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/asn1"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
+	"io"
+	"log/slog"
 	"math/big"
+	"net/http"
+	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -47,12 +54,49 @@ var (
 // serverVerificationData) offline, against Apple's root. No App Store Server
 // API key is needed: the signature is the proof.
 //
-// ponytail: offline JWS only. A refund after the proof was signed is caught
-// the next time the app sends its current entitlements, which StoreKit
-// filters; App Store Server Notifications would catch it sooner.
+// Offline, a refund after the proof was signed is invisible: a client that
+// keeps replaying the old JWS keeps the purchase. With API set, each proof is
+// also looked up in the App Store Server API, which knows about refunds.
 type AppleVerifier struct {
 	BundleID string
 	Roots    *x509.CertPool
+	API      *AppleAPI // optional
+}
+
+// AppleAPI asks the App Store Server API whether a transaction was refunded
+// or revoked after it was signed. It needs an In-App Purchase key from App
+// Store Connect (Users and Access → Integrations).
+type AppleAPI struct {
+	IssuerID, KeyID string
+	Key             *ecdsa.PrivateKey
+	Client          *http.Client
+	// BaseURL replaces both Apple hosts; tests point it at a local server.
+	BaseURL string
+
+	mu    sync.Mutex
+	cache map[string]appleStatus // transaction id -> last answer
+}
+
+type appleStatus struct {
+	revoked bool
+	at      time.Time
+}
+
+// NewAppleAPI reads the In-App Purchase key file (.p8) contents.
+func NewAppleAPI(issuerID, keyID string, p8 []byte) (*AppleAPI, error) {
+	block, _ := pem.Decode(p8)
+	if block == nil || issuerID == "" || keyID == "" {
+		return nil, errors.New("apple api: issuer id, key id and a PEM private key are required")
+	}
+	parsed, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("apple api: %w", err)
+	}
+	key, ok := parsed.(*ecdsa.PrivateKey)
+	if !ok {
+		return nil, errors.New("apple api: private key is not EC")
+	}
+	return &AppleAPI{IssuerID: issuerID, KeyID: keyID, Key: key, Client: &http.Client{Timeout: 10 * time.Second}}, nil
 }
 
 // NewAppleVerifier trusts Apple Root CA - G3.
@@ -79,9 +123,10 @@ type appleTransaction struct {
 	SignedDate     int64  `json:"signedDate"`
 	ExpiresDate    int64  `json:"expiresDate"`
 	RevocationDate int64  `json:"revocationDate"`
+	TransactionID  string `json:"transactionId"`
 }
 
-func (v AppleVerifier) Verify(_ context.Context, productID, data string, _ bool, now time.Time) (Grant, error) {
+func (v AppleVerifier) Verify(ctx context.Context, productID, data string, _ bool, now time.Time) (Grant, error) {
 	tx, err := v.verifyJWS(data)
 	if err != nil {
 		return Grant{}, err
@@ -89,6 +134,8 @@ func (v AppleVerifier) Verify(_ context.Context, productID, data string, _ bool,
 	switch {
 	case tx.Environment != "Production" && tx.Environment != "Sandbox",
 		tx.BundleID != v.BundleID, tx.ProductID != productID, tx.RevocationDate != 0:
+		return Grant{}, ErrInvalidProof
+	case v.API != nil && v.API.revoked(ctx, v, tx, now):
 		return Grant{}, ErrInvalidProof
 	case tx.ExpiresDate == 0:
 		return Grant{ProductID: productID}, nil
@@ -174,4 +221,91 @@ func hasExtension(c *x509.Certificate, oid asn1.ObjectIdentifier) bool {
 		}
 	}
 	return false
+}
+
+// revoked reports whether Apple says the transaction was refunded or revoked.
+// Only Apple's signed answer takes a purchase away: an outage, an unknown id
+// or a bad response keeps the offline verdict, as Google's verifier does.
+func (a *AppleAPI) revoked(ctx context.Context, v AppleVerifier, tx appleTransaction, now time.Time) bool {
+	if tx.TransactionID == "" {
+		return false
+	}
+	a.mu.Lock()
+	hit, ok := a.cache[tx.TransactionID]
+	a.mu.Unlock()
+	if ok && now.Sub(hit.at) < cacheTTL {
+		return hit.revoked
+	}
+	info, err := a.lookup(ctx, v, tx, now)
+	if err != nil {
+		slog.Warn("apple transaction lookup failed; using the offline verdict", "err", err)
+		return false
+	}
+	revoked := info.RevocationDate != 0
+	a.mu.Lock()
+	if a.cache == nil || len(a.cache) >= cacheMax {
+		a.cache = map[string]appleStatus{} // ponytail: dropped whole at the cap, as in google.go
+	}
+	a.cache[tx.TransactionID] = appleStatus{revoked: revoked, at: now}
+	a.mu.Unlock()
+	return revoked
+}
+
+func (a *AppleAPI) lookup(ctx context.Context, v AppleVerifier, tx appleTransaction, now time.Time) (appleTransaction, error) {
+	base := a.BaseURL
+	if base == "" {
+		base = "https://api.storekit.itunes.apple.com"
+		if tx.Environment == "Sandbox" {
+			base = "https://api.storekit-sandbox.itunes.apple.com"
+		}
+	}
+	token, err := a.token(v.BundleID, now)
+	if err != nil {
+		return appleTransaction{}, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"/inApps/v1/transactions/"+url.PathEscape(tx.TransactionID), nil)
+	if err != nil {
+		return appleTransaction{}, err
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	res, err := a.Client.Do(req)
+	if err != nil {
+		return appleTransaction{}, err
+	}
+	defer func() { _ = res.Body.Close() }()
+	body, err := io.ReadAll(io.LimitReader(res.Body, maxGoogleResponse))
+	if err != nil || res.StatusCode != http.StatusOK {
+		return appleTransaction{}, fmt.Errorf("status %d: %v", res.StatusCode, err)
+	}
+	var out struct {
+		SignedTransactionInfo string `json:"signedTransactionInfo"`
+	}
+	if err := json.Unmarshal(body, &out); err != nil {
+		return appleTransaction{}, err
+	}
+	info, err := v.verifyJWS(out.SignedTransactionInfo)
+	if err != nil || info.TransactionID != tx.TransactionID {
+		return appleTransaction{}, errors.New("unverifiable signedTransactionInfo")
+	}
+	return info, nil
+}
+
+// token is the App Store Server API's ES256 bearer JWT.
+func (a *AppleAPI) token(bundleID string, now time.Time) (string, error) {
+	enc := base64.RawURLEncoding
+	header, _ := json.Marshal(map[string]string{"alg": "ES256", "kid": a.KeyID, "typ": "JWT"})
+	claims, _ := json.Marshal(map[string]any{
+		"iss": a.IssuerID, "iat": now.Unix(), "exp": now.Add(20 * time.Minute).Unix(),
+		"aud": "appstoreconnect-v1", "bid": bundleID,
+	})
+	unsigned := enc.EncodeToString(header) + "." + enc.EncodeToString(claims)
+	digest := sha256.Sum256([]byte(unsigned))
+	r, s, err := ecdsa.Sign(rand.Reader, a.Key, digest[:])
+	if err != nil {
+		return "", err
+	}
+	sig := make([]byte, 64)
+	r.FillBytes(sig[:32])
+	s.FillBytes(sig[32:])
+	return unsigned + "." + enc.EncodeToString(sig), nil
 }

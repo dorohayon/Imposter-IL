@@ -7,8 +7,8 @@ import '../widgets/game_ui.dart';
 /// Bump this value whenever a material Terms/Privacy change requires renewed
 /// acknowledgement. The acknowledgement is deliberately device-local: the
 /// product has no account system and no legal-consent profile on the server.
-const legalVersion = '1.1';
-const legalDate = '23 בספטמבר 2026';
+const legalVersion = '1.2';
+const legalDate = '25 בספטמבר 2026';
 const legalAcceptedVersionKey = 'legal.acceptedVersion';
 
 /// Public copies for App Store Connect, Google Play and anyone who wants to
@@ -22,9 +22,12 @@ const termsPath = '/terms/';
 Uri publicLegalUrl(String path) => Uri.parse(publicSite).resolve(path);
 
 class LegalGate extends StatefulWidget {
-  const LegalGate({required this.child, super.key});
+  const LegalGate({required this.child, this.onAccepted, super.key});
 
   final Widget child;
+
+  /// Called once the current version has just been accepted.
+  final VoidCallback? onAccepted;
 
   @override
   State<LegalGate> createState() => _LegalGateState();
@@ -52,6 +55,7 @@ class _LegalGateState extends State<LegalGate> {
     await prefs.setString(legalAcceptedVersionKey, legalVersion);
     if (!mounted) return;
     setState(() => _accepted = true);
+    widget.onAccepted?.call();
   }
 
   @override
@@ -184,7 +188,7 @@ class TermsScreen extends StatelessWidget {
     return const _LegalDocument(
       title: 'תנאי שימוש',
       intro:
-          'גרסה $legalVersion · בתוקף מ־$legalDate\n\nהשימוש ב״מי המתחזה?״ כפוף לתנאים הבאים. המשחק מתאים מגיל 6 ומעלה. מי שטרם מלאו לו 13 יכול לשחק רק באישור ובהשגחה של הורה או אפוטרופוס, שמסכים לתנאים בשמו. אם מלאו לכם 13 אך אינכם בגיל שמאפשר לכם להסכים לתנאים במקום מגוריכם, השתמשו במשחק רק באישור ובהשגחת הורה או אפוטרופוס.',
+          'גרסה $legalVersion · בתוקף מ־$legalDate\n\nהשימוש ב״מי המתחזה?״ כפוף לתנאים הבאים. המשחק מיועד לבני 13 ומעלה. אם מלאו לכם 13 אך אינכם בגיל שמאפשר לכם להסכים לתנאים במקום מגוריכם, השתמשו במשחק רק באישור ובהשגחת הורה או אפוטרופוס.',
       sections: [
         _LegalSection(
           '1. השירות',
@@ -196,7 +200,7 @@ class TermsScreen extends StatelessWidget {
         ),
         _LegalSection(
           '3. תוכן של שחקנים',
-          'כינויים ורמזים שכתבתם מוצגים לשחקנים אחרים במשחק. אתם אחראים לתוכן שאתם שולחים. המשחק רשאי לסרב לתוכן, להסתירו או להפסיק גישה במקרה של הפרת הכללים. שחקנים יכולים לדווח על תוכן ולהסתיר תוכן של שחקן שדווח במכשיר שלהם. דיווחים נבדקים בתוך 24 שעות. תוכן שמפר את הכללים מתווסף לסינון, ושחקן ששני שחקנים או יותר דיווחו עליו באותו משחק — הרמזים שלו מוסתרים מכל השולחן עד סוף המשחק.',
+          'כינויים ורמזים שכתבתם מוצגים לשחקנים אחרים במשחק. אתם אחראים לתוכן שאתם שולחים. המשחק רשאי לסרב לתוכן, להסתירו או להפסיק גישה במקרה של הפרת הכללים. שחקנים יכולים לדווח על תוכן ולהסתיר תוכן של שחקן שדווח במכשיר שלהם. דיווחים נבדקים בתוך 24 שעות, ותוכן שמפר את הכללים מתווסף לסינון.',
         ),
         _LegalSection(
           '4. משחקים, תוצאות וסטטיסטיקה',
@@ -280,7 +284,7 @@ class PrivacyScreen extends StatelessWidget {
         ),
         _LegalSection(
           '8. ילדים ופרטים אישיים',
-          'המשחק אינו מבקש שם אמיתי או פרטי קשר. אין לכתוב בכינוי או ברמז מידע אישי שלכם או של אחרים. התוכן מתאים מגיל 6 ומעלה. ילדים שטרם מלאו להם 13 יכולים לשחק רק באישור ובהשגחה של הורה או אפוטרופוס, שמאשר בשמם את התנאים ואת המדיניות הזאת. איננו אוספים ביודעין מידע מילד מתחת לגיל 13 ללא אישור כזה, ואם ייוודע לנו על כך נמחק את המידע הקשור אליו. המודעות מוגבלות לתוכן בדירוג שמתאים לקהל רחב.',
+          'המשחק אינו מבקש שם אמיתי או פרטי קשר. אין לכתוב בכינוי או ברמז מידע אישי שלכם או של אחרים. המשחק מיועד לבני 13 ומעלה ואינו מיועד לילדים. איננו אוספים ביודעין מידע מילדים מתחת לגיל 13, ואם ייוודע לנו על כך נמחק את המידע הקשור אליהם. המודעות מוגבלות לתוכן בדירוג שמתאים לקהל רחב.',
         ),
         _LegalSection(
           '9. בחירה ושליטה',

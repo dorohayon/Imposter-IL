@@ -66,6 +66,7 @@ func (s *Server) reap() {
 	}
 
 	for token, sess := range s.sessions {
+		sess.replies.prune(now)
 		// Only a live connection counts as alive. Membership of a room does
 		// not: a player who closes the app stays a member so they can come
 		// back, and treating that as activity would keep the session — and
@@ -95,6 +96,7 @@ func (s *Server) reap() {
 	s.sessionLimit.sweep(now, BucketIdle)
 	s.joinLimit.sweep(now, BucketIdle)
 	s.commandLimit.sweep(now, BucketIdle)
+	s.profileLimit.sweep(now, BucketIdle)
 	s.entitlementLimit.sweep(now, BucketIdle)
 	s.entitlementIPLimit.sweep(now, BucketIdle)
 
