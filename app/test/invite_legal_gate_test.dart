@@ -1,12 +1,10 @@
-// Audit repro (iOS/release audit): an invitation link must not open a room
-// screen over the legal gate. A returning install (saved session, older
-// accepted legal version) is the state every existing tester is in after the
-// 1.1 bump, and main.dart's _openInvite only checks playerId. On iOS the link
-// arrives through FlutterSceneLifeCycle -> pushRouteInformation, which is
-// what handlePushRoute simulates.
-//
-// Expected today: the first test FAILS (JoinRoomScreen is pushed over
-// LegalConsentScreen); the control passes.
+// An invitation link must not open a room screen over the legal gate: a
+// returning install (saved session, older accepted legal version) has a player
+// id but still owes the re-acceptance. The invitation waits and opens once the
+// new version is accepted. On iOS the link arrives through
+// FlutterSceneLifeCycle -> pushRouteInformation, which handlePushRoute
+// simulates.
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/screens/legal_screens.dart';
 import 'package:imposter_il/screens/private_flow.dart';
@@ -43,6 +41,13 @@ void main() {
 
     expect(find.byType(JoinRoomScreen), findsNothing,
         reason: 'JoinRoomScreen was pushed over LegalConsentScreen');
+
+    // Accepting opens the room the link was for.
+    await tester.tap(find.byType(CheckboxListTile));
+    await tester.pump();
+    await tapText(tester, 'אישור והמשך');
+    await tester.pumpAndSettle();
+    expect(find.byType(JoinRoomScreen), findsOneWidget);
   });
 
   testWidgets('control: invite opens the join screen after consent',

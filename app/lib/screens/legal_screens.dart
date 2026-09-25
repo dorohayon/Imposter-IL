@@ -22,9 +22,12 @@ const termsPath = '/terms/';
 Uri publicLegalUrl(String path) => Uri.parse(publicSite).resolve(path);
 
 class LegalGate extends StatefulWidget {
-  const LegalGate({required this.child, super.key});
+  const LegalGate({required this.child, this.onAccepted, super.key});
 
   final Widget child;
+
+  /// Called once the current version has just been accepted.
+  final VoidCallback? onAccepted;
 
   @override
   State<LegalGate> createState() => _LegalGateState();
@@ -52,6 +55,7 @@ class _LegalGateState extends State<LegalGate> {
     await prefs.setString(legalAcceptedVersionKey, legalVersion);
     if (!mounted) return;
     setState(() => _accepted = true);
+    widget.onAccepted?.call();
   }
 
   @override

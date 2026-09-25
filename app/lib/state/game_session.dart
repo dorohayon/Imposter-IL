@@ -51,6 +51,11 @@ class GameSession extends ChangeNotifier {
   String? _pendingGameLeave;
   bool _pendingGameLeaveInFlight = false;
 
+  /// A search cancelled while offline. The server keeps a dropped searcher's
+  /// place for 30 seconds, so the cancel is sent again once reconnected.
+  bool _pendingSearchCancel = false;
+  bool _pendingSearchCancelInFlight = false;
+
   /// While disconnected: when the server stops holding this player's turn
   /// (docs/decisions.md, 30 seconds), for the reconnecting overlay.
   DateTime? reconnectDeadline;
@@ -222,6 +227,7 @@ class GameSession extends ChangeNotifier {
     // infrastructure failure into a local loss.
     _pendingGameLeave = null;
     _pendingGameLeaveInFlight = false;
+    _pendingSearchCancel = false;
     _clearActivity();
     final json = await api.request(
       'POST',
@@ -335,6 +341,14 @@ class GameSession extends ChangeNotifier {
             ?.complete(error?['code'] as String?);
         return;
       case 'session.state':
+        if (_pendingSearchCancel) {
+          if (payload['activity'] == 'matchmaking') {
+            // Still searching on the server: stay home and cancel it there.
+            unawaited(_retryPendingSearchCancel());
+            return;
+          }
+          _pendingSearchCancel = false;
+        }
         final outcomeGameId = payload['lastGameId'] as String?;
         final outcome = payload['lastGameOutcome'] as String?;
         if (outcomeGameId != null && outcome != null) {
@@ -482,6 +496,17 @@ class GameSession extends ChangeNotifier {
   Future<String?> leaveGame() =>
       _leave('game.leave', 'gameId', gameId ?? game?.id);
 
+  Future<void> _retryPendingSearchCancel() async {
+    if (!_pendingSearchCancel || _pendingSearchCancelInFlight || !connected) {
+      return;
+    }
+    _pendingSearchCancelInFlight = true;
+    final code = await send('matchmaking.cancel', {});
+    _pendingSearchCancelInFlight = false;
+    // The server's cancel always succeeds; a network error keeps it pending.
+    if (code == null) _pendingSearchCancel = false;
+  }
+
   Future<void> _retryPendingGameLeave() async {
     final id = _pendingGameLeave;
     if (id == null || _pendingGameLeaveInFlight || !connected) return;
@@ -549,11 +574,12 @@ class GameSession extends ChangeNotifier {
   }
 
   /// Cancels the online search once the server confirms it. Without a
-  /// connection the search is already cancelled, since disconnecting cancels
-  /// it on the server.
+  /// connection it is cancelled here at once and again on the server after
+  /// reconnecting, since the server holds a dropped searcher's place.
   Future<String?> cancelSearch() async {
     final code = await send('matchmaking.cancel', {});
     if (code != null && connected) return code;
+    if (code != null) _pendingSearchCancel = true;
     _clearActivity();
     _notify();
     return null;

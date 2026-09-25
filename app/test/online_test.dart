@@ -4,6 +4,7 @@ import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/screens/live_room.dart';
 import 'package:imposter_il/screens/online_flow.dart';
+import 'package:imposter_il/state/game_session.dart';
 import 'package:imposter_il/local/online_choice_screen.dart';
 
 import 'support/fake_server.dart';
@@ -138,6 +139,33 @@ void main() {
     await tapLive(tester, 'ביטול חיפוש');
     expect(channel.commands('matchmaking.cancel'), hasLength(1));
     expect(find.byType(CategorySelectionScreen), findsOneWidget);
+  });
+
+  testWidgets('a search cancelled offline is cancelled again on reconnect',
+      (tester) async {
+    final api = FakeApi();
+    final first = await startSearching(tester, api);
+    pushSearch(first, 'searching', 2);
+    await settle(tester);
+    final session =
+        SessionScope.read(tester.element(find.byType(Scaffold).first));
+
+    api.connectError = Exception('down');
+    await first.close();
+    await settle(tester);
+    expect(await session.cancelSearch(), isNull); // gone here at once
+    expect(session.activity, 'none');
+
+    // Back online: the server kept the place for 30 s and says so.
+    api.connectError = null;
+    await settle(tester);
+    final second = api.channel;
+    expect(second, isNot(same(first)));
+    second.event('session.state',
+        {'playerId': 'p_me', 'activity': 'matchmaking', 'roomId': 'r_pub'});
+    await settle(tester);
+    expect(second.commands('matchmaking.cancel'), hasLength(1));
+    expect(session.activity, 'none');
   });
 
   testWidgets('no match offers other categories or another try',
