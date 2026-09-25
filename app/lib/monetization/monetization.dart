@@ -37,12 +37,17 @@ enum RestoreResult { found, none, failed }
 /// last answer is kept on the device, so offline play keeps what was paid for.
 /// The same proofs go to the server, which enforces the online side.
 class Monetization extends ChangeNotifier {
+  /// A tester APK built with `--dart-define=TEST_ADS=true` shows Google's test
+  /// ads: a new AdMob app serves no real ads until it is linked to a published
+  /// store listing. Never set it for a store build.
+  static const testAdsBuild = bool.fromEnvironment('TEST_ADS');
+
   Monetization({
     required this.store,
     required this.ads,
     required this.api,
     DateTime Function()? clock,
-    this.useTestAds = !kReleaseMode,
+    this.useTestAds = !kReleaseMode || testAdsBuild,
     this.settle = const Duration(milliseconds: 400),
   }) : _clock = clock ?? DateTime.now;
 
