@@ -103,7 +103,7 @@ void main() {
       expect(find.text('לפתיחה'), findsNWidgets(15));
 
       await tapLive(tester, 'חפש משחק');
-      expect(_searched(api), ['food', 'film_tv', 'places']);
+      expect(_searched(api), ['food', 'places', 'film_tv']);
     });
 
     testWidgets('a locked category opens the popup with the store prices',
@@ -288,7 +288,7 @@ void main() {
       await tapLive(tester, 'יצירת חדר');
       final body = api.requests.lastWhere((r) => r.$2 == '/v1/rooms').$3!
           as Map<String, Object?>;
-      expect(body['categoryIds'], ['food', 'film_tv', 'places']);
+      expect(body['categoryIds'], ['food', 'places', 'film_tv']);
     });
 
     testWidgets('one-device play locks the same categories', (tester) async {
@@ -302,7 +302,7 @@ void main() {
       await tapText(tester, 'מתחילים');
       final screen =
           tester.widget<LocalGameScreen>(find.byType(LocalGameScreen));
-      expect(screen.categoryIds, ['food', 'film_tv', 'places', 'gaming']);
+      expect(screen.categoryIds, ['food', 'places', 'gaming', 'film_tv']);
     });
   });
 
