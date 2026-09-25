@@ -43,11 +43,11 @@ type botHintFile struct {
 // a pile of package variables so that the derivation can be exercised against a
 // fixture, instead of only against whatever the real file happens to hold.
 type hintTables struct {
-	citizen  map[string]map[string][]string // category name -> secret word -> hints
-	fallback map[string][]string            // category name -> hints
-	shared   map[string][]string            // category name -> hints used by 2+ words
-	together map[string]map[string]int      // hint -> hint -> pools they share
-	aliases  map[string][]string            // secret word -> accepted guess spellings
+	citizen  map[string]map[string][]string       // category name -> secret word -> hints
+	fallback map[string][]string                  // category name -> hints
+	shared   map[string][]string                  // category name -> hints used by 2+ words
+	together map[string]map[string]map[string]int // category -> hint -> hint -> pools they share
+	aliases  map[string][]string                  // secret word -> accepted guess spellings
 }
 
 var tables = loadHintTables(botHintsJSON)
@@ -61,7 +61,7 @@ func loadHintTables(raw []byte) hintTables {
 		citizen:  map[string]map[string][]string{},
 		fallback: map[string][]string{},
 		shared:   map[string][]string{},
-		together: map[string]map[string]int{},
+		together: map[string]map[string]map[string]int{},
 		aliases:  map[string][]string{},
 	}
 	for word, aliases := range file.GuessAliases {
@@ -72,17 +72,21 @@ func loadHintTables(raw []byte) hintTables {
 		t.fallback[c.Name] = c.ImpostorFallbackHints
 		appearances[c.Name] = map[string]int{}
 		t.citizen[c.Name] = map[string][]string{}
+		// Scoped by category: the same hint means different things next to
+		// different words, and a link from another category is noise here.
+		together := map[string]map[string]int{}
+		t.together[c.Name] = together
 		addWord := func(word string, hints []string) {
 			t.citizen[c.Name][word] = slices.Clone(hints)
 			for _, hint := range hints {
 				appearances[c.Name][hint]++
 				key := game.NormalizeWord(hint)
-				if t.together[key] == nil {
-					t.together[key] = map[string]int{}
+				if together[key] == nil {
+					together[key] = map[string]int{}
 				}
 				for _, other := range hints {
 					if other != hint {
-						t.together[key][game.NormalizeWord(other)]++
+						together[key][game.NormalizeWord(other)]++
 					}
 				}
 			}
@@ -111,15 +115,15 @@ func loadHintTables(raw []byte) hintTables {
 	return t
 }
 
-// linked reports whether the graph pairs these two hints, however either of
-// them happens to be spelled.
-func (t hintTables) linked(a, b string) bool {
-	return t.together[game.NormalizeWord(a)][game.NormalizeWord(b)] > 0
+// linked reports whether the category's graph pairs these two hints, however
+// either of them happens to be spelled.
+func (t hintTables) linked(category, a, b string) bool {
+	return t.together[category][game.NormalizeWord(a)][game.NormalizeWord(b)] > 0
 }
 
-// known reports whether the graph has anything at all to say about a hint.
-func (t hintTables) known(hint string) bool {
-	return len(t.together[game.NormalizeWord(hint)]) > 0
+// known reports whether the category's graph has anything to say about a hint.
+func (t hintTables) known(category, hint string) bool {
+	return len(t.together[category][game.NormalizeWord(hint)]) > 0
 }
 
 // CitizenHints are the hints for a secret word in its public category, in file
@@ -168,8 +172,8 @@ func (t hintTables) impostorHints(category string, seen []string) []string {
 		}
 		score := 0
 		for _, said := range seen {
-			if t.linked(hint, said) {
-				score += t.together[game.NormalizeWord(hint)][game.NormalizeWord(said)]
+			if t.linked(category, hint, said) {
+				score += t.together[category][game.NormalizeWord(hint)][game.NormalizeWord(said)]
 			}
 		}
 		if score > 0 {

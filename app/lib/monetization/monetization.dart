@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/server.dart';
+import '../local/words.g.dart';
 import '../state/game_session.dart';
 import 'ads.dart';
 import 'monetization_config.dart';
@@ -152,8 +153,15 @@ class Monetization extends ChangeNotifier {
     final cached = prefs.getString(_configKey);
     if (cached != null) {
       try {
-        config = MonetizationConfig.fromJson(
+        final saved = MonetizationConfig.fromJson(
             jsonDecode(cached) as Map<String, dynamic>);
+        // Saved before the category catalogue changed: it may lock a category
+        // that is free now. The built-in default holds until the server answers.
+        final known = {for (final c in localCategories) c.id};
+        if (!saved.freeCategoryIds.every(known.contains)) {
+          throw const FormatException('stale category catalogue');
+        }
+        config = saved;
       } on Object {
         await prefs.remove(_configKey);
       }

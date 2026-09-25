@@ -136,7 +136,7 @@ func TestABroadHintIsJudgedEvenWhenTheGraphIsSilent(t *testing.T) {
 	f := loadHintTables([]byte(fixture))
 
 	// מנה is in the fixture's fallback pool and in none of its citizen pools.
-	if f.known("מנה") {
+	if f.known("אוכל", "מנה") {
 		t.Fatal("the fixture changed: מנה now appears in a citizen pool")
 	}
 	board := []BoardHint{
@@ -181,5 +181,21 @@ func TestSpellingDoesNotDecideWhetherAHintCanBeJudged(t *testing.T) {
 			t.Errorf("%q read %+.2f but %q read %+.2f: spelling decided whether it could be judged",
 				pair[0], curated, pair[1], typed)
 		}
+	}
+}
+
+// The same hint links to different hints in different categories; a link from
+// one category must not count in another, or bots read the board wrongly.
+func TestHintLinksStayInTheirCategory(t *testing.T) {
+	f := loadHintTables([]byte(`{"version": 2, "categories": [
+		{"id": "a", "name": "א", "impostorFallbackHints": [], "clusters": [
+			{"name": "x", "words": ["ירח", "כוכב"], "hints": ["לילה", "שמיים"]}]},
+		{"id": "b", "name": "ב", "impostorFallbackHints": [], "clusters": [
+			{"name": "y", "words": ["מועדון", "פאב"], "hints": ["לילה", "מסיבה"]}]}]}`))
+	if !f.linked("א", "לילה", "שמיים") || !f.linked("ב", "לילה", "מסיבה") {
+		t.Fatal("a link inside its own category is missing")
+	}
+	if f.linked("א", "לילה", "מסיבה") || f.linked("ב", "לילה", "שמיים") {
+		t.Fatal("a link leaked across categories")
 	}
 }

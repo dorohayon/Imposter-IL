@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/monetization/monetization.dart';
@@ -135,6 +137,20 @@ void main() {
       m.attach(session);
       await m.syncServer(force: true);
       expect(m.premiumUntil, DateTime.utc(2026, 10, 20));
+    });
+
+    test('a config cached before the catalogue changed is not trusted',
+        () async {
+      // Saved by an older build: 'animals' no longer exists, film_tv is free.
+      SharedPreferences.setMockInitialValues({
+        'monetization.config': jsonEncode(const MonetizationConfig(
+          freeCategoryIds: ['food', 'animals', 'places'],
+        ).toJson()),
+      });
+      final offline = FakeApi()..responses.remove('GET /v1/config');
+      final m = await started(api: offline);
+      expect(m.isUnlocked('film_tv'), isTrue);
+      expect(m.config.freeCategoryIds, isNot(contains('animals')));
     });
 
     test('offline, the last answer is kept and survives a restart', () async {
