@@ -90,22 +90,32 @@ func isPrefixed(long, short string) bool {
 }
 
 // hintContainsSecret applies only to citizens; the impostor does not know the
-// word. A short secret counts only at the start of the hint, after any prefix
-// letters: "הדגים" gives "דג" away, "אגדה" does not.
+// word. For a two-word secret, neither the full phrase nor either visible word
+// may be used as the one-word hint. Short components are matched only as exact
+// or Hebrew-prefixed forms, avoiding false positives such as בן inside מבנה.
 func hintContainsSecret(hint, secret string) bool {
-	h, s := normalizeWord(hint), normalizeWord(secret)
-	switch {
-	case s == "":
-		return false
-	case len([]rune(s)) >= minInnerSecret:
-		return strings.Contains(h, s)
-	}
-	hr := []rune(h)
-	for i := 0; i <= maxPrefixLetters && i < len(hr); i++ {
-		if i > 0 && !strings.ContainsRune(prefixLetters, hr[i-1]) {
-			break
+	h := normalizeWord(hint)
+	matches := func(s string, allowInner bool) bool {
+		s = normalizeWord(s)
+		if s == "" {
+			return false
 		}
-		if strings.HasPrefix(string(hr[i:]), s) {
+		if allowInner && len([]rune(s)) >= minInnerSecret {
+			return strings.Contains(h, s)
+		}
+		return h == s || isPrefixed(h, s)
+	}
+
+	// A phrase typed without spaces is still the phrase.
+	if matches(secret, true) {
+		return true
+	}
+	parts := strings.Fields(secret)
+	if len(parts) <= 1 {
+		return false
+	}
+	for _, part := range parts {
+		if matches(part, len([]rune(normalizeWord(part))) >= minInnerSecret) {
 			return true
 		}
 	}
