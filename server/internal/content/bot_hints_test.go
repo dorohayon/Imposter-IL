@@ -15,6 +15,9 @@ func TestCitizenHintsAreUsable(t *testing.T) {
 		for _, word := range c.Words {
 			hints := CitizenHints(c.Name, word)
 			for i, hint := range hints {
+				if !isHebrewSingleToken(hint) {
+					t.Errorf("%s/%s: %q must be one Hebrew hint word", c.Name, word, hint)
+				}
 				if !UsableHint(hint, word) {
 					t.Errorf("%s/%s: %q is not a hint the engine would take", c.Name, word, hint)
 				}
@@ -40,6 +43,9 @@ func TestFallbackHintsAreNotTheAnswer(t *testing.T) {
 			t.Errorf("%s: %d fallback hints, want 10 to 16", c.Name, len(pool))
 		}
 		for i, hint := range pool {
+			if !isHebrewSingleToken(hint) {
+				t.Errorf("%s: fallback %q must be one Hebrew word", c.Name, hint)
+			}
 			if !UsableHint(hint, "") {
 				t.Errorf("%s: %q is not a hint the engine would take", c.Name, hint)
 			}
