@@ -64,7 +64,7 @@ void main() {
     expect(body, {
       'maxPlayers': 8,
       'hintSeconds': 30,
-      'categoryIds': ['objects'],
+      'categoryIds': ['home'],
     });
     expect(find.text('482 913'), findsOneWidget); // grouped in the lobby
     expect(
