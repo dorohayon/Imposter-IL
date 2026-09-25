@@ -7,6 +7,24 @@ import (
 	"testing"
 )
 
+func isHebrewSingleToken(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		switch {
+		case r == '\'' || r == '"':
+			// Common keyboard forms used in words such as צ'אט and בקו"ם.
+		case r >= '\u0590' && r <= '\u05FF' && r != '\u05BE':
+			// Hebrew letters, marks, geresh and gershayim. Hebrew maqaf is
+			// intentionally excluded: playable secrets are one plain token.
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 func TestCategoriesAreWellFormed(t *testing.T) {
 	ids := map[string]bool{}
 	for _, c := range Categories {
@@ -21,6 +39,9 @@ func TestCategoriesAreWellFormed(t *testing.T) {
 		for _, w := range c.Words {
 			if w == "" || strings.TrimSpace(w) != w {
 				t.Errorf("%s: %q must be non-empty without surrounding whitespace", c.ID, w)
+			}
+			if !isHebrewSingleToken(w) {
+				t.Errorf("%s: %q must be one Hebrew word with no Latin letters, spaces or hyphens", c.ID, w)
 			}
 			if seen[w] {
 				t.Errorf("%s: %q appears twice in the same category", c.ID, w)
