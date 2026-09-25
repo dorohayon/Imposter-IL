@@ -1079,7 +1079,9 @@ class _RoleReveal extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             impostor ? 'את/ה המתחזה' : 'את/ה אזרח/ית',
-            style: Theme.of(context).textTheme.headlineLarge,
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  color: impostor ? AppColors.yellow : AppColors.cream,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
@@ -2444,6 +2446,7 @@ class _VotingState extends State<_Voting> {
       title: runoff ? 'הצבעה חוזרת' : 'מי המתחזה?',
       timer: _timer(game),
       onExit: widget.onLeave,
+      accent: const Color(0xFF42203C),
       bottom: watching
           ? null
           : PrimaryButton(
@@ -2880,7 +2883,13 @@ class _ResultState extends State<_Result> {
                     : citizensWon
                         ? 'האזרחים ניצחו!'
                         : 'המתחזה ניצח!',
-            style: Theme.of(context).textTheme.headlineLarge,
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  color: stopped
+                      ? AppColors.cream
+                      : citizensWon
+                          ? AppColors.turquoise
+                          : AppColors.yellow,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),

@@ -104,6 +104,7 @@ class _LocalPlayersScreenState extends State<LocalPlayersScreen> {
     final problems = _problems;
     return GameScaffold(
       title: 'משחק במכשיר אחד',
+      accent: const Color(0xFF1B4F4A),
       bannerPlacement: BannerPlacement.localPlayers,
       bottom: PrimaryButton(
         label: 'המשך להגדרות',
@@ -228,6 +229,10 @@ class _Stepper extends StatelessWidget {
             onPressed: count < LocalGame.maxPlayers
                 ? () => onChanged(count + 1)
                 : null,
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.yellow,
+              foregroundColor: AppColors.night,
+            ),
             icon: const Icon(Icons.add_rounded),
             tooltip: 'עוד שחקנים',
           ),

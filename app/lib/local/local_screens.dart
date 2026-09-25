@@ -192,6 +192,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     return GameScaffold(
       title: '',
       showHeader: false,
+      accent: forVoting ? const Color(0xFF42203C) : const Color(0xFF3A3470),
       bottom: PrimaryButton(
         label: forVoting
             ? 'אני ${_current.name} — להצבעה'
@@ -236,6 +237,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     return GameScaffold(
       title: '',
       showHeader: false,
+      accent: const Color(0xFF3A3470),
       bottom: PrimaryButton(
         label: 'אני ${impostor.name} — הציגו לי',
         onPressed: () => _apply(_game.reveal),
@@ -270,7 +272,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     return GameScaffold(
       title: '',
       showHeader: false,
-      accent: impostor ? AppColors.purple : null,
+      accent: impostor ? const Color(0xFF4A2A8C) : const Color(0xFF1B4F4A),
       bottom: PrimaryButton(
         label: 'הבנתי — הסתירו',
         onPressed: () => _apply(() => _game.roleSeen(player)),
@@ -296,7 +298,9 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           Text(
             impostor ? 'את/ה המתחזה' : 'את/ה אזרח/ית',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge,
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  color: impostor ? AppColors.yellow : AppColors.cream,
+                ),
           ),
           const SizedBox(height: 12),
           SecretWordCard(word: _game.secretWord, impostor: impostor),
@@ -337,6 +341,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     return GameScaffold(
       title: '',
       showHeader: false,
+      accent: _game.round == 1 ? const Color(0xFF2A2455) : null,
       bottom: PrimaryButton(
         label:
             _game.round == 1 ? 'מתחילים סיבוב 1' : 'התחלת סיבוב ${_game.round}',
@@ -526,6 +531,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     return GameScaffold(
       title: '',
       showHeader: false,
+      accent: const Color(0xFF2A2455),
       bottom: PrimaryButton(
         label: 'ממשיכים לסיבוב ${_game.round + 1}',
         onPressed: () => _apply(_game.afterElimination),
@@ -553,7 +559,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
         remaining: (_game.secondsRemaining ?? LocalGame.guessSeconds) /
             LocalGame.guessSeconds,
       ),
-      accent: AppColors.purple,
+      accent: const Color(0xFF4A2A8C),
       bottom: PrimaryButton(
         label: 'שליחת ניחוש',
         onPressed: _guess.text.trim().isEmpty
@@ -627,6 +633,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       title: '',
       showHeader: false,
       showBack: false,
+      accent: citizensWon ? const Color(0xFF14514A) : const Color(0xFF4A2A8C),
       bottom: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -683,7 +690,9 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           Text(
             citizensWon ? 'האזרחים ניצחו!' : 'המתחזה ניצח!',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge,
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  color: citizensWon ? AppColors.turquoise : AppColors.yellow,
+                ),
           ),
           const SizedBox(height: 10),
           Text(
@@ -834,8 +843,10 @@ class _BallotState extends State<_Ballot> {
       return GameScaffold(
         title: '',
         showHeader: false,
+        accent: const Color(0xFF14514A),
         bottom: PrimaryButton(
           label: 'הסתרתי — לשחקן הבא',
+          variant: ButtonVariant.confirm,
           onPressed: widget.onHidden,
         ),
         child: Column(
@@ -870,6 +881,7 @@ class _BallotState extends State<_Ballot> {
     return GameScaffold(
       title: widget.runoff ? 'יש תיקו' : 'מי המתחזה?',
       showBack: false,
+      accent: const Color(0xFF42203C),
       bottom: PrimaryButton(
         label: 'אישור הצבעה',
         onPressed:
@@ -948,11 +960,18 @@ class _TieAnnouncement extends StatelessWidget {
   final VoidCallback onExit;
   final VoidCallback onContinue;
 
+  /// The explanation's first sentence, which the design sets in bold.
+  String get _lead {
+    final end = explanation.indexOf('.');
+    return end < 0 ? explanation : explanation.substring(0, end + 1);
+  }
+
   @override
   Widget build(BuildContext context) {
     return GameScaffold(
       title: title,
       onExit: onExit,
+      accent: const Color(0xFF42203C),
       bottom: PrimaryButton(label: action, onPressed: onContinue),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1004,16 +1023,43 @@ class _TieAnnouncement extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
             decoration: BoxDecoration(
-              color: AppColors.coral.withValues(alpha: .13),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.coral.withValues(alpha: .42)),
+              color: AppColors.coral.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.coral.withValues(alpha: .47)),
             ),
-            child: Text(
-              explanation,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFFFFD9D9), height: 1.4),
+            // Design 15ב/15ג: the scales inline, the first sentence in bold
+            // pink, the rest in cream.
+            child: Text.rich(
+              TextSpan(
+                style: const TextStyle(
+                  color: AppColors.cream,
+                  fontSize: 15,
+                  height: 1.55,
+                ),
+                children: [
+                  const WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
+                    child: Padding(
+                      padding: EdgeInsetsDirectional.only(end: 7),
+                      child: Icon(
+                        Icons.balance_rounded,
+                        color: AppColors.yellow,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                  TextSpan(
+                    text: _lead,
+                    style: const TextStyle(
+                      color: Color(0xFFFFB7B7),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  TextSpan(text: explanation.substring(_lead.length)),
+                ],
+              ),
             ),
           ),
           if (footnote case final note?) ...[

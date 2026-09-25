@@ -247,7 +247,9 @@ void main() {
     // Design 15ג: its own screen, not a line on the round that follows.
     expect(find.text('שוב יש תיקו'), findsOneWidget);
     expect(find.text('גם הפעם הקולות התחלקו שווה בשווה'), findsOneWidget);
-    expect(find.text('איש לא הודח. ממשיכים לסבב רמזים נוסף.'), findsOneWidget);
+    // One note: the bold lead and the rest share a rich text with the scales.
+    expect(find.textContaining('איש לא הודח. ממשיכים לסבב רמזים נוסף.'),
+        findsOneWidget);
 
     await tapText(tester, 'ממשיכים לסבב הבא');
     expect(game.phase, LocalPhase.ready);
