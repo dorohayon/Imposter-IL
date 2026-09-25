@@ -32,6 +32,8 @@ and one worked example (`פיצה`), is already in the file. Fill in the rest.
 - `id` and `name` must match `content.Categories` exactly.
 - Each category has 10 internal semantic clusters of 5 words. Clusters are an
   authoring/AI-bot detail only; players and impostors see only the category.
+- Every playable secret is exactly one Hebrew-script word: no Latin letters,
+  whitespace, or hyphen-joined compounds. Bot hints follow the same language rule.
 - Each cluster owns 8 one-word citizen hints shared by all 5 words. That
   overlap is deliberate: a clue should narrow the space without becoming a
   fingerprint for one secret.
