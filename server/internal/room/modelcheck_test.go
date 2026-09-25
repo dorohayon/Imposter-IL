@@ -840,7 +840,7 @@ func runModel(seed uint64, maxSteps int) *modelRun {
 	}
 	hs := []int{30, 60, 90}[0:3]
 	_ = hs
-	r, err := New("123456", m.ids[0], Settings{MaxPlayers: 8, HintSeconds: 60, CategoryIDs: []string{"animals"}}, game.Policy{
+	r, err := New("123456", m.ids[0], Settings{MaxPlayers: 8, HintSeconds: 60, CategoryIDs: []string{"film_tv"}}, game.Policy{
 		HintInappropriate: func(h string) bool { return h == "blocked" },
 		ValidReaction:     func(id string) bool { return id == "x" },
 	}, rng, t0)
