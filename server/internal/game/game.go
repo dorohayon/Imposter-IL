@@ -159,10 +159,9 @@ func DefaultConfig() Config {
 	}
 }
 
-// Policy holds the checks whose exact rules are still open in
-// docs/open-decisions.md. All fields are required so no placeholder silently
-// becomes product behaviour. The secret-word, duplicate and guess rules are
-// decided and live in words.go.
+// Policy holds content-level checks and optional guess aliases. The required
+// moderation/reaction functions must always be present; GuessAliases may be
+// nil for tests or content sets that have no alternate spellings.
 type Policy struct {
 	HintInappropriate func(hint string) bool
 	ValidReaction     func(reactionID string) bool
