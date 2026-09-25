@@ -31,7 +31,7 @@ func TestWordRules(t *testing.T) {
 	}{
 		"hintContainsSecret": {cases.ContainsSecret, hintContainsSecret},
 		"sameHint":           {cases.SameHint, sameHint},
-		"guessMatches":       {cases.GuessMatches, guessMatches},
+		"guessMatches":       {cases.GuessMatches, func(a, b string) bool { return guessMatches(a, b) }},
 	} {
 		if len(check.rows) == 0 {
 			t.Fatalf("no %s cases", name)
