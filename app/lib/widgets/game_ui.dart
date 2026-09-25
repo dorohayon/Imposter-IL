@@ -14,12 +14,14 @@ class PrimaryButton extends StatefulWidget {
     required this.label,
     required this.onPressed,
     this.variant = ButtonVariant.primary,
+    this.icon,
     super.key,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final ButtonVariant variant;
+  final IconData? icon;
 
   @override
   State<PrimaryButton> createState() => _PrimaryButtonState();
@@ -80,6 +82,26 @@ class _PrimaryButtonState extends State<PrimaryButton> {
         ),
     };
     final drop = shadow != null && _pressed ? _sink : 0.0;
+    final contentColor = enabled
+        ? foreground
+        : widget.variant == ButtonVariant.primary
+            ? AppColors.night.withValues(alpha: .45)
+            : AppColors.muted;
+    final contentStyle = TextStyle(
+      color: contentColor,
+      fontFamily: widget.variant == ButtonVariant.danger ||
+              widget.variant == ButtonVariant.quiet
+          ? 'Rubik'
+          : 'Secular One',
+      fontSize: widget.variant == ButtonVariant.danger ||
+              widget.variant == ButtonVariant.quiet
+          ? 16
+          : 22,
+      fontWeight: widget.variant == ButtonVariant.danger ||
+              widget.variant == ButtonVariant.quiet
+          ? FontWeight.w600
+          : FontWeight.w400,
+    );
     return Semantics(
       button: true,
       enabled: enabled,
@@ -129,30 +151,27 @@ class _PrimaryButtonState extends State<PrimaryButton> {
                         ),
                       ],
               ),
-              child: Text(
-                widget.label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  // Readable disabled text (WCAG AA on the disabled background).
-                  color: enabled
-                      ? foreground
-                      : widget.variant == ButtonVariant.primary
-                          ? AppColors.night.withValues(alpha: .45)
-                          : AppColors.muted,
-                  fontFamily: widget.variant == ButtonVariant.danger ||
-                          widget.variant == ButtonVariant.quiet
-                      ? 'Rubik'
-                      : 'Secular One',
-                  fontSize: widget.variant == ButtonVariant.danger ||
-                          widget.variant == ButtonVariant.quiet
-                      ? 16
-                      : 22,
-                  fontWeight: widget.variant == ButtonVariant.danger ||
-                          widget.variant == ButtonVariant.quiet
-                      ? FontWeight.w600
-                      : FontWeight.w400,
-                ),
-              ),
+              child: widget.icon == null
+                  ? Text(
+                      widget.label,
+                      textAlign: TextAlign.center,
+                      style: contentStyle,
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(widget.icon, size: 22, color: contentColor),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            widget.label,
+                            textAlign: TextAlign.center,
+                            style: contentStyle,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ),
         ),
@@ -1473,6 +1492,7 @@ class ToVotingView extends StatelessWidget {
     return GameScaffold(
       title: '',
       onExit: onExit,
+      accent: const Color(0xFF3A3470),
       bottom: bottom,
       child: Column(
         children: [
