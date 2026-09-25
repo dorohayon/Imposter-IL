@@ -90,32 +90,49 @@ func isPrefixed(long, short string) bool {
 }
 
 // hintContainsSecret applies only to citizens; the impostor does not know the
-// word. For a two-word secret, neither the full phrase nor either visible word
-// may be used as the one-word hint. Short components are matched only as exact
-// or Hebrew-prefixed forms, avoiding false positives such as בן inside מבנה.
+// word. The full secret keeps the original matching rule, including short
+// stems such as פיל -> פילים. For a two-word secret, each visible component is
+// blocked too; short components use exact/prefixed matching only, avoiding
+// false positives such as בן inside מבנה.
 func hintContainsSecret(hint, secret string) bool {
 	h := normalizeWord(hint)
-	matches := func(s string, allowInner bool) bool {
-		s = normalizeWord(s)
-		if s == "" {
+	matchesWhole := func(candidate string) bool {
+		s := normalizeWord(candidate)
+		switch {
+		case s == "":
 			return false
-		}
-		if allowInner && len([]rune(s)) >= minInnerSecret {
+		case len([]rune(s)) >= minInnerSecret:
 			return strings.Contains(h, s)
 		}
-		return h == s || isPrefixed(h, s)
+		hr := []rune(h)
+		for i := 0; i <= maxPrefixLetters && i < len(hr); i++ {
+			if i > 0 && !strings.ContainsRune(prefixLetters, hr[i-1]) {
+				break
+			}
+			if strings.HasPrefix(string(hr[i:]), s) {
+				return true
+			}
+		}
+		return false
 	}
-
-	// A phrase typed without spaces is still the phrase.
-	if matches(secret, true) {
+	if matchesWhole(secret) {
 		return true
 	}
+
 	parts := strings.Fields(secret)
 	if len(parts) <= 1 {
 		return false
 	}
 	for _, part := range parts {
-		if matches(part, len([]rune(normalizeWord(part))) >= minInnerSecret) {
+		p := normalizeWord(part)
+		if p == "" {
+			continue
+		}
+		if len([]rune(p)) >= minInnerSecret {
+			if strings.Contains(h, p) {
+				return true
+			}
+		} else if h == p || isPrefixed(h, p) {
 			return true
 		}
 	}
