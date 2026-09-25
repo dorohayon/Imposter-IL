@@ -960,6 +960,12 @@ class _TieAnnouncement extends StatelessWidget {
   final VoidCallback onExit;
   final VoidCallback onContinue;
 
+  /// The explanation's first sentence, which the design sets in bold.
+  String get _lead {
+    final end = explanation.indexOf('.');
+    return end < 0 ? explanation : explanation.substring(0, end + 1);
+  }
+
   @override
   Widget build(BuildContext context) {
     return GameScaffold(
@@ -1017,31 +1023,43 @@ class _TieAnnouncement extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
             decoration: BoxDecoration(
-              color: AppColors.coral.withValues(alpha: .13),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.coral.withValues(alpha: .42)),
+              color: AppColors.coral.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.coral.withValues(alpha: .47)),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.balance_rounded,
-                  color: AppColors.yellow,
-                  size: 20,
+            // Design 15ב/15ג: the scales inline, the first sentence in bold
+            // pink, the rest in cream.
+            child: Text.rich(
+              TextSpan(
+                style: const TextStyle(
+                  color: AppColors.cream,
+                  fontSize: 15,
+                  height: 1.55,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    explanation,
-                    style: const TextStyle(
-                      color: Color(0xFFFFD9D9),
-                      height: 1.4,
+                children: [
+                  const WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
+                    child: Padding(
+                      padding: EdgeInsetsDirectional.only(end: 7),
+                      child: Icon(
+                        Icons.balance_rounded,
+                        color: AppColors.yellow,
+                        size: 18,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  TextSpan(
+                    text: _lead,
+                    style: const TextStyle(
+                      color: Color(0xFFFFB7B7),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  TextSpan(text: explanation.substring(_lead.length)),
+                ],
+              ),
             ),
           ),
           if (footnote case final note?) ...[
