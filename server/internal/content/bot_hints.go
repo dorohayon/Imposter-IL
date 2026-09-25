@@ -24,8 +24,9 @@ import (
 var botHintsJSON []byte
 
 type botHintFile struct {
-	Version    int `json:"version"`
-	Categories []struct {
+	Version      int                 `json:"version"`
+	GuessAliases map[string][]string `json:"guessAliases,omitempty"`
+	Categories   []struct {
 		ID                    string              `json:"id"`
 		Name                  string              `json:"name"`
 		ImpostorFallbackHints []string            `json:"impostorFallbackHints"`
@@ -46,6 +47,7 @@ type hintTables struct {
 	fallback map[string][]string            // category name -> hints
 	shared   map[string][]string            // category name -> hints used by 2+ words
 	together map[string]map[string]int      // hint -> hint -> pools they share
+	aliases  map[string][]string            // secret word -> accepted guess spellings
 }
 
 var tables = loadHintTables(botHintsJSON)
@@ -60,6 +62,10 @@ func loadHintTables(raw []byte) hintTables {
 		fallback: map[string][]string{},
 		shared:   map[string][]string{},
 		together: map[string]map[string]int{},
+		aliases:  map[string][]string{},
+	}
+	for word, aliases := range file.GuessAliases {
+		t.aliases[word] = slices.Clone(aliases)
 	}
 	appearances := map[string]map[string]int{} // category -> hint -> words using it
 	for _, c := range file.Categories {
@@ -125,6 +131,13 @@ func CitizenHints(category, word string) []string {
 		return nil
 	}
 	return slices.Clone(tables.citizen[category][word])
+}
+
+// GuessAliases returns accepted alternate spellings for a secret. They are
+// never shown to players; they only make the caught impostor's final guess
+// tolerant of common Hebrew transliterations and legacy spellings.
+func GuessAliases(word string) []string {
+	return slices.Clone(tables.aliases[word])
 }
 
 // ImpostorHints are what a bot may say when it does not know the word, best
