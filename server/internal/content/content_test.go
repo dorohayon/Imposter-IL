@@ -140,5 +140,7 @@ func TestReactions(t *testing.T) {
 	}
 	if p := Policy(); p.HintInappropriate("anything") || !p.ValidReaction("laugh") {
 		t.Fatal("the MVP policy blocks no hint and accepts approved reactions")
+	} else if !slices.Contains(p.GuessAliases("פאקמן"), "פקמן") {
+		t.Fatal("the content policy did not expose configured guess aliases")
 	}
 }
