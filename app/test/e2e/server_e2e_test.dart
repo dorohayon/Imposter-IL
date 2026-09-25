@@ -205,7 +205,7 @@ void main() {
       await m.refresh();
       // The server's default model, as the app reads it.
       await until(session, () => m.config.freeCategoryIds.isNotEmpty);
-      expect(m.config.freeCategoryIds, ['food', 'animals', 'places']);
+      expect(m.config.freeCategoryIds, ['food', 'places', 'film_tv']);
       expect(m.isUnlocked('sports'), isTrue, reason: 'the store says so');
 
       // No verifier is configured on a test server, so the proof is
