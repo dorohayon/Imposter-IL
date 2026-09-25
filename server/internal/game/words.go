@@ -119,8 +119,23 @@ func sameHint(a, b string) bool {
 	return a == b || isPrefixed(a, b) || isPrefixed(b, a)
 }
 
-// guessMatches accepts the secret word, optionally with prefix letters.
-func guessMatches(guess, secret string) bool {
-	g, s := normalizeWord(guess), normalizeWord(secret)
-	return g == s || isPrefixed(g, s)
+// guessMatches accepts the secret word or one of its configured alternate
+// spellings, optionally with Hebrew prefix letters. Spacing and punctuation
+// are already ignored by normalizeWord, so aliases are only needed when the
+// spelling itself differs.
+func guessMatches(guess, secret string, aliases ...string) bool {
+	g := normalizeWord(guess)
+	matches := func(candidate string) bool {
+		s := normalizeWord(candidate)
+		return g == s || isPrefixed(g, s)
+	}
+	if matches(secret) {
+		return true
+	}
+	for _, alias := range aliases {
+		if matches(alias) {
+			return true
+		}
+	}
+	return false
 }
