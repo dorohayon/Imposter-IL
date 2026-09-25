@@ -105,9 +105,10 @@ func (b *lockedBuffer) lines(msg string) []map[string]any {
 	return out
 }
 
-// Reports reach the operator with what was reported, and two different
-// reporters hide a player's clues from the whole table (docs/moderation.md).
-func TestReportsAreLoggedAndTwoHideThePlayerForEveryone(t *testing.T) {
+// Reports are logged with what was reported, for the operator's review.
+// Nobody is hidden for the table: with no accounts, one person with two
+// sessions could silence anyone. The reporter's own app hides the player.
+func TestReportsAreLoggedAndHideNobodyForTheTable(t *testing.T) {
 	logs := &lockedBuffer{}
 	previous := slog.Default()
 	slog.SetDefault(slog.New(slog.NewJSONHandler(logs, nil)))
@@ -130,39 +131,17 @@ func TestReportsAreLoggedAndTwoHideThePlayerForEveryone(t *testing.T) {
 		}
 	}
 	wantOK(t, author.w.command("hint", "game.submitHint", map[string]any{"gameId": gameID, "text": "אפור"}))
-	reporterA, reporterB, bystander := others[0], others[1], others[2]
 	report := func(by *wsPlayer, id string) {
 		t.Helper()
 		wantOK(t, by.w.command(id, "game.report", map[string]any{"gameId": gameID, "playerId": author.id, "hintIndex": 0}))
 	}
-	hintOf := func(w *wsClient) map[string]any {
-		t.Helper()
-		g := w.gameState(func(g map[string]any) bool { return len(g["hints"].([]any)) > 0 })
-		return g["hints"].([]any)[0].(map[string]any)
-	}
+	report(others[0], "r1")
+	report(others[0], "r1-again") // the same reporter twice is still one
+	report(others[1], "r2")
 
-	report(reporterA, "r1")
-	report(reporterA, "r1-again") // the same reporter twice is still one
-	if h := hintOf(bystander.w); h["text"] != "אפור" || h["hidden"] == true {
-		t.Fatalf("after one reporter the table still sees the clue, got %v", h)
-	}
-
-	report(reporterB, "r2")
-	for {
-		if h := hintOf(bystander.w); h["hidden"] == true {
-			if h["text"] != "" {
-				t.Fatalf("hidden clue still carries its text: %v", h)
-			}
-			break
-		}
-	}
-	for {
-		if h := hintOf(author.w); h["text"] == "אפור" {
-			if h["hidden"] == true {
-				t.Fatalf("the author is told their clue is hidden: %v", h)
-			}
-			break
-		}
+	g := others[2].w.gameState(func(g map[string]any) bool { return len(g["hints"].([]any)) > 0 })
+	if h := g["hints"].([]any)[0].(map[string]any); h["text"] != "אפור" || h["hidden"] != nil {
+		t.Fatalf("two reports hid the clue for the table: %v", h)
 	}
 
 	lines := logs.lines(reportLogMessage)
@@ -171,7 +150,7 @@ func TestReportsAreLoggedAndTwoHideThePlayerForEveryone(t *testing.T) {
 	}
 	last := lines[2]
 	if last["hint"] != "אפור" || last["nickname"] == "" || last["playerId"] != author.id ||
-		last["reporters"] != float64(2) || last["hiddenForAll"] != true || last["gameId"] != gameID {
+		last["reporters"] != float64(2) || last["gameId"] != gameID {
 		t.Fatalf("report log = %v", last)
 	}
 	if lines[1]["reporters"] != float64(1) {

@@ -13,18 +13,51 @@ const (
 	prefixLetters    = "והבכלמש"
 	maxPrefixLetters = 3
 	minStemLetters   = 2
+	// minInnerSecret is the shortest secret matched anywhere inside a hint.
+	// Shorter ones (ים, דג, פיל) sit inside too many unrelated words, so they
+	// are matched only at the start, after any prefix letters.
+	minInnerSecret = 4
 )
+
+// presentationForms folds the Hebrew presentation forms (U+FB1D–FB4F) to
+// the letters they draw, so "בּית" typed with precomposed characters still
+// matches, repeats and gets blocked like "בית". The standard library has no
+// NFKC; this block is all a Hebrew keyboard or a copy-paste can produce.
+var presentationForms = strings.NewReplacer(
+	"\uFB1D", "י", "\uFB1F", "ײ", "\uFB20", "ע", "\uFB21", "א", "\uFB22", "ד", "\uFB23", "ה",
+	"\uFB24", "כ", "\uFB25", "ל", "\uFB26", "ם", "\uFB27", "ר", "\uFB28", "ת",
+	"\uFB2A", "ש", "\uFB2B", "ש", "\uFB2C", "ש", "\uFB2D", "ש", "\uFB2E", "א", "\uFB2F", "א", "\uFB30", "א",
+	"\uFB31", "ב", "\uFB32", "ג", "\uFB33", "ד", "\uFB34", "ה", "\uFB35", "ו", "\uFB36", "ז",
+	"\uFB38", "ט", "\uFB39", "י", "\uFB3A", "ך", "\uFB3B", "כ", "\uFB3C", "ל", "\uFB3E", "מ",
+	"\uFB40", "נ", "\uFB41", "ס", "\uFB43", "ף", "\uFB44", "פ", "\uFB46", "צ", "\uFB47", "ק",
+	"\uFB48", "ר", "\uFB49", "ש", "\uFB4A", "ת", "\uFB4B", "ו", "\uFB4C", "ב", "\uFB4D", "כ",
+	"\uFB4E", "פ", "\uFB4F", "אל",
+)
+
+// cleanHint drops invisible formatting characters (zero-width, bidi marks)
+// and turns blank-looking fillers into spaces, so neither can smuggle a
+// second word past the one-word rule or split the secret word apart.
+func cleanHint(s string) string {
+	return strings.Map(func(r rune) rune {
+		switch {
+		case unicode.Is(unicode.Cf, r):
+			return -1
+		case r == '\u2800' || r == '\u3164' || r == '\u115F' || r == '\u1160' || r == '\uFFA0':
+			return ' '
+		}
+		return r
+	}, s)
+}
 
 var finalLetters = strings.NewReplacer("ך", "כ", "ם", "מ", "ן", "נ", "ף", "פ", "ץ", "צ")
 
 // normalizeWord keeps letters and digits only, dropping niqqud, geresh,
 // gershayim, maqaf, hyphens and other punctuation, lowercases, and maps final
 // letters to their regular forms. Spelling is otherwise strict.
-// ponytail: no NFKC, so precomposed presentation forms (U+FB1D–FB4F) are not
-// folded; add golang.org/x/text/unicode/norm if they show up in real input.
+// Hebrew presentation forms are folded first (presentationForms).
 func normalizeWord(s string) string {
 	var b strings.Builder
-	for _, r := range s {
+	for _, r := range presentationForms.Replace(s) {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
 			b.WriteRune(unicode.ToLower(r))
 		}
@@ -56,10 +89,27 @@ func isPrefixed(long, short string) bool {
 	})
 }
 
-// hintContainsSecret applies only to citizens; the impostor does not know the word.
+// hintContainsSecret applies only to citizens; the impostor does not know the
+// word. A short secret counts only at the start of the hint, after any prefix
+// letters: "הדגים" gives "דג" away, "אגדה" does not.
 func hintContainsSecret(hint, secret string) bool {
-	s := normalizeWord(secret)
-	return s != "" && strings.Contains(normalizeWord(hint), s)
+	h, s := normalizeWord(hint), normalizeWord(secret)
+	switch {
+	case s == "":
+		return false
+	case len([]rune(s)) >= minInnerSecret:
+		return strings.Contains(h, s)
+	}
+	hr := []rune(h)
+	for i := 0; i <= maxPrefixLetters && i < len(hr); i++ {
+		if i > 0 && !strings.ContainsRune(prefixLetters, hr[i-1]) {
+			break
+		}
+		if strings.HasPrefix(string(hr[i:]), s) {
+			return true
+		}
+	}
+	return false
 }
 
 // sameHint treats hints as duplicates when they are equal or one is the other

@@ -36,10 +36,13 @@ import (
 //	LOG_LEVEL      debug | info | warn | error (default info)
 //	MONETIZATION_CONFIG  JSON over monetization.Default() (docs/monetization.md)
 //	APPLE_BUNDLE_ID      verify StoreKit 2 purchases for this bundle id
+//	APPLE_ISSUER_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY  optional In-App Purchase
+//	                     key (.p8 contents, a secret): also ask Apple whether a
+//	                     purchase was refunded after it was signed
 //	GOOGLE_PLAY_PACKAGE  verify Play purchases for this package name, with
 //	GOOGLE_PLAY_SERVICE_ACCOUNT  the service account key file's JSON (a secret)
 func main() {
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel()})))
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel(), ReplaceAttr: cloudLogging})))
 
 	srv := api.NewServer(time.Now, content.Policy(), content.Pick)
 	if bots, err := strconv.Atoi(os.Getenv("STAGING_BOTS")); err == nil && bots > 0 {
@@ -107,7 +110,15 @@ func monetizationFromEnv() (monetization.Config, map[string]monetization.Verifie
 	}
 	verifiers := map[string]monetization.Verifier{}
 	if bundle := os.Getenv("APPLE_BUNDLE_ID"); bundle != "" {
-		verifiers["ios"] = monetization.NewAppleVerifier(bundle)
+		apple := monetization.NewAppleVerifier(bundle)
+		if key := os.Getenv("APPLE_PRIVATE_KEY"); key != "" {
+			api, err := monetization.NewAppleAPI(os.Getenv("APPLE_ISSUER_ID"), os.Getenv("APPLE_KEY_ID"), []byte(key))
+			if err != nil {
+				return cfg, nil, err
+			}
+			apple.API = api
+		}
+		verifiers["ios"] = apple
 	}
 	if pkg := os.Getenv("GOOGLE_PLAY_PACKAGE"); pkg != "" {
 		google, err := monetization.NewGoogleVerifier(pkg, []byte(os.Getenv("GOOGLE_PLAY_SERVICE_ACCOUNT")))
@@ -141,6 +152,11 @@ func drain(srv *api.Server) {
 		}
 		if !time.Now().Before(deadline) {
 			slog.Warn("drain timed out, ending games in progress", "games", games)
+			// game.aborted (no loss recorded) now, rather than a dead socket
+			// the app only makes sense of after reconnecting to a server that
+			// no longer knows it. A moment for the writers to flush it.
+			srv.AbortGames()
+			time.Sleep(time.Second)
 			return
 		}
 		slog.Info("draining", "games", games, "secondsLeft", int(time.Until(deadline).Seconds()))
@@ -166,6 +182,26 @@ func serveMetrics(ctx context.Context, srv *api.Server) {
 	if err := s.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		slog.Error("metrics listen", "err", err)
 	}
+}
+
+// cloudLogging names the level the way Cloud Logging reads it. Under slog's
+// own "level" key every entry, panics included, lands with DEFAULT severity:
+// invisible to severity filters, Error Reporting and any alert on errors.
+// "msg" stays as it is: the moderation alert and runbook filter on
+// jsonPayload.msg (deploy/setup-moderation-alerts.sh, docs/moderation.md).
+func cloudLogging(groups []string, a slog.Attr) slog.Attr {
+	level, ok := a.Value.Any().(slog.Level)
+	if len(groups) > 0 || a.Key != slog.LevelKey || !ok {
+		return a
+	}
+	severity := level.String()
+	switch {
+	case level >= slog.LevelError:
+		severity = "ERROR"
+	case level >= slog.LevelWarn:
+		severity = "WARNING"
+	}
+	return slog.String("severity", severity)
 }
 
 func logLevel() slog.Level {

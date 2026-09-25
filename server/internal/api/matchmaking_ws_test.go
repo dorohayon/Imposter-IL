@@ -376,12 +376,47 @@ func TestMatchmakingErrors(t *testing.T) {
 	wantReplyError(t, c.dial(other).command("nocontent", "matchmaking.join", map[string]any{"categoryIds": []string{"food"}}), "content_unavailable")
 }
 
-func TestMatchmakingClosingTheAppCancelsTheSearch(t *testing.T) {
+// A dropped connection keeps the place in the search for 30 s; closing the
+// app for longer ends the search.
+func TestMatchmakingADropKeepsThePlaceForThirtySeconds(t *testing.T) {
 	c := newClient(t)
 	players := c.searchers(2, "animals")
 	players[0].w.searchState(searchPlayers(2))
 	_ = players[1].w.ws.CloseNow()
+	c.waitOffline(players[1].id)
+
+	c.advance(29 * time.Second)
+	c.tickAll()
+	c.srv.mu.Lock()
+	still := c.srv.players[players[1].id].roomID != ""
+	c.srv.mu.Unlock()
+	if !still {
+		t.Fatal("a drop shorter than 30 s ended the search")
+	}
+	c.advance(time.Second)
+	c.tickAll()
 	players[0].w.searchState(searchPlayers(1))
+}
+
+func TestMatchmakingReconnectingInTimeKeepsSearching(t *testing.T) {
+	c := newClient(t)
+	players := c.searchers(2, "animals")
+	players[0].w.searchState(searchPlayers(2))
+	_ = players[1].w.ws.CloseNow()
+	c.waitOffline(players[1].id)
+	c.advance(10 * time.Second)
+	back := c.dial(players[1].token)
+	if s := back.sessionState(func(map[string]any) bool { return true }); s["activity"] != "matchmaking" {
+		t.Fatalf("session.state after a 10 s drop = %v, want still searching", s)
+	}
+	c.advance(30 * time.Second)
+	c.tickAll()
+	c.srv.mu.Lock()
+	still := c.srv.players[players[1].id].roomID != ""
+	c.srv.mu.Unlock()
+	if !still {
+		t.Fatal("the search ended after the player came back")
+	}
 }
 
 func TestMatchmakingPlayAgainSearchesTogetherAndFillsUp(t *testing.T) {
@@ -518,4 +553,20 @@ func TestStagingBotsReactToTheHintOnTheBoard(t *testing.T) {
 	if reactions == 0 {
 		t.Fatal("no bot reacted to any hint")
 	}
+}
+
+// waitOffline waits until the server has seen the player's socket close, so a
+// clock advance after it is measured from the drop.
+func (c *client) waitOffline(playerID string) {
+	c.t.Helper()
+	for range 200 {
+		c.srv.mu.Lock()
+		gone := c.srv.players[playerID].conn == nil
+		c.srv.mu.Unlock()
+		if gone {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	c.t.Fatal("the server never saw the socket close")
 }

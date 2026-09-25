@@ -143,6 +143,31 @@
 - [x] **CI:** גם build של release (AAB ו־iOS ללא חתימה) בכל PR.
 - [ ] **CI:** חתימה אמיתית ב־CI אחרי שיהיו המפתחות, אם רוצים להעלות משם.
 
+## מסקירת המוכנות לייצור (25 בספטמבר)
+
+הדוח המלא: `docs/production-readiness-audit.md`. תוקנו בענף `audit/production-readiness`:
+קריסת השרת ממזהי הודעה ענקיים, עקיפת הגבלות הקצב דרך `X-Forwarded-For`,
+נעילת השרת אחרי panic, ניתוק שולחן בהצפת עדכוני פרופיל, זיהוי חיבור מת
+באפליקציה, והחלטות המוצר החדשות ב־`docs/decisions.md` (ניתוק נספר אחרי 30
+שניות, זמן התור ממשיך לרוץ, מסך אזהרה ביציאה, 13+, דיווח במינימום החנויות).
+
+- [ ] **ה־PR הבא:** Crash Reporting (Crashlytics), יחד עם עדכון סעיף 7 במדיניות
+      הפרטיות, טופס Data Safety וכרטיס App Privacy — באותה גרסה.
+- [ ] **חוסם — לפרוס את הענף** עם `STAGING_BOTS=0` (`deploy/setup-cloudrun.sh`),
+      ולבדוק מיד: הגבלת קצב משתי רשתות שונות, ופריסה אחת בזמן משחק בדיקה.
+- [ ] **חוסם — החלטה:** אכיפת רכישות בשרת (`serverEnforcement`) מההשקה, ומגבלת
+      sessions לכל רכישה. דורש את מפתחות החנויות.
+- [ ] אופציונלי: מפתח In-App Purchase של Apple (`APPLE_ISSUER_ID`, `APPLE_KEY_ID`,
+      `APPLE_PRIVATE_KEY`) — השרת בודק אז מול Apple אם רכישה הוחזרה.
+- [ ] Monitoring: uptime check על `/readyz`, והתרעות על `severity>=ERROR` ועל
+      `panic recovered` (הלוגים כוללים עכשיו `severity`).
+- [ ] ליישר ל־1 את ה־maxScale ברמת השירות ב־Cloud Run (כרגע 12), להעלות
+      concurrency ל־1000, להעביר את `METRICS_TOKEN` ל־Secret Manager ו־service
+      account ייעודי.
+- [ ] סקירות שלא הושלמו: אובדן רשת בכל מסך, UX ב־320px ותנועת חזרה, משחק במכשיר
+      אחד, תזמוני matchmaking, ומעבר מלא על מדיניות App Store ו־Google Play.
+- [ ] `ITSAppUsesNonExemptEncryption` ב־`Info.plist` — הצהרה משפטית של הבעלים.
+
 ## לפני השקה, לא חוסם העלאה
 
 - [ ] Crash Reporting. אין כרגע; ה־SDK היחיד של צד שלישי הוא Google Mobile Ads.

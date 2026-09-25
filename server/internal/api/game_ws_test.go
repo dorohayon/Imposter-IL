@@ -261,17 +261,20 @@ func TestWSRemovedPlayerStillSeesTheGame(t *testing.T) {
 	gameID, _ := c.startGame(roomID, players)
 	host, victim := players[0], players[1]
 
+	// A drop counts once the player has been away 30 s; the third removes.
 	for i := range 3 {
 		_ = victim.w.ws.CloseNow()
-		host.w.gameState(func(g map[string]any) bool { return gamePlayer(g, victim.id)["disconnects"] == float64(i+1) })
+		host.w.gameState(func(g map[string]any) bool { return gamePlayer(g, victim.id)["connected"] == false })
+		c.advance(30 * time.Second)
+		c.tick(roomID)
+		g := host.w.gameState(func(g map[string]any) bool { return gamePlayer(g, victim.id)["disconnects"] == float64(i+1) })
 		if i < 2 {
 			victim.w = c.dial(victim.token)
 			host.w.gameState(func(g map[string]any) bool { return gamePlayer(g, victim.id)["connected"] == true })
+		} else if gamePlayer(g, victim.id)["status"] != "removed" {
+			t.Fatalf("third counted drop did not remove: %v", gamePlayer(g, victim.id))
 		}
 	}
-	c.advance(30 * time.Second)
-	c.tick(roomID)
-	host.w.gameState(func(g map[string]any) bool { return gamePlayer(g, victim.id)["status"] == "removed" })
 
 	// Coming back shows the game with my removal (screen 27), not the room.
 	victim.w = c.dial(victim.token)
@@ -319,15 +322,24 @@ func TestWSPlayerRemovedFromAnEarlierGameCanStillSeeAndLeaveIt(t *testing.T) {
 
 	for i := range 3 {
 		_ = victim.w.ws.CloseNow()
+		watcher.w.gameState(func(g map[string]any) bool { return gamePlayer(g, victim.id)["connected"] == false })
+		c.advance(30 * time.Second) // a drop counts once the player has been away 30 s
+		c.tick(roomID)
 		watcher.w.gameState(func(g map[string]any) bool { return gamePlayer(g, victim.id)["disconnects"] == float64(i+1) })
 		if i < 2 {
 			victim.w = c.dial(victim.token)
 			watcher.w.gameState(func(g map[string]any) bool { return gamePlayer(g, victim.id)["connected"] == true })
 		}
 	}
-	c.advance(30 * time.Second)
-	c.tick(roomID)
-	watcher.w.gameState(func(g map[string]any) bool { return gamePlayer(g, victim.id)["status"] == "removed" })
+	c.srv.mu.Lock()
+	removed := c.srv.roomsByID[roomID].room.Game()
+	c.srv.mu.Unlock()
+	v, _ := removed.View(victim.id)
+	for _, pv := range v.Players {
+		if pv.ID == victim.id && pv.Status != game.StatusRemoved {
+			t.Fatalf("victim %s after the third counted drop, want removed", pv.Status)
+		}
+	}
 
 	// The impostor leaves, the first game ends, and a second one starts.
 	wantOK(t, byID(players, impostor).w.command("bye", "game.leave", map[string]any{"gameId": oldGameID}))

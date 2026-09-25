@@ -31,6 +31,8 @@ const (
 	joinsBurst        = 10
 	commandsPerMinute = 600 // 10/s per session; reactions are unlimited by product rule
 	commandsBurst     = 60
+	profilesPerMinute = 10 // profile edits per session; a person edits a few times at most
+	profilesBurst     = 5
 )
 
 type bucket struct {
@@ -94,10 +96,17 @@ func (l *limiter) sweep(now time.Time, idle time.Duration) {
 // X-Forwarded-For is honoured only when the server is explicitly told it sits
 // behind a proxy (TRUST_PROXY=1). A directly exposed server that trusted the
 // header would let any client forge it and walk straight past every limit.
+//
+// The LAST entry is the one the trusted proxy wrote: Cloud Run's front end
+// appends the address it saw to whatever the client sent, and Caddy replaces
+// the header outright. Everything to the left is client-controlled.
 func (s *Server) clientIP(r *http.Request) string {
 	if s.trustProxy {
-		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-			return strings.TrimSpace(strings.Split(xff, ",")[0])
+		if values := r.Header.Values("X-Forwarded-For"); len(values) > 0 {
+			hops := strings.Split(values[len(values)-1], ",")
+			if ip := strings.TrimSpace(hops[len(hops)-1]); ip != "" {
+				return ip
+			}
 		}
 	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
@@ -124,5 +133,6 @@ func (s *Server) DisableRateLimits() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.sessionLimit, s.joinLimit, s.commandLimit = newLimiter(0, 0), newLimiter(0, 0), newLimiter(0, 0)
+	s.profileLimit = newLimiter(0, 0)
 	s.entitlementLimit, s.entitlementIPLimit = newLimiter(0, 0), newLimiter(0, 0)
 }

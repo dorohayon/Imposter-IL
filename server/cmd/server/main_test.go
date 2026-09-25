@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -169,5 +171,19 @@ func TestMonetizationFromEnv(t *testing.T) {
 	t.Setenv("GOOGLE_PLAY_SERVICE_ACCOUNT", "{}")
 	if _, _, err := monetizationFromEnv(); err == nil {
 		t.Fatal("broken service account accepted")
+	}
+}
+
+func TestLogsCarryCloudLoggingSeverity(t *testing.T) {
+	var buf bytes.Buffer
+	log := slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{ReplaceAttr: cloudLogging}))
+	log.Warn("slow", "k", 1)
+	log.Error("boom")
+	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
+	// msg is kept: the moderation alert filters on jsonPayload.msg.
+	for i, want := range []string{`"severity":"WARNING","msg":"slow"`, `"severity":"ERROR","msg":"boom"`} {
+		if !strings.Contains(lines[i], want) {
+			t.Fatalf("line %d = %s, want it to contain %s", i, lines[i], want)
+		}
 	}
 }

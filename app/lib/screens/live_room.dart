@@ -177,8 +177,49 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
   void _leaveRoom() =>
       _leaveThen(SessionScope.read(context).leaveRoom, _goHome);
 
-  void _leaveGame() =>
-      _leaveThen(SessionScope.read(context).leaveGame, _goHome);
+  bool _confirmingLeave = false;
+
+  /// Leaving a game still in play is a loss (docs/decisions.md), so the exit
+  /// button, the system back gesture and the reconnecting screen all ask
+  /// first. Leaving a finished game, or one the player was removed from,
+  /// costs nothing and asks nothing.
+  Future<void> _leaveGame() async {
+    final session = SessionScope.read(context);
+    final game = session.game;
+    final status = game?.player(session.playerId)?.status;
+    final isLoss = game != null &&
+        game.phase != 'ended' &&
+        (status == 'active' || status == 'eliminated');
+    if (isLoss) {
+      if (_confirmingLeave) return;
+      _confirmingLeave = true;
+      final go = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppColors.nightRaised,
+          title: const Text('לצאת מהמשחק?'),
+          content: const Text(
+            'יציאה באמצע המשחק נרשמת כהפסד.',
+            style: TextStyle(height: 1.45),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('המשך משחק'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child:
+                  const Text('יציאה', style: TextStyle(color: AppColors.coral)),
+            ),
+          ],
+        ),
+      );
+      _confirmingLeave = false;
+      if (go != true || !mounted) return;
+    }
+    _leaveThen(session.leaveGame, _goHome);
+  }
 
   /// Back to the category picker, which opened the search.
   void _backToCategories() {
@@ -361,9 +402,12 @@ class _Reconnecting extends StatelessWidget {
                       color: AppColors.yellow.withValues(alpha: .42)),
                 ),
                 child: Text(
-                  disconnectedDuringMyTurn
-                      ? 'ניתוק $disconnectNumber מתוך 3 במשחק הזה. אם תחזרו בזמן, תקבלו תור מלא מחדש.'
-                      : 'ניתוק $disconnectNumber מתוך 3 במשחק הזה. אם לא תחזרו בזמן, תוצאו מהמשחק.',
+                  (disconnectNumber == 3
+                          ? 'אם לא תחזרו בתוך 30 שניות, זה ייספר כניתוק 3 מתוך 3 ותוצאו מהמשחק.'
+                          : 'אם לא תחזרו בתוך 30 שניות, זה ייספר כניתוק $disconnectNumber מתוך 3.') +
+                      (disconnectedDuringMyTurn
+                          ? ' הזמן בתור ממשיך לרוץ.'
+                          : ''),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       color: Color(0xFFFFF0C2), fontSize: 13, height: 1.45),

@@ -122,6 +122,14 @@ Future<void> settle(WidgetTester tester) async {
   }
 }
 
+/// Confirms the "leaving is a loss" dialog that guards leaving a live game.
+Future<void> confirmLeave(WidgetTester tester) async {
+  expect(find.text('יציאה באמצע המשחק נרשמת כהפסד.'), findsOneWidget);
+  await tester.tap(find.descendant(
+      of: find.byType(AlertDialog), matching: find.text('יציאה')));
+  await settle(tester);
+}
+
 Future<void> tapLive(WidgetTester tester, String text) async {
   final finder = find.text(text).last;
   await tester.ensureVisible(finder);

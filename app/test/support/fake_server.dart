@@ -15,6 +15,16 @@ class FakeChannel implements RealtimeChannel {
   final bool emitLeaveState;
   final String leaveOutcome;
   final _incoming = StreamController<Map<String, dynamic>>();
+
+  @override
+  String? closeReason;
+
+  /// Closes the way the server does when the player connected elsewhere.
+  Future<void> closeReplaced() {
+    closeReason = replacedByNewConnection;
+    return close();
+  }
+
   final sent = <Map<String, dynamic>>[];
   final errors = <String, String>{};
   int _version = 0;

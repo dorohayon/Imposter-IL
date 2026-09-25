@@ -506,3 +506,53 @@ func TestGoogleVerifierBadServiceAccount(t *testing.T) {
 		}
 	}
 }
+
+// A purchase refunded after its JWS was signed is caught by asking Apple;
+// an Apple outage never takes a purchase away.
+func TestAppleAPICatchesRefundsAfterSigning(t *testing.T) {
+	pki := newApplePKI(t)
+	signed := transaction("premium_lifetime", map[string]any{"transactionId": "1000"})
+	proof := pki.sign(t, signed)
+
+	var calls atomic.Int32
+	status, refunded := http.StatusOK, false
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		if !strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") || r.URL.Path != "/inApps/v1/transactions/1000" {
+			t.Errorf("request %s %v", r.URL.Path, r.Header)
+		}
+		if status != http.StatusOK {
+			w.WriteHeader(status)
+			return
+		}
+		info := transaction("premium_lifetime", map[string]any{"transactionId": "1000"})
+		if refunded {
+			info["revocationDate"] = now.UnixMilli()
+		}
+		_ = json.NewEncoder(w).Encode(map[string]string{"signedTransactionInfo": pki.sign(t, info)})
+	}))
+	defer api.Close()
+	verifier := func() AppleVerifier {
+		return AppleVerifier{BundleID: "com.imposter.il", Roots: pki.roots,
+			API: &AppleAPI{IssuerID: "i", KeyID: "k", Key: key(t), Client: api.Client(), BaseURL: api.URL}}
+	}
+	ctx := context.Background()
+
+	if _, err := verifier().Verify(ctx, "premium_lifetime", proof, false, now); err != nil {
+		t.Fatalf("not refunded: %v", err)
+	}
+	refunded = true
+	v := verifier()
+	if _, err := v.Verify(ctx, "premium_lifetime", proof, false, now); !errors.Is(err, ErrInvalidProof) {
+		t.Fatalf("refunded: err = %v, want invalid", err)
+	}
+	before := calls.Load()
+	_, _ = v.Verify(ctx, "premium_lifetime", proof, false, now.Add(time.Minute))
+	if calls.Load() != before {
+		t.Fatal("a fresh answer was not reused from the cache")
+	}
+	status = http.StatusInternalServerError
+	if _, err := verifier().Verify(ctx, "premium_lifetime", proof, false, now); err != nil {
+		t.Fatalf("an Apple outage took the purchase away: %v", err)
+	}
+}

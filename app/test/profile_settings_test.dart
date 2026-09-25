@@ -118,10 +118,13 @@ void main() {
     channel.errors['game.leave'] = 'network_error';
     await tester.tap(find.byTooltip('יציאה'));
     await settle(tester);
+    await confirmLeave(tester);
     expect(session.losses, 0); // still in the game
 
     channel.errors.remove('game.leave');
     await tester.tap(find.byTooltip('יציאה'));
+    await settle(tester);
+    await confirmLeave(tester);
     await tester.pumpAndSettle(); // let the game screen finish closing
 
     await tapTooltip(tester, 'פרופיל');
@@ -145,6 +148,7 @@ void main() {
     await api.channel.close();
     await settle(tester);
     await tapLive(tester, 'יציאה מהמשחק');
+    await confirmLeave(tester);
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(session.losses, 0); // no decision from a stale local snapshot
 
@@ -199,6 +203,7 @@ void main() {
     await api.channel.close();
     await settle(tester);
     await tapLive(tester, 'יציאה מהמשחק');
+    await confirmLeave(tester);
     expect(session.wins, 0);
     expect(session.losses, 0);
 
@@ -387,18 +392,22 @@ void main() {
       expect(find.text('מתחברים מחדש...'), findsNothing);
     }
 
-    // Someone else's turn: the drop is counted but nothing is timed.
+    // Someone else's turn: 30 seconds before the drop counts as number 1.
     await dropWith(turn: 'p_2', disconnects: 0);
-    expect(find.text('ניתוק 1 מתוך 3'), findsOneWidget);
-    expect(bannerCountdown, findsNothing);
+    expect(find.textContaining('ניתוק 1 מתוך 3'), findsOneWidget);
+    expect(find.textContaining('הזמן בתור ממשיך לרוץ'), findsNothing);
+    expect(bannerCountdown, findsOneWidget);
     await reconnect();
 
-    // My turn: the server holds it for 30 seconds, on a screen of its own.
+    // My turn: the turn's own clock keeps running, so the wait is whatever
+    // is left of it when that is under 30 seconds (the fixture's turn ends
+    // about 15 seconds after the tests load).
     await dropWith(turn: 'p_me', disconnects: 1);
     expect(find.textContaining('ניתוק 2 מתוך 3'), findsOneWidget);
+    expect(find.textContaining('הזמן בתור ממשיך לרוץ'), findsOneWidget);
     expect(bannerCountdown, findsOneWidget);
     expect(find.descendant(of: bannerCountdown, matching: find.text('30')),
-        findsOneWidget);
+        findsNothing);
     expect(
         find.text(
             'החיבור אבד בזמן התור שלכם. ננסה להחזיר אתכם למשחק במשך 30 שניות.'),
@@ -412,5 +421,24 @@ void main() {
     expect(find.textContaining('ניתוק 8 מתוך 3'), findsNothing);
     expect(bannerCountdown, findsOneWidget);
     await reconnect();
+  });
+
+  testWidgets('leaving just as the host starts the next game shows that game',
+      (tester) async {
+    final api = FakeApi();
+    final session = await openActiveGame(tester, api);
+    final channel = api.channel;
+    channel.snapshot('game.state', 'game', gameJson(phase: 'ended'));
+    await settle(tester);
+
+    // The leave for g_1 is on its way when the next game starts; the server
+    // then no longer knows g_1 for this player.
+    channel.errors['game.leave'] = 'game_not_found';
+    final left = session.leaveGame();
+    enterGame(channel, 'g_2');
+    expect(await left, 'room_in_game');
+    expect(session.activity, 'game');
+    expect(session.gameId, 'g_2');
+    await settle(tester);
   });
 }

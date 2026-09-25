@@ -74,6 +74,9 @@ type session struct {
 	// The categories and start time of the player's latest online search.
 	searchCategories []string
 	searchStarted    time.Time
+	// searchGoneAt is when a searching player's connection dropped. They keep
+	// their place for searchGrace, and leave the search if not back by then.
+	searchGoneAt time.Time
 
 	conn    *conn // current WebSocket, if connected
 	replies replyCache
@@ -167,6 +170,7 @@ type Server struct {
 	minBuild   int  // oldest app build allowed in; 0 accepts every client
 
 	sessionLimit *limiter // guest creation, per IP
+	profileLimit *limiter // nickname/avatar changes, per session: each one republishes the room
 	joinLimit    *limiter // room-code attempts, per IP
 	commandLimit *limiter // WebSocket commands, per session
 	// entitlementLimit and entitlementIPLimit bound purchase verification,
@@ -204,6 +208,7 @@ func NewServer(now func() time.Time, policy game.Policy, pickWord PickWord) *Ser
 		sessionLimit: newLimiter(sessionsPerMinute, sessionsBurst),
 		joinLimit:    newLimiter(joinsPerMinute, joinsBurst),
 		commandLimit: newLimiter(commandsPerMinute, commandsBurst),
+		profileLimit: newLimiter(profilesPerMinute, profilesBurst),
 
 		entitlementLimit:   newLimiter(entitlementsPerMin, entitlementsBurst),
 		entitlementIPLimit: newLimiter(entitlementsPerMinPerIP, entitlementsBurstPerIP),
@@ -428,14 +433,33 @@ func (s *Server) updateSession(w http.ResponseWriter, body []byte, sess *session
 	if !decode(w, body, &req) {
 		return
 	}
+	if !s.profileLimit.allow(sess.playerID, s.now()) {
+		s.metrics.rateLimited++
+		writeError(w, errRateLimited)
+		return
+	}
+	before := [2]string{sess.nickname, sess.avatarID}
 	if err := applyProfile(sess, req); err != nil {
 		writeError(w, *err)
 		return
 	}
-	if entry := s.currentRoom(sess); entry != nil {
+	// Only a real change is republished: every publish goes to the whole
+	// table, and a loop of no-op edits used to overflow other players'
+	// send buffers and disconnect them.
+	if entry := s.currentRoom(sess); entry != nil && before != [2]string{sess.nickname, sess.avatarID} {
 		s.publish(entry) // nickname and avatar are part of room.state
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"playerId": sess.playerID})
+}
+
+// markSocketless records a member who entered over REST with no WebSocket as
+// offline. Otherwise the room counts them connected forever: a player whose
+// app died right after joining held every turn of the next game at full time
+// and was never subject to the disconnect rules. attach reconnects them.
+func (s *Server) markSocketless(entry *roomEntry, sess *session, now time.Time) {
+	if sess.conn == nil {
+		_ = entry.room.Disconnect(sess.playerID, now)
+	}
 }
 
 func listCategories(w http.ResponseWriter, _ []byte, _ *session) {
@@ -494,6 +518,7 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 	s.roomsByID[entry.id], s.roomsCode[code] = entry, entry
 	sess.roomID = entry.id
 	sess.leaveGame()
+	s.markSocketless(entry, sess, now)
 	s.sendSessionState(sess)
 	s.publish(entry)
 	writeJSON(w, http.StatusCreated, map[string]any{"room": s.roomJSON(entry)})
@@ -543,6 +568,7 @@ func (s *Server) joinRoom(w http.ResponseWriter, body []byte, sess *session) {
 	s.leave(previous, sess, now)
 	sess.roomID = entry.id
 	sess.leaveGame()
+	s.markSocketless(entry, sess, now)
 	s.sendSessionState(sess)
 	s.publish(entry)
 	writeJSON(w, http.StatusOK, map[string]any{"room": s.roomJSON(entry)})

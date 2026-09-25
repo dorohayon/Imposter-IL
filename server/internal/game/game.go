@@ -22,8 +22,9 @@ const (
 	MinPlayersToStart    = 4
 	MinPlayersToContinue = 3
 	MaxHintRunes         = 25
-	// MaxDisconnects is the disconnect count at which a player who does not
-	// return within ReconnectDuration is removed.
+	// MaxDisconnects is how many counted disconnects remove a player. A drop
+	// counts only once the player has been away for ReconnectDuration, and the
+	// one that reaches this number removes them there and then.
 	MaxDisconnects = 3
 	// maxSilentVotes is how many voting phases in a row may pass with nobody
 	// voting before the match is called off. The first is a round the table
@@ -228,7 +229,9 @@ type player struct {
 	connected   bool
 	disconnects int
 	confirmed   bool
-	removeAt    time.Time // set on the third disconnect until the player returns
+	// strikeAt is when the current drop counts as a disconnect, unless the
+	// player is back first: a blip on the network is not a strike.
+	strikeAt time.Time
 }
 
 type Game struct {
@@ -244,8 +247,12 @@ type Game struct {
 	deadline time.Time
 	version  uint64
 
-	round        int
-	turn         int
+	round int
+	turn  int
+	// turnDeadline is when the current hint turn ends. It never moves: time
+	// runs while the player is away, so leaving and coming back cannot buy a
+	// fresh turn. While they are away the turn waits at most ReconnectDuration.
+	turnDeadline time.Time
 	reconnecting bool
 	hints        []Hint
 	// Reactions sent before the first hint of a round attach when that hint lands.
@@ -255,6 +262,10 @@ type Game struct {
 	// silentVotes counts voting phases in a row that nobody voted in. One is a
 	// round the table could not decide; two is a table that has gone.
 	silentVotes int
+	// voteCast is whether anybody voted in the current voting phase. Votes
+	// for or by a player who then leaves are deleted, but the round was not
+	// silent: people chose, and it must not count toward abandoning the match.
+	voteCast    bool
 	votes       map[string]string
 	voteRounds  []map[string]string
 	abstentions []int
@@ -328,12 +339,18 @@ func (g *Game) Tick(now time.Time) {
 			var removeIDs []string
 			for _, id := range g.order {
 				p := g.players[id]
-				if p.status == StatusActive && p.removeAt.Equal(at) {
-					removeIDs = append(removeIDs, id)
+				if p.status == StatusActive && p.strikeAt.Equal(at) {
+					p.strikeAt = time.Time{}
+					p.disconnects++
+					if p.disconnects >= MaxDisconnects {
+						removeIDs = append(removeIDs, id)
+					}
 				}
 			}
-			g.removeAll(removeIDs, StatusRemoved, at)
-			g.version += uint64(len(removeIDs))
+			if len(removeIDs) > 0 {
+				g.removeAll(removeIDs, StatusRemoved, at)
+			}
+			g.version++
 		} else {
 			g.expire(at)
 			g.version++
@@ -341,8 +358,9 @@ func (g *Game) Tick(now time.Time) {
 	}
 }
 
-// nextDeadline returns the earliest deadline and, when it is a removal, the
-// player to remove. Removals win ties so a removed player's turn is not skipped first.
+// nextDeadline returns the earliest deadline and, when it is a strike, the
+// player it counts for. Strikes win ties so a removed player's turn is not
+// skipped first.
 func (g *Game) nextDeadline() (time.Time, string) {
 	next, removeID := g.deadline, ""
 	if g.phase == PhaseEnded {
@@ -350,11 +368,11 @@ func (g *Game) nextDeadline() (time.Time, string) {
 	}
 	for _, id := range g.order {
 		p := g.players[id]
-		if p.status != StatusActive || p.removeAt.IsZero() {
+		if p.status != StatusActive || p.strikeAt.IsZero() {
 			continue
 		}
-		if next.IsZero() || p.removeAt.Before(next) || (removeID == "" && p.removeAt.Equal(next)) {
-			next, removeID = p.removeAt, id
+		if next.IsZero() || p.strikeAt.Before(next) || (removeID == "" && p.strikeAt.Equal(next)) {
+			next, removeID = p.strikeAt, id
 		}
 	}
 	return next, removeID
@@ -405,9 +423,11 @@ func (g *Game) SubmitHint(playerID, text string, now time.Time) error {
 	if g.order[g.turn] != playerID || g.reconnecting {
 		return ErrNotYourTurn
 	}
-	text = strings.TrimSpace(text)
+	text = strings.TrimSpace(cleanHint(text))
 	switch {
-	case text == "":
+	case text == "", normalizeWord(text) == "":
+		// Nothing but symbols or emoji is no hint, and would make every
+		// later symbol-only hint a "duplicate" of it.
 		return ErrHintEmpty
 	case strings.IndexFunc(text, unicode.IsSpace) >= 0:
 		return ErrHintNotOneWord
@@ -455,7 +475,23 @@ func (g *Game) React(playerID string, hintIndex int, reactionID string, now time
 	if !g.policy.ValidReaction(reactionID) {
 		return ErrInvalidReaction
 	}
-	if g.phase == PhaseHints && !g.hasHintThisRound() {
+	pending := g.phase == PhaseHints && !g.hasHintThisRound()
+	// A skipped turn leaves a Missing hint where the client's "last hint"
+	// points; the reaction belongs to the last hint somebody actually gave in
+	// that round, or, if nobody has yet in this one, waits for the first.
+	if !pending && hintIndex >= 0 && hintIndex < len(g.hints) {
+		round := g.hints[hintIndex].Round
+		for hintIndex >= 0 && g.hints[hintIndex].Missing && g.hints[hintIndex].Round == round {
+			hintIndex--
+		}
+		if hintIndex < 0 || g.hints[hintIndex].Round != round {
+			if g.phase != PhaseHints || round != g.round {
+				return ErrInvalidHint
+			}
+			pending = true
+		}
+	}
+	if pending {
 		if g.pendingReactions == nil {
 			g.pendingReactions = map[string]int{}
 		}
@@ -463,7 +499,7 @@ func (g *Game) React(playerID string, hintIndex int, reactionID string, now time
 		g.version++
 		return nil
 	}
-	if hintIndex < 0 || hintIndex >= len(g.hints) || g.hints[hintIndex].Missing {
+	if hintIndex < 0 || hintIndex >= len(g.hints) {
 		return ErrInvalidHint
 	}
 	h := &g.hints[hintIndex]
@@ -491,6 +527,7 @@ func (g *Game) Vote(voterID, targetID string, now time.Time) error {
 		return ErrInvalidVoteTarget
 	}
 	g.votes[voterID] = targetID
+	g.voteCast = true
 	g.version++
 	return nil
 }
@@ -525,10 +562,7 @@ func (g *Game) Disconnect(playerID string, now time.Time) error {
 	// A spectator has no turn to hold up and nothing left to be removed from,
 	// and removing them would turn a team win into a personal loss.
 	if g.phase != PhaseEnded && p.status == StatusActive {
-		p.disconnects++
-		if p.disconnects >= MaxDisconnects {
-			p.removeAt = now.Add(g.cfg.ReconnectDuration)
-		}
+		p.strikeAt = now.Add(g.cfg.ReconnectDuration)
 	}
 	switch {
 	case g.phase == PhaseHints && g.order[g.turn] == playerID:
@@ -540,8 +574,8 @@ func (g *Game) Disconnect(playerID string, now time.Time) error {
 	return nil
 }
 
-// Reconnect marks the player online. A player whose turn was waiting gets a
-// fresh hint timer.
+// Reconnect marks the player online, before their drop counted. A player
+// whose turn was waiting resumes it on the clock it started with.
 func (g *Game) Reconnect(playerID string, now time.Time) error {
 	g.Tick(now)
 	p, err := g.watcher(playerID)
@@ -549,10 +583,10 @@ func (g *Game) Reconnect(playerID string, now time.Time) error {
 		return err
 	}
 	p.connected = true
-	p.removeAt = time.Time{}
+	p.strikeAt = time.Time{}
 	if g.phase == PhaseHints && p.status == StatusActive && g.order[g.turn] == playerID {
 		g.reconnecting = false
-		g.setPhase(PhaseHints, now, g.cfg.HintDuration)
+		g.deadline = g.turnDeadline
 	}
 	g.version++
 	return nil
@@ -762,24 +796,29 @@ func (g *Game) startTurn(i int, at time.Time) {
 	}
 	g.turn = i
 	g.reconnecting = false
+	g.setPhase(PhaseHints, at, g.cfg.HintDuration)
+	g.turnDeadline = g.deadline
 	if !g.players[g.order[i]].connected {
 		g.awaitReconnect(at)
-		return
 	}
-	g.setPhase(PhaseHints, at, g.cfg.HintDuration)
 }
 
-// awaitReconnect holds the current turn for the reconnect window; if the
-// player does not return, the turn is skipped.
+// awaitReconnect holds the current turn for the reconnect window, or less if
+// the turn's own clock runs out first; if the player does not return, the
+// turn is skipped.
 func (g *Game) awaitReconnect(at time.Time) {
 	g.reconnecting = true
-	g.setPhase(PhaseHints, at, g.cfg.ReconnectDuration)
+	g.deadline = at.Add(g.cfg.ReconnectDuration)
+	if g.turnDeadline.Before(g.deadline) {
+		g.deadline = g.turnDeadline
+	}
 }
 
 func (g *Game) startVoting(phase Phase, candidates []string, at time.Time, d time.Duration) {
 	g.reconnecting = false
 	g.candidates = candidates
 	g.votes = map[string]string{}
+	g.voteCast = false
 	g.setPhase(phase, at, d)
 }
 
@@ -802,7 +841,7 @@ func (g *Game) tally(at time.Time) {
 	// A vote nobody cast says nothing about who the impostor is, and two of
 	// them in a row say the table is not there any more. A tie is not one of
 	// these: people voted, they just did not agree.
-	if len(counted) == 0 {
+	if len(counted) == 0 && !g.voteCast {
 		g.silentVotes++
 		if g.silentVotes >= maxSilentVotes {
 			g.end(TeamNone, ReasonAbandoned)
@@ -925,6 +964,9 @@ func (g *Game) removeAll(ids []string, status PlayerStatus, at time.Time) {
 	switch {
 	case removedImpostor:
 		g.end(TeamCitizens, ReasonImpostorGone)
+	case g.phase == PhaseImpostorGuess:
+		// Caught: from here only the guess decides the match. Somebody leaving
+		// must not hand the impostor a parity win or end it on a head count.
 	case impostors > 0 && impostors >= citizens:
 		// Reached by walking out or being removed just as much as by a vote.
 		// Checked before the head count, because one citizen against one

@@ -388,8 +388,17 @@ void main() {
     api.channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
 
+    // Leaving is a loss, so it asks first; staying sends nothing.
     await tester.tap(find.byTooltip('יציאה'));
     await settle(tester);
+    await tester.tap(find.text('המשך משחק'));
+    await settle(tester);
+    expect(api.channel.commands('game.leave'), isEmpty);
+    expect(find.byType(HomeScreen), findsNothing);
+
+    await tester.tap(find.byTooltip('יציאה'));
+    await settle(tester);
+    await confirmLeave(tester);
     expect(api.channel.commands('game.leave').single['payload'],
         {'gameId': 'g_1'});
     expect(find.byType(HomeScreen), findsOneWidget);
@@ -513,6 +522,42 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('session.token'), 'token-2');
+  });
+
+  testWidgets('game.aborted from the server shows screen 29 without a loss',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+
+    api.channel.event('game.aborted', {
+      'gameId': 'g_1',
+      'reason': 'server_error',
+      'lossRecorded': false,
+    });
+    api.channel
+        .event('session.state', {'playerId': 'p_me', 'activity': 'none'});
+    await settle(tester);
+
+    expect(find.text('לא נרשם לכם הפסד'), findsOneWidget);
+  });
+
+  testWidgets('connected from another device: this one becomes a new guest',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    api.responses['POST /v1/sessions'] = {
+      'playerId': 'p_new',
+      'sessionToken': 'token-2',
+    };
+
+    await api.channel.closeReplaced();
+    await settle(tester);
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.text('לא נרשם לכם הפסד'), findsNothing);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('session.token'), 'token-2');
+    expect(prefs.getString('session.nickname'), 'דור');
   });
 
   testWidgets('reopening the app mid-game returns to the game', (tester) async {

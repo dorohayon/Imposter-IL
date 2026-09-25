@@ -221,12 +221,14 @@ func TestFinishedGameReturnsToLobbyAndRoomStaysOpen(t *testing.T) {
 }
 
 // disconnectThreeTimes leaves playerID offline on their third disconnect and
-// returns when that happened.
+// returns when that happened. A drop counts only after 30 s away, so each of
+// the first two lasts that long.
 func disconnectThreeTimes(t *testing.T, r *Room, playerID string) time.Time {
 	t.Helper()
 	now := t0
 	for i := range game.MaxDisconnects {
 		if i > 0 {
+			now = now.Add(30 * time.Second)
 			must(t, r.Reconnect(playerID, now))
 			now = now.Add(time.Second)
 		}
@@ -378,13 +380,14 @@ func TestHostRemovedOnThirdDisconnectInGame(t *testing.T) {
 	must(t, r.Start("host", "animals", "פיל", t0))
 	now := disconnectThreeTimes(t, r, "host")
 
-	// The game removal and the host timer end at the same moment.
+	// Each drop lasts 30 s, which is also the host's reconnect window: the
+	// host passed on the first one, and a former host does not get it back.
 	r.Tick(now.Add(30 * time.Second))
 	if r.member("host") != nil {
 		t.Fatal("removed host is still a member")
 	}
-	if tr := r.View().HostTransfer; tr == nil || tr.Reason != ReasonHostRemoved || tr.To != "p1" {
-		t.Fatalf("transfer = %+v", tr)
+	if tr := r.View().HostTransfer; tr == nil || tr.Reason != ReasonHostTimeout || tr.To != "p1" || r.View().HostID != "p1" {
+		t.Fatalf("transfer = %+v, host %s", tr, r.View().HostID)
 	}
 }
 

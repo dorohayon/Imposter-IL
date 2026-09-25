@@ -122,6 +122,7 @@ func (s *Server) joinSearch(sess *session, previous *roomEntry, categories []str
 	}
 	s.roomsByID[entry.id] = entry
 	sess.roomID, sess.searchCategories, sess.searchStarted = entry.id, categories, now
+	sess.searchGoneAt = time.Time{}
 	sess.leaveGame()
 	if !sess.bot {
 		s.rebalanceStagingBots(entry, categories, now)
@@ -160,10 +161,22 @@ func (s *Server) tickSearch(entry *roomEntry, now time.Time) {
 	if !s.searching(entry) {
 		return
 	}
+	for _, m := range entry.room.View().Members {
+		if sess := s.players[m.ID]; sess != nil && !sess.searchGoneAt.IsZero() && !now.Before(sess.searchGoneAt.Add(searchGrace)) {
+			sess.searchGoneAt = time.Time{}
+			s.leaveSearch(sess, entry, now) // away too long: the search ends for them
+		}
+	}
+	if !s.searching(entry) {
+		return
+	}
 	members := entry.room.View().Members
 	if len(members) < matchmaking.MinPlayers {
 		for _, m := range members {
 			sess := s.players[m.ID]
+			if sess == nil {
+				continue // removed earlier in this walk, e.g. a bot rebalanced away
+			}
 			if now.Before(sess.searchStarted.Add(matchmaking.NoMatch)) {
 				continue
 			}
@@ -191,21 +204,37 @@ func (s *Server) tickSearch(entry *roomEntry, now time.Time) {
 	s.beginGame(entry)
 }
 
+// searchGrace is how long a searching player whose connection dropped keeps
+// their place (docs/decisions.md): a blip must not cost the search.
+const searchGrace = 30 * time.Second
+
 // searchDeadline is the next matchmaking event of a forming match, or zero.
 func (s *Server) searchDeadline(entry *roomEntry) time.Time {
 	if !s.searching(entry) {
 		return time.Time{}
 	}
 	members := entry.room.View().Members
-	if len(members) >= matchmaking.MinPlayers {
-		return entry.timers.StartAt()
-	}
 	var next time.Time
-	for _, m := range members {
-		at := s.players[m.ID].searchStarted.Add(matchmaking.NoMatch)
-		if next.IsZero() || at.Before(next) {
+	consider := func(at time.Time) {
+		if !at.IsZero() && (next.IsZero() || at.Before(next)) {
 			next = at
 		}
+	}
+	for _, m := range members {
+		if sess := s.players[m.ID]; sess != nil && !sess.searchGoneAt.IsZero() {
+			consider(sess.searchGoneAt.Add(searchGrace))
+		}
+	}
+	if len(members) >= matchmaking.MinPlayers {
+		consider(entry.timers.StartAt())
+		return next
+	}
+	for _, m := range members {
+		sess := s.players[m.ID]
+		if sess == nil {
+			continue
+		}
+		consider(sess.searchStarted.Add(matchmaking.NoMatch))
 	}
 	return next
 }
@@ -237,12 +266,18 @@ func (s *Server) publishSearch(entry *roomEntry, now time.Time) {
 	players := []map[string]string{}
 	for _, m := range members {
 		sess := s.players[m.ID]
+		if sess == nil {
+			continue
+		}
 		players = append(players, map[string]string{"playerId": m.ID, "nickname": sess.nickname, "avatarId": sess.avatarID})
 	}
 	status := entry.timers.Status()
 	shared := s.sharedCategories(entry)
 	for _, m := range members {
 		sess := s.players[m.ID]
+		if sess == nil {
+			continue
+		}
 		deadline := entry.timers.StartAt()
 		if status == matchmaking.StatusSearching {
 			deadline = sess.searchStarted.Add(matchmaking.NoMatch) // when "no match" would show

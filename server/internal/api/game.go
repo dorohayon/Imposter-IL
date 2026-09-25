@@ -119,15 +119,14 @@ func (s *Server) gameCommand(sess *session, typ string, p commandPayload, now ti
 	case "game.report":
 		// Required of any app showing user-written text to strangers (App
 		// Store 1.2, Play UGC). See moderation.go: the report is logged with
-		// what was reported, and enough reporters hide the player for all.
+		// what was reported for review; the reporter's app hides the player.
 		target := entry.room.Game()
 		if p.PlayerID == "" || p.PlayerID == id || target == nil ||
 			!slices.Contains(target.PlayerIDs(), p.PlayerID) {
 			return "invalid_message"
 		}
-		if !s.report(entry, sess, p.PlayerID, p.HintIndex) {
-			return "" // nothing anyone sees changed, so nothing to publish
-		}
+		s.report(entry, sess, p.PlayerID, p.HintIndex)
+		return "" // nothing anyone else sees changes, so nothing to publish
 
 	case "game.playAgain":
 		v, viewErr := sess.game.View(id)
@@ -232,9 +231,6 @@ type hintJSON struct {
 	Round     int            `json:"round"`
 	Missing   bool           `json:"missing"`
 	Reactions map[string]int `json:"reactions"`
-	// Hidden: reported by enough players in this game that its text is
-	// withheld from everyone else (moderation.go).
-	Hidden bool `json:"hidden,omitempty"`
 }
 
 type resultJSON struct {
@@ -314,12 +310,7 @@ func (s *Server) gameJSON(viewerID, gameID string, v game.View, entry *roomEntry
 		if reactions == nil {
 			reactions = map[string]int{}
 		}
-		hint := hintJSON{PlayerID: h.PlayerID, Text: h.Text, Round: h.Round, Missing: h.Missing, Reactions: reactions}
-		// Hidden for everyone but its author, who is not told.
-		if h.PlayerID != viewerID && gameID == entry.gameID && entry.hiddenForAll(h.PlayerID) {
-			hint.Text, hint.Hidden = "", true
-		}
-		out.Hints = append(out.Hints, hint)
+		out.Hints = append(out.Hints, hintJSON{PlayerID: h.PlayerID, Text: h.Text, Round: h.Round, Missing: h.Missing, Reactions: reactions})
 	}
 	if r := v.Result; r != nil {
 		out.Result = &resultJSON{
