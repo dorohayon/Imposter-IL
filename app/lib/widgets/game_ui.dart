@@ -1360,12 +1360,16 @@ class CategoryPill extends StatelessWidget {
             style: TextStyle(color: Color(0xFFD9C8FF), fontSize: 13),
           ),
           const SizedBox(width: 8),
-          Text(
-            category,
-            style: const TextStyle(
-              color: Color(0xFFC4B0FF),
-              fontFamily: 'Secular One',
-              fontSize: 17,
+          Flexible(
+            child: Text(
+              category,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFFC4B0FF),
+                fontFamily: 'Secular One',
+                fontSize: 17,
+              ),
             ),
           ),
         ],
