@@ -31,7 +31,7 @@ Future<FakeChannel> startSearching(WidgetTester tester, FakeApi api) async {
   await openQuickGame(tester);
   expect(find.byType(CategorySelectionScreen), findsOneWidget);
   // "הכול" is the default; tapping one category leaves it for just that one.
-  await tapText(tester, 'אוכל');
+  await tapText(tester, 'אוכל ושתייה');
   await tapLive(tester, 'חפש משחק');
   final channel = api.channel;
   expect(channel.commands('matchmaking.join').single['payload'], {
@@ -84,7 +84,7 @@ void main() {
     await openQuickGame(tester);
     api.responses['GET /v1/categories'] = categories;
     await tapText(tester, 'ניסיון נוסף');
-    expect(find.text('אוכל'), findsOneWidget);
+    expect(find.text('אוכל ושתייה'), findsOneWidget);
     expect(find.text('משהו השתבש'), findsNothing);
   });
 
@@ -260,7 +260,7 @@ void main() {
 
     // "הכול" is selected on its own — the six categories are not lit up too.
     expect(isSelectedTile(tester, 'הכול'), isTrue);
-    for (final name in ['אוכל', 'חיות', 'ספורט']) {
+    for (final name in ['אוכל ושתייה', 'בבית', 'בית ספר וסטודנטים']) {
       expect(isSelectedTile(tester, name), isFalse);
     }
     expect(isEnabled(tester, 'חפש משחק'), isTrue);
@@ -273,11 +273,11 @@ void main() {
     // Any single category is a valid choice, and can be turned off again.
     // (That picking one leaves "הכול" rather than keeping all six is covered
     // by startSearching, which asserts the search sends only ['food'].)
-    await tapText(tester, 'אוכל');
-    expect(isSelectedTile(tester, 'אוכל'), isTrue);
+    await tapText(tester, 'אוכל ושתייה');
+    expect(isSelectedTile(tester, 'אוכל ושתייה'), isTrue);
     expect(isEnabled(tester, 'חפש משחק'), isTrue);
 
-    await tapText(tester, 'אוכל');
+    await tapText(tester, 'אוכל ושתייה');
     expect(isEnabled(tester, 'חפש משחק'), isFalse);
   });
 }
