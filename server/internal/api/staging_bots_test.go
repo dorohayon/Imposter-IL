@@ -100,7 +100,7 @@ func TestVotingIsIndependentOfTheSecretWordAndTheRoles(t *testing.T) {
 	// A citizen bot holding the word, and an impostor bot holding none. Same
 	// board, so the same votes — the reading has no parameter for either.
 	citizen := tally(game.View{Category: "אוכל ושתייה", SecretWord: "פיצה", Hints: hints, Role: game.RoleCitizen})
-	impostor := tally(game.View{Category: category, Hints: hints, Role: game.RoleImpostor})
+	impostor := tally(game.View{Category: "אוכל ושתייה", Hints: hints, Role: game.RoleImpostor})
 	other := tally(game.View{Category: "אוכל ושתייה", SecretWord: "סושי", Hints: hints, Role: game.RoleCitizen})
 	for id := range citizen {
 		for name, got := range map[string]float64{"impostor": impostor[id], "another word": other[id]} {
