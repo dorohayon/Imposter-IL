@@ -25,6 +25,19 @@ func isHebrewSingleToken(s string) bool {
 	return true
 }
 
+func isHebrewSecret(s string) bool {
+	parts := strings.Fields(s)
+	if len(parts) < 1 || len(parts) > 2 || strings.Join(parts, " ") != s {
+		return false
+	}
+	for _, part := range parts {
+		if !isHebrewSingleToken(part) {
+			return false
+		}
+	}
+	return true
+}
+
 func TestCategoriesAreWellFormed(t *testing.T) {
 	ids := map[string]bool{}
 	for _, c := range Categories {
@@ -40,8 +53,8 @@ func TestCategoriesAreWellFormed(t *testing.T) {
 			if w == "" || strings.TrimSpace(w) != w {
 				t.Errorf("%s: %q must be non-empty without surrounding whitespace", c.ID, w)
 			}
-			if !isHebrewSingleToken(w) {
-				t.Errorf("%s: %q must be one Hebrew word with no Latin letters, spaces or hyphens", c.ID, w)
+			if !isHebrewSecret(w) {
+				t.Errorf("%s: %q must be one or two Hebrew words with no Latin letters, digits or hyphens", c.ID, w)
 			}
 			if seen[w] {
 				t.Errorf("%s: %q appears twice in the same category", c.ID, w)
@@ -51,6 +64,33 @@ func TestCategoriesAreWellFormed(t *testing.T) {
 	}
 	if len(Categories) != 18 {
 		t.Fatalf("%d categories, want 18", len(Categories))
+	}
+}
+
+func TestGuessAliasesBelongToKnownSecrets(t *testing.T) {
+	known := map[string]bool{}
+	for _, c := range Categories {
+		for _, word := range c.Words {
+			known[word] = true
+		}
+	}
+	for word, aliases := range tables.aliases {
+		if !known[word] {
+			t.Errorf("aliases exist for unknown secret %q", word)
+		}
+		if len(aliases) == 0 {
+			t.Errorf("%q has an empty alias list", word)
+		}
+		seen := map[string]bool{}
+		for _, alias := range aliases {
+			if strings.TrimSpace(alias) == "" {
+				t.Errorf("%q has a blank alias", word)
+			}
+			if seen[alias] {
+				t.Errorf("%q repeats alias %q", word, alias)
+			}
+			seen[alias] = true
+		}
 	}
 }
 
