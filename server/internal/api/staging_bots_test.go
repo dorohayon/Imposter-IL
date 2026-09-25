@@ -80,7 +80,7 @@ func TestVotingIsIndependentOfTheSecretWordAndTheRoles(t *testing.T) {
 	hints := []game.Hint{
 		{PlayerID: "p1", Text: pool[0]},
 		{PlayerID: "p2", Text: pool[1]},
-		{PlayerID: "p3", Text: "מסדרון"},
+		{PlayerID: "p3", Text: "פלומבק"},
 	}
 	candidates := []string{"p1", "p2", "p3"}
 
