@@ -214,11 +214,14 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                                 ),
                               if (tile.id == _allId)
                                 Align(
-                                  alignment: AlignmentDirectional.bottomEnd,
-                                  // Half the tile at most, wrapping to two
-                                  // lines, so "הכול" keeps its place.
-                                  child: FractionallySizedBox(
-                                    widthFactor: .55,
+                                  // Top corner, across from the check: nearly
+                                  // the tile's full width, so the caption fits
+                                  // in two lines even at 320 px, and "הכול"
+                                  // keeps the bottom line every name uses.
+                                  alignment: AlignmentDirectional.topEnd,
+                                  child: Padding(
+                                    padding: const EdgeInsetsDirectional.only(
+                                        start: 30),
                                     child: Text(
                                       money.premium
                                           ? 'כל הקטגוריות'

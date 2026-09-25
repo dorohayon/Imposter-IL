@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/local/local_screens.dart';
 import 'package:imposter_il/monetization/store.dart';
@@ -550,5 +552,27 @@ void main() {
     await openCreatedRoom(tester, api);
     expect(find.byType(LiveRoomScreen), findsOneWidget);
     expect(_banner, findsOneWidget);
+  });
+
+  testWidgets('the "הכול" caption is never cut on a 320 px screen',
+      (tester) async {
+    // The test font draws every letter as a square; measure with the fonts a
+    // phone actually uses.
+    for (final (family, files) in [
+      ('Rubik', ['Rubik-Regular.ttf', 'Rubik-Medium.ttf']),
+      ('Secular One', ['SecularOne-Regular.ttf']),
+    ]) {
+      final loader = FontLoader(family);
+      for (final f in files) {
+        loader.addFont(rootBundle.load('assets/fonts/$f'));
+      }
+      await loader.load();
+    }
+    await _freePlayer(tester); // 320 x 640
+    await _openPicker(tester);
+    final caption =
+        tester.renderObject<RenderParagraph>(find.text('כל הקטגוריות הפתוחות'));
+    expect(caption.didExceedMaxLines, isFalse,
+        reason: 'a cut caption reads as if every category were selected');
   });
 }
