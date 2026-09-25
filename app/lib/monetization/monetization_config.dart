@@ -3,7 +3,7 @@
 /// the stores, localized.
 class MonetizationConfig {
   const MonetizationConfig({
-    this.freeCategoryIds = const ['food', 'animals', 'places'],
+    this.freeCategoryIds = const ['food', 'places', 'film_tv'],
     this.categoryPrefix = 'category_',
     this.premiumMonthly = 'premium_monthly',
     this.premiumLifetime = 'premium_lifetime',
