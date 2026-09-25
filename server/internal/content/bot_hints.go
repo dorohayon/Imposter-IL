@@ -218,11 +218,33 @@ func UsableHint(hint, secret string) bool {
 	return !containsWord(hint, secret)
 }
 
-// containsWord mirrors the engine's secret-word rule: a hint is refused when
-// its normalised form contains the normalised word.
+// containsWord mirrors the engine's secret-word rule, including two-word
+// secrets: a citizen may not use the full phrase or either visible component.
 func containsWord(hint, secret string) bool {
-	s := game.NormalizeWord(secret)
-	return s != "" && strings.Contains(game.NormalizeWord(hint), s)
+	h := game.NormalizeWord(hint)
+	matches := func(candidate string, allowInner bool) bool {
+		s := game.NormalizeWord(candidate)
+		if s == "" {
+			return false
+		}
+		if allowInner && len([]rune(s)) >= 4 {
+			return strings.Contains(h, s)
+		}
+		return h == s || game.IsPrefixedForm(h, s)
+	}
+	if matches(secret, true) {
+		return true
+	}
+	parts := strings.Fields(secret)
+	if len(parts) <= 1 {
+		return false
+	}
+	for _, part := range parts {
+		if matches(part, len([]rune(game.NormalizeWord(part))) >= 4) {
+			return true
+		}
+	}
+	return false
 }
 
 func sameWord(a, b string) bool { return game.NormalizeWord(a) == game.NormalizeWord(b) }
