@@ -162,7 +162,7 @@ func botHintPool(view game.View) []string {
 	// The broad pool trails the word's own, because a match runs several
 	// rounds now and six curated hints shared between the citizens run out by
 	// the third one. Better a broad hint than a turn nobody answers.
-	pool := append(content.CitizenHints(view.SecretWord), content.ImpostorHints(view.Category, said)...)
+	pool := append(content.CitizenHints(view.Category, view.SecretWord), content.ImpostorHints(view.Category, said)...)
 	if len(pool) > 0 {
 		return pool
 	}
