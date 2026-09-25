@@ -11,38 +11,46 @@ and one worked example (`פיצה`), is already in the file. Fill in the rest.
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "categories": [
     {
       "id": "food",
-      "name": "אוכל",
-      "impostorFallbackHints": ["טעים", "חם", "מתוק"],
-      "citizenHints": {
-        "פיצה": ["משולש", "גבינה", "תנור", "איטליה", "משלוח", "פטריות"]
-      }
+      "name": "אוכל ושתייה",
+      "impostorFallbackHints": ["טעים", "מנה", "מסעדה"],
+      "clusters": [
+        {
+          "name": "אוכל רחוב",
+          "words": ["פלאפל", "שווארמה", "סביח", "טאקו", "בוריטו"],
+          "hints": ["דוכן", "מהיר", "ביד", "רוטב", "רחוב", "עטוף", "חריף", "צהריים"]
+        }
+      ]
     }
   ]
 }
 ```
 
-- `id` and `name` must match `content.Categories` exactly. Do not add, rename
-  or reorder categories here; this file follows the word list, never leads it.
-- `citizenHints` is keyed by the secret word, exactly as spelled in
-  `content.Categories`. Every word needs an entry and no key may be a word that
-  is not in that category.
-- Hints are plain strings. There are no weights: `version` is the room to add
-  them later if uniform choice ever proves not to be enough.
+- `id` and `name` must match `content.Categories` exactly.
+- Each category has 10 internal semantic clusters of 5 words. Clusters are an
+  authoring/AI-bot detail only; players and impostors see only the category.
+- Each cluster owns 8 one-word citizen hints shared by all 5 words. That
+  overlap is deliberate: a clue should narrow the space without becoming a
+  fingerprint for one secret.
+- A secret may appear in more than one category. Citizen hints are therefore
+  keyed at runtime by **category + secret word**, never by the word alone.
+- `impostorFallbackHints` is public category-level vocabulary only. There is
+  deliberately no secret-word-specific impostor pool.
+- Version 1 `citizenHints` remains readable for fixtures/backward-compatible
+  tooling, but the shipped dataset is version 2.
 - UTF-8, no BOM, LF line endings, two-space indent.
-
-**`impostorFallbackHints` is the only thing the impostor may read.** There is
-deliberately no impostor list per word. If you ever feel like adding one, that
-is the leak this whole structure exists to prevent.
 
 ## How many
 
 | | count |
 |---|---|
-| `citizenHints` per word | 5–7 |
+| words per category | 50 |
+| semantic clusters per category | 10 |
+| words per cluster | 5 |
+| citizen hints per cluster/word | 8 |
 | `impostorFallbackHints` per category | 10–16 |
 
 ## Rules a hint must satisfy
@@ -87,7 +95,7 @@ passes validation and one that reads like a person.
 - **Vary the angle.** Six hints about how a thing tastes is one hint written
   six times. Spread them across appearance, use, place, time, who does it, what
   it is made of, the feeling it carries, the cultural association.
-- **Prefer a hint that could belong to two or three words in the category.** A
+- **Prefer a hint that naturally belongs to several nearby words in the category; the shipped catalogue targets five.** A
   hint that fits exactly one word hands the impostor the answer once the
   derivation step starts reading the board.
 
