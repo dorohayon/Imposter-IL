@@ -257,7 +257,9 @@ func TestUnusedSessionsAreReapedQuickly(t *testing.T) {
 
 	// One that has actually connected keeps the long TTL.
 	connected, _ := c.session("נועה")
-	c.dial(connected)
+	// The handshake returns before the server attaches the socket; its first
+	// message (session.state) is sent on attach, so wait for it.
+	c.dial(connected).sessionState(func(map[string]any) bool { return true })
 	c.advance(UnusedSessionTTL + time.Minute)
 	c.srv.reap()
 	if len(c.srv.sessions) != 1 {
