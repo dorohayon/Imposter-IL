@@ -97,10 +97,10 @@ void main() {
           findsOneWidget);
       expect(find.text('כל הפתוחות'), findsOneWidget);
       // Every category stays visible: the locked ones are there, marked.
-      for (final name in ['ספורט', 'מקצועות', 'חפצים']) {
+      for (final name in ['ספורט וכושר', 'עבודה ומשרד', 'גיימינג']) {
         expect(find.text(name), findsOneWidget);
       }
-      expect(find.text('לפתיחה'), findsNWidgets(3));
+      expect(find.text('לפתיחה'), findsNWidgets(15));
 
       await tapLive(tester, 'חפש משחק');
       expect(_searched(api), ['food', 'film_tv', 'places']);
@@ -110,11 +110,11 @@ void main() {
         (tester) async {
       await _freePlayer(tester);
       await _openPicker(tester);
-      await _tapLocked(tester, 'ספורט');
+      await _tapLocked(tester, 'ספורט וכושר');
 
-      expect(find.text('״ספורט״ נעולה'), findsOneWidget);
+      expect(find.text('״ספורט וכושר״ נעולה'), findsOneWidget);
       expect(find.text('בחרו איך לפתוח אותה'), findsOneWidget);
-      expect(find.text('רק ״ספורט״'), findsOneWidget);
+      expect(find.text('רק ״ספורט וכושר״'), findsOneWidget);
       expect(find.text('פרימיום חודשי'), findsOneWidget);
       expect(find.text('פרימיום לכל החיים'), findsOneWidget);
       expect(find.text('9.90 ₪'), findsOneWidget);
@@ -131,18 +131,18 @@ void main() {
         (tester) async {
       final (api, store, _) = await _freePlayer(tester);
       await _openPicker(tester);
-      await tapText(tester, 'אוכל'); // an explicit choice, not "הכול"
-      await _tapLocked(tester, 'ספורט');
+      await tapText(tester, 'אוכל ושתייה'); // an explicit choice, not "הכול"
+      await _tapLocked(tester, 'ספורט וכושר');
 
       await _buy(tester);
       expect(store.bought, ['category_sports']);
-      expect(find.text('״ספורט״ נפתחה!'), findsOneWidget);
+      expect(find.text('״ספורט וכושר״ נפתחה!'), findsOneWidget);
       expect(find.text('הקטגוריה שלכם לתמיד. הפרסומות ממשיכות להופיע.'),
           findsOneWidget);
-      await tapText(tester, 'בוחרים ב״ספורט״');
+      await tapText(tester, 'בוחרים ב״ספורט וכושר״');
 
-      expect(find.text('״ספורט״ נעולה'), findsNothing);
-      expect(find.text('לפתיחה'), findsNWidgets(2));
+      expect(find.text('״ספורט וכושר״ נעולה'), findsNothing);
+      expect(find.text('לפתיחה'), findsNWidgets(14));
       await tapLive(tester, 'חפש משחק');
       expect(_searched(api), ['food', 'sports']);
     });
@@ -151,7 +151,7 @@ void main() {
         (tester) async {
       final (_, store, _) = await _freePlayer(tester);
       await _openPicker(tester);
-      await _tapLocked(tester, 'חפצים');
+      await _tapLocked(tester, 'גיימינג');
       await tapText(tester, 'פרימיום חודשי');
 
       expect(find.text('הצטרפות לפרימיום'), findsOneWidget);
@@ -179,7 +179,7 @@ void main() {
         (tester) async {
       await _freePlayer(tester);
       await _openPicker(tester);
-      await _tapLocked(tester, 'ספורט');
+      await _tapLocked(tester, 'ספורט וכושר');
       await tapText(tester, 'תנאי שימוש');
       expect(find.byType(TermsScreen), findsOneWidget);
       await tester.tap(find.byType(BackButton));
@@ -193,21 +193,21 @@ void main() {
       final (_, store, _) = await _freePlayer(tester);
       store.outcome = StoreStatus.canceled;
       await _openPicker(tester);
-      await _tapLocked(tester, 'ספורט');
+      await _tapLocked(tester, 'ספורט וכושר');
       await _buy(tester);
 
       expect(find.text('הרכישה בוטלה. לא בוצע חיוב.'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.close_rounded));
       await tester.pumpAndSettle();
-      expect(find.text('״ספורט״ נעולה'), findsNothing);
-      expect(find.text('לפתיחה'), findsNWidgets(3));
+      expect(find.text('״ספורט וכושר״ נעולה'), findsNothing);
+      expect(find.text('לפתיחה'), findsNWidgets(15));
     });
 
     testWidgets('while the store works, the popup stays open', (tester) async {
       final (_, store, _) = await _freePlayer(tester);
       store.outcome = null; // the store never answers in this test
       await _openPicker(tester);
-      await _tapLocked(tester, 'ספורט');
+      await _tapLocked(tester, 'ספורט וכושר');
       await _buy(tester);
 
       expect(find.text('מתחברים לחנות…'), findsOneWidget);
@@ -219,7 +219,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
-      expect(find.text('״ספורט״ נעולה'), findsOneWidget);
+      expect(find.text('״ספורט וכושר״ נעולה'), findsOneWidget);
     });
 
     testWidgets('an error names the cause and offers another try',
@@ -227,7 +227,7 @@ void main() {
       final (_, store, _) = await _freePlayer(tester);
       store.outcome = StoreStatus.error;
       await _openPicker(tester);
-      await _tapLocked(tester, 'ספורט');
+      await _tapLocked(tester, 'ספורט וכושר');
       await _buy(tester);
       expect(
         find.text(
@@ -236,7 +236,7 @@ void main() {
       );
       store.outcome = StoreStatus.purchased;
       await tapText(tester, 'ניסיון נוסף');
-      expect(find.text('״ספורט״ נפתחה!'), findsOneWidget);
+      expect(find.text('״ספורט וכושר״ נפתחה!'), findsOneWidget);
     });
 
     testWidgets('prices that cannot load do not trap the player',
@@ -244,7 +244,7 @@ void main() {
       final (_, store, _) = await _freePlayer(tester);
       store.productsFail = true;
       await _openPicker(tester);
-      await _tapLocked(tester, 'ספורט');
+      await _tapLocked(tester, 'ספורט וכושר');
       expect(
         find.textContaining('לא הצלחנו לטעון את המחירים מהחנות'),
         findsOneWidget,
@@ -258,7 +258,7 @@ void main() {
         (tester) async {
       final (_, store, _) = await _freePlayer(tester);
       await _openPicker(tester);
-      await _tapLocked(tester, 'ספורט');
+      await _tapLocked(tester, 'ספורט וכושר');
       await tapText(tester, 'שחזור רכישות');
       expect(find.text('לא נמצאו רכישות קודמות בחשבון החנות הזה.'),
           findsOneWidget);
@@ -266,9 +266,9 @@ void main() {
       store.owned.add('category_sports'); // bought on another phone
       await tapText(tester, 'שחזור רכישות');
       expect(find.text('הרכישות שוחזרו'), findsOneWidget);
-      expect(find.text('״ספורט״ פתוחה שוב במכשיר הזה.'), findsOneWidget);
+      expect(find.text('״ספורט וכושר״ פתוחה שוב במכשיר הזה.'), findsOneWidget);
       await tapText(tester, 'סגירה');
-      expect(find.text('לפתיחה'), findsNWidgets(2));
+      expect(find.text('לפתיחה'), findsNWidgets(14));
       expect(find.text('✓ נרכשה'), findsOneWidget);
     });
 
@@ -280,8 +280,8 @@ void main() {
       await tapText(tester, 'יצירת חדר');
       expect(find.text('3 פתוחות בחינם'), findsOneWidget);
 
-      await _tapLocked(tester, 'ספורט');
-      expect(find.text('״ספורט״ נעולה'), findsOneWidget);
+      await _tapLocked(tester, 'ספורט וכושר');
+      expect(find.text('״ספורט וכושר״ נעולה'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.close_rounded));
       await tester.pumpAndSettle();
 
@@ -296,7 +296,7 @@ void main() {
       await tapText(tester, 'משחק במכשיר אחד');
       await tapText(tester, 'המשך להגדרות');
       expect(find.text('4 פתוחות'), findsOneWidget);
-      for (final name in ['ספורט', 'מקצועות']) {
+      for (final name in ['ספורט וכושר', 'עבודה ומשרד']) {
         expect(_locked(name), findsOneWidget);
       }
       await tapText(tester, 'מתחילים');
