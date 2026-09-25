@@ -44,3 +44,15 @@ func TestWordRules(t *testing.T) {
 		}
 	}
 }
+
+func TestGuessMatchesAliases(t *testing.T) {
+	aliases := []string{"פקמן", "Pac-Man"}
+	for _, guess := range []string{"פאקמן", "פקמן", "Pac-Man"} {
+		if !guessMatches(guess, "פאקמן", aliases...) {
+			t.Errorf("%q should match פאקמן through the canonical spelling or aliases", guess)
+		}
+	}
+	if guessMatches("טטריס", "פאקמן", aliases...) {
+		t.Fatal("unrelated guess matched an alias")
+	}
+}
