@@ -45,7 +45,7 @@ type hintTables struct {
 	citizen  map[string]map[string][]string // category name -> secret word -> hints
 	fallback map[string][]string            // category name -> hints
 	shared   map[string][]string            // category name -> hints used by 2+ words
-	together map[string]map[string]int        // hint -> hint -> pools they share
+	together map[string]map[string]int      // hint -> hint -> pools they share
 }
 
 var tables = loadHintTables(botHintsJSON)
