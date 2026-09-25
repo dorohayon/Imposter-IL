@@ -30,8 +30,8 @@ func TestDefaultConfig(t *testing.T) {
 	if err := c.validate(); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(c.FreeCategoryIDs, []string{"food", "animals", "places"}) {
-		t.Fatalf("free categories = %v, the design names food, animals and places", c.FreeCategoryIDs)
+	if !slices.Equal(c.FreeCategoryIDs, []string{"food", "places", "film_tv"}) {
+		t.Fatalf("free categories = %v, the design names food, places and film_tv", c.FreeCategoryIDs)
 	}
 	if c.ServerEnforcement {
 		t.Fatal("enforcement must stay off until the store verifiers are configured")
