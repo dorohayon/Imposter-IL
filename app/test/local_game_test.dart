@@ -41,7 +41,7 @@ void main() {
   test('a match deals one impostor and a word from the chosen categories', () {
     final g = game();
     expect(g.impostor, inInclusiveRange(0, 3));
-    expect(g.category, 'אוכל');
+    expect(g.category, 'אוכל ושתייה');
     expect(g.secretWord, isNotEmpty);
     // Only the chosen category's words are in play.
     expect(
@@ -401,5 +401,11 @@ void main() {
     expect(g.hintSeconds, isNull);
     toVote(g);
     expect(g.phase, LocalPhase.voting);
+  });
+
+  test('local guess accepts configured alternate spellings', () {
+    expect(isCorrectLocalGuess('פקמן', 'פאקמן'), isTrue);
+    expect(isCorrectLocalGuess('וויפי', 'וויי פיי'), isTrue);
+    expect(isCorrectLocalGuess('טטריס', 'פאקמן'), isFalse);
   });
 }

@@ -11,38 +11,52 @@ and one worked example (`פיצה`), is already in the file. Fill in the rest.
 
 ```json
 {
-  "version": 1,
+  "version": 2,
+  "guessAliases": {
+    "פאקמן": ["פקמן", "Pac-Man"],
+    "וויי פיי": ["וייפיי", "ווייפיי", "וויפי", "Wi-Fi"]
+  },
   "categories": [
     {
       "id": "food",
-      "name": "אוכל",
-      "impostorFallbackHints": ["טעים", "חם", "מתוק"],
-      "citizenHints": {
-        "פיצה": ["משולש", "גבינה", "תנור", "איטליה", "משלוח", "פטריות"]
-      }
+      "name": "אוכל ושתייה",
+      "impostorFallbackHints": ["טעים", "מנה", "מסעדה"],
+      "clusters": [
+        {
+          "name": "אוכל רחוב",
+          "words": ["פלאפל", "שווארמה", "סביח", "טאקו", "בוריטו"],
+          "hints": ["דוכן", "מהיר", "ביד", "רוטב", "רחוב", "עטוף", "חריף", "צהריים"]
+        }
+      ]
     }
   ]
 }
 ```
 
-- `id` and `name` must match `content.Categories` exactly. Do not add, rename
-  or reorder categories here; this file follows the word list, never leads it.
-- `citizenHints` is keyed by the secret word, exactly as spelled in
-  `content.Categories`. Every word needs an entry and no key may be a word that
-  is not in that category.
-- Hints are plain strings. There are no weights: `version` is the room to add
-  them later if uniform choice ever proves not to be enough.
+- `id` and `name` must match `content.Categories` exactly.
+- Each category has 10 internal semantic clusters of 5 words. Clusters are an
+  authoring/AI-bot detail only; players and impostors see only the category.
+- A playable secret is one Hebrew word or a natural two-word Hebrew phrase. Do not glue phrases together just to satisfy storage rules. Citizen and impostor fallback hints still have to be exactly one Hebrew word.
+- `guessAliases` is hidden guess-only metadata for secrets with genuinely different common spellings/transliterations. Spacing/punctuation variants do not need aliases because normalisation already ignores them.
+- Each cluster owns 8 one-word citizen hints shared by all 5 words. That
+  overlap is deliberate: a clue should narrow the space without becoming a
+  fingerprint for one secret.
+- A secret may appear in more than one category. Citizen hints are therefore
+  keyed at runtime by **category + secret word**, never by the word alone.
+- `impostorFallbackHints` is public category-level vocabulary only. There is
+  deliberately no secret-word-specific impostor pool.
+- Version 1 `citizenHints` remains readable for fixtures/backward-compatible
+  tooling, but the shipped dataset is version 2.
 - UTF-8, no BOM, LF line endings, two-space indent.
-
-**`impostorFallbackHints` is the only thing the impostor may read.** There is
-deliberately no impostor list per word. If you ever feel like adding one, that
-is the leak this whole structure exists to prevent.
 
 ## How many
 
 | | count |
 |---|---|
-| `citizenHints` per word | 5–7 |
+| words per category | 50 |
+| semantic clusters per category | 10 |
+| words per cluster | 5 |
+| citizen hints per cluster/word | 8 |
 | `impostorFallbackHints` per category | 10–16 |
 
 ## Rules a hint must satisfy
@@ -59,10 +73,7 @@ that stays silent on its turn.
    hyphenated word counts as one is still open in `docs/open-decisions.md`.
 2. **At most 25 characters.**
 3. **Not on the blocklist** (`server/internal/content/blocked_words.txt`).
-4. **Must not contain the secret word.** The check is on the normalised form,
-   which drops niqqud, geresh, maqaf and punctuation and folds final letters.
-   So for `בננה`, both `בננות` and `הבננה` are refused — anything whose letters
-   contain the word's letters in sequence.
+4. **Must not reveal the secret.** The check is on the normalised form. For a two-word secret, the full phrase and each visible component are blocked; e.g. `בסיס` cannot be a citizen hint for `בסיס פתוח`.
 5. **No two hints in the same pool may be duplicates.** Two hints are the same
    if they are equal after normalisation, or one is the other with 1–3 Hebrew
    prefix letters (`ו ה ב כ ל מ ש`) in front leaving at least two letters. So
@@ -87,7 +98,7 @@ passes validation and one that reads like a person.
 - **Vary the angle.** Six hints about how a thing tastes is one hint written
   six times. Spread them across appearance, use, place, time, who does it, what
   it is made of, the feeling it carries, the cultural association.
-- **Prefer a hint that could belong to two or three words in the category.** A
+- **Prefer a hint that naturally belongs to several nearby words in the category; the shipped catalogue targets five.** A
   hint that fits exactly one word hands the impostor the answer once the
   derivation step starts reading the board.
 

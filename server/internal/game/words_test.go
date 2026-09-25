@@ -31,7 +31,7 @@ func TestWordRules(t *testing.T) {
 	}{
 		"hintContainsSecret": {cases.ContainsSecret, hintContainsSecret},
 		"sameHint":           {cases.SameHint, sameHint},
-		"guessMatches":       {cases.GuessMatches, guessMatches},
+		"guessMatches":       {cases.GuessMatches, func(a, b string) bool { return guessMatches(a, b) }},
 	} {
 		if len(check.rows) == 0 {
 			t.Fatalf("no %s cases", name)
@@ -42,5 +42,17 @@ func TestWordRules(t *testing.T) {
 				t.Errorf("%s(%q, %q) = %v, want %v", name, a, b, got, want)
 			}
 		}
+	}
+}
+
+func TestGuessMatchesAliases(t *testing.T) {
+	aliases := []string{"פקמן", "Pac-Man"}
+	for _, guess := range []string{"פאקמן", "פקמן", "Pac-Man"} {
+		if !guessMatches(guess, "פאקמן", aliases...) {
+			t.Errorf("%q should match פאקמן through the canonical spelling or aliases", guess)
+		}
+	}
+	if guessMatches("טטריס", "פאקמן", aliases...) {
+		t.Fatal("unrelated guess matched an alias")
 	}
 }

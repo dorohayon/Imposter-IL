@@ -59,7 +59,7 @@
 ```json
 {
   "monetization": {
-    "freeCategoryIds": ["food", "animals", "places"],
+    "freeCategoryIds": ["food", "places", "film_tv"],
     "products": {
       "categoryPrefix": "category_",
       "premiumMonthly": "premium_monthly",
@@ -128,7 +128,7 @@
 { "categories": [ { "id": "…", "name": "…" } ] }
 ```
 
-מחזיר את המנה הראשונה שאושרה (`docs/decisions.md`): `food`, `animals`, `sports`, `professions`, `places`, `objects`. `categoryIds` בחדר חייבים להיות מהרשימה הזו.
+מחזיר את קטלוג התוכן המאושר מ־`server/internal/content/content.go` (18 קטגוריות, 50 מילים בכל אחת). `categoryIds` בחדר חייבים להיות מזהים שמוחזרים מה־endpoint.
 
 ### `GET /v1/reactions`
 

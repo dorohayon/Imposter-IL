@@ -50,7 +50,7 @@ func (t hintTables) suspicion(category string, board []BoardHint) map[string]flo
 		// out worse than one who reached nothing at all.
 		reach := false
 		for _, other := range board {
-			if other.PlayerID != h.PlayerID && t.affinity(h.Text, other.Text) {
+			if other.PlayerID != h.PlayerID && t.affinity(category, h.Text, other.Text) {
 				reach = true
 				break
 			}
@@ -71,7 +71,7 @@ func (t hintTables) suspicion(category string, board []BoardHint) map[string]flo
 		// a graph built out of what bots say, so reading that silence as guilt
 		// would hunt them by construction: measured at 78% before this guard
 		// existed.
-		if !t.known(h.Text) && !reach && !vague {
+		if !t.known(category, h.Text) && !reach && !vague {
 			continue
 		}
 		// Broad or apart, never both. A hint the category calls broad is one
@@ -131,11 +131,11 @@ const (
 
 // affinity reports whether two played hints look like they belong to the same
 // round. It knows nothing about who wrote either one.
-func (t hintTables) affinity(a, b string) bool {
+func (t hintTables) affinity(category, a, b string) bool {
 	// Hebrew carries meaning in the stem, so איטלקי reaches איטליה and גבינות
 	// reaches גבינה. That is the only thing that speaks for a word nobody
 	// curated, which is to say for most of what a person writes.
-	return sameWord(a, b) || t.linked(a, b) || sharesStem(a, b)
+	return sameWord(a, b) || t.linked(category, a, b) || sharesStem(a, b)
 }
 
 func sharesStem(a, b string) bool {

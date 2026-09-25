@@ -20,7 +20,7 @@ func testPolicy() game.Policy {
 }
 
 func settings() Settings {
-	return Settings{MaxPlayers: 8, HintSeconds: 60, CategoryIDs: []string{"animals"}}
+	return Settings{MaxPlayers: 8, HintSeconds: 60, CategoryIDs: []string{"film_tv"}}
 }
 
 func must(t *testing.T, err error) {
@@ -138,12 +138,12 @@ func TestStartIncludesOfflineMembersAndUsesHintSeconds(t *testing.T) {
 	s := settings()
 	s.HintSeconds = 30
 	r := newRoom(t, s, "p1", "p2")
-	wantErr(t, r.Start("p1", "animals", "פיל", t0), ErrNotHost)
-	wantErr(t, r.Start("host", "animals", "פיל", t0), ErrNotEnoughPlayers)
+	wantErr(t, r.Start("p1", "film_tv", "פיל", t0), ErrNotHost)
+	wantErr(t, r.Start("host", "film_tv", "פיל", t0), ErrNotEnoughPlayers)
 
 	must(t, r.Join("p3", t0))
 	must(t, r.Disconnect("p3", t0))
-	must(t, r.Start("host", "animals", "פיל", t0))
+	must(t, r.Start("host", "film_tv", "פיל", t0))
 	if r.View().Status != StatusInGame {
 		t.Fatal("room did not enter the game")
 	}
@@ -159,7 +159,7 @@ func TestStartIncludesOfflineMembersAndUsesHintSeconds(t *testing.T) {
 	wantInGame(false)
 	wantErr(t, r.Join("p5", t0), ErrInGame)
 	wantErr(t, r.Kick("host", "p1", t0), ErrInGame)
-	wantErr(t, r.Start("host", "animals", "פיל", t0), ErrInGame)
+	wantErr(t, r.Start("host", "film_tv", "פיל", t0), ErrInGame)
 
 	must(t, r.Reconnect("p3", t0))
 	wantInGame(true)
@@ -172,13 +172,13 @@ func TestStartIncludesOfflineMembersAndUsesHintSeconds(t *testing.T) {
 
 func TestStartByServerNeedsNoHost(t *testing.T) {
 	r := newRoom(t, settings(), "p1", "p2")
-	wantErr(t, r.StartByServer("animals", "פיל", t0), ErrNotEnoughPlayers)
+	wantErr(t, r.StartByServer("film_tv", "פיל", t0), ErrNotEnoughPlayers)
 	must(t, r.Join("p3", t0))
-	must(t, r.StartByServer("animals", "פיל", t0))
+	must(t, r.StartByServer("film_tv", "פיל", t0))
 	if r.View().Status != StatusInGame {
 		t.Fatal("room did not enter the game")
 	}
-	wantErr(t, r.StartByServer("animals", "פיל", t0), ErrInGame)
+	wantErr(t, r.StartByServer("film_tv", "פיל", t0), ErrInGame)
 }
 
 func confirmAll(t *testing.T, r *Room, now time.Time) {
@@ -202,7 +202,7 @@ func impostor(t *testing.T, r *Room) string {
 func TestFinishedGameReturnsToLobbyAndRoomStaysOpen(t *testing.T) {
 	r := newRoom(t, settings(), "p1", "p2", "p3", "p4")
 	wantErr(t, r.WithGame(t0, func(*game.Game) error { return nil }), ErrNoGame)
-	must(t, r.Start("host", "animals", "פיל", t0))
+	must(t, r.Start("host", "film_tv", "פיל", t0))
 	confirmAll(t, r, t0)
 
 	// The impostor leaving ends the game (impostor_gone) and leaves the room.
@@ -217,7 +217,7 @@ func TestFinishedGameReturnsToLobbyAndRoomStaysOpen(t *testing.T) {
 	}
 
 	must(t, r.Join("p5", t0.Add(2*time.Second)))
-	must(t, r.Start(r.host, "animals", "נמר", t0.Add(3*time.Second)))
+	must(t, r.Start(r.host, "film_tv", "נמר", t0.Add(3*time.Second)))
 }
 
 // disconnectThreeTimes leaves playerID offline on their third disconnect and
@@ -239,7 +239,7 @@ func disconnectThreeTimes(t *testing.T, r *Room, playerID string) time.Time {
 
 func TestPlayerRemovedFromGameLeavesRoom(t *testing.T) {
 	r := newRoom(t, settings(), "p1", "p2", "p3", "p4")
-	must(t, r.Start("host", "animals", "פיל", t0))
+	must(t, r.Start("host", "film_tv", "פיל", t0))
 	now := disconnectThreeTimes(t, r, "p1")
 	r.Tick(now.Add(29 * time.Second))
 	if r.member("p1") == nil {
@@ -307,7 +307,7 @@ func TestHostTimeoutWithNobodyOnlineGoesToFirstOtherMemberBack(t *testing.T) {
 	must(t, r.Reconnect("host", t0.Add(40*time.Second)))
 	wantHost(t, r, "")
 	wantErr(t, r.Kick("host", "p1", t0.Add(40*time.Second)), ErrNotHost)
-	wantErr(t, r.Start("host", "animals", "פיל", t0.Add(40*time.Second)), ErrNotHost)
+	wantErr(t, r.Start("host", "film_tv", "פיל", t0.Add(40*time.Second)), ErrNotHost)
 
 	must(t, r.Reconnect("p2", t0.Add(time.Minute)))
 	wantHost(t, r, "p2")
@@ -359,7 +359,7 @@ func TestHostLeavingHandsOverImmediately(t *testing.T) {
 
 func TestHostLeavingDuringGameIsALossAndHandsOver(t *testing.T) {
 	r := newRoom(t, settings(), "p1", "p2", "p3", "p4")
-	must(t, r.Start("host", "animals", "פיל", t0))
+	must(t, r.Start("host", "film_tv", "פיל", t0))
 	confirmAll(t, r, t0)
 	hostWasImpostor := impostor(t, r) == "host"
 
@@ -377,7 +377,7 @@ func TestHostLeavingDuringGameIsALossAndHandsOver(t *testing.T) {
 
 func TestHostRemovedOnThirdDisconnectInGame(t *testing.T) {
 	r := newRoom(t, settings(), "p1", "p2", "p3", "p4")
-	must(t, r.Start("host", "animals", "פיל", t0))
+	must(t, r.Start("host", "film_tv", "פיל", t0))
 	now := disconnectThreeTimes(t, r, "host")
 
 	// Each drop lasts 30 s, which is also the host's reconnect window: the
@@ -396,7 +396,7 @@ func TestViewIsASnapshot(t *testing.T) {
 	v := r.View()
 	v.Members[0].ID = "changed"
 	v.Settings.CategoryIDs[0] = "changed"
-	if next := r.View(); next.Members[0].ID != "host" || next.Settings.CategoryIDs[0] != "animals" {
+	if next := r.View(); next.Members[0].ID != "host" || next.Settings.CategoryIDs[0] != "film_tv" {
 		t.Fatal("mutating a view changed the room")
 	}
 }
@@ -406,7 +406,7 @@ func TestViewIsASnapshot(t *testing.T) {
 // what happened while the room dropped everyone who was not active.
 func TestASpectatorKeepsTheirSeatInTheRoom(t *testing.T) {
 	r := newRoom(t, settings(), "p1", "p2", "p3", "p4")
-	must(t, r.Start("host", "animals", "פיל", t0))
+	must(t, r.Start("host", "film_tv", "פיל", t0))
 
 	// Find a citizen, and hand the whole table's vote to them.
 	var victim string

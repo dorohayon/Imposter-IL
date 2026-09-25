@@ -60,7 +60,7 @@ func TestConfigIsPublic(t *testing.T) {
 	}
 	cfg := body["monetization"].(map[string]any)
 	free := cfg["freeCategoryIds"].([]any)
-	if fmt.Sprint(free) != "[food animals places]" || cfg["serverEnforcement"] != false {
+	if fmt.Sprint(free) != "[food places film_tv]" || cfg["serverEnforcement"] != false {
 		t.Fatalf("config = %v", cfg)
 	}
 	products := cfg["products"].(map[string]any)
@@ -79,7 +79,7 @@ func TestConfigIsPublic(t *testing.T) {
 func TestWithoutEnforcementEveryCategoryIsOpen(t *testing.T) {
 	c := newClient(t)
 	token, _ := c.session("דור")
-	if status, body := c.roomWith(token, "sports", "objects"); status != http.StatusCreated {
+	if status, body := c.roomWith(token, "sports", "gaming"); status != http.StatusCreated {
 		t.Fatalf("create room: %d %v", status, body)
 	}
 }
@@ -94,7 +94,7 @@ func TestPrivateRoomHostNeedsTheCategories(t *testing.T) {
 
 	status, body := c.roomWith(token, "food", "sports")
 	c.wantError(http.StatusForbidden, "category_locked", status, body)
-	if status, body := c.roomWith(token, "food", "animals", "places"); status != http.StatusCreated {
+	if status, body := c.roomWith(token, "food", "film_tv", "places"); status != http.StatusCreated {
 		t.Fatalf("free categories: %d %v", status, body)
 	}
 
@@ -106,7 +106,7 @@ func TestPrivateRoomHostNeedsTheCategories(t *testing.T) {
 	if status, body := c.roomWith(token, "sports", "food"); status != http.StatusCreated {
 		t.Fatalf("bought category: %d %v", status, body)
 	}
-	status, body = c.roomWith(token, "objects")
+	status, body = c.roomWith(token, "gaming")
 	c.wantError(http.StatusForbidden, "category_locked", status, body)
 
 	// Monthly Premium opens everything while the period lasts.
@@ -114,11 +114,11 @@ func TestPrivateRoomHostNeedsTheCategories(t *testing.T) {
 	if status != http.StatusOK || body["entitlements"].(map[string]any)["premium"] != true {
 		t.Fatalf("monthly: %d %v", status, body)
 	}
-	if status, body := c.roomWith(token, "objects", "professions"); status != http.StatusCreated {
+	if status, body := c.roomWith(token, "gaming", "music"); status != http.StatusCreated {
 		t.Fatalf("premium: %d %v", status, body)
 	}
 	c.advance(2 * time.Hour)
-	status, body = c.roomWith(token, "objects")
+	status, body = c.roomWith(token, "gaming")
 	c.wantError(http.StatusForbidden, "category_locked", status, body)
 }
 
@@ -229,12 +229,12 @@ func TestOnlineSearchAndRoomSettingsNeedTheCategories(t *testing.T) {
 	wantOK(t, w.command("ok", "matchmaking.join", map[string]any{"categoryIds": []string{"food", "sports"}}))
 	wantOK(t, w.command("cancel", "matchmaking.cancel", map[string]any{}))
 
-	room := c.createRoom(token, 4) // animals, which is free
+	room := c.createRoom(token, 4) // film_tv, which is free
 	settings := func(categories ...string) map[string]any {
 		return map[string]any{"roomId": room["roomId"], "maxPlayers": 4, "hintSeconds": 60, "categoryIds": categories}
 	}
-	wantReplyError(t, w.command("settings-locked", "room.updateSettings", settings("objects")), "category_locked")
-	wantOK(t, w.command("settings-ok", "room.updateSettings", settings("sports", "animals")))
+	wantReplyError(t, w.command("settings-locked", "room.updateSettings", settings("gaming")), "category_locked")
+	wantOK(t, w.command("settings-ok", "room.updateSettings", settings("sports", "film_tv")))
 }
 
 // "משחק נוסף" online searches again through joinSearch, so it is where a

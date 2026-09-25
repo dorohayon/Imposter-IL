@@ -25,7 +25,7 @@ func (c *client) searcher(name string, categories ...string) *wsPlayer {
 func TestStagingBotsFillYieldAndNeverWaitAlone(t *testing.T) {
 	c := newClient(t)
 	c.srv.EnableStagingBots(5)
-	first := c.searcher("דור", "animals")
+	first := c.searcher("דור", "film_tv")
 	c.advanceStagingBots(stagingBotJoinWindow)
 	state := first.w.searchState(searchPlayers(6))
 	botNames := 0
@@ -38,7 +38,7 @@ func TestStagingBotsFillYieldAndNeverWaitAlone(t *testing.T) {
 		t.Fatalf("players = %v, want one human and five named bots", state["players"])
 	}
 
-	second := c.searcher("נועה", "animals")
+	second := c.searcher("נועה", "film_tv")
 	first.w.searchState(func(state map[string]any) bool {
 		players := state["players"].([]any)
 		if len(players) != 4 {
@@ -78,7 +78,7 @@ func TestStagingBotsFillYieldAndNeverWaitAlone(t *testing.T) {
 func TestStagingBotsPlayAnOnlineGameToCompletion(t *testing.T) {
 	c := newClient(t)
 	c.srv.EnableStagingBots(5)
-	human := c.searcher("דור", "animals")
+	human := c.searcher("דור", "film_tv")
 	c.waitStagingSearchPlayers(4)
 	c.advance(30 * time.Second)
 	c.tickAll()
@@ -252,14 +252,14 @@ func wantGameStarted(t *testing.T, players ...*wsPlayer) []map[string]any {
 
 func TestMatchmakingFourthPlayerStartsThirtySecondWait(t *testing.T) {
 	c := newClient(t)
-	players := c.searchers(3, "animals")
+	players := c.searchers(3, "film_tv")
 	s := players[0].w.searchState(searchPlayers(3))
 	if s["status"] != "searching" || s["deadline"] != "2026-09-15T12:02:00Z" || s["targetPlayers"] != float64(6) || s["maxPlayers"] != float64(8) {
 		t.Fatalf("searching state = %v", s)
 	}
 
 	c.advance(10 * time.Second)
-	players = append(players, c.searcher("רביעי", "animals"))
+	players = append(players, c.searcher("רביעי", "film_tv"))
 	s = players[0].w.searchState(searchPlayers(4))
 	if s["status"] != "waiting_for_more" || s["deadline"] != "2026-09-15T12:00:40Z" {
 		t.Fatalf("waiting state = %v", s)
@@ -287,9 +287,9 @@ func (p *wsPlayer) roomID(c *client) string {
 
 func TestMatchmakingSixthPlayerStartsCountdownThatSurvivesACancel(t *testing.T) {
 	c := newClient(t)
-	players := c.searchers(4, "animals")
+	players := c.searchers(4, "film_tv")
 	c.advance(5 * time.Second)
-	players = append(players, c.searcher("חמישי", "animals"), c.searcher("שישי", "animals"))
+	players = append(players, c.searcher("חמישי", "film_tv"), c.searcher("שישי", "film_tv"))
 	s := players[0].w.searchState(searchPlayers(6))
 	if s["status"] != "countdown" || s["deadline"] != "2026-09-15T12:00:10Z" {
 		t.Fatalf("countdown state = %v", s)
@@ -308,14 +308,14 @@ func TestMatchmakingSixthPlayerStartsCountdownThatSurvivesACancel(t *testing.T) 
 
 func TestMatchmakingDroppingBelowFourStartsAFreshWait(t *testing.T) {
 	c := newClient(t)
-	players := c.searchers(4, "animals")
+	players := c.searchers(4, "film_tv")
 	c.advance(10 * time.Second)
 	wantOK(t, players[3].w.command("cancel", "matchmaking.cancel", map[string]any{}))
 	if s := players[0].w.searchState(searchPlayers(3)); s["status"] != "searching" {
 		t.Fatalf("below four = %v", s)
 	}
 	c.advance(10 * time.Second)
-	wantOK(t, players[3].w.command("again", "matchmaking.join", map[string]any{"categoryIds": []string{"animals"}}))
+	wantOK(t, players[3].w.command("again", "matchmaking.join", map[string]any{"categoryIds": []string{"film_tv"}}))
 	// Skip the older 4-player snapshot from before the cancel.
 	players[0].w.searchState(func(s map[string]any) bool {
 		return len(s["players"].([]any)) == 4 && s["deadline"] == "2026-09-15T12:00:50Z" && s["status"] == "waiting_for_more"
@@ -324,7 +324,7 @@ func TestMatchmakingDroppingBelowFourStartsAFreshWait(t *testing.T) {
 
 func TestMatchmakingNoMatchAfterTwoMinutes(t *testing.T) {
 	c := newClient(t)
-	players := c.searchers(3, "animals")
+	players := c.searchers(3, "film_tv")
 	c.advance(2*time.Minute - time.Second)
 	c.tickAll()
 	if players[0].roomID(c) == "" {
@@ -333,7 +333,7 @@ func TestMatchmakingNoMatchAfterTwoMinutes(t *testing.T) {
 	c.advance(time.Second)
 	c.tickAll()
 	for _, p := range players {
-		if payload := p.w.next("matchmaking.noMatch")["payload"].(map[string]any); fmt.Sprint(payload["categoryIds"]) != "[animals]" {
+		if payload := p.w.next("matchmaking.noMatch")["payload"].(map[string]any); fmt.Sprint(payload["categoryIds"]) != "[film_tv]" {
 			t.Fatalf("noMatch = %v", payload)
 		}
 		p.w.sessionState(func(s map[string]any) bool { return s["activity"] == "none" })
@@ -343,11 +343,11 @@ func TestMatchmakingNoMatchAfterTwoMinutes(t *testing.T) {
 func TestMatchmakingGroupsPlayersWhoShareACategory(t *testing.T) {
 	c := newClient(t)
 	food := c.searcher("אוכל", "food")
-	animals := c.searcher("חיות", "animals")
+	animals := c.searcher("חיות", "film_tv")
 	if food.roomID(c) == animals.roomID(c) {
 		t.Fatal("players without a shared category were grouped")
 	}
-	both := c.searcher("שניהם", "food", "animals")
+	both := c.searcher("שניהם", "food", "film_tv")
 	if both.roomID(c) != food.roomID(c) {
 		t.Fatal("a player with a shared category did not join the existing group")
 	}
@@ -382,7 +382,7 @@ func TestMatchmakingErrors(t *testing.T) {
 // app for longer ends the search.
 func TestMatchmakingADropKeepsThePlaceForThirtySeconds(t *testing.T) {
 	c := newClient(t)
-	players := c.searchers(2, "animals")
+	players := c.searchers(2, "film_tv")
 	players[0].w.searchState(searchPlayers(2))
 	_ = players[1].w.ws.CloseNow()
 	c.waitOffline(players[1].id)
@@ -405,7 +405,7 @@ func TestMatchmakingADropKeepsThePlaceForThirtySeconds(t *testing.T) {
 // inside that game would leave them only a losing way out.
 func TestMatchmakingOfflineSearcherIsNotDealtIntoTheMatch(t *testing.T) {
 	c := newClient(t)
-	players := c.searchers(6, "animals")
+	players := c.searchers(6, "film_tv")
 	players[0].w.searchState(searchPlayers(6))
 	gone := players[5]
 	_ = gone.w.ws.CloseNow()
@@ -429,7 +429,7 @@ func TestMatchmakingOfflineSearcherIsNotDealtIntoTheMatch(t *testing.T) {
 
 func TestMatchmakingReconnectingInTimeKeepsSearching(t *testing.T) {
 	c := newClient(t)
-	players := c.searchers(2, "animals")
+	players := c.searchers(2, "film_tv")
 	players[0].w.searchState(searchPlayers(2))
 	_ = players[1].w.ws.CloseNow()
 	c.waitOffline(players[1].id)
@@ -450,7 +450,7 @@ func TestMatchmakingReconnectingInTimeKeepsSearching(t *testing.T) {
 
 func TestMatchmakingPlayAgainSearchesTogetherAndFillsUp(t *testing.T) {
 	c := newClient(t)
-	players := c.searchers(4, "animals")
+	players := c.searchers(4, "film_tv")
 	c.advance(30 * time.Second)
 	c.tickAll()
 	games := wantGameStarted(t, players...)
@@ -477,7 +477,7 @@ func TestMatchmakingPlayAgainSearchesTogetherAndFillsUp(t *testing.T) {
 	if rest[0].roomID(c) != rest[1].roomID(c) {
 		t.Fatal("players who chose another game were split up")
 	}
-	stranger := c.searcher("חדש", "animals")
+	stranger := c.searcher("חדש", "film_tv")
 	if stranger.roomID(c) != rest[0].roomID(c) {
 		t.Fatal("a new player did not fill the continuing group")
 	}
@@ -493,10 +493,10 @@ func TestMatchmakingPlayAgainStaysTogetherEvenWithDifferentCategories(t *testing
 	// Two of the four matched only on animals: one also picked food, one
 	// also picked sports.
 	players := []*wsPlayer{
-		c.searcher("אוכל-וחיות", "food", "animals"),
-		c.searcher("חיות", "animals"),
-		c.searcher("ספורט-וחיות", "sports", "animals"),
-		c.searcher("חיות2", "animals"),
+		c.searcher("אוכל-וחיות", "food", "film_tv"),
+		c.searcher("חיות", "film_tv"),
+		c.searcher("ספורט-וחיות", "sports", "film_tv"),
+		c.searcher("חיות2", "film_tv"),
 	}
 	c.advance(30 * time.Second)
 	c.tickAll()
@@ -536,7 +536,7 @@ func TestMatchmakingPlayAgainStaysTogetherEvenWithDifferentCategories(t *testing
 func TestStagingBotsReactToTheHintOnTheBoard(t *testing.T) {
 	c := newClient(t)
 	c.srv.EnableStagingBots(5)
-	human := c.searcher("דור", "animals")
+	human := c.searcher("דור", "film_tv")
 	c.waitStagingSearchPlayers(4)
 	c.advance(30 * time.Second)
 	c.tickAll()

@@ -30,7 +30,7 @@ class FakeStore implements StoreGateway {
   /// Verification data per product, for example a StoreKit JWS.
   final proofs = <String, String>{};
   final prices = <String, String>{
-    for (final id in ['sports', 'professions', 'objects', 'food'])
+    for (final id in ['sports', 'professions', 'gaming', 'food'])
       'category_$id': '9.90 ₪',
     monthly: '14.90 ₪',
     lifetime: '59.90 ₪',

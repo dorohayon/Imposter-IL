@@ -60,6 +60,31 @@ const localCategories = <LocalCategory>[
 		}
 		b.WriteString("  ]),\n")
 	}
-	b.WriteString("];\n")
+	b.WriteString("];\n\n")
+
+	b.WriteString("// Alternate spellings accepted only for the impostor's final guess.\n")
+	b.WriteString("const localGuessAliases = <String, List<String>>{\n")
+	seen := map[string]bool{}
+	for _, c := range content.Categories {
+		for _, w := range c.Words {
+			if seen[w] {
+				continue
+			}
+			seen[w] = true
+			aliases := content.GuessAliases(w)
+			if len(aliases) == 0 {
+				continue
+			}
+			fmt.Fprintf(&b, "  '%s': [", quote(w))
+			for i, alias := range aliases {
+				if i > 0 {
+					b.WriteString(", ")
+				}
+				fmt.Fprintf(&b, "'%s'", quote(alias))
+			}
+			b.WriteString("],\n")
+		}
+	}
+	b.WriteString("};\n")
 	return b.String()
 }

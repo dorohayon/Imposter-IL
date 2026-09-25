@@ -35,9 +35,9 @@ func auditLockFree(s *Server, d time.Duration) bool {
 func TestAuditNoMatchWithStagingBotsDereferencesADeletedBot(t *testing.T) {
 	c := newClient(t)
 	c.srv.EnableStagingBots(5)
-	h1 := c.searcher("אחד", "animals")
-	h2 := c.searcher("שתיים", "animals")
-	h3 := c.searcher("שלוש", "animals")
+	h1 := c.searcher("אחד", "film_tv")
+	h2 := c.searcher("שתיים", "film_tv")
+	h3 := c.searcher("שלוש", "film_tv")
 	c.waitStagingSearchPlayers(4) // three humans, one bot
 	c.advance(5 * time.Second)
 	// Two humans cancel; the room is back to one human and one bot, and the
@@ -71,7 +71,7 @@ func TestAuditNoMatchWithStagingBotsDereferencesADeletedBot(t *testing.T) {
 // recover: in production (Server.Run goroutine) this panic ends the process.
 func TestAuditNoMatchInPlayAgainRoomPanicsTheBotLoop(t *testing.T) {
 	c := newClient(t)
-	hs := c.searchers(4, "animals")
+	hs := c.searchers(4, "film_tv")
 	c.advance(30 * time.Second)
 	c.tickAll()
 	var gameIDs []string
@@ -187,7 +187,7 @@ func TestAuditGhostSessionDeadlocksTheServer(t *testing.T) {
 	delete(c.srv.players, id)
 	c.srv.mu.Unlock()
 
-	w.send(map[string]any{"v": 1, "id": "j", "type": "matchmaking.join", "payload": map[string]any{"categoryIds": []string{"animals"}}})
+	w.send(map[string]any{"v": 1, "id": "j", "type": "matchmaking.join", "payload": map[string]any{"categoryIds": []string{"film_tv"}}})
 	time.Sleep(300 * time.Millisecond)
 	if !auditLockFree(c.srv, 3*time.Second) {
 		buf := make([]byte, 1<<16)

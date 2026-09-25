@@ -81,10 +81,10 @@ var BannerPlacements = []string{
 	"lobby", "profile", "settings", "how_to_play", "local_players", "local_rules",
 }
 
-// Default is the approved model: food, animals and places are free.
+// Default is the approved model: food, world places and film/TV are free.
 func Default() Config {
 	return Config{
-		FreeCategoryIDs: []string{"food", "animals", "places"},
+		FreeCategoryIDs: []string{"food", "places", "film_tv"},
 		Products: Products{
 			CategoryPrefix:  "category_",
 			PremiumMonthly:  "premium_monthly",

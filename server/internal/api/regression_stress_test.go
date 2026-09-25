@@ -193,7 +193,7 @@ func auditStress(t *testing.T, runFor time.Duration) {
 		}()
 	}
 	pick := func(r *rand.Rand) *auditPlayer { return players[r.IntN(len(players))] }
-	cats := [][]string{{"animals"}, {"animals", "food"}, {"food"}}
+	cats := [][]string{{"film_tv"}, {"film_tv", "food"}, {"food"}}
 	for range 12 {
 		loop(func(r *rand.Rand) {
 			p := pick(r)
@@ -248,7 +248,7 @@ func auditStress(t *testing.T, runFor time.Duration) {
 					auditREST(ts, "POST", "/v1/rooms/join", p.token, map[string]any{"code": cs[r.IntN(len(cs))]})
 				}
 			case 2:
-				auditREST(ts, "POST", "/v1/rooms", p.token, map[string]any{"maxPlayers": 8, "hintSeconds": 60, "categoryIds": []string{"animals"}})
+				auditREST(ts, "POST", "/v1/rooms", p.token, map[string]any{"maxPlayers": 8, "hintSeconds": 60, "categoryIds": []string{"film_tv"}})
 			case 3:
 				auditREST(ts, "POST", "/v1/entitlements", p.token, map[string]any{"purchases": []any{}})
 			case 4:

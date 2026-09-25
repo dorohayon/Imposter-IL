@@ -88,7 +88,7 @@ func (c *client) session(nickname string) (string, string) {
 
 func (c *client) createRoom(token string, maxPlayers int) map[string]any {
 	c.t.Helper()
-	status, body := c.do("POST", "/v1/rooms", token, map[string]any{"maxPlayers": maxPlayers, "hintSeconds": 60, "categoryIds": []string{"animals"}})
+	status, body := c.do("POST", "/v1/rooms", token, map[string]any{"maxPlayers": maxPlayers, "hintSeconds": 60, "categoryIds": []string{"film_tv"}})
 	if status != http.StatusCreated {
 		c.t.Fatalf("create room: %d %v", status, body)
 	}
@@ -202,10 +202,10 @@ func TestListCategories(t *testing.T) {
 	token, _ := c.session("דור")
 	status, body = c.do("GET", "/v1/categories", token, nil)
 	categories, _ := body["categories"].([]any)
-	if status != 200 || len(categories) != 6 {
+	if status != 200 || len(categories) != 18 {
 		t.Fatalf("got %d %v", status, body)
 	}
-	if first := categories[0].(map[string]any); first["id"] != "food" || first["name"] != "אוכל" {
+	if first := categories[0].(map[string]any); first["id"] != "food" || first["name"] != "אוכל ושתייה" {
 		t.Fatalf("first category = %v", first)
 	}
 }
@@ -322,7 +322,7 @@ func TestCannotMoveRoomsDuringAGame(t *testing.T) {
 		c.join(token, room["code"].(string))
 	}
 	entry := c.srv.roomsByID[room["roomId"].(string)]
-	if err := entry.room.Start(hostID, "animals", "פיל", t0); err != nil {
+	if err := entry.room.Start(hostID, "film_tv", "פיל", t0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -356,7 +356,7 @@ func TestKickedPlayerCanMoveEvenIfTheOldRoomStarted(t *testing.T) {
 	if err := entry.room.Kick(hostID, kickedID, t0); err != nil {
 		t.Fatal(err)
 	}
-	if err := entry.room.Start(hostID, "animals", "פיל", t0); err != nil {
+	if err := entry.room.Start(hostID, "film_tv", "פיל", t0); err != nil {
 		t.Fatal(err)
 	}
 	c.createRoom(kicked, 8)

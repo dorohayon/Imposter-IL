@@ -26,12 +26,18 @@
 
 | מוצר | מזהה | סוג ב־App Store | סוג ב־Google Play |
 | --- | --- | --- | --- |
-| קטגוריה | `category_<id>` (למשל `category_sports`) | Non-Consumable | One-time product |
+| קטגוריה | `category_<id>` (למשל `category_gaming`) | Non-Consumable | One-time product |
 | פרימיום חודשי | `premium_monthly` | Auto-Renewable Subscription, חודש | Subscription, base plan חודשי |
 | פרימיום לכל החיים | `premium_lifetime` | Non-Consumable | One-time product |
 
 קטגוריה חדשה צריכה מוצר חדש בשתי החנויות, ולא שינוי קוד או הגדרה. מזהה מוצר
 ב־App Store אינו ניתן לשימוש חוזר לעולם, גם אחרי מחיקה.
+
+**מרגע שקטגוריה נמכרה, אסור להסיר את המזהה שלה או לשנות את משמעותו.** רכישה
+של `category_<id>` שאינו ברשימה נדחית בשרת, ומי שקנה מאבד את מה ששילם עליו.
+קטגוריה שיוצאת מהקטלוג נשארת ברשימה (אפשר להסתיר אותה מהבחירה לשחקנים חדשים),
+או ממופה במפורש לקטגוריה שמחליפה אותה. שינוי המזהים בספטמבר 2026 נעשה לפני
+שנמכרה קטגוריה כלשהי.
 
 ## ארכיטקטורה
 
@@ -150,7 +156,7 @@ POST /v1/rooms · matchmaking.join · room.updateSettings ──► 403 category
 
 | שדה | ברירת מחדל | משמעות |
 | --- | --- | --- |
-| `freeCategoryIds` | `food, animals, places` | הקטגוריות החינמיות |
+| `freeCategoryIds` | `food, places, film_tv` | הקטגוריות החינמיות |
 | `products.*` | ראו למעלה | מזהי המוצרים |
 | `purchasesEnabled` | `true` | כיבוי כפתורי הקנייה (למשל בתקלה בחנות); השחזור נשאר |
 | `serverEnforcement` | `false` | אכיפה בשרת |

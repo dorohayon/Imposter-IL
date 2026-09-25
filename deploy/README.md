@@ -223,7 +223,7 @@ other than the comma, and the Play key belongs in Secret Manager:
 
 ```sh
 gcloud run services update imposter --region us-central1 \
-  --update-env-vars='^@^MONETIZATION_CONFIG={"freeCategoryIds":["food","animals","places"]}'
+  --update-env-vars='^@^MONETIZATION_CONFIG={"freeCategoryIds":["food","places","film_tv"]}'
 gcloud run services update imposter --region us-central1 \
   --update-env-vars=APPLE_BUNDLE_ID=com.imposteril.app,GOOGLE_PLAY_PACKAGE=com.imposteril.app \
   --set-secrets=GOOGLE_PLAY_SERVICE_ACCOUNT=play-verifier:latest

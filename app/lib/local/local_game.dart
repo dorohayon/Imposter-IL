@@ -464,8 +464,16 @@ class LocalGame {
 /// punctuation and niqqud are ignored, final letters are folded, and up to
 /// three Hebrew use-prefix letters may precede the secret word.
 bool isCorrectLocalGuess(String guess, String secretWord) {
+  if (_matchesLocalGuess(guess, secretWord)) return true;
+  for (final alias in localGuessAliases[secretWord] ?? const <String>[]) {
+    if (_matchesLocalGuess(guess, alias)) return true;
+  }
+  return false;
+}
+
+bool _matchesLocalGuess(String guess, String candidate) {
   final said = _normaliseHebrewWord(guess);
-  final word = _normaliseHebrewWord(secretWord);
+  final word = _normaliseHebrewWord(candidate);
   if (said == word) return true;
   const prefixes = 'והבכלמש';
   for (var count = 1; count <= 3 && count < said.length; count++) {

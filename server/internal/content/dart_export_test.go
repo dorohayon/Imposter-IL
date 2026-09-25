@@ -49,4 +49,23 @@ func TestDartExportMatchesTheCategories(t *testing.T) {
 	if strings.Count(dart, "LocalCategory(") != len(Categories)+1 { // +1 for the class
 		t.Errorf("%s holds a different number of categories: run go run ./cmd/exportwords", path)
 	}
+
+	for _, c := range Categories {
+		for _, word := range c.Words {
+			aliases := GuessAliases(word)
+			if len(aliases) == 0 {
+				continue
+			}
+			escapedWord := strings.ReplaceAll(word, "'", `\'`)
+			if !strings.Contains(dart, "  '"+escapedWord+"': [") {
+				t.Errorf("aliases for %q are missing from %s", word, path)
+			}
+			for _, alias := range aliases {
+				escapedAlias := strings.ReplaceAll(alias, "'", `\'`)
+				if !strings.Contains(dart, "'"+escapedAlias+"'") {
+					t.Errorf("alias %q for %q is missing from %s", alias, word, path)
+				}
+			}
+		}
+	}
 }

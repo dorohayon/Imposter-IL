@@ -90,22 +90,49 @@ func isPrefixed(long, short string) bool {
 }
 
 // hintContainsSecret applies only to citizens; the impostor does not know the
-// word. A short secret counts only at the start of the hint, after any prefix
-// letters: "הדגים" gives "דג" away, "אגדה" does not.
+// word. The full secret keeps the original matching rule, including short
+// stems such as פיל -> פילים. For a two-word secret, each visible component is
+// blocked too; short components use exact/prefixed matching only, avoiding
+// false positives such as בן inside מבנה.
 func hintContainsSecret(hint, secret string) bool {
-	h, s := normalizeWord(hint), normalizeWord(secret)
-	switch {
-	case s == "":
-		return false
-	case len([]rune(s)) >= minInnerSecret:
-		return strings.Contains(h, s)
-	}
-	hr := []rune(h)
-	for i := 0; i <= maxPrefixLetters && i < len(hr); i++ {
-		if i > 0 && !strings.ContainsRune(prefixLetters, hr[i-1]) {
-			break
+	h := normalizeWord(hint)
+	matchesWhole := func(candidate string) bool {
+		s := normalizeWord(candidate)
+		switch {
+		case s == "":
+			return false
+		case len([]rune(s)) >= minInnerSecret:
+			return strings.Contains(h, s)
 		}
-		if strings.HasPrefix(string(hr[i:]), s) {
+		hr := []rune(h)
+		for i := 0; i <= maxPrefixLetters && i < len(hr); i++ {
+			if i > 0 && !strings.ContainsRune(prefixLetters, hr[i-1]) {
+				break
+			}
+			if strings.HasPrefix(string(hr[i:]), s) {
+				return true
+			}
+		}
+		return false
+	}
+	if matchesWhole(secret) {
+		return true
+	}
+
+	parts := strings.Fields(secret)
+	if len(parts) <= 1 {
+		return false
+	}
+	for _, part := range parts {
+		p := normalizeWord(part)
+		if p == "" {
+			continue
+		}
+		if len([]rune(p)) >= minInnerSecret {
+			if strings.Contains(h, p) {
+				return true
+			}
+		} else if h == p || isPrefixed(h, p) {
 			return true
 		}
 	}
@@ -119,8 +146,23 @@ func sameHint(a, b string) bool {
 	return a == b || isPrefixed(a, b) || isPrefixed(b, a)
 }
 
-// guessMatches accepts the secret word, optionally with prefix letters.
-func guessMatches(guess, secret string) bool {
-	g, s := normalizeWord(guess), normalizeWord(secret)
-	return g == s || isPrefixed(g, s)
+// guessMatches accepts the secret word or one of its configured alternate
+// spellings, optionally with Hebrew prefix letters. Spacing and punctuation
+// are already ignored by normalizeWord, so aliases are only needed when the
+// spelling itself differs.
+func guessMatches(guess, secret string, aliases ...string) bool {
+	g := normalizeWord(guess)
+	matches := func(candidate string) bool {
+		s := normalizeWord(candidate)
+		return g == s || isPrefixed(g, s)
+	}
+	if matches(secret) {
+		return true
+	}
+	for _, alias := range aliases {
+		if matches(alias) {
+			return true
+		}
+	}
+	return false
 }

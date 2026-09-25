@@ -55,8 +55,8 @@ void main() {
 
     // Categories come from the server. "הכול" is the default; tapping one
     // leaves it and picks just that one.
-    expect(find.text('חפצים'), findsOneWidget);
-    await tapText(tester, 'חפצים');
+    expect(find.text('בבית'), findsOneWidget);
+    await tapText(tester, 'בבית');
     await tapText(tester, '30 שניות');
     await tapLive(tester, 'יצירת חדר');
 
@@ -64,7 +64,7 @@ void main() {
     expect(body, {
       'maxPlayers': 8,
       'hintSeconds': 30,
-      'categoryIds': ['objects'],
+      'categoryIds': ['home'],
     });
     expect(find.text('482 913'), findsOneWidget); // grouped in the lobby
     expect(

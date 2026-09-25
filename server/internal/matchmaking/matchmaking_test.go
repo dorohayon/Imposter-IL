@@ -54,10 +54,10 @@ func TestCountdownNeverDelaysAnEarlierWaitEnd(t *testing.T) {
 }
 
 func TestShared(t *testing.T) {
-	if got := Shared([]string{"food", "animals", "sports"}, []string{"sports", "food"}); !slices.Equal(got, []string{"food", "sports"}) {
+	if got := Shared([]string{"food", "film_tv", "sports"}, []string{"sports", "food"}); !slices.Equal(got, []string{"food", "sports"}) {
 		t.Fatalf("Shared = %v", got)
 	}
-	if got := Shared([]string{"food"}, []string{"animals"}); got != nil {
+	if got := Shared([]string{"food"}, []string{"film_tv"}); got != nil {
 		t.Fatalf("no overlap = %v", got)
 	}
 }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/monetization/monetization.dart';
@@ -32,10 +34,10 @@ void main() {
   group('entitlements', () {
     test('three configured categories are free and the rest locked', () async {
       final m = await started();
-      for (final id in ['food', 'animals', 'places']) {
+      for (final id in ['food', 'places', 'film_tv']) {
         expect(m.isUnlocked(id), isTrue, reason: id);
       }
-      for (final id in ['sports', 'professions', 'objects']) {
+      for (final id in ['sports', 'gaming', 'music']) {
         expect(m.isUnlocked(id), isFalse, reason: id);
       }
       expect(m.premium, isFalse);
@@ -56,7 +58,7 @@ void main() {
       final m = await started(store: FakeStore(owned: {'category_sports'}));
       expect(m.isUnlocked('sports'), isTrue);
       expect(m.isPurchased('sports'), isTrue);
-      expect(m.isUnlocked('objects'), isFalse);
+      expect(m.isUnlocked('gaming'), isFalse);
       expect(m.premium, isFalse);
       expect(m.showsAds, isTrue);
       expect(m.bannerUnit(BannerPlacement.home), isNotNull);
@@ -65,8 +67,8 @@ void main() {
     test('lifetime Premium unlocks everything and removes every ad', () async {
       final m = await started(store: FakeStore(owned: {lifetime}));
       expect(m.premium, isTrue);
-      expect(m.isUnlocked('objects'), isTrue);
-      expect(m.isPurchased('objects'), isFalse);
+      expect(m.isUnlocked('gaming'), isTrue);
+      expect(m.isPurchased('gaming'), isFalse);
       expect(m.showsAds, isFalse);
       for (final placement in BannerPlacement.all) {
         expect(m.bannerUnit(placement), isNull, reason: placement);
@@ -135,6 +137,20 @@ void main() {
       m.attach(session);
       await m.syncServer(force: true);
       expect(m.premiumUntil, DateTime.utc(2026, 10, 20));
+    });
+
+    test('a config cached before the catalogue changed is not trusted',
+        () async {
+      // Saved by an older build: 'animals' no longer exists, film_tv is free.
+      SharedPreferences.setMockInitialValues({
+        'monetization.config': jsonEncode(const MonetizationConfig(
+          freeCategoryIds: ['food', 'animals', 'places'],
+        ).toJson()),
+      });
+      final offline = FakeApi()..responses.remove('GET /v1/config');
+      final m = await started(api: offline);
+      expect(m.isUnlocked('film_tv'), isTrue);
+      expect(m.config.freeCategoryIds, isNot(contains('animals')));
     });
 
     test('offline, the last answer is kept and survives a restart', () async {
@@ -249,7 +265,7 @@ void main() {
       await m.restoreFor('sports');
       expect(m.step, PurchaseStep.restoreNone);
 
-      store.owned.add('category_objects');
+      store.owned.add('category_gaming');
       await m.restoreFor('sports');
       expect(m.step, PurchaseStep.restoredOther);
 
@@ -329,7 +345,7 @@ void main() {
       expect(posts(), before, reason: 'nothing the server decides on changed');
 
       // A real change is sent, once.
-      store.owned.add('category_objects');
+      store.owned.add('category_gaming');
       await m.refresh();
       await flush();
       expect(posts(), before + 1);
@@ -608,7 +624,7 @@ void main() {
     expect(back.interstitialMinInterval, const Duration(seconds: 30));
     expect(back.units['ios']?.banner, 'b');
     expect(MonetizationConfig.fromJson({}).freeCategoryIds,
-        ['food', 'animals', 'places']);
+        ['food', 'places', 'film_tv']);
     expect(config.categoryOf('category_sports'), 'sports');
     expect(config.categoryOf('premium_monthly'), isNull);
     expect(config.categoryOf('category_'), isNull);

@@ -204,7 +204,7 @@ func TestWSRepeatedMessageIDGetsTheSameReplyWithoutRunningAgain(t *testing.T) {
 	room := c.createRoom(token, 8)
 	w := c.dial(token)
 	settings := func(hint int) map[string]any {
-		return map[string]any{"roomId": room["roomId"], "maxPlayers": 8, "hintSeconds": hint, "categoryIds": []string{"animals"}}
+		return map[string]any{"roomId": room["roomId"], "maxPlayers": 8, "hintSeconds": hint, "categoryIds": []string{"film_tv"}}
 	}
 
 	bad := settings(30)

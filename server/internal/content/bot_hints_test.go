@@ -13,8 +13,11 @@ import (
 func TestCitizenHintsAreUsable(t *testing.T) {
 	for _, c := range Categories {
 		for _, word := range c.Words {
-			hints := CitizenHints(word)
+			hints := CitizenHints(c.Name, word)
 			for i, hint := range hints {
+				if !isHebrewSingleToken(hint) {
+					t.Errorf("%s/%s: %q must be one Hebrew hint word", c.Name, word, hint)
+				}
 				if !UsableHint(hint, word) {
 					t.Errorf("%s/%s: %q is not a hint the engine would take", c.Name, word, hint)
 				}
@@ -40,6 +43,9 @@ func TestFallbackHintsAreNotTheAnswer(t *testing.T) {
 			t.Errorf("%s: %d fallback hints, want 10 to 16", c.Name, len(pool))
 		}
 		for i, hint := range pool {
+			if !isHebrewSingleToken(hint) {
+				t.Errorf("%s: fallback %q must be one Hebrew word", c.Name, hint)
+			}
 			if !UsableHint(hint, "") {
 				t.Errorf("%s: %q is not a hint the engine would take", c.Name, hint)
 			}
@@ -62,7 +68,7 @@ func TestFallbackHintsAreNotTheAnswer(t *testing.T) {
 // asked about a secret word, and the engine never hands it one — an impostor's
 // View carries no secret word at all.
 func TestImpostorHintsCannotDependOnTheWord(t *testing.T) {
-	if got := CitizenHints(""); got != nil {
+	if got := CitizenHints("", ""); got != nil {
 		t.Errorf(`CitizenHints("") = %v, want nil: that is what an impostor's view holds`, got)
 	}
 	for _, c := range Categories {
@@ -103,12 +109,12 @@ func TestEveryWordHasCitizenHints(t *testing.T) {
 	missing, wrongSize := 0, 0
 	for _, c := range Categories {
 		for _, word := range c.Words {
-			switch n := len(CitizenHints(word)); {
+			switch n := len(CitizenHints(c.Name, word)); {
 			case n == 0:
 				missing++
-			case n < 5 || n > 7:
+			case n != 8:
 				wrongSize++
-				t.Errorf("%s/%s: %d hints, want 5 to 7", c.Name, word, n)
+				t.Errorf("%s/%s: %d hints, want 8", c.Name, word, n)
 			}
 		}
 	}
@@ -118,18 +124,38 @@ func TestEveryWordHasCitizenHints(t *testing.T) {
 	_ = wrongSize
 }
 
+// A citizen hint must remain ambiguous. The shipped catalogue is authored in
+// five-word semantic clusters, so no curated hint may fingerprint fewer than
+// five candidate secrets inside its category.
+func TestCitizenHintsStayAmbiguous(t *testing.T) {
+	for _, c := range Categories {
+		counts := map[string]int{}
+		for _, word := range c.Words {
+			for _, hint := range CitizenHints(c.Name, word) {
+				counts[hint]++
+			}
+		}
+		for hint, n := range counts {
+			if n < 5 {
+				t.Errorf("%s: %q belongs to only %d words, want at least 5", c.Name, hint, n)
+			}
+		}
+	}
+}
+
 // A key for a word that is not in the category means the word list moved and
 // the dataset did not follow.
 func TestDatasetFollowsTheWordList(t *testing.T) {
-	known := map[string]bool{}
-	for _, c := range Categories {
-		for _, word := range c.Words {
-			known[word] = true
+	for category, words := range tables.citizen {
+		at := slices.IndexFunc(Categories, func(c Category) bool { return c.Name == category })
+		if at < 0 {
+			t.Errorf("%q has citizen hints but is not a category", category)
+			continue
 		}
-	}
-	for word := range tables.citizen {
-		if !known[word] {
-			t.Errorf("%q has hints but is not a word in any category", word)
+		for word := range words {
+			if !slices.Contains(Categories[at].Words, word) {
+				t.Errorf("%s/%q has hints but is not a word in that category", category, word)
+			}
 		}
 	}
 	for category := range tables.fallback {
