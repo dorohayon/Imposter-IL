@@ -5,37 +5,37 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"unicode"
 )
 
 func TestCategoriesAreWellFormed(t *testing.T) {
-	ids, words := map[string]bool{}, map[string]string{}
+	ids := map[string]bool{}
 	for _, c := range Categories {
 		if c.ID == "" || c.Name == "" || ids[c.ID] {
 			t.Fatalf("bad or duplicate category %+v", c)
 		}
 		ids[c.ID] = true
-		if len(c.Words) != 20 {
-			t.Errorf("%s has %d words, want 20", c.ID, len(c.Words))
+		if len(c.Words) != 50 {
+			t.Errorf("%s has %d words, want 50", c.ID, len(c.Words))
 		}
+		seen := map[string]bool{}
 		for _, w := range c.Words {
-			if w == "" || strings.ContainsFunc(w, unicode.IsSpace) {
-				t.Errorf("%s: %q must be one word", c.ID, w)
+			if w == "" || strings.TrimSpace(w) != w {
+				t.Errorf("%s: %q must be non-empty without surrounding whitespace", c.ID, w)
 			}
-			if other, dup := words[w]; dup {
-				t.Errorf("%q appears in %s and %s", w, other, c.ID)
+			if seen[w] {
+				t.Errorf("%s: %q appears twice in the same category", c.ID, w)
 			}
-			words[w] = c.ID
+			seen[w] = true
 		}
 	}
-	if len(Categories) != 6 {
-		t.Fatalf("%d categories, want 6", len(Categories))
+	if len(Categories) != 18 {
+		t.Fatalf("%d categories, want 18", len(Categories))
 	}
 }
 
 func TestValidIDs(t *testing.T) {
 	switch {
-	case !ValidIDs([]string{"food"}), !ValidIDs([]string{"food", "objects"}):
+	case !ValidIDs([]string{"food"}), !ValidIDs([]string{"food", "gaming"}):
 		t.Fatal("known ids rejected")
 	case ValidIDs(nil), ValidIDs([]string{"food", "cars"}):
 		t.Fatal("empty or unknown ids accepted")
@@ -46,17 +46,17 @@ func TestPickUsesOnlyTheChosenCategories(t *testing.T) {
 	rng := rand.New(rand.NewPCG(1, 2))
 	seen := map[string]bool{}
 	for range 500 {
-		name, word, ok := Pick([]string{"food", "animals"}, rng)
-		if !ok || (name != "אוכל" && name != "חיות") {
+		name, word, ok := Pick([]string{"food", "home"}, rng)
+		if !ok || (name != "אוכל ושתייה" && name != "בבית") {
 			t.Fatalf("Pick = %q %q %v", name, word, ok)
 		}
 		if c := Categories[slices.IndexFunc(Categories, func(c Category) bool { return c.Name == name })]; !slices.Contains(c.Words, word) {
 			t.Fatalf("%q is not in %s", word, name)
 		}
-		seen[word] = true
+		seen[name+"\x00"+word] = true
 	}
-	if len(seen) < 35 {
-		t.Fatalf("only %d of 40 words picked in 500 draws", len(seen))
+	if len(seen) < 80 {
+		t.Fatalf("only %d of 100 category-word pairs picked in 500 draws", len(seen))
 	}
 	if _, _, ok := Pick([]string{"cars"}, rng); ok {
 		t.Fatal("unknown category picked a word")
