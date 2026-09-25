@@ -12,11 +12,23 @@ import 'secondary_screens.dart';
 
 const _categoryIcons = {
   'food': Icons.restaurant_rounded,
-  'animals': Icons.pets_rounded,
-  'sports': Icons.sports_soccer_rounded,
-  'professions': Icons.work_rounded,
+  'home': Icons.home_rounded,
+  'school_students': Icons.school_rounded,
+  'work_office': Icons.work_rounded,
+  'technology_digital': Icons.devices_rounded,
+  'travel_vacation': Icons.flight_takeoff_rounded,
   'places': Icons.public_rounded,
-  'objects': Icons.umbrella_rounded,
+  'dating_relationships': Icons.favorite_rounded,
+  'nightlife': Icons.nightlife_rounded,
+  'weddings_events': Icons.celebration_rounded,
+  'fashion_grooming': Icons.checkroom_rounded,
+  'gaming': Icons.sports_esports_rounded,
+  'music': Icons.music_note_rounded,
+  'nostalgia': Icons.history_rounded,
+  'israeli_slang': Icons.forum_rounded,
+  'idf_service': Icons.military_tech_rounded,
+  'film_tv': Icons.movie_rounded,
+  'sports': Icons.fitness_center_rounded,
 };
 
 const _allId = '';
