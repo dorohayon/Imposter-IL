@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/local/local_screens.dart';
 import 'package:imposter_il/monetization/store.dart';
@@ -95,12 +97,12 @@ void main() {
 
       expect(find.text('אפשר לבחור כמה קטגוריות · 3 פתוחות בחינם'),
           findsOneWidget);
-      expect(find.text('כל הפתוחות'), findsOneWidget);
+      expect(find.text('כל הקטגוריות הפתוחות'), findsOneWidget);
       // Every category stays visible: the locked ones are there, marked.
       for (final name in ['ספורט וכושר', 'עבודה ומשרד', 'גיימינג']) {
-        expect(find.text(name), findsOneWidget);
+        expect(find.text(categoryTileName(name)), findsOneWidget);
       }
-      expect(find.text('לפתיחה'), findsNWidgets(15));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(15));
 
       await tapLive(tester, 'חפש משחק');
       expect(_searched(api), ['food', 'places', 'film_tv']);
@@ -131,7 +133,8 @@ void main() {
         (tester) async {
       final (api, store, _) = await _freePlayer(tester);
       await _openPicker(tester);
-      await tapText(tester, 'אוכל ושתייה'); // an explicit choice, not "הכול"
+      await tapText(tester,
+          categoryTileName('אוכל ושתייה')); // an explicit choice, not "הכול"
       await _tapLocked(tester, 'ספורט וכושר');
 
       await _buy(tester);
@@ -142,7 +145,7 @@ void main() {
       await tapText(tester, 'בוחרים ב״ספורט וכושר״');
 
       expect(find.text('״ספורט וכושר״ נעולה'), findsNothing);
-      expect(find.text('לפתיחה'), findsNWidgets(14));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(14));
       await tapLive(tester, 'חפש משחק');
       expect(_searched(api), ['food', 'sports']);
     });
@@ -170,7 +173,7 @@ void main() {
       await tapText(tester, 'מתחילים לשחק');
 
       // Everything is open, and the header says so.
-      expect(find.text('לפתיחה'), findsNothing);
+      expect(find.byIcon(Icons.lock_rounded), findsNothing);
       expect(find.text('פרימיום'), findsOneWidget);
       expect(find.text('כל הקטגוריות'), findsOneWidget);
     });
@@ -200,7 +203,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.close_rounded));
       await tester.pumpAndSettle();
       expect(find.text('״ספורט וכושר״ נעולה'), findsNothing);
-      expect(find.text('לפתיחה'), findsNWidgets(15));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(15));
     });
 
     testWidgets('while the store works, the popup stays open', (tester) async {
@@ -268,7 +271,7 @@ void main() {
       expect(find.text('הרכישות שוחזרו'), findsOneWidget);
       expect(find.text('״ספורט וכושר״ פתוחה שוב במכשיר הזה.'), findsOneWidget);
       await tapText(tester, 'סגירה');
-      expect(find.text('לפתיחה'), findsNWidgets(14));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(14));
       expect(find.text('✓ נרכשה'), findsOneWidget);
     });
 
@@ -549,5 +552,27 @@ void main() {
     await openCreatedRoom(tester, api);
     expect(find.byType(LiveRoomScreen), findsOneWidget);
     expect(_banner, findsOneWidget);
+  });
+
+  testWidgets('the "הכול" caption is never cut on a 320 px screen',
+      (tester) async {
+    // The test font draws every letter as a square; measure with the fonts a
+    // phone actually uses.
+    for (final (family, files) in [
+      ('Rubik', ['Rubik-Regular.ttf', 'Rubik-Medium.ttf']),
+      ('Secular One', ['SecularOne-Regular.ttf']),
+    ]) {
+      final loader = FontLoader(family);
+      for (final f in files) {
+        loader.addFont(rootBundle.load('assets/fonts/$f'));
+      }
+      await loader.load();
+    }
+    await _freePlayer(tester); // 320 x 640
+    await _openPicker(tester);
+    final caption =
+        tester.renderObject<RenderParagraph>(find.text('כל הקטגוריות הפתוחות'));
+    expect(caption.didExceedMaxLines, isFalse,
+        reason: 'a cut caption reads as if every category were selected');
   });
 }

@@ -37,12 +37,17 @@ enum RestoreResult { found, none, failed }
 /// last answer is kept on the device, so offline play keeps what was paid for.
 /// The same proofs go to the server, which enforces the online side.
 class Monetization extends ChangeNotifier {
+  /// A tester APK built with `--dart-define=TEST_ADS=true` shows Google's test
+  /// ads: a new AdMob app serves no real ads until it is linked to a published
+  /// store listing. Never set it for a store build.
+  static const testAdsBuild = bool.fromEnvironment('TEST_ADS');
+
   Monetization({
     required this.store,
     required this.ads,
     required this.api,
     DateTime Function()? clock,
-    this.useTestAds = !kReleaseMode,
+    this.useTestAds = !kReleaseMode || testAdsBuild,
     this.settle = const Duration(milliseconds: 400),
   }) : _clock = clock ?? DateTime.now;
 
@@ -131,6 +136,12 @@ class Monetization extends ChangeNotifier {
   bool get monthlyActive => premiumUntil?.isAfter(now) ?? false;
 
   bool isFree(String categoryId) => config.freeCategoryIds.contains(categoryId);
+
+  /// [items] in catalogue order, the categories this player can play first.
+  List<T> openFirst<T>(Iterable<T> items, String Function(T) id) => [
+        ...items.where((c) => isUnlocked(id(c))),
+        ...items.where((c) => !isUnlocked(id(c))),
+      ];
 
   bool isUnlocked(String categoryId) =>
       premium || isFree(categoryId) || ownedCategories.contains(categoryId);
