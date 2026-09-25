@@ -12,6 +12,10 @@ and one worked example (`פיצה`), is already in the file. Fill in the rest.
 ```json
 {
   "version": 2,
+  "guessAliases": {
+    "פאקמן": ["פקמן", "Pac-Man"],
+    "וויי פיי": ["וייפיי", "ווייפיי", "וויפי", "Wi-Fi"]
+  },
   "categories": [
     {
       "id": "food",
@@ -32,8 +36,8 @@ and one worked example (`פיצה`), is already in the file. Fill in the rest.
 - `id` and `name` must match `content.Categories` exactly.
 - Each category has 10 internal semantic clusters of 5 words. Clusters are an
   authoring/AI-bot detail only; players and impostors see only the category.
-- Every playable secret is exactly one Hebrew-script word: no Latin letters,
-  whitespace, or hyphen-joined compounds. Bot hints follow the same language rule.
+- A playable secret is one Hebrew word or a natural two-word Hebrew phrase. Do not glue phrases together just to satisfy storage rules. Citizen and impostor fallback hints still have to be exactly one Hebrew word.
+- `guessAliases` is hidden guess-only metadata for secrets with genuinely different common spellings/transliterations. Spacing/punctuation variants do not need aliases because normalisation already ignores them.
 - Each cluster owns 8 one-word citizen hints shared by all 5 words. That
   overlap is deliberate: a clue should narrow the space without becoming a
   fingerprint for one secret.
@@ -69,10 +73,7 @@ that stays silent on its turn.
    hyphenated word counts as one is still open in `docs/open-decisions.md`.
 2. **At most 25 characters.**
 3. **Not on the blocklist** (`server/internal/content/blocked_words.txt`).
-4. **Must not contain the secret word.** The check is on the normalised form,
-   which drops niqqud, geresh, maqaf and punctuation and folds final letters.
-   So for `בננה`, both `בננות` and `הבננה` are refused — anything whose letters
-   contain the word's letters in sequence.
+4. **Must not reveal the secret.** The check is on the normalised form. For a two-word secret, the full phrase and each visible component are blocked; e.g. `בסיס` cannot be a citizen hint for `בסיס פתוח`.
 5. **No two hints in the same pool may be duplicates.** Two hints are the same
    if they are equal after normalisation, or one is the other with 1–3 Hebrew
    prefix letters (`ו ה ב כ ל מ ש`) in front leaving at least two letters. So
