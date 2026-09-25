@@ -166,6 +166,9 @@ func DefaultConfig() Config {
 type Policy struct {
 	HintInappropriate func(hint string) bool
 	ValidReaction     func(reactionID string) bool
+	// GuessAliases returns alternate accepted spellings for a secret. It may be
+	// nil for tests/content sets with no aliases.
+	GuessAliases func(secret string) []string
 }
 
 type Hint struct {
@@ -543,7 +546,11 @@ func (g *Game) SubmitGuess(playerID, guess string, now time.Time) error {
 	if playerID != g.impostor {
 		return ErrNotImpostor
 	}
-	if guessMatches(guess, g.secret) {
+	aliases := []string(nil)
+	if g.policy.GuessAliases != nil {
+		aliases = g.policy.GuessAliases(g.secret)
+	}
+	if guessMatches(guess, g.secret, aliases...) {
 		g.end(TeamImpostor, ReasonImpostorGuessedWord)
 	} else {
 		g.end(TeamCitizens, ReasonImpostorGuessWrong)
