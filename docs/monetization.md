@@ -26,7 +26,7 @@
 
 | מוצר | מזהה | סוג ב־App Store | סוג ב־Google Play |
 | --- | --- | --- | --- |
-| קטגוריה | `category_<id>` (למשל `category_sports`) | Non-Consumable | One-time product |
+| קטגוריה | `category_<id>` (למשל `category_gaming`) | Non-Consumable | One-time product |
 | פרימיום חודשי | `premium_monthly` | Auto-Renewable Subscription, חודש | Subscription, base plan חודשי |
 | פרימיום לכל החיים | `premium_lifetime` | Non-Consumable | One-time product |
 
@@ -150,7 +150,7 @@ POST /v1/rooms · matchmaking.join · room.updateSettings ──► 403 category
 
 | שדה | ברירת מחדל | משמעות |
 | --- | --- | --- |
-| `freeCategoryIds` | `food, animals, places` | הקטגוריות החינמיות |
+| `freeCategoryIds` | `food, places, film_tv` | הקטגוריות החינמיות |
 | `products.*` | ראו למעלה | מזהי המוצרים |
 | `purchasesEnabled` | `true` | כיבוי כפתורי הקנייה (למשל בתקלה בחנות); השחזור נשאר |
 | `serverEnforcement` | `false` | אכיפה בשרת |
