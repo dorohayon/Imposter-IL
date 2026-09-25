@@ -59,7 +59,7 @@ func TestReaperDropsEmptyRoomsAndIdleSessions(t *testing.T) {
 	code := room["code"].(string)
 
 	if status, got := c.do("POST", "/v1/rooms", token, map[string]any{
-		"maxPlayers": 4, "hintSeconds": 60, "categoryIds": []string{"animals"},
+		"maxPlayers": 4, "hintSeconds": 60, "categoryIds": []string{"film_tv"},
 	}); status != http.StatusCreated {
 		t.Fatalf("second room: %d %v", status, got) // leaves the first one empty
 	}
@@ -95,7 +95,7 @@ func TestDrainRefusesNewActivityButNotLiveGames(t *testing.T) {
 	}
 
 	status, got := c.do("POST", "/v1/rooms", token, map[string]any{
-		"maxPlayers": 4, "hintSeconds": 60, "categoryIds": []string{"animals"},
+		"maxPlayers": 4, "hintSeconds": 60, "categoryIds": []string{"film_tv"},
 	})
 	c.wantError(http.StatusServiceUnavailable, "server_draining", status, got)
 
@@ -104,7 +104,7 @@ func TestDrainRefusesNewActivityButNotLiveGames(t *testing.T) {
 	c.wantError(http.StatusServiceUnavailable, "server_draining", status, got)
 
 	w := c.dial(other)
-	wantReplyError(t, w.command("m", "matchmaking.join", map[string]any{"categoryIds": []string{"animals"}}), "server_draining")
+	wantReplyError(t, w.command("m", "matchmaking.join", map[string]any{"categoryIds": []string{"film_tv"}}), "server_draining")
 }
 
 // A panic inside a room must cost that room, not the process: its players are
