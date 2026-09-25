@@ -219,20 +219,35 @@ func UsableHint(hint, secret string) bool {
 }
 
 // containsWord mirrors the engine's secret-word rule, including two-word
-// secrets: a citizen may not use the full phrase or either visible component.
+// secrets and the original handling of short single-word secrets.
 func containsWord(hint, secret string) bool {
 	h := game.NormalizeWord(hint)
-	matches := func(candidate string, allowInner bool) bool {
+	matchesWhole := func(candidate string) bool {
 		s := game.NormalizeWord(candidate)
-		if s == "" {
+		switch {
+		case s == "":
 			return false
-		}
-		if allowInner && len([]rune(s)) >= 4 {
+		case len([]rune(s)) >= 4:
 			return strings.Contains(h, s)
 		}
-		return h == s || game.IsPrefixedForm(h, s)
+		if h == s || game.IsPrefixedForm(h, s) {
+			return true
+		}
+		// Preserve the engine's historical "short stem at the start after
+		// prefixes" behavior, e.g. פיל -> פילים and דג -> הדגים.
+		hr := []rune(h)
+		const prefixes = "והבכלמש"
+		for i := 0; i <= 3 && i < len(hr); i++ {
+			if i > 0 && !strings.ContainsRune(prefixes, hr[i-1]) {
+				break
+			}
+			if strings.HasPrefix(string(hr[i:]), s) {
+				return true
+			}
+		}
+		return false
 	}
-	if matches(secret, true) {
+	if matchesWhole(secret) {
 		return true
 	}
 	parts := strings.Fields(secret)
@@ -240,7 +255,15 @@ func containsWord(hint, secret string) bool {
 		return false
 	}
 	for _, part := range parts {
-		if matches(part, len([]rune(game.NormalizeWord(part))) >= 4) {
+		p := game.NormalizeWord(part)
+		if p == "" {
+			continue
+		}
+		if len([]rune(p)) >= 4 {
+			if strings.Contains(h, p) {
+				return true
+			}
+		} else if h == p || game.IsPrefixedForm(h, p) {
 			return true
 		}
 	}
