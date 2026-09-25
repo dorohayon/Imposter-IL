@@ -189,6 +189,21 @@ func (s *Server) tickSearch(entry *roomEntry, now time.Time) {
 	if now.Before(entry.timers.StartAt()) {
 		return
 	}
+	// Nobody is dealt into a match while offline. A searcher who dropped may
+	// have cancelled on a phone that could not reach us; starting the game
+	// with them would put them in a match they could only leave with a loss.
+	// They leave the search instead, and the timers restart for the rest.
+	removed := false
+	for _, m := range members {
+		if sess := s.players[m.ID]; sess != nil && !sess.searchGoneAt.IsZero() {
+			sess.searchGoneAt = time.Time{}
+			s.leaveSearch(sess, entry, now)
+			removed = true
+		}
+	}
+	if removed {
+		return
+	}
 	category, word, ok := s.pickWord(s.sharedCategories(entry), s.rng)
 	if !ok {
 		return

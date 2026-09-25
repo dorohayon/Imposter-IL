@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dorohayon/Imposter-IL/server/internal/matchmaking"
+
 	"github.com/dorohayon/Imposter-IL/server/internal/game"
 )
 
@@ -396,6 +398,33 @@ func TestMatchmakingADropKeepsThePlaceForThirtySeconds(t *testing.T) {
 	c.advance(time.Second)
 	c.tickAll()
 	players[0].w.searchState(searchPlayers(1))
+}
+
+// A searcher who is offline when the match starts is not dealt in: they may
+// have cancelled on a phone that could not reach the server, and waking up
+// inside that game would leave them only a losing way out.
+func TestMatchmakingOfflineSearcherIsNotDealtIntoTheMatch(t *testing.T) {
+	c := newClient(t)
+	players := c.searchers(6, "animals")
+	players[0].w.searchState(searchPlayers(6))
+	gone := players[5]
+	_ = gone.w.ws.CloseNow()
+	c.waitOffline(gone.id)
+
+	c.advance(matchmaking.Countdown) // the countdown ends with them away
+	c.tickAll()
+	c.srv.mu.Lock()
+	sess := c.srv.players[gone.id]
+	stillSearching, inGame := sess.roomID != "", sess.gameID != ""
+	c.srv.mu.Unlock()
+	if stillSearching || inGame {
+		t.Fatalf("offline searcher: searching=%v inGame=%v, want neither", stillSearching, inGame)
+	}
+
+	// The five who stayed get their match once the timers run again.
+	c.advance(matchmaking.Wait)
+	c.tickAll()
+	wantGameStarted(t, players[:5]...)
 }
 
 func TestMatchmakingReconnectingInTimeKeepsSearching(t *testing.T) {
