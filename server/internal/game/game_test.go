@@ -28,7 +28,7 @@ func ids(n int) []string {
 
 func newGame(t *testing.T, n int) *Game {
 	t.Helper()
-	g, err := New(DefaultConfig(), testPolicy(), ids(n), "animals", secret, rand.New(rand.NewPCG(1, 2)), t0)
+	g, err := New(DefaultConfig(), testPolicy(), ids(n), "film_tv", secret, rand.New(rand.NewPCG(1, 2)), t0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +150,7 @@ func TestOnlyCitizensSeeTheSecretWord(t *testing.T) {
 	for _, id := range g.order {
 		v, err := g.View(id)
 		must(t, err)
-		if v.Category != "animals" {
+		if v.Category != "film_tv" {
 			t.Fatalf("%s category = %q", id, v.Category)
 		}
 		isImpostor := id == g.impostor
