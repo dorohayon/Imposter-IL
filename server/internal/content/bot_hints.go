@@ -29,7 +29,12 @@ type botHintFile struct {
 		ID                    string              `json:"id"`
 		Name                  string              `json:"name"`
 		ImpostorFallbackHints []string            `json:"impostorFallbackHints"`
-		CitizenHints          map[string][]string `json:"citizenHints"`
+		CitizenHints          map[string][]string `json:"citizenHints,omitempty"` // v1 compatibility
+		Clusters              []struct {
+			Name  string   `json:"name"`
+			Words []string `json:"words"`
+			Hints []string `json:"hints"`
+		} `json:"clusters,omitempty"`
 	} `json:"categories"`
 }
 
@@ -37,9 +42,9 @@ type botHintFile struct {
 // a pile of package variables so that the derivation can be exercised against a
 // fixture, instead of only against whatever the real file happens to hold.
 type hintTables struct {
-	citizen  map[string][]string       // secret word -> hints
-	fallback map[string][]string       // category name -> hints
-	shared   map[string][]string       // category name -> hints used by 2+ words
+	citizen  map[string]map[string][]string // category name -> secret word -> hints
+	fallback map[string][]string            // category name -> hints
+	shared   map[string][]string            // category name -> hints used by 2+ words
 	together map[string]map[string]int // hint -> hint -> pools they share
 }
 
@@ -51,7 +56,7 @@ func loadHintTables(raw []byte) hintTables {
 		panic(fmt.Sprintf("bot_hints.json: %v", err))
 	}
 	t := hintTables{
-		citizen:  map[string][]string{},
+		citizen:  map[string]map[string][]string{},
 		fallback: map[string][]string{},
 		shared:   map[string][]string{},
 		together: map[string]map[string]int{},
@@ -60,27 +65,28 @@ func loadHintTables(raw []byte) hintTables {
 	for _, c := range file.Categories {
 		t.fallback[c.Name] = c.ImpostorFallbackHints
 		appearances[c.Name] = map[string]int{}
-		for word, hints := range c.CitizenHints {
-			t.citizen[word] = hints
+		t.citizen[c.Name] = map[string][]string{}
+		addWord := func(word string, hints []string) {
+			t.citizen[c.Name][word] = slices.Clone(hints)
 			for _, hint := range hints {
 				appearances[c.Name][hint]++
-				// Keyed the way the game reads a word, so that a player typing
-				// גונגל reaches the curated ג'ונגל. The engine drops geresh,
-				// maqaf and punctuation and folds final letters; a graph keyed
-				// on raw spelling would answer only to the exact one curated.
 				key := game.NormalizeWord(hint)
 				if t.together[key] == nil {
 					t.together[key] = map[string]int{}
 				}
-				// Hints that share a word's pool describe the same thing. This
-				// is what lets an impostor read the board: knowledge about the
-				// language, gathered across every word, never about the word in
-				// play.
 				for _, other := range hints {
 					if other != hint {
 						t.together[key][game.NormalizeWord(other)]++
 					}
 				}
+			}
+		}
+		for word, hints := range c.CitizenHints {
+			addWord(word, hints)
+		}
+		for _, cluster := range c.Clusters {
+			for _, word := range cluster.Words {
+				addWord(word, cluster.Hints)
 			}
 		}
 	}
@@ -110,15 +116,15 @@ func (t hintTables) known(hint string) bool {
 	return len(t.together[game.NormalizeWord(hint)]) > 0
 }
 
-// CitizenHints are the hints for a secret word, in file order. Empty for a
-// word with no curated pool, and for the empty string — which is what an
-// impostor's View holds, so this cannot leak through a caller that forgets
-// which role it is playing.
-func CitizenHints(word string) []string {
-	if word == "" {
+// CitizenHints are the hints for a secret word in its public category, in file
+// order. Category is part of the key because a useful word may intentionally
+// appear in more than one category with different clue context. Empty for an
+// impostor's view, which carries no secret word.
+func CitizenHints(category, word string) []string {
+	if category == "" || word == "" {
 		return nil
 	}
-	return slices.Clone(tables.citizen[word])
+	return slices.Clone(tables.citizen[category][word])
 }
 
 // ImpostorHints are what a bot may say when it does not know the word, best
