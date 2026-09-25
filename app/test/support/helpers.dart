@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/main.dart';
+import 'package:imposter_il/screens/online_flow.dart';
 import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/screens/legal_screens.dart';
 import 'package:imposter_il/screens/live_room.dart';
@@ -153,8 +154,10 @@ Future<void> tapTooltip(WidgetTester tester, String tooltip) async {
 ///
 /// The grid is lazy, so only ask about tiles that are on screen.
 bool isSelectedTile(WidgetTester tester, String label) {
-  final tile =
-      find.ancestor(of: find.text(label), matching: find.byType(Stack)).first;
+  final tile = find
+      .ancestor(
+          of: find.text(categoryTileName(label)), matching: find.byType(Stack))
+      .first;
   return find
       .descendant(of: tile, matching: find.byIcon(Icons.check_rounded))
       .evaluate()

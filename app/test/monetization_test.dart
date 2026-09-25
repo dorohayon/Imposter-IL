@@ -139,6 +139,15 @@ void main() {
       expect(m.premiumUntil, DateTime.utc(2026, 10, 20));
     });
 
+    test('open categories come first, in catalogue order', () async {
+      final m = await started();
+      expect(
+        m.openFirst(
+            ['sports', 'food', 'gaming', 'places', 'film_tv'], (id) => id),
+        ['food', 'places', 'film_tv', 'sports', 'gaming'],
+      );
+    });
+
     test('a config cached before the catalogue changed is not trusted',
         () async {
       // Saved by an older build: 'animals' no longer exists, film_tv is free.

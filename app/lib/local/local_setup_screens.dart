@@ -341,7 +341,7 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
                   _categories = _categories == null ? <String>{} : null;
                 }),
               ),
-              for (final c in localCategories)
+              for (final c in money.openFirst(localCategories, (c) => c.id))
                 if (money.isUnlocked(c.id))
                   _Chip(
                     label: c.name,

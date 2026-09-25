@@ -132,6 +132,12 @@ class Monetization extends ChangeNotifier {
 
   bool isFree(String categoryId) => config.freeCategoryIds.contains(categoryId);
 
+  /// [items] in catalogue order, the categories this player can play first.
+  List<T> openFirst<T>(Iterable<T> items, String Function(T) id) => [
+        ...items.where((c) => isUnlocked(id(c))),
+        ...items.where((c) => !isUnlocked(id(c))),
+      ];
+
   bool isUnlocked(String categoryId) =>
       premium || isFree(categoryId) || ownedCategories.contains(categoryId);
 

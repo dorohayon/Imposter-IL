@@ -104,7 +104,8 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
 
     final tiles = [
       (id: _allId, name: 'הכול'),
-      for (final c in categories) (id: c.id, name: c.name),
+      for (final c in money.openFirst(categories, (c) => c.id))
+        (id: c.id, name: c.name),
     ];
 
     return GameScaffold(
@@ -236,7 +237,8 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                               Align(
                                 alignment: AlignmentDirectional.bottomStart,
                                 child: Text(
-                                  tile.name,
+                                  categoryTileName(tile.name),
+                                  maxLines: 2,
                                   style: TextStyle(
                                     color: isSelected
                                         ? AppColors.night
@@ -292,8 +294,16 @@ class PremiumBadge extends StatelessWidget {
   }
 }
 
-/// A category that is visible but locked: a lock, a dimmed name and
-/// "לפתיחה". Tapping it opens the purchase popup (design 04).
+/// A category's name on its tile: a name of several words breaks before its
+/// last word, so every tile holds its name on the same lines and the bottom
+/// line sits in the same place ("עבודה" / "ומשרד").
+String categoryTileName(String name) {
+  final i = name.lastIndexOf(' ');
+  return i < 0 ? name : '${name.substring(0, i)}\n${name.substring(i + 1)}';
+}
+
+/// A category that is visible but locked: a lock and a dimmed name. Tapping
+/// it opens the purchase popup (design 04).
 class LockedCategoryTile extends StatelessWidget {
   const LockedCategoryTile({
     required this.name,
@@ -344,22 +354,12 @@ class LockedCategoryTile extends StatelessWidget {
               Align(
                 alignment: AlignmentDirectional.bottomStart,
                 child: Text(
-                  name,
+                  categoryTileName(name),
+                  maxLines: 2,
                   style: TextStyle(
                     color: AppColors.cream.withValues(alpha: .62),
                     fontFamily: 'Secular One',
                     fontSize: 20,
-                  ),
-                ),
-              ),
-              const Align(
-                alignment: AlignmentDirectional.bottomEnd,
-                child: Text(
-                  'לפתיחה',
-                  style: TextStyle(
-                    color: AppColors.yellow,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),

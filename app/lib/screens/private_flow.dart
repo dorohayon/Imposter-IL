@@ -288,7 +288,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                   onSelected: (_) =>
                       setState(() => _selected = all ? <String>{} : null),
                 ),
-                for (final c in categories)
+                for (final c in money.openFirst(categories, (c) => c.id))
                   if (money.isUnlocked(c.id))
                     FilterChip(
                       label: Text(c.name),

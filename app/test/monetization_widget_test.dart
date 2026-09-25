@@ -98,9 +98,9 @@ void main() {
       expect(find.text('כל הפתוחות'), findsOneWidget);
       // Every category stays visible: the locked ones are there, marked.
       for (final name in ['ספורט וכושר', 'עבודה ומשרד', 'גיימינג']) {
-        expect(find.text(name), findsOneWidget);
+        expect(find.text(categoryTileName(name)), findsOneWidget);
       }
-      expect(find.text('לפתיחה'), findsNWidgets(15));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(15));
 
       await tapLive(tester, 'חפש משחק');
       expect(_searched(api), ['food', 'places', 'film_tv']);
@@ -131,7 +131,8 @@ void main() {
         (tester) async {
       final (api, store, _) = await _freePlayer(tester);
       await _openPicker(tester);
-      await tapText(tester, 'אוכל ושתייה'); // an explicit choice, not "הכול"
+      await tapText(tester,
+          categoryTileName('אוכל ושתייה')); // an explicit choice, not "הכול"
       await _tapLocked(tester, 'ספורט וכושר');
 
       await _buy(tester);
@@ -142,7 +143,7 @@ void main() {
       await tapText(tester, 'בוחרים ב״ספורט וכושר״');
 
       expect(find.text('״ספורט וכושר״ נעולה'), findsNothing);
-      expect(find.text('לפתיחה'), findsNWidgets(14));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(14));
       await tapLive(tester, 'חפש משחק');
       expect(_searched(api), ['food', 'sports']);
     });
@@ -170,7 +171,7 @@ void main() {
       await tapText(tester, 'מתחילים לשחק');
 
       // Everything is open, and the header says so.
-      expect(find.text('לפתיחה'), findsNothing);
+      expect(find.byIcon(Icons.lock_rounded), findsNothing);
       expect(find.text('פרימיום'), findsOneWidget);
       expect(find.text('כל הקטגוריות'), findsOneWidget);
     });
@@ -200,7 +201,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.close_rounded));
       await tester.pumpAndSettle();
       expect(find.text('״ספורט וכושר״ נעולה'), findsNothing);
-      expect(find.text('לפתיחה'), findsNWidgets(15));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(15));
     });
 
     testWidgets('while the store works, the popup stays open', (tester) async {
@@ -268,7 +269,7 @@ void main() {
       expect(find.text('הרכישות שוחזרו'), findsOneWidget);
       expect(find.text('״ספורט וכושר״ פתוחה שוב במכשיר הזה.'), findsOneWidget);
       await tapText(tester, 'סגירה');
-      expect(find.text('לפתיחה'), findsNWidgets(14));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(14));
       expect(find.text('✓ נרכשה'), findsOneWidget);
     });
 
