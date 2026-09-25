@@ -402,4 +402,10 @@ void main() {
     toVote(g);
     expect(g.phase, LocalPhase.voting);
   });
+  test('local guess accepts configured alternate spellings', () {
+    expect(isCorrectLocalGuess('פקמן', 'פאקמן'), isTrue);
+    expect(isCorrectLocalGuess('וויפי', 'וויי פיי'), isTrue);
+    expect(isCorrectLocalGuess('טטריס', 'פאקמן'), isFalse);
+  });
+
 }
