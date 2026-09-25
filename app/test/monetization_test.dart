@@ -620,6 +620,62 @@ void main() {
       await flush();
       expect(m.bannerUnit(BannerPlacement.home), isNull);
     });
+
+    test('test builds use Google test units, whatever the server says',
+        () async {
+      final api = FakeApi();
+      final m = await started(store: FakeStore(), api: api); // useTestAds
+      expect(m.bannerUnit(BannerPlacement.home),
+          'ca-app-pub-3940256099942544/9214589741');
+      final ios = await started(store: FakeStore(platform: 'ios'), api: api);
+      expect(ios.bannerUnit(BannerPlacement.home),
+          'ca-app-pub-3940256099942544/2435281174');
+    });
+
+    test('a production build uses the server units, never test ones', () async {
+      final m = Monetization(
+        store: FakeStore(),
+        ads: FakeAds(),
+        api: FakeApi()
+          ..responses['GET /v1/config'] = {
+            'monetization': {
+              'ads': {
+                'units': {
+                  'android': {
+                    'banner': 'ca-app-pub-1/banner',
+                    'interstitial': 'ca-app-pub-1/interstitial',
+                  },
+                },
+              },
+            },
+          },
+        useTestAds: false,
+        settle: Duration.zero,
+      );
+      addTearDown(m.dispose);
+      await m.start();
+      await flush();
+      expect(m.bannerUnit(BannerPlacement.home), 'ca-app-pub-1/banner');
+      // Only an explicit --dart-define=TEST_ADS=true turns test ads on.
+      expect(Monetization.testAdsBuild, isFalse);
+    });
+
+    test(
+        'a failed ads start is retried when the app comes back, '
+        'even with the server out of reach', () async {
+      final ads = FakeAds()..canRequest = false;
+      final offline = FakeApi()..responses.remove('GET /v1/config');
+      final m = await started(
+          store: FakeStore()..available = false, ads: ads, api: offline);
+      await m.startAds();
+      expect(m.adsReady, isFalse);
+
+      ads.canRequest = true;
+      m.resumed();
+      await flush();
+      expect(ads.started, 2);
+      expect(m.adsReady, isTrue);
+    });
   });
 
   test('the config survives a round trip and fills gaps with defaults', () {
