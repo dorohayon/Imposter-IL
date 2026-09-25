@@ -60,7 +60,7 @@ func TestConfigIsPublic(t *testing.T) {
 	}
 	cfg := body["monetization"].(map[string]any)
 	free := cfg["freeCategoryIds"].([]any)
-	if fmt.Sprint(free) != "[food animals places]" || cfg["serverEnforcement"] != false {
+	if fmt.Sprint(free) != "[food places film_tv]" || cfg["serverEnforcement"] != false {
 		t.Fatalf("config = %v", cfg)
 	}
 	products := cfg["products"].(map[string]any)
