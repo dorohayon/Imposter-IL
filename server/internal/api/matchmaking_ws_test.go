@@ -333,7 +333,7 @@ func TestMatchmakingNoMatchAfterTwoMinutes(t *testing.T) {
 	c.advance(time.Second)
 	c.tickAll()
 	for _, p := range players {
-		if payload := p.w.next("matchmaking.noMatch")["payload"].(map[string]any); fmt.Sprint(payload["categoryIds"]) != "[animals]" {
+		if payload := p.w.next("matchmaking.noMatch")["payload"].(map[string]any); fmt.Sprint(payload["categoryIds"]) != "[film_tv]" {
 			t.Fatalf("noMatch = %v", payload)
 		}
 		p.w.sessionState(func(s map[string]any) bool { return s["activity"] == "none" })
