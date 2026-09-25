@@ -14,10 +14,10 @@ import (
 
 // Bot hints (docs/bot-hints.md). Two pools, kept apart on purpose:
 //
-//   - citizenHints is keyed by the secret word, and a citizen bot knows the
-//     word because the game tells it. The impostor's View carries no secret
-//     word at all, so an impostor bot cannot reach this map even by mistake —
-//     the separation is the engine's, not a rule bots are trusted to follow.
+//   - citizen hints are keyed by public category plus secret word. A citizen
+//     bot knows both; an impostor's View carries no secret word at all, so it
+//     cannot reach this map even by mistake — the separation is the engine's,
+//     not a rule bots are trusted to follow.
 //   - impostorFallback and shared are keyed by category, which is public.
 //
 //go:embed bot_hints.json
@@ -45,7 +45,7 @@ type hintTables struct {
 	citizen  map[string]map[string][]string // category name -> secret word -> hints
 	fallback map[string][]string            // category name -> hints
 	shared   map[string][]string            // category name -> hints used by 2+ words
-	together map[string]map[string]int // hint -> hint -> pools they share
+	together map[string]map[string]int        // hint -> hint -> pools they share
 }
 
 var tables = loadHintTables(botHintsJSON)
