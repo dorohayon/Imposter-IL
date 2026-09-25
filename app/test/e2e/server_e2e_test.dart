@@ -56,12 +56,12 @@ void main() {
         players.add(session);
         await session.signIn(name, 'avatar-m04-detective-hat');
         await until(session, () => session.connected);
-        expect(session.categories.map((c) => c.id), contains('animals'));
+        expect(session.categories.map((c) => c.id), contains('film_tv'));
       }
       final host = players.first;
 
       await host
-          .createRoom(maxPlayers: 8, hintSeconds: 30, categoryIds: ['animals']);
+          .createRoom(maxPlayers: 8, hintSeconds: 30, categoryIds: ['film_tv']);
       final code = host.room!.code;
       for (final p in players.skip(1)) {
         await p.joinRoom(code);
@@ -161,7 +161,7 @@ void main() {
         players.add(session);
         await session.signIn(name, 'avatar-f02-camera');
         await until(session, () => session.connected);
-        await ok(session.startSearch(['food', 'objects']));
+        await ok(session.startSearch(['food', 'home']));
       }
       final first = players.first;
       await until(first, () => first.search?.players.length == 4);
@@ -173,7 +173,7 @@ void main() {
             timeout: const Duration(seconds: 40));
       }
       expect(players.map((p) => p.game!.id).toSet(), hasLength(1));
-      expect(['אוכל', 'חפצים'], contains(first.game!.category));
+      expect(['אוכל ושתייה', 'בבית'], contains(first.game!.category));
       for (final p in players) {
         await ok(p.leaveGame());
       }
