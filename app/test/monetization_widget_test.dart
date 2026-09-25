@@ -95,7 +95,7 @@ void main() {
 
       expect(find.text('אפשר לבחור כמה קטגוריות · 3 פתוחות בחינם'),
           findsOneWidget);
-      expect(find.text('כל הפתוחות'), findsOneWidget);
+      expect(find.text('כל הקטגוריות הפתוחות'), findsOneWidget);
       // Every category stays visible: the locked ones are there, marked.
       for (final name in ['ספורט וכושר', 'עבודה ומשרד', 'גיימינג']) {
         expect(find.text(categoryTileName(name)), findsOneWidget);

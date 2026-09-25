@@ -215,17 +215,24 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                               if (tile.id == _allId)
                                 Align(
                                   alignment: AlignmentDirectional.bottomEnd,
-                                  child: Text(
-                                    money.premium
-                                        ? 'כל הקטגוריות'
-                                        : 'כל הפתוחות',
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? AppColors.night
-                                              .withValues(alpha: .7)
-                                          : AppColors.muted,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
+                                  // Half the tile at most, wrapping to two
+                                  // lines, so "הכול" keeps its place.
+                                  child: FractionallySizedBox(
+                                    widthFactor: .55,
+                                    child: Text(
+                                      money.premium
+                                          ? 'כל הקטגוריות'
+                                          : 'כל הקטגוריות הפתוחות',
+                                      textAlign: TextAlign.end,
+                                      maxLines: 2,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? AppColors.night
+                                                .withValues(alpha: .7)
+                                            : AppColors.muted,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ),
                                 ),
