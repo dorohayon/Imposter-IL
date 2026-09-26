@@ -394,3 +394,32 @@ func TestReaperPrunesExpiredReplies(t *testing.T) {
 		t.Fatalf("%d expired replies still cached after a reap", cached)
 	}
 }
+
+// The host alone in a new room steps out (sharing the invite) and comes back.
+func TestWSHostAloneReconnectsAfterADisconnect(t *testing.T) {
+	c := newClient(t)
+	token, id := c.session("מנהל")
+	room := c.createRoom(token, 8)
+	first := c.dial(token)
+	first.roomState(func(r map[string]any) bool { return member(r, id)["connected"] == true })
+	_ = first.ws.Close(websocket.StatusNormalClosure, "")
+	entry := c.srv.roomsByID[room["roomId"].(string)]
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		c.srv.mu.Lock()
+		gone := !entry.room.View().Members[0].Connected
+		c.srv.mu.Unlock()
+		if gone {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the close was never counted")
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	c.advance(5 * time.Second)
+	r := c.dial(token).roomState(func(map[string]any) bool { return true })
+	if member(r, id)["connected"] != true || r["hostReconnectDeadline"] != nil {
+		t.Fatalf("back, the host still reads as away: %v", r)
+	}
+}

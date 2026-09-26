@@ -229,4 +229,42 @@ void main() {
     },
     skip: _server == null ? 'IMPOSTER_E2E_SERVER is not set' : false,
   );
+  test(
+    'a host alone in a new room drops and comes back connected',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final api = _DroppableApi(Uri.parse(_server!));
+      final host = GameSession(api);
+      addTearDown(host.dispose);
+      await host.signIn('דור', 'avatar-m04-detective-hat');
+      await until(host, () => host.connected);
+      await host
+          .createRoom(maxPlayers: 8, hintSeconds: 60, categoryIds: ['film_tv']);
+      bool meConnected() =>
+          host.room?.players.any((p) => p.id == host.playerId && p.connected) ??
+          false;
+      await until(host, meConnected);
+
+      // Sharing the invite: the app leaves the screen and the socket drops.
+      await api.last!.close();
+      await until(host, () => !host.connected);
+      await until(host, () => host.connected);
+      await until(
+        host,
+        () => meConnected() && host.room?.hostReconnectDeadline == null,
+      );
+    },
+    skip: _server == null ? 'IMPOSTER_E2E_SERVER is not set' : false,
+  );
+}
+
+/// Keeps the last connection, so a test can drop it.
+class _DroppableApi extends ApiClient {
+  _DroppableApi(super.baseUrl);
+
+  RealtimeChannel? last;
+
+  @override
+  Future<RealtimeChannel> connect(String token) async =>
+      last = await super.connect(token);
 }

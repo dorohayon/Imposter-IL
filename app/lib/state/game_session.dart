@@ -480,6 +480,11 @@ class GameSession extends ChangeNotifier {
 
   void _enterRoom(Map<String, dynamic> json) {
     final entered = RoomView.fromJson(json);
+    // The socket may have delivered this room already. Its state is newer
+    // than this reply: on a stalled network the reply landed after the
+    // reconnect had said the host was back, put them "away" again, and with
+    // nobody else in the room nothing ever corrected it.
+    if (entered.id == roomId && room?.id == entered.id) return;
     if (entered.id != roomId) _lastVersion = 0;
     activity = 'room';
     roomId = entered.id;

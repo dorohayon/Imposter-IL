@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
@@ -11,6 +13,32 @@ import 'support/fake_server.dart';
 import 'support/helpers.dart';
 
 void main() {
+  testWidgets('a slow create-room reply does not undo the live state',
+      (tester) async {
+    // The network stalled: the server made the room while the socket was down
+    // (so its reply says the host is away), the socket came back and said the
+    // host is here, and only then did the reply arrive.
+    final api = _SlowCreateApi();
+    final session = await startAtHome(tester, api);
+    final creating = session.createRoom(
+        maxPlayers: 8, hintSeconds: 60, categoryIds: ['food']);
+    await tester.pump();
+    api.channel.event('session.state',
+        {'playerId': 'p_me', 'activity': 'room', 'roomId': 'r_1'});
+    api.channel.snapshot('room.state', 'room', roomJson());
+    await tester.pump();
+    api.reply.complete({
+      'room': {
+        ...roomJson(players: [player('p_me', 'דור', connected: false)]),
+        'hostReconnectDeadline':
+            DateTime.now().add(const Duration(seconds: 30)).toIso8601String(),
+      },
+    });
+    await creating;
+    expect(session.room!.players.single.connected, isTrue);
+    expect(session.room!.hostReconnectDeadline, isNull);
+  });
+
   testWidgets('onboarding creates a session and remembers it', (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);
@@ -916,3 +944,15 @@ final _clueField = find.byWidgetPredicate(
   (widget) =>
       widget is Semantics && widget.properties.label == 'הרמז שלך · מילה אחת',
 );
+
+/// Holds the create-room reply until the test releases it.
+class _SlowCreateApi extends FakeApi {
+  final reply = Completer<Map<String, dynamic>>();
+
+  @override
+  Future<Map<String, dynamic>> request(String method, String path,
+          {String? token, Object? body}) =>
+      method == 'POST' && path == '/v1/rooms'
+          ? reply.future
+          : super.request(method, path, token: token, body: body);
+}
