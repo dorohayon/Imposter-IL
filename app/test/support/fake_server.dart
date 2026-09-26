@@ -136,7 +136,8 @@ class FakeApi extends ApiClient {
         'ads': {
           'enabled': true,
           'bannerPlacements': [
-            'home', 'categories', 'search', 'friends', 'create_room', //
+            'home', 'online_choice', 'categories', 'search', 'friends',
+            'create_room', //
             'join_room', 'lobby', 'profile', 'settings', 'how_to_play',
             'local_players', 'local_rules',
           ],

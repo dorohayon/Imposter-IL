@@ -257,6 +257,17 @@ void main() {
       expect(find.text('9.90 ₪'), findsOneWidget);
     });
 
+    testWidgets('a store that sells none of them says so, not "offline"',
+        (tester) async {
+      final (_, store, _) = await _freePlayer(tester);
+      store.prices.clear();
+      await _openPicker(tester);
+      await _tapLocked(tester, 'ספורט וכושר');
+      expect(find.text('הרכישות אינן זמינות כרגע. אנא נסו שוב מאוחר יותר.'),
+          findsOneWidget);
+      expect(find.textContaining('בדקו את החיבור'), findsNothing);
+    });
+
     testWidgets('restore in the popup reopens a bought category',
         (tester) async {
       final (_, store, _) = await _freePlayer(tester);

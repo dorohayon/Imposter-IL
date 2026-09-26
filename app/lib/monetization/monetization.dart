@@ -84,6 +84,10 @@ class Monetization extends ChangeNotifier {
   bool productsLoading = false;
   bool productsFailed = false;
 
+  /// The store answered but sells none of them (not set up there yet), as
+  /// opposed to a failed connection. [productsFailed] is set too.
+  bool productsMissing = false;
+
   bool adsReady = false;
   bool privacyOptionsRequired = false;
   DateTime? _lastInterstitial;
@@ -193,6 +197,9 @@ class Monetization extends ChangeNotifier {
   void resumed() {
     unawaited(_loadConfig());
     unawaited(refresh());
+    // A start that failed (no network, a consent error) gets another go even
+    // when the server cannot be reached; otherwise a session stays ad-less.
+    if (_adsWanted && !adsReady) unawaited(startAds());
   }
 
   /// Sends proofs whenever the session's token changes (a new or replaced
@@ -471,11 +478,12 @@ class Monetization extends ChangeNotifier {
     if (ids.every(products.containsKey)) return;
     productsLoading = true;
     productsFailed = false;
+    productsMissing = false;
     _notify();
     try {
       if (!await store.isAvailable()) throw StateError('store unavailable');
       products = {...products, ...await store.products(ids)};
-      productsFailed = !ids.any(products.containsKey);
+      productsFailed = productsMissing = !ids.any(products.containsKey);
     } on Object {
       productsFailed = true;
     } finally {
@@ -552,15 +560,25 @@ class Monetization extends ChangeNotifier {
   Future<void> startAds() async {
     _adsWanted = true;
     final units = _units;
-    if (_adsStarting || adsReady || !showsAds || units == null) return;
-    if (units.banner.isEmpty && units.interstitial.isEmpty) return;
+    if (_adsStarting || adsReady) return;
+    if (!showsAds ||
+        units == null ||
+        (units.banner.isEmpty && units.interstitial.isEmpty)) {
+      adsLog('ads not started: premium=$premium, '
+          'enabled=${config.adsEnabled}, units=${units == null ? 'none' : 'set'}');
+      return;
+    }
+    adsLog('${useTestAds ? 'TEST' : 'PRODUCTION'} ads on ${store.platform}: '
+        'banner ${units.banner}, interstitial ${units.interstitial}');
     _adsStarting = true;
     try {
       adsReady = await ads.start(maxAdContentRating: config.maxAdContentRating);
       privacyOptionsRequired = await ads.privacyOptionsRequired();
+      adsLog('ads ready: $adsReady');
       _notify();
       _preloadInterstitial();
-    } on Object {
+    } on Object catch (e) {
+      adsLog('ads start failed: $e');
       adsReady = false;
     } finally {
       _adsStarting = false;
@@ -571,7 +589,9 @@ class Monetization extends ChangeNotifier {
     if (!adsReady || !showsAds || !config.interstitialEnabled) return;
     final unit = _units?.interstitial ?? '';
     if (unit.isEmpty) return;
-    unawaited(ads.loadInterstitial(unit).catchError((Object _) {}));
+    unawaited(ads
+        .loadInterstitial(unit)
+        .catchError((Object e) => adsLog('interstitial load threw: $e')));
   }
 
   /// Called once a finished match's full result has been seen and the player

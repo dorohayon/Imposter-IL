@@ -185,6 +185,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     bool pricesFailed,
   ) {
     final notice = switch (m.step) {
+      _ when pricesFailed && m.productsMissing => const _Notice.error(
+          'הרכישות אינן זמינות כרגע. אנא נסו שוב מאוחר יותר.'),
       _ when pricesFailed => const _Notice.error(
           'לא הצלחנו לטעון את המחירים מהחנות. בדקו את החיבור לאינטרנט ונסו שוב.'),
       PurchaseStep.cancelled =>

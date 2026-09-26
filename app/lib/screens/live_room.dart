@@ -1739,7 +1739,6 @@ class _Composer extends StatelessWidget {
     final bad = error != null;
     final accent = bad ? AppColors.coral : AppColors.yellow;
     final count = controller.text.characters.length;
-    final narrow = MediaQuery.sizeOf(context).width < 360;
     const counterStyle = TextStyle(color: Color(0x8C14132B), fontSize: 11);
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
@@ -1788,18 +1787,11 @@ class _Composer extends StatelessWidget {
                       ),
                       suffixIconConstraints:
                           const BoxConstraints(minWidth: 0, minHeight: 0),
+                      // Only the count: a "one word" reminder beside it cut
+                      // the hint off, and the field's label already says it.
                       suffixIcon: Padding(
                         padding: const EdgeInsetsDirectional.only(end: 12),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Narrow phones keep the count and drop the
-                            // reminder, which the field's label still says.
-                            if (!bad && !narrow)
-                              const Text('מילה אחת · ', style: counterStyle),
-                            LtrText('$count/25', style: counterStyle),
-                          ],
-                        ),
+                        child: LtrText('$count/25', style: counterStyle),
                       ),
                     ),
                     onChanged: (_) => onChanged(),

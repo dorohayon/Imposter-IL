@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -30,6 +31,14 @@ abstract interface class AdsGateway {
   Future<bool> showInterstitial();
 }
 
+/// Ad diagnostics, in debug builds and TEST_ADS tester builds only. Unit ids,
+/// platform and SDK codes and messages; never anything about the player.
+void adsLog(String message) {
+  if (kDebugMode || const bool.fromEnvironment('TEST_ADS')) {
+    debugPrint('[ads] $message');
+  }
+}
+
 /// Google's test units: debug builds must never request live ads.
 AdUnits testAdUnits(String platform) => platform == 'ios'
     ? const AdUnits(
@@ -40,6 +49,11 @@ AdUnits testAdUnits(String platform) => platform == 'ios'
         banner: 'ca-app-pub-3940256099942544/9214589741',
         interstitial: 'ca-app-pub-3940256099942544/1033173712',
       );
+
+/// Hashed ids of our own phones (the SDK logs a phone's id on first ad
+/// request). They get test ads from the live units, so we never click our own.
+// ponytail: the console test-device list didn't reach the SDK on our phone.
+const testDeviceIds = ['97A34F8CB0EEDBDD235DCDFE48F7C855'];
 
 class AdMobAds implements AdsGateway {
   InterstitialAd? _interstitial;
@@ -54,22 +68,47 @@ class AdMobAds implements AdsGateway {
 
     ConsentInformation.instance.requestConsentInfoUpdate(
       ConsentRequestParameters(),
-      () => ConsentForm.loadAndShowConsentFormIfRequired(done),
-      done,
+      () {
+        adsLog('consent info updated');
+        ConsentForm.loadAndShowConsentFormIfRequired((error) {
+          if (error != null) {
+            adsLog('consent form error ${error.errorCode}: ${error.message}');
+          }
+          done();
+        });
+      },
+      (error) {
+        // canRequestAds below still honours consent from an earlier session.
+        adsLog('consent info update failed '
+            '${error.errorCode}: ${error.message}');
+        done();
+      },
     );
     await gathered.future;
-    if (!await ConsentInformation.instance.canRequestAds()) return false;
-    await MobileAds.instance.initialize();
+    final canRequest = await ConsentInformation.instance.canRequestAds();
+    adsLog('canRequestAds: $canRequest');
+    if (!canRequest) return false;
+    // Request settings first, so no ad is ever requested without them.
     await MobileAds.instance.updateRequestConfiguration(
-      RequestConfiguration(maxAdContentRating: maxAdContentRating),
+      RequestConfiguration(
+        maxAdContentRating: maxAdContentRating,
+        testDeviceIds: testDeviceIds,
+      ),
     );
+    final status = await MobileAds.instance.initialize();
+    adsLog('MobileAds initialized: ${status.adapterStatuses.entries.map(
+          (e) => '${e.key}=${e.value.state.name}',
+        ).join(', ')}');
     return true;
   }
 
   @override
-  Future<bool> privacyOptionsRequired() async =>
-      await ConsentInformation.instance.getPrivacyOptionsRequirementStatus() ==
-      PrivacyOptionsRequirementStatus.required;
+  Future<bool> privacyOptionsRequired() async {
+    final status =
+        await ConsentInformation.instance.getPrivacyOptionsRequirementStatus();
+    adsLog('privacy options: ${status.name}');
+    return status == PrivacyOptionsRequirementStatus.required;
+  }
 
   @override
   Future<void> showPrivacyOptions() {
@@ -90,10 +129,14 @@ class AdMobAds implements AdsGateway {
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
+          adsLog('interstitial loaded ($unitId)');
           _interstitial = ad;
           _loadingInterstitial = false;
         },
-        onAdFailedToLoad: (_) => _loadingInterstitial = false,
+        onAdFailedToLoad: (error) {
+          adsLog('interstitial failed to load ($unitId): ${_describe(error)}');
+          _loadingInterstitial = false;
+        },
       ),
     );
   }
@@ -101,28 +144,38 @@ class AdMobAds implements AdsGateway {
   @override
   Future<bool> showInterstitial() async {
     final ad = _interstitial;
-    if (ad == null) return false;
+    if (ad == null) {
+      adsLog('interstitial not shown: none loaded');
+      return false;
+    }
     _interstitial = null;
     final closed = Completer<bool>();
     ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (_) => adsLog('interstitial shown'),
       onAdDismissedFullScreenContent: (ad) {
+        adsLog('interstitial dismissed');
         ad.dispose();
         if (!closed.isCompleted) closed.complete(true);
       },
-      onAdFailedToShowFullScreenContent: (ad, _) {
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        adsLog('interstitial failed to show ${error.code}: ${error.message}');
         ad.dispose();
         if (!closed.isCompleted) closed.complete(false);
       },
     );
     try {
       await ad.show();
-    } on Object {
+    } on Object catch (e) {
+      adsLog('interstitial show threw: $e');
       ad.dispose();
       return false;
     }
     return closed.future;
   }
 }
+
+String _describe(LoadAdError error) => '${error.code} ${error.domain}: '
+    '${error.message} (response ${error.responseInfo?.responseId})';
 
 class _AdMobBanner extends StatefulWidget {
   const _AdMobBanner({required this.unitId});
@@ -134,10 +187,20 @@ class _AdMobBanner extends StatefulWidget {
 }
 
 class _AdMobBannerState extends State<_AdMobBanner> {
+  /// A failed banner tries again after these, then gives up for this screen:
+  /// no fill and a dropped connection are usually short-lived.
+  static const _retryDelays = [
+    Duration(seconds: 15),
+    Duration(seconds: 45),
+    Duration(minutes: 2),
+  ];
+
   BannerAd? _ad;
   AdSize? _size;
   bool _loaded = false;
   bool _started = false;
+  int _failures = 0;
+  Timer? _retry;
 
   @override
   void didChangeDependencies() {
@@ -148,8 +211,18 @@ class _AdMobBannerState extends State<_AdMobBanner> {
   }
 
   Future<void> _load(int width) async {
-    final size = await AdSize.getLargeAnchoredAdaptiveBannerAdSize(width);
-    if (!mounted || size == null) return;
+    // The standard anchored size (about 60 on a phone), not the "large" one:
+    // that took up to 15% of the screen (128 on a 411-wide phone) while most
+    // creatives are 50-60 tall, leaving an empty band over the screen.
+    // ignore: deprecated_member_use
+    final size = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+      width,
+    );
+    if (!mounted) return;
+    if (size == null) {
+      adsLog('banner: no adaptive size for width $width');
+      return;
+    }
     // The space is taken as soon as the size is known, before the ad
     // arrives, so the screen does not jump when it does.
     setState(() => _size = size);
@@ -158,11 +231,32 @@ class _AdMobBannerState extends State<_AdMobBanner> {
       adUnitId: widget.unitId,
       request: const AdRequest(),
       listener: BannerAdListener(
-        onAdLoaded: (_) {
-          if (mounted) setState(() => _loaded = true);
+        onAdLoaded: (loaded) async {
+          // The creative can be shorter than the slot (a 50-tall ad in a
+          // 57-tall slot); the strip shrinks to it, leaving no band above.
+          final real = await (loaded as BannerAd).getPlatformAdSize();
+          adsLog('banner loaded (${widget.unitId}) '
+              '${real?.width}x${real?.height} in ${size.width}x${size.height}');
+          if (mounted) {
+            setState(() {
+              _loaded = true;
+              if (real != null) _size = real;
+            });
+          }
         },
-        // No ad leaves the reserved space empty; nothing else changes.
-        onAdFailedToLoad: (ad, _) => ad.dispose(),
+        // The reserved space stays empty meanwhile; nothing else changes.
+        onAdFailedToLoad: (ad, error) {
+          adsLog('banner failed to load (${widget.unitId}): '
+              '${_describe(error)}');
+          ad.dispose();
+          if (!mounted) return;
+          _ad = null;
+          if (_failures < _retryDelays.length) {
+            _retry = Timer(_retryDelays[_failures++], () {
+              if (mounted) _load(width);
+            });
+          }
+        },
       ),
     );
     _ad = ad;
@@ -171,6 +265,7 @@ class _AdMobBannerState extends State<_AdMobBanner> {
 
   @override
   void dispose() {
+    _retry?.cancel();
     _ad?.dispose();
     super.dispose();
   }
@@ -180,7 +275,7 @@ class _AdMobBannerState extends State<_AdMobBanner> {
     final size = _size;
     return SizedBox(
       height: size?.height.toDouble() ?? 60,
-      child: size != null && _loaded
+      child: size != null && _loaded && _ad != null
           ? Center(
               child: SizedBox(
                 width: size.width.toDouble(),
