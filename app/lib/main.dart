@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'crash_reporting.dart';
 import 'data/invite.dart';
 import 'data/server.dart';
 import 'monetization/ads.dart';
@@ -16,6 +17,7 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await startCrashReporting();
   final api = ApiClient(defaultServerUrl());
   final session = GameSession(api);
   final monetization =

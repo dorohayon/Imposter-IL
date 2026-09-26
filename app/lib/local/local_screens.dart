@@ -223,7 +223,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           Text(
             forVoting
                 ? 'אף אחד אחר לא מסתכל על המסך.'
-                : 'רק ${_current.name} מסתכל על המסך. השאר מחכים שנייה.',
+                : 'רק ${_current.name} מסתכל/ת על המסך.',
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, height: 1.45),
           ),
@@ -255,7 +255,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'רק ${impostor.name} מסתכל על המסך. השאר מחכים שנייה.',
+            'רק ${impostor.name} מסתכל/ת על המסך.',
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, height: 1.45),
           ),

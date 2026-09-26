@@ -2,6 +2,10 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
+    // Firebase from google-services.json, and the build id Crashlytics needs
+    // to start at all.
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }

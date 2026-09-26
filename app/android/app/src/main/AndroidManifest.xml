@@ -29,10 +29,19 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Room invitations. The shared link is https://<server>/join/CODE,
-                 and the page there hands the phone to this scheme. An https
-                 App Link would skip that page, but verifying one needs the
-                 release signing certificate, which does not exist yet. -->
+            <!-- Room invitations. The shared link https://<server>/join/CODE
+                 opens the app directly: the server's
+                 /.well-known/assetlinks.json vouches for this app's signing
+                 certificate. Where that fails (a build signed otherwise), the
+                 page at the link hands the phone to the scheme below. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https"
+                      android:host="imposter-eegbs6v5uq-uc.a.run.app"
+                      android:pathPrefix="/join/"/>
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
@@ -46,6 +55,10 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-9035143252838544~9971528166"/>
+        <!-- Firebase starts with the app, before any Dart: Crashlytics stays
+             off until crash_reporting.dart turns it on (release builds, after
+             the documents are accepted). -->
+        <meta-data android:name="firebase_crashlytics_collection_enabled" android:value="false"/>
         <!-- Hands the link above to Flutter as a route. -->
         <meta-data android:name="flutter_deeplinking_enabled" android:value="true"/>
         <!-- Don't delete the meta-data below.

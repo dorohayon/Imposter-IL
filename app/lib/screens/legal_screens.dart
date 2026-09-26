@@ -1,14 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../crash_reporting.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 
 /// Bump this value whenever a material Terms/Privacy change requires renewed
 /// acknowledgement. The acknowledgement is deliberately device-local: the
 /// product has no account system and no legal-consent profile on the server.
-const legalVersion = '1.2';
-const legalDate = '25 בספטמבר 2026';
+const legalVersion = '1.3';
+const legalDate = '26 בספטמבר 2026';
 const legalAcceptedVersionKey = 'legal.acceptedVersion';
 
 /// Public copies for App Store Connect, Google Play and anyone who wants to
@@ -53,6 +56,7 @@ class _LegalGateState extends State<LegalGate> {
   Future<void> _accept() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(legalAcceptedVersionKey, legalVersion);
+    unawaited(enableCrashReporting());
     if (!mounted) return;
     setState(() => _accepted = true);
     widget.onAccepted?.call();
@@ -280,7 +284,7 @@ class PrivacyScreen extends StatelessWidget {
         ),
         _LegalSection(
           '7. שירותים חיצוניים',
-          'השרת מתארח ב־Google Cloud Platform (Cloud Run, אזור us-central1), וגוגל מעבדת מידע טכני הנדרש להעברת התעבורה ולשמירת הלוגים התפעוליים, כמעבדת מידע מטעמנו ובכפוף להתחייבויות אבטחה ופרטיות ברמה זהה או טובה יותר מזו שמתוארת כאן. התשלומים מתבצעים ב־App Store של Apple וב־Google Play, לפי מדיניות הפרטיות שלהם. למי שאין לו פרימיום מוצגות פרסומות של Google AdMob. AdMob עשויה לאסוף מזהי מכשיר ומזהה פרסום, כתובת IP, מידע על אינטראקציה עם מודעות, מידע אבחון וביצועים, לצורך הצגת מודעות, מדידתן ומניעת הונאה, לפי מדיניות הפרסום של Google (policies.google.com/technologies/ads). במקומות שבהם הדין מחייב, ובהם האיחוד האירופי ובריטניה, מתבקשת הסכמתכם לפני פרסום מותאם אישית; ב־iPhone לא נעשה שימוש במזהה הפרסום ללא הרשאתכם. אין מכירת מידע אישי, ואין SDK צד שלישי ל־analytics או crash reporting. אם יתווסף שירות כזה, המדיניות ורישומי החנויות יעודכנו.',
+          'השרת מתארח ב־Google Cloud Platform (Cloud Run, אזור us-central1), וגוגל מעבדת מידע טכני הנדרש להעברת התעבורה ולשמירת הלוגים התפעוליים, כמעבדת מידע מטעמנו ובכפוף להתחייבויות אבטחה ופרטיות ברמה זהה או טובה יותר מזו שמתוארת כאן. התשלומים מתבצעים ב־App Store של Apple וב־Google Play, לפי מדיניות הפרטיות שלהם. למי שאין לו פרימיום מוצגות פרסומות של Google AdMob. AdMob עשויה לאסוף מזהי מכשיר ומזהה פרסום, כתובת IP, מידע על אינטראקציה עם מודעות, מידע אבחון וביצועים, לצורך הצגת מודעות, מדידתן ומניעת הונאה, לפי מדיניות הפרסום של Google (policies.google.com/technologies/ads). במקומות שבהם הדין מחייב, ובהם האיחוד האירופי ובריטניה, מתבקשת הסכמתכם לפני פרסום מותאם אישית; ב־iPhone לא נעשה שימוש במזהה הפרסום ללא הרשאתכם. כדי לאתר ולתקן תקלות, כשהאפליקציה קורסת או נתקלת בשגיאה היא שולחת דוח ל־Firebase Crashlytics של Google: פרטי השגיאה ומיקומה בקוד, דגם המכשיר, מערכת ההפעלה, גרסת האפליקציה ומזהה התקנה אקראי של Crashlytics. הדוח אינו כולל כינוי, רמזים או מזהה פרסום, והוא נשמר עד 90 יום. אין מכירת מידע אישי, ואין SDK צד שלישי ל־analytics.',
         ),
         _LegalSection(
           '8. ילדים ופרטים אישיים',

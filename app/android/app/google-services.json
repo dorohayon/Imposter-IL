@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "665896750521",
+    "project_id": "imposter-il-game",
+    "storage_bucket": "imposter-il-game.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665896750521:android:e0d40c1660ecdfc9227a68",
+        "android_client_info": {
+          "package_name": "com.imposteril.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7NUCDRa4_t2-sAGop88fmvpujMBIHQ3c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

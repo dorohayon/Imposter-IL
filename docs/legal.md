@@ -9,7 +9,7 @@ Plus `legalVersion` / `legal.acceptedVersion`, the device-local acknowledgement 
 
 `imposteril/imposteril.github.io` is output only. Never edit it by hand: the next publish overwrites it. The workflow pushes with a write deploy key on that repository, whose private half is the `SITE_DEPLOY_KEY` secret here.
 
-Current document version: **1.1**, effective **23 September 2026**. 1.1 added purchases, subscriptions and ads (Terms §5, Privacy §2–4, §6–9), which is a material change, so every install is asked to accept again.
+Current document version: **1.3**, effective **26 September 2026**. 1.1 added purchases, subscriptions and ads (Terms §5, Privacy §2–4, §6–9); 1.3 adds Firebase Crashlytics (Privacy §7). Both are material changes, so every install is asked to accept again.
 
 ## Player flow
 
@@ -46,7 +46,8 @@ The v1 documents are intentionally product-specific. They reflect the current im
 - server operational logs and report metadata;
 - purchases through the App Store and Google Play only; the server verifies the store's proof (StoreKit 2 signed transaction or Play purchase token) and keeps the result in memory with the session; no payment details reach us;
 - Google AdMob for players without Premium, with Google UMP consent where the law requires it (EEA, UK) and Apple's tracking permission before the advertising identifier is used;
-- no sale of personal data, no third-party analytics SDK and no crash-reporting SDK;
+- Firebase Crashlytics in release builds, only after the documents are accepted (collection is off natively until then): crash and uncaught-error reports with the stack, device model, OS, app version and a random Crashlytics installation id; no nickname, hints or advertising id; kept 90 days;
+- no sale of personal data and no third-party analytics SDK;
 - UGC filtering, reporting and device-local hiding.
 
 If any of those facts changes, review both documents and the App Store Privacy / Google Play Data Safety declarations before release.
@@ -83,11 +84,13 @@ Revisit only if moderation and verifiable parental consent are actually built.
 - Google Mobile Ads SDK, per Google's disclosure guides ([iOS](https://developers.google.com/admob/ios/privacy/data-disclosure), [Android](https://developers.google.com/admob/android/privacy/play-data-disclosure)): IP address / approximate location, device and advertising identifiers, product interaction, advertising data, diagnostics and performance. On iOS, device ID, advertising data and product interaction are marked "used for tracking"; that is only true after the player grants tracking permission, but the label is per app, not per player.
 - In App Store Connect, "Tracking: Yes" with Google's tracking domains, as the SDK's own privacy manifest declares. In Play, "Data is shared" for the advertising ID and device identifiers.
 
-No account, so Apple's account-deletion requirement (5.1.1(v)) does not apply. No analytics SDK, no crash-reporting SDK.
+- Firebase Crashlytics: crash logs and diagnostics, plus the installation id as a device identifier, collected for app functionality (analytics of crashes), not linked to an identity, not used for tracking, not shared. In App Store Connect: Crash Data and Other Diagnostic Data, "Not Linked to You".
+
+No account, so Apple's account-deletion requirement (5.1.1(v)) does not apply. No analytics SDK.
 
 **Subscriptions.** App Store Connect metadata must link the Terms of Use and the Privacy Policy. With the EULA field empty, the Terms of Use link for Apple is the [standard EULA](https://www.apple.com/legal/internet-services/itunes/dev/stdeula/); put it in the app description. The in-app purchase popup already links both documents.
 
-**The SDK coupling.** Section 7 names Google AdMob and promises no third-party analytics or crash-reporting SDK. Adding Crashlytics or anything like it means editing that section, the Data Safety form and the App Privacy card in the same release — not afterwards.
+**The SDK coupling.** Section 7 names Google AdMob and Firebase Crashlytics and promises no third-party analytics SDK. Adding analytics or anything like it means editing that section, the Data Safety form and the App Privacy card in the same release — not afterwards.
 
 **Distribution.** The rights section names Israeli law and the GDPR. If Play distribution stays worldwide, that stays accurate; restricting countries later does not require a change, but widening the data practices does.
 

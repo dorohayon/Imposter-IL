@@ -2,6 +2,7 @@ package invite
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -50,5 +51,26 @@ func TestPageCarriesTheInvitation(t *testing.T) {
 	}
 	if !bytes.Equal(rec.Body.Bytes(), hero) {
 		t.Error("the hero route served something else")
+	}
+}
+
+// Android checks this file before it lets a /join/ link skip the page.
+func TestAssetLinksNameTheApp(t *testing.T) {
+	mux := http.NewServeMux()
+	Routes(mux)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/.well-known/assetlinks.json", nil))
+	var links []struct {
+		Target struct {
+			Package      string   `json:"package_name"`
+			Fingerprints []string `json:"sha256_cert_fingerprints"`
+		} `json:"target"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &links); err != nil {
+		t.Fatalf("not JSON: %v", err)
+	}
+	if rec.Header().Get("Content-Type") != "application/json" || len(links) != 1 ||
+		links[0].Target.Package != "com.imposteril.app" || len(links[0].Target.Fingerprints) == 0 {
+		t.Errorf("assetlinks = %s", rec.Body)
 	}
 }
