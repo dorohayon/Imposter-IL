@@ -50,6 +50,11 @@ AdUnits testAdUnits(String platform) => platform == 'ios'
         interstitial: 'ca-app-pub-3940256099942544/1033173712',
       );
 
+/// Hashed ids of our own phones (the SDK logs a phone's id on first ad
+/// request). They get test ads from the live units, so we never click our own.
+// ponytail: the console test-device list didn't reach the SDK on our phone.
+const testDeviceIds = ['97A34F8CB0EEDBDD235DCDFE48F7C855'];
+
 class AdMobAds implements AdsGateway {
   InterstitialAd? _interstitial;
   bool _loadingInterstitial = false;
@@ -85,7 +90,10 @@ class AdMobAds implements AdsGateway {
     if (!canRequest) return false;
     // Request settings first, so no ad is ever requested without them.
     await MobileAds.instance.updateRequestConfiguration(
-      RequestConfiguration(maxAdContentRating: maxAdContentRating),
+      RequestConfiguration(
+        maxAdContentRating: maxAdContentRating,
+        testDeviceIds: testDeviceIds,
+      ),
     );
     final status = await MobileAds.instance.initialize();
     adsLog('MobileAds initialized: ${status.adapterStatuses.entries.map(
