@@ -46,7 +46,7 @@ The v1 documents are intentionally product-specific. They reflect the current im
 - server operational logs and report metadata;
 - purchases through the App Store and Google Play only; the server verifies the store's proof (StoreKit 2 signed transaction or Play purchase token) and keeps the result in memory with the session; no payment details reach us;
 - Google AdMob for players without Premium, with Google UMP consent where the law requires it (EEA, UK) and Apple's tracking permission before the advertising identifier is used;
-- Firebase Crashlytics in release builds: crash and uncaught-error reports with the stack, device model, OS, app version and a random Crashlytics installation id; no nickname, hints or advertising id; kept 90 days;
+- Firebase Crashlytics in release builds, only after the documents are accepted (collection is off natively until then): crash and uncaught-error reports with the stack, device model, OS, app version and a random Crashlytics installation id; no nickname, hints or advertising id; kept 90 days;
 - no sale of personal data and no third-party analytics SDK;
 - UGC filtering, reporting and device-local hiding.
 

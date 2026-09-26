@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../crash_reporting.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 
@@ -53,6 +56,7 @@ class _LegalGateState extends State<LegalGate> {
   Future<void> _accept() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(legalAcceptedVersionKey, legalVersion);
+    unawaited(enableCrashReporting());
     if (!mounted) return;
     setState(() => _accepted = true);
     widget.onAccepted?.call();

@@ -1,6 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'screens/legal_screens.dart';
 
 /// Firebase for iOS (Android reads android/app/google-services.json). Not
 /// secrets: they only name the Firebase app.
@@ -13,8 +16,13 @@ const _ios = FirebaseOptions(
   iosBundleId: 'com.imposteril.app',
 );
 
+bool _started = false;
+
 /// Sends crashes and uncaught errors to Firebase Crashlytics, in release
-/// builds only (privacy policy section 7). Never stops the app from starting.
+/// builds only and once the player accepted the documents that disclose it
+/// (privacy policy section 7). Collection is off natively until then: Android
+/// starts Firebase before any Dart runs (AndroidManifest.xml, Info.plist).
+/// Never stops the app from starting.
 Future<void> startCrashReporting() async {
   if (!kReleaseMode) return;
   try {
@@ -31,4 +39,18 @@ Future<void> startCrashReporting() async {
     crashlytics.recordError(error, stack, fatal: true);
     return true;
   };
+  _started = true;
+  final prefs = await SharedPreferences.getInstance();
+  // Off again when the accepted version is out of date: the native setting
+  // persists, and new documents need a new yes.
+  await crashlytics.setCrashlyticsCollectionEnabled(
+    prefs.getString(legalAcceptedVersionKey) == legalVersion,
+  );
+}
+
+/// Turns collection on once the documents are accepted.
+Future<void> enableCrashReporting() async {
+  if (_started) {
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+  }
 }
