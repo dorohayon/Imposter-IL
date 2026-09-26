@@ -20,8 +20,8 @@ void main() {
     // host is here, and only then did the reply arrive.
     final api = _SlowCreateApi();
     final session = await startAtHome(tester, api);
-    final creating = session.createRoom(
-        maxPlayers: 8, hintSeconds: 60, categoryIds: ['food']);
+    final creating = session
+        .createRoom(maxPlayers: 8, hintSeconds: 60, categoryIds: ['food']);
     await tester.pump();
     api.channel.event('session.state',
         {'playerId': 'p_me', 'activity': 'room', 'roomId': 'r_1'});
