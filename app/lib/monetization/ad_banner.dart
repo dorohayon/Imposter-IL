@@ -34,12 +34,9 @@ class AdBanner extends StatelessWidget {
         child: SafeArea(
           top: false,
           minimum: const EdgeInsets.only(bottom: 14),
-          child: Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: monetization.adsReady
-                ? monetization.ads.banner(unit)
-                : const SizedBox(height: 60, width: double.infinity),
-          ),
+          child: monetization.adsReady
+              ? monetization.ads.banner(unit)
+              : const SizedBox(height: 60, width: double.infinity),
         ),
       ),
     );

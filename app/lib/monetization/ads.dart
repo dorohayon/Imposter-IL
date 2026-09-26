@@ -231,10 +231,18 @@ class _AdMobBannerState extends State<_AdMobBanner> {
       adUnitId: widget.unitId,
       request: const AdRequest(),
       listener: BannerAdListener(
-        onAdLoaded: (_) {
+        onAdLoaded: (loaded) async {
+          // The creative can be shorter than the slot (a 50-tall ad in a
+          // 57-tall slot); the strip shrinks to it, leaving no band above.
+          final real = await (loaded as BannerAd).getPlatformAdSize();
           adsLog('banner loaded (${widget.unitId}) '
-              '${size.width}x${size.height}');
-          if (mounted) setState(() => _loaded = true);
+              '${real?.width}x${real?.height} in ${size.width}x${size.height}');
+          if (mounted) {
+            setState(() {
+              _loaded = true;
+              if (real != null) _size = real;
+            });
+          }
         },
         // The reserved space stays empty meanwhile; nothing else changes.
         onAdFailedToLoad: (ad, error) {
