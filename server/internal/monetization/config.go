@@ -73,11 +73,11 @@ type AdUnits struct {
 }
 
 // BannerPlacements lists the screens the design allows a banner on
-// (design/claude/Imposter IL Monetization.dc.html): home, categories, the
-// search, private room screens, profile, settings, how to play and the
-// one-device setup. Never game, result, error or first-run screens.
+// (design/claude/Imposter IL Monetization.dc.html): home, the online choice,
+// categories, the search, private room screens, profile, settings, how to
+// play and the one-device setup. Never game, result, error or first-run screens.
 var BannerPlacements = []string{
-	"home", "categories", "search", "friends", "create_room", "join_room",
+	"home", "online_choice", "categories", "search", "friends", "create_room", "join_room",
 	"lobby", "profile", "settings", "how_to_play", "local_players", "local_rules",
 }
 

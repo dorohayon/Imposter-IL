@@ -110,6 +110,7 @@ class AdUnits {
 /// (design/claude/Imposter IL Monetization.dc.html, "כללי פרסומות").
 abstract final class BannerPlacement {
   static const home = 'home';
+  static const onlineChoice = 'online_choice';
   static const categories = 'categories';
   static const search = 'search';
   static const friends = 'friends';
@@ -123,7 +124,7 @@ abstract final class BannerPlacement {
   static const localRules = 'local_rules';
 
   static const all = {
-    home, categories, search, friends, createRoom, joinRoom, lobby, //
+    home, onlineChoice, categories, search, friends, createRoom, joinRoom, lobby, //
     profile, settings, howToPlay, localPlayers, localRules,
   };
 }

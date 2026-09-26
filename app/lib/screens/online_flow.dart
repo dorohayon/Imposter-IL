@@ -244,6 +244,18 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                                   alignment: AlignmentDirectional.topStart,
                                   child: _SelectedCategoryCheck(),
                                 ),
+                              // Where a locked tile has its lock.
+                              if (tile.id != _allId)
+                                Align(
+                                  alignment: AlignmentDirectional.topEnd,
+                                  child: Icon(
+                                    categoryIcon(tile.id),
+                                    size: 24,
+                                    color: isSelected
+                                        ? AppColors.night
+                                        : AppColors.turquoise,
+                                  ),
+                                ),
                               Align(
                                 alignment: AlignmentDirectional.bottomStart,
                                 child: Text(
@@ -303,6 +315,29 @@ class PremiumBadge extends StatelessWidget {
     );
   }
 }
+
+/// An open category's icon on its tile.
+IconData categoryIcon(String id) => switch (id) {
+      'food' => Icons.restaurant_rounded,
+      'home' => Icons.chair_rounded,
+      'school_students' => Icons.school_rounded,
+      'work_office' => Icons.work_rounded,
+      'technology_digital' => Icons.devices_rounded,
+      'travel_vacation' => Icons.flight_rounded,
+      'places' => Icons.public_rounded,
+      'dating_relationships' => Icons.favorite_rounded,
+      'nightlife' => Icons.nightlife_rounded,
+      'weddings_events' => Icons.celebration_rounded,
+      'fashion_grooming' => Icons.checkroom_rounded,
+      'gaming' => Icons.sports_esports_rounded,
+      'music' => Icons.music_note_rounded,
+      'nostalgia' => Icons.history_rounded,
+      'israeli_slang' => Icons.record_voice_over_rounded,
+      'idf_service' => Icons.military_tech_rounded,
+      'film_tv' => Icons.movie_rounded,
+      'sports' => Icons.sports_soccer_rounded,
+      _ => Icons.category_rounded,
+    };
 
 /// A category's name on its tile: a name of several words breaks before its
 /// last word, so every tile holds its name on the same lines and the bottom

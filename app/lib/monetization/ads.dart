@@ -211,7 +211,13 @@ class _AdMobBannerState extends State<_AdMobBanner> {
   }
 
   Future<void> _load(int width) async {
-    final size = await AdSize.getLargeAnchoredAdaptiveBannerAdSize(width);
+    // The standard anchored size (about 60 on a phone), not the "large" one:
+    // that took up to 15% of the screen (128 on a 411-wide phone) while most
+    // creatives are 50-60 tall, leaving an empty band over the screen.
+    // ignore: deprecated_member_use
+    final size = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+      width,
+    );
     if (!mounted) return;
     if (size == null) {
       adsLog('banner: no adaptive size for width $width');

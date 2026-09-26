@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../monetization/monetization_config.dart';
 import '../screens/online_flow.dart';
 import '../screens/private_flow.dart';
 import '../theme/app_theme.dart';
@@ -15,6 +16,7 @@ class OnlineChoiceScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return GameScaffold(
       title: 'משחק ברשת',
+      bannerPlacement: BannerPlacement.onlineChoice,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
