@@ -200,11 +200,18 @@ void main() {
       final m = await started(store: FakeStore()..productsFail = true);
       await m.loadProducts('sports');
       expect(m.productsFailed, isTrue);
+      expect(m.productsMissing, isFalse);
       expect(m.productsLoading, isFalse);
 
       final offline = await started(store: FakeStore()..available = false);
       await offline.loadProducts('sports');
       expect(offline.productsFailed, isTrue);
+
+      // The store answers, but sells none of them yet.
+      final unset = await started(store: FakeStore()..prices.clear());
+      await unset.loadProducts('sports');
+      expect(unset.productsFailed, isTrue);
+      expect(unset.productsMissing, isTrue);
     });
 
     test('buying a category unlocks it and finishes the transaction', () async {

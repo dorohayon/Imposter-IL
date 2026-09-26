@@ -84,6 +84,10 @@ class Monetization extends ChangeNotifier {
   bool productsLoading = false;
   bool productsFailed = false;
 
+  /// The store answered but sells none of them (not set up there yet), as
+  /// opposed to a failed connection. [productsFailed] is set too.
+  bool productsMissing = false;
+
   bool adsReady = false;
   bool privacyOptionsRequired = false;
   DateTime? _lastInterstitial;
@@ -474,11 +478,12 @@ class Monetization extends ChangeNotifier {
     if (ids.every(products.containsKey)) return;
     productsLoading = true;
     productsFailed = false;
+    productsMissing = false;
     _notify();
     try {
       if (!await store.isAvailable()) throw StateError('store unavailable');
       products = {...products, ...await store.products(ids)};
-      productsFailed = !ids.any(products.containsKey);
+      productsFailed = productsMissing = !ids.any(products.containsKey);
     } on Object {
       productsFailed = true;
     } finally {

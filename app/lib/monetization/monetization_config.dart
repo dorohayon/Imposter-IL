@@ -124,7 +124,8 @@ abstract final class BannerPlacement {
   static const localRules = 'local_rules';
 
   static const all = {
-    home, onlineChoice, categories, search, friends, createRoom, joinRoom, lobby, //
+    home, onlineChoice, categories, search, friends, createRoom, joinRoom,
+    lobby, //
     profile, settings, howToPlay, localPlayers, localRules,
   };
 }
