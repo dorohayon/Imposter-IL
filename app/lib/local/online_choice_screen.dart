@@ -74,7 +74,7 @@ class _ModeCard extends StatelessWidget {
   final List<String> notes;
   final VoidCallback onTap;
 
-  /// Design L02: quick play is the lit card, yellow on yellow.
+  /// Design L02: quick play is the lit card: a yellow tint and title.
   final bool highlighted;
 
   @override
@@ -100,9 +100,7 @@ class _ModeCard extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: radius,
           side: BorderSide(
-            color: highlighted
-                ? AppColors.yellow
-                : AppColors.cream.withValues(alpha: .14),
+            color: AppColors.cream.withValues(alpha: .14),
             width: 2,
           ),
         ),
