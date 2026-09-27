@@ -1191,6 +1191,7 @@ class _EliminationReveal extends StatelessWidget {
       showHeader: true,
       timer: _timer(game),
       onExit: onLeave,
+      accent: const Color(0xFF2A2455),
       bottom: continueButton,
       child: EliminationRevealContent(
         eliminatedName: out.nickname,
@@ -2846,174 +2847,85 @@ class _ResultState extends State<_Result> {
     if (result == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    final stopped = result.winner == null;
-    final citizensWon = result.winner == 'citizens';
-    final outcome = result.outcomes[session.playerId];
     final votes = <String, int>{};
     for (final target in (result.voteRounds.isEmpty
         ? const <String>[]
         : result.voteRounds.last.values)) {
       votes[target] = (votes[target] ?? 0) + 1;
     }
-    final mostVotes = votes.values.fold(0, (a, b) => a > b ? a : b);
     final abstained = result.abstentions.isEmpty ? 0 : result.abstentions.last;
     final impostor = game.player(result.impostorId);
+    final outcome = result.outcomes[session.playerId];
+    // The citizen the table voted out, when that handed the impostor the
+    // match: coral in the breakdown (design 16).
+    final wronged = result.winner == 'impostor'
+        ? (votes.entries.where((e) => e.key != result.impostorId).toList()
+              ..sort((a, b) => b.value.compareTo(a.value)))
+            .firstOrNull
+            ?.key
+        : null;
 
     return GameScaffold(
       title: '',
       showBack: false,
       showHeader: false,
-      accent: stopped
-          ? null
-          : citizensWon
-              ? const Color(0xFF14514A)
-              : const Color(0xFF4A2A8C),
-      bottom: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          PrimaryButton(
-            label: 'משחק נוסף',
-            onPressed: _continuing
-                ? null
-                : () => _continue(
-                      context,
-                      () => runCommand(
-                        context,
-                        session.send('game.playAgain', {'gameId': game.id}),
-                      ),
-                    ),
-          ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: _continuing ? null : () => _continue(context, onHome),
-            child: const Text('חזרה למסך הבית'),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Illustration(
-            stopped
-                ? 'assets/illustrations/connection-error.webp'
-                : citizensWon
-                    ? 'assets/illustrations/result-citizens-win.webp'
-                    : 'assets/illustrations/result-impostor-win.webp',
-            height: 168,
-          ),
-          Text(
-            result.reason == 'abandoned'
-                ? 'המשחק בוטל'
-                : stopped
-                    ? 'המשחק הופסק'
-                    : citizensWon
-                        ? 'האזרחים ניצחו!'
-                        : 'המתחזה ניצח!',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: stopped
-                      ? AppColors.cream
-                      : citizensWon
-                          ? AppColors.turquoise
-                          : AppColors.yellow,
+      accent: GameResultContent.accentFor(result.winner),
+      bottom: ResultButtons(
+        onAgain: _continuing
+            ? null
+            : () => _continue(
+                  context,
+                  () => runCommand(
+                    context,
+                    session.send('game.playAgain', {'gameId': game.id}),
+                  ),
                 ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            _resultReasons[result.reason] ?? '',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, fontSize: 17),
-          ),
-          // A match that was called off is recorded for nobody, so there is
-          // nothing to tell anyone they earned.
-          if (outcome != null && outcome != 'none') ...[
-            const SizedBox(height: 10),
-            StatusBanner(
-              text: outcome == 'win' ? 'נרשם לכם ניצחון' : 'נרשם לכם הפסד',
-              positive: outcome == 'win',
-            ),
-          ],
-          const SizedBox(height: 18),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                children: [
-                  ListTile(
-                    title: const Text('המתחזה היה'),
-                    trailing: Text(
-                      impostor?.nickname ?? '',
-                      style: const TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                  const Divider(),
-                  ListTile(
-                    title: const Text('המילה הייתה'),
-                    trailing: Text(
-                      result.secretWord,
-                      style: const TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                  if (votes.isNotEmpty || abstained > 0) ...[
-                    const Divider(),
-                    const ListTile(title: Text('חלוקת הקולות')),
-                    for (final entry
-                        in (votes.entries.toList()
-                          ..sort((a, b) => b.value.compareTo(a.value))))
-                      _VoteBar(
-                        name: game.player(entry.key)?.nickname ?? '',
-                        votes: entry.value,
-                        of: mostVotes,
-                      ),
-                    if (abstained > 0)
-                      _VoteBar(name: 'נמנעו', votes: abstained, of: mostVotes),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
+        onHome: _continuing ? null : () => _continue(context, onHome),
       ),
-    );
-  }
-}
-
-/// One row of the vote breakdown: a name, a bar and the number of votes.
-class _VoteBar extends StatelessWidget {
-  const _VoteBar({required this.name, required this.votes, required this.of});
-
-  final String name;
-  final int votes;
-  final int of;
-
-  @override
-  Widget build(BuildContext context) {
-    final muted = name == 'נמנעו';
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 92,
-            child: Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: muted ? AppColors.muted : null),
-            ),
-          ),
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                value: of == 0 ? 0 : votes / of,
-                minHeight: 10,
-                backgroundColor: AppColors.night,
-                color: muted ? AppColors.muted : AppColors.yellow,
+      child: GameResultContent(
+        winner: result.winner,
+        title: result.reason == 'abandoned'
+            ? 'המשחק בוטל'
+            : switch (result.winner) {
+                'citizens' => 'האזרחים ניצחו!',
+                'impostor' => 'המתחזה ניצח!',
+                _ => 'המשחק הופסק',
+              },
+        reason: _resultReasons[result.reason] ?? '',
+        impostorName: impostor?.nickname ?? '',
+        impostorAvatar: impostor?.avatarAsset ?? '',
+        secretWord: result.secretWord,
+        impostorLabel: 'המתחזה היה',
+        // A match that was called off is recorded for nobody, so there is
+        // nothing to tell anyone they earned.
+        above: outcome == null || outcome == 'none'
+            ? null
+            : StatusBanner(
+                text: outcome == 'win' ? 'נרשם לכם ניצחון' : 'נרשם לכם הפסד',
+                positive: outcome == 'win',
               ),
+        guess: result.guess,
+        children: [
+          if (votes.isNotEmpty || abstained > 0)
+            ResultVoteBars(
+              of: game.players.length,
+              rows: [
+                for (final entry
+                    in (votes.entries.toList()
+                      ..sort((a, b) => b.value.compareTo(a.value))))
+                  (
+                    game.player(entry.key)?.nickname ?? '',
+                    entry.value,
+                    entry.key == result.impostorId
+                        ? AppColors.purple
+                        : entry.key == wronged
+                            ? AppColors.coral
+                            : AppColors.cream.withValues(alpha: .45),
+                  ),
+                if (abstained > 0)
+                  ('נמנעו', abstained, AppColors.cream.withValues(alpha: .25)),
+              ],
             ),
-          ),
-          const SizedBox(width: 10),
-          Text('$votes', style: const TextStyle(fontWeight: FontWeight.w900)),
         ],
       ),
     );

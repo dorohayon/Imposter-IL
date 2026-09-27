@@ -527,6 +527,14 @@ func TestImpostorGuess(t *testing.T) {
 		must(t, g.SubmitGuess(g.impostor, " "+secret, now))
 		wantResult(t, g, TeamImpostor, ReasonImpostorGuessedWord)
 	})
+	t.Run("a guess the hint filter blocks is not shown", func(t *testing.T) {
+		g, now := caught(t)
+		must(t, g.SubmitGuess(g.impostor, "blocked", now))
+		wantResult(t, g, TeamCitizens, ReasonImpostorGuessWrong)
+		if g.result.Guess != "" {
+			t.Fatalf("blocked guess shown: %q", g.result.Guess)
+		}
+	})
 	t.Run("normalized guess with prefix", func(t *testing.T) {
 		g, now := caught(t)
 		must(t, g.SubmitGuess(g.impostor, "הַפִּיל", now))
@@ -534,8 +542,11 @@ func TestImpostorGuess(t *testing.T) {
 	})
 	t.Run("wrong guess", func(t *testing.T) {
 		g, now := caught(t)
-		must(t, g.SubmitGuess(g.impostor, "נמר", now))
+		must(t, g.SubmitGuess(g.impostor, " נמר ", now))
 		wantResult(t, g, TeamCitizens, ReasonImpostorGuessWrong)
+		if g.result.Guess != "נמר" {
+			t.Fatalf("result guess = %q, want the guess shown", g.result.Guess)
+		}
 		for _, id := range citizens(g) {
 			if g.result.Outcomes[id] != OutcomeWin {
 				t.Fatalf("citizen %s must win", id)

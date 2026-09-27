@@ -416,7 +416,7 @@ void main() {
 
     await tapText(tester, 'המשך להגדרות');
     expect(find.byType(LocalRulesScreen), findsOneWidget);
-    await tester.tap(find.widgetWithText(ChoiceChip, 'הכול'));
+    await tester.tap(find.text('הכול').first);
     await tester.pump();
     expect(isEnabled(tester, 'מתחילים'), isFalse);
   });

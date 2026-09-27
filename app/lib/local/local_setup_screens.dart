@@ -127,6 +127,8 @@ class _LocalPlayersScreenState extends State<LocalPlayersScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const _StepBar(step: 1),
+          const SizedBox(height: 16),
           const Illustration('assets/illustrations/local-one-device.webp',
               height: 130),
           const SizedBox(height: 12),
@@ -312,10 +314,11 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const _StepBar(step: 2),
+          const SizedBox(height: 16),
           Row(
             children: [
-              const Text('קטגוריות',
-                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+              const Text('קטגוריות', style: _sectionLabel),
               const SizedBox(width: 10),
               if (!money.premium)
                 Expanded(
@@ -363,9 +366,8 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
                   ),
             ],
           ),
-          const SizedBox(height: 20),
-          const Text('זמן לכל רמז',
-              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 16),
+          const Text('זמן לכל רמז', style: _sectionLabel),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -374,32 +376,48 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
               for (final seconds in _times)
                 _Chip(
                   label: seconds == null ? 'ללא טיימר' : '$seconds',
+                  number: seconds != null,
                   selected: _hintSeconds == seconds,
                   onTap: () => setState(() => _hintSeconds = seconds),
                 ),
             ],
           ),
-          const SizedBox(height: 20),
-          InfoCard(
-            label: 'סיכום',
+          const SizedBox(height: 16),
+          const Text('סיכום', style: _sectionLabel),
+          const SizedBox(height: 10),
+          // Design L05: a cream card of label / value rows.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.cream,
+              borderRadius: BorderRadius.circular(22),
+            ),
             child: Column(
               children: [
-                _SummaryRow('שחקנים', '${widget.players.length}'),
+                _SummaryRow('שחקנים', _value('${widget.players.length}')),
                 _SummaryRow(
                   'קטגוריות',
-                  picked == null
-                      ? 'הכול'
-                      : localCategories
-                          .where((c) => picked.contains(c.id))
-                          .map((c) => c.name)
-                          .join(', '),
+                  _value(
+                    picked == null
+                        ? 'הכול'
+                        : localCategories
+                            .where((c) => picked.contains(c.id))
+                            .map((c) => c.name)
+                            .join(', '),
+                  ),
                 ),
                 _SummaryRow(
                   'זמן לרמז',
-                  _hintSeconds == null ? 'ללא טיימר' : '$_hintSeconds שניות',
+                  _value(_hintSeconds == null
+                      ? 'ללא טיימר'
+                      : '$_hintSeconds שניות'),
                 ),
-                const _SummaryRow('מתחזים', 'מתחזה אחד'),
-                const _SummaryRow('הצבעה', 'הצבעה פרטית במכשיר'),
+                _SummaryRow('מתחזים', _value('מתחזה אחד')),
+                _SummaryRow(
+                  'הצבעה',
+                  _value('הצבעה פרטית במכשיר'),
+                  last: true,
+                ),
               ],
             ),
           ),
@@ -409,32 +427,92 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
   }
 }
 
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow(this.label, this.value);
+Widget _value(String text) => Text(text, textAlign: TextAlign.end);
 
-  final String label;
-  final String value;
+const _sectionLabel = TextStyle(
+  color: AppColors.cream,
+  fontSize: 14,
+  fontWeight: FontWeight.w500,
+);
+
+/// Design L03/L05: two steps, players then settings.
+class _StepBar extends StatelessWidget {
+  const _StepBar({required this.step});
+
+  final int step;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+    Widget part(Color color) => Expanded(
+          child: Container(
+            height: 4,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        );
+    return Row(
+      children: [
+        part(step == 1
+            ? AppColors.turquoise
+            : AppColors.turquoise.withValues(alpha: .35)),
+        const SizedBox(width: 6),
+        part(step == 2
+            ? AppColors.turquoise
+            : AppColors.cream.withValues(alpha: .16)),
+      ],
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow(this.label, this.value, {this.last = false});
+
+  final String label;
+  final Widget value;
+  final bool last;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 48),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: last
+          ? null
+          : BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: AppColors.night.withValues(alpha: .1),
+                ),
+              ),
+            ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
+          Flexible(
             child: Text(
               label,
               textAlign: TextAlign.start,
-              style: const TextStyle(color: AppColors.muted),
+              style: TextStyle(
+                color: AppColors.night.withValues(alpha: .6),
+                fontSize: 14,
+              ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: const TextStyle(fontWeight: FontWeight.w800),
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: DefaultTextStyle.merge(
+                textAlign: TextAlign.end,
+                style: const TextStyle(
+                  color: AppColors.night,
+                  fontFamily: 'Secular One',
+                  fontSize: 19,
+                  height: 1.2,
+                ),
+                child: value,
+              ),
             ),
           ),
         ],
@@ -448,28 +526,52 @@ class _Chip extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.number = false,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
+  /// Hint times are set a size up, and a touch wider (design L05).
+  final bool number;
+
   @override
   Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
+    final radius = BorderRadius.circular(999);
+    return Semantics(
+      button: true,
       selected: selected,
-      onSelected: (_) => onTap(),
-      showCheckmark: false,
-      backgroundColor: AppColors.cream.withValues(alpha: .07),
-      selectedColor: AppColors.yellow,
-      labelStyle: TextStyle(
-        color: selected ? AppColors.night : AppColors.cream,
-        fontWeight: FontWeight.w700,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: AppColors.cream.withValues(alpha: .12)),
+      child: Material(
+        color: selected
+            ? AppColors.yellow
+            : AppColors.cream.withValues(alpha: .08),
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: selected
+              ? BorderSide.none
+              : BorderSide(color: AppColors.cream.withValues(alpha: .16)),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: (number ? 18 : 15) + (selected ? 1 : 0),
+              vertical: 10 + (selected ? 1 : 0),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: selected
+                    ? AppColors.night
+                    : AppColors.cream.withValues(alpha: .85),
+                fontSize: number ? 15 : 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
