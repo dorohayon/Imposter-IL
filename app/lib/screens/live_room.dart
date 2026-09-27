@@ -1131,6 +1131,44 @@ class _EliminationReveal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
+    final ready = game.player(session.playerId)?.roleConfirmed ?? false;
+    final continueButton = PrimaryButton(
+      label: ready
+          ? 'ממתינים לשאר השחקנים'
+          : game.eliminatedPlayerId == null
+              ? 'ממשיכים לסבב הבא'
+              : 'ממשיכים לסיבוב ${game.round + 1}',
+      onPressed: ready
+          ? null
+          : () => runCommand(
+                context,
+                session.send(
+                  'game.continueAfterElimination',
+                  {'gameId': game.id},
+                ),
+              ),
+    );
+    if (game.eliminatedPlayerId == null) {
+      // The runoff tied too (design 15ג): nobody is out and another round
+      // starts, which without this looked like the vote had simply vanished.
+      return GameScaffold(
+        title: 'שוב יש תיקו',
+        showHeader: true,
+        timer: _timer(game),
+        onExit: onLeave,
+        accent: const Color(0xFF42203C),
+        bottom: continueButton,
+        child: TieAnnouncementContent(
+          subtitle: 'גם הפעם הקולות התחלקו שווה בשווה',
+          explanation: 'איש לא הודח. ממשיכים לסבב רמזים נוסף.',
+          candidates: [
+            for (final id in game.voteCandidates)
+              if (game.player(id) case final p?)
+                (p.nickname, p.avatarAsset, null),
+          ],
+        ),
+      );
+    }
     final out = game.player(game.eliminatedPlayerId);
     if (out == null) {
       return GameScaffold(
@@ -1140,25 +1178,12 @@ class _EliminationReveal extends StatelessWidget {
         child: const Center(child: Text('טוענים…')),
       );
     }
-    final ready = game.player(session.playerId)?.roleConfirmed ?? false;
     return GameScaffold(
       title: '',
       showHeader: true,
       timer: _timer(game),
       onExit: onLeave,
-      bottom: PrimaryButton(
-        label:
-            ready ? 'ממתינים לשאר השחקנים' : 'ממשיכים לסיבוב ${game.round + 1}',
-        onPressed: ready
-            ? null
-            : () => runCommand(
-                  context,
-                  session.send(
-                    'game.continueAfterElimination',
-                    {'gameId': game.id},
-                  ),
-                ),
-      ),
+      bottom: continueButton,
       child: EliminationRevealContent(
         eliminatedName: out.nickname,
         eliminatedAvatar: out.avatarAsset,

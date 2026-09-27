@@ -1539,3 +1539,133 @@ class ToVotingView extends StatelessWidget {
     );
   }
 }
+
+/// Design 15ב/15ג: a tie, before the runoff or after a runoff that tied as
+/// well. Shared by pass-and-play and network games.
+class TieAnnouncementContent extends StatelessWidget {
+  const TieAnnouncementContent({
+    required this.subtitle,
+    required this.explanation,
+    required this.candidates,
+    this.footnote,
+    super.key,
+  });
+
+  final String subtitle;
+  final String explanation;
+
+  /// Who tied: name, avatar, and a line under them such as the vote count.
+  final List<(String name, String avatar, String? note)> candidates;
+  final String? footnote;
+
+  /// The explanation's first sentence, which the design sets in bold.
+  String get _lead {
+    final end = explanation.indexOf('.');
+    return end < 0 ? explanation : explanation.substring(0, end + 1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Illustration(
+          'assets/illustrations/tie-announcement.webp',
+          height: 190,
+        ),
+        const SizedBox(height: 14),
+        Text(
+          subtitle,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.muted, fontSize: 15),
+        ),
+        const SizedBox(height: 16),
+        // Wrapped rather than a row: a tie can be between more than two, and
+        // the design says never to crop a name or show only the first pair.
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 14,
+          runSpacing: 14,
+          children: [
+            for (final (name, avatar, note) in candidates)
+              SizedBox(
+                width: 96,
+                child: Column(
+                  children: [
+                    AvatarView(asset: avatar, size: 66),
+                    const SizedBox(height: 8),
+                    Text(
+                      name,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    if (note != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        note,
+                        style: const TextStyle(
+                          color: AppColors.yellow,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
+          decoration: BoxDecoration(
+            color: AppColors.coral.withValues(alpha: .12),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.coral.withValues(alpha: .47)),
+          ),
+          // Design 15ב/15ג: the scales inline, the first sentence in bold
+          // pink, the rest in cream.
+          child: Text.rich(
+            TextSpan(
+              style: const TextStyle(
+                color: AppColors.cream,
+                fontSize: 15,
+                height: 1.55,
+              ),
+              children: [
+                const WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: Padding(
+                    padding: EdgeInsetsDirectional.only(end: 7),
+                    child: Icon(
+                      Icons.balance_rounded,
+                      color: AppColors.yellow,
+                      size: 18,
+                    ),
+                  ),
+                ),
+                TextSpan(
+                  text: _lead,
+                  style: const TextStyle(
+                    color: Color(0xFFFFB7B7),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                TextSpan(text: explanation.substring(_lead.length)),
+              ],
+            ),
+          ),
+        ),
+        if (footnote case final line?) ...[
+          const SizedBox(height: 12),
+          Text(
+            line,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.muted, fontSize: 13),
+          ),
+        ],
+      ],
+    );
+  }
+}

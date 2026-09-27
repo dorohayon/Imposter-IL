@@ -74,6 +74,42 @@ void main() {
     expect(find.text('נשארו במשחק'), findsOneWidget);
   });
 
+  testWidgets('a runoff that tied again says nobody is out', (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    api.channel.snapshot(
+      'game.state',
+      'game',
+      gameJson(
+        phase: 'elimination_reveal',
+        round: 1,
+        candidates: ['p_2', 'p_4'],
+        players: [
+          player('p_me', 'דור'),
+          player('p_2', 'נועה'),
+          player('p_3', 'יובל'),
+          player('p_4', 'מאיה'),
+        ],
+      ),
+    );
+    await settle(tester);
+
+    expect(find.text('שוב יש תיקו'), findsOneWidget);
+    expect(find.textContaining('איש לא הודח.'), findsOneWidget);
+    expect(find.text('נועה'), findsOneWidget);
+    expect(find.text('מאיה'), findsOneWidget);
+    expect(find.textContaining('הודח/ה'), findsNothing);
+    await tapText(tester, 'ממשיכים לסבב הבא');
+    expect(api.channel.commands('game.continueAfterElimination'), hasLength(1));
+  });
+
   testWidgets('a later round says which round it is', (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);

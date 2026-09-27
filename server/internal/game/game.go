@@ -875,11 +875,15 @@ func (g *Game) tally(at time.Time) {
 		g.eliminate(top[0], at)
 	case len(top) > 1 && g.phase == PhaseVoting:
 		g.startVoting(PhaseRunoffVoting, top, at, g.cfg.RunoffVoteDuration)
+	case len(top) > 1:
+		// A tie the runoff could not break. Nobody leaves the table and the
+		// match goes another round, which is also what stops a second tie from
+		// handing the impostor the win it used to get for free. The reveal
+		// names nobody: jumping straight to hints left players unsure what
+		// had just happened.
+		g.showElimination("", at)
 	default:
-		// A tie the runoff could not break, or a round nobody voted in.
-		// Nobody leaves the table and the match goes another round, which is
-		// also what stops a second tie from handing the impostor the win it
-		// used to get for free.
+		// A round nobody voted in.
 		g.startRound(at)
 	}
 }
@@ -920,6 +924,8 @@ func (g *Game) ContinueAfterElimination(playerID string, now time.Time) error {
 	return nil
 }
 
+// showElimination names the voted-out citizen, or nobody after a runoff tie,
+// before the next round.
 func (g *Game) showElimination(id string, at time.Time) {
 	g.lastEliminated = id
 	g.resetAcks()

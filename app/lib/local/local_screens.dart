@@ -960,12 +960,6 @@ class _TieAnnouncement extends StatelessWidget {
   final VoidCallback onExit;
   final VoidCallback onContinue;
 
-  /// The explanation's first sentence, which the design sets in bold.
-  String get _lead {
-    final end = explanation.indexOf('.');
-    return end < 0 ? explanation : explanation.substring(0, end + 1);
-  }
-
   @override
   Widget build(BuildContext context) {
     return GameScaffold(
@@ -973,103 +967,17 @@ class _TieAnnouncement extends StatelessWidget {
       onExit: onExit,
       accent: const Color(0xFF42203C),
       bottom: PrimaryButton(label: action, onPressed: onContinue),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Illustration(
-            'assets/illustrations/tie-announcement.webp',
-            height: 190,
-          ),
-          const SizedBox(height: 14),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, fontSize: 15),
-          ),
-          const SizedBox(height: 16),
-          // Wrapped rather than a row: a tie can be between more than two, and
-          // the design says never to crop a name or show only the first pair.
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 14,
-            runSpacing: 14,
-            children: [
-              for (final i in game.tieCandidates)
-                SizedBox(
-                  width: 96,
-                  child: Column(
-                    children: [
-                      AvatarView(asset: game.players[i].avatar, size: 66),
-                      const SizedBox(height: 8),
-                      Text(
-                        game.players[i].name,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${game.tiedVotes} קולות',
-                        style: const TextStyle(
-                          color: AppColors.yellow,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
-            decoration: BoxDecoration(
-              color: AppColors.coral.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppColors.coral.withValues(alpha: .47)),
+      child: TieAnnouncementContent(
+        subtitle: subtitle,
+        explanation: explanation,
+        footnote: footnote,
+        candidates: [
+          for (final i in game.tieCandidates)
+            (
+              game.players[i].name,
+              game.players[i].avatar,
+              '${game.tiedVotes} קולות',
             ),
-            // Design 15ב/15ג: the scales inline, the first sentence in bold
-            // pink, the rest in cream.
-            child: Text.rich(
-              TextSpan(
-                style: const TextStyle(
-                  color: AppColors.cream,
-                  fontSize: 15,
-                  height: 1.55,
-                ),
-                children: [
-                  const WidgetSpan(
-                    alignment: PlaceholderAlignment.middle,
-                    child: Padding(
-                      padding: EdgeInsetsDirectional.only(end: 7),
-                      child: Icon(
-                        Icons.balance_rounded,
-                        color: AppColors.yellow,
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                  TextSpan(
-                    text: _lead,
-                    style: const TextStyle(
-                      color: Color(0xFFFFB7B7),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  TextSpan(text: explanation.substring(_lead.length)),
-                ],
-              ),
-            ),
-          ),
-          if (footnote case final note?) ...[
-            const SizedBox(height: 12),
-            Text(
-              note,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted, fontSize: 13),
-            ),
-          ],
         ],
       ),
     );
