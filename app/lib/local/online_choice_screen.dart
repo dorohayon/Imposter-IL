@@ -74,115 +74,99 @@ class _ModeCard extends StatelessWidget {
   final List<String> notes;
   final VoidCallback onTap;
 
-  /// Design L02: quick play is the lit card: a yellow tint and title.
+  /// Quick play: the same card as the private room, with a yellow title.
   final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(26);
-    return DecoratedBox(
-      decoration: BoxDecoration(
+    return Material(
+      color: AppColors.cream.withValues(alpha: .06),
+      shape: RoundedRectangleBorder(
         borderRadius: radius,
-        boxShadow: highlighted
-            ? const [
-                BoxShadow(
-                  color: Color(0x47000000),
-                  blurRadius: 28,
-                  offset: Offset(0, 12),
-                ),
-              ]
-            : null,
-      ),
-      child: Material(
-        color: highlighted
-            ? AppColors.yellow.withValues(alpha: .12)
-            : AppColors.cream.withValues(alpha: .06),
-        shape: RoundedRectangleBorder(
-          borderRadius: radius,
-          side: BorderSide(
-            color: AppColors.cream.withValues(alpha: .14),
-            width: 2,
-          ),
+        side: BorderSide(
+          color: AppColors.cream.withValues(alpha: .14),
+          width: 2,
         ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: radius,
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 86,
-                      height: 86,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.cream.withValues(alpha: .07),
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                      child: Image.asset(illustration, width: 78, height: 78),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 86,
+                    height: 86,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.cream.withValues(alpha: .07),
+                      borderRadius: BorderRadius.circular(22),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: TextStyle(
-                              fontFamily: 'Secular One',
-                              fontSize: 26,
-                              height: 1.1,
-                              color: highlighted
-                                  ? AppColors.yellow
-                                  : AppColors.cream,
-                            ),
+                    child: Image.asset(illustration, width: 78, height: 78),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontFamily: 'Secular One',
+                            fontSize: 26,
+                            height: 1.1,
+                            color: highlighted
+                                ? AppColors.yellow
+                                : AppColors.cream,
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            description,
-                            style: TextStyle(
-                              color: AppColors.cream
-                                  .withValues(alpha: highlighted ? .75 : .7),
-                              fontSize: 14,
-                              height: 1.45,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final note in notes)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: AppColors.cream
-                              .withValues(alpha: highlighted ? .1 : .08),
-                          borderRadius: BorderRadius.circular(999),
                         ),
-                        child: Text(
-                          note,
+                        const SizedBox(height: 6),
+                        Text(
+                          description,
                           style: TextStyle(
                             color: AppColors.cream
-                                .withValues(alpha: highlighted ? .8 : .7),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                                .withValues(alpha: highlighted ? .75 : .7),
+                            fontSize: 14,
+                            height: 1.45,
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final note in notes)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: AppColors.cream
+                            .withValues(alpha: highlighted ? .1 : .08),
+                        borderRadius: BorderRadius.circular(999),
                       ),
-                  ],
-                ),
-              ],
-            ),
+                      child: Text(
+                        note,
+                        style: TextStyle(
+                          color: AppColors.cream
+                              .withValues(alpha: highlighted ? .8 : .7),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

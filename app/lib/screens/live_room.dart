@@ -2707,7 +2707,8 @@ class _ImpostorGuess extends StatelessWidget {
                 session.playerId,
                 hint: _saidSoFar(game, session, p.id) ?? '',
               ),
-              enabled: false,
+              // No onTap: nothing to pick here. Not enabled: false, which
+              // would mark every row with the blocked icon.
             ),
           ),
         const SizedBox(height: 14),
