@@ -91,6 +91,7 @@ void main() {
         phase: 'elimination_reveal',
         round: 1,
         candidates: ['p_2', 'p_4'],
+        previousVotes: {'p_2': 2, 'p_4': 2},
         players: [
           player('p_me', 'דור'),
           player('p_2', 'נועה'),
@@ -105,6 +106,7 @@ void main() {
     expect(find.textContaining('איש לא הודח.'), findsOneWidget);
     expect(find.text('נועה'), findsOneWidget);
     expect(find.text('מאיה'), findsOneWidget);
+    expect(find.text('2 קולות'), findsNWidgets(2));
     expect(find.textContaining('הודח/ה'), findsNothing);
     await tapText(tester, 'ממשיכים לסבב הבא');
     expect(api.channel.commands('game.continueAfterElimination'), hasLength(1));

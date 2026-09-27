@@ -1164,7 +1164,15 @@ class _EliminationReveal extends StatelessWidget {
           candidates: [
             for (final id in game.voteCandidates)
               if (game.player(id) case final p?)
-                (p.nickname, p.avatarAsset, null),
+                (
+                  p.nickname,
+                  p.avatarAsset,
+                  switch (game.previousVotes[id]) {
+                    null => null,
+                    1 => 'קול אחד',
+                    final n => '$n קולות',
+                  },
+                ),
           ],
         ),
       );
