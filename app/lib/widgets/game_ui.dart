@@ -651,6 +651,8 @@ class PlayerCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
           child: Row(
+            // A card with ten rounds of hints is tall; the face stays at its top.
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AvatarView(
                 asset: player.avatar,
@@ -1945,8 +1947,7 @@ class GameResultContent extends StatelessWidget {
                   'הניחוש',
                   Text(
                     guess,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
                     style: const TextStyle(
                       color: Color(0xFFC4413F),
                       fontSize: 16,
@@ -2138,6 +2139,7 @@ class ResultButtons extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               textStyle: const TextStyle(
+                fontFamily: 'Rubik',
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),

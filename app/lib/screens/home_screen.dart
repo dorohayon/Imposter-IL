@@ -339,6 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           textStyle: const TextStyle(
+                            fontFamily: 'Rubik',
                             fontSize: 17,
                             fontWeight: FontWeight.w500,
                           ),

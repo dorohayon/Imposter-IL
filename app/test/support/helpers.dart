@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -199,4 +202,44 @@ Future<void> loadRealFonts() async {
     }
     await loader.load();
   }
+  // Icons too, or every one of them is an empty box in a screenshot. The
+  // flutter tool runs tests with FLUTTER_ROOT set.
+  final icons = File('${Platform.environment['FLUTTER_ROOT']}'
+      '/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+  if (icons.existsSync()) {
+    final bytes = icons.readAsBytesSync();
+    await (FontLoader('MaterialIcons')
+          ..addFont(Future.value(ByteData.sublistView(bytes))))
+        .load();
+  }
+}
+
+/// Screenshots of a run, in build/screenshots/[folder]/ (not in git). Each
+/// run replaces the last: [clearScreenshots] empties the folder first.
+void clearScreenshots(String folder) {
+  final dir = Directory('build/screenshots/$folder');
+  if (dir.existsSync()) dir.deleteSync(recursive: true);
+}
+
+/// Saves what is on the screen as build/screenshots/[folder]/[name].png,
+/// once its images have loaded.
+Future<void> saveScreenshot(
+  WidgetTester tester,
+  String folder,
+  String name,
+) async {
+  await tester.runAsync(() async {
+    for (final element in find.byType(Image).evaluate()) {
+      await precacheImage((element.widget as Image).image, element);
+    }
+  });
+  await tester.pump();
+  await tester.runAsync(() async {
+    final image = await captureImage(tester.element(find.byType(MaterialApp)));
+    final png = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+    File('build/screenshots/$folder/$name.png')
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(png!.buffer.asUint8List());
+  });
 }

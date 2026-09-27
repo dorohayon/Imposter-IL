@@ -61,6 +61,14 @@ jobs:
             exit 1
           fi
       - run: flutter test
+      # The screens the long-game test walks through, to review by eye. Kept
+      # even when a test fails: that is when they are wanted most.
+      - if: always() && matrix.format
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: screenshots
+          path: app/build/screenshots
+          retention-days: 14
 
   build:
     name: build ${{ matrix.platform }} (minimum 3.44.0)

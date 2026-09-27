@@ -161,6 +161,8 @@ Map<String, dynamic> _local(String phase) => {
       'endReason': phase == 'ended' ? 'impostorGuessWrong' : null,
     };
 
+const _shots = 'long_game';
+
 /// What proves each phase is the screen under test.
 final _expected = {
   'ready': 'סיבוב נוסף',
@@ -179,6 +181,8 @@ final _expected = {
 const _privatePhases = {'voting', 'runoff', 'guess'};
 
 void main() {
+  // Every run replaces the last: build/screenshots/long_game/.
+  setUpAll(() => clearScreenshots(_shots));
   for (final scale in [1.0, 1.3, 1.5]) {
     group('one device, 12 players, round $_rounds, font x$scale', () {
       for (final phase in [
@@ -212,9 +216,12 @@ void main() {
           }
           expect(find.textContaining(_expected[phase]!), findsWidgets);
           expect(find.textContaining('העבירו את המכשיר'), findsNothing);
+          await saveScreenshot(tester, _shots, 'local_x${scale}_${phase}_1top');
           await tester.drag(
               find.byType(Scrollable).first, const Offset(0, -3000));
           await settle(tester);
+          await saveScreenshot(
+              tester, _shots, 'local_x${scale}_${phase}_2bottom');
         });
       }
     });
@@ -236,10 +243,13 @@ void main() {
           api.channel.snapshot('game.state', 'game', build());
           await settle(tester);
           _expectNoHintCut(tester);
+          final name = 'online_x${scale}_${screen.replaceAll(' ', '_')}';
+          await saveScreenshot(tester, _shots, '${name}_1top');
           // Scrolled to the end too: what is below the fold lays out as well.
           await tester.drag(
               find.byType(Scrollable).first, const Offset(0, -3000));
           await settle(tester);
+          await saveScreenshot(tester, _shots, '${name}_2bottom');
 
           if (screen == 'hints') {
             // All ten rounds of one player, from their card.
@@ -249,9 +259,11 @@ void main() {
             await tester.tap(find.text(_name(2)).first);
             await settle(tester);
             expect(find.text('הרמזים של ${_name(2)}'), findsOneWidget);
+            await saveScreenshot(tester, _shots, '${name}_3history');
             await tester.drag(
                 find.byType(Scrollable).last, const Offset(0, -3000));
             await settle(tester);
+            await saveScreenshot(tester, _shots, '${name}_4history_bottom');
           }
         });
       }
