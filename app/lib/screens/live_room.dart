@@ -2857,8 +2857,9 @@ class _ResultState extends State<_Result> {
     final impostor = game.player(result.impostorId);
     final outcome = result.outcomes[session.playerId];
     // The citizen the table voted out, when that handed the impostor the
-    // match: coral in the breakdown (design 16).
-    final wronged = result.winner == 'impostor'
+    // match: coral in the breakdown (design 16). Not when the impostor won
+    // by guessing the word: then nobody else was voted out.
+    final wronged = result.reason == 'impostor_parity'
         ? (votes.entries.where((e) => e.key != result.impostorId).toList()
               ..sort((a, b) => b.value.compareTo(a.value)))
             .firstOrNull

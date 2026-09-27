@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:imposter_il/theme/app_theme.dart';
 import 'package:imposter_il/widgets/game_ui.dart';
 
 import 'support/fake_server.dart';
@@ -111,6 +113,53 @@ void main() {
     await tapText(tester, 'ממשיכים לסבב הבא');
     expect(api.channel.commands('game.continueAfterElimination'), hasLength(1));
   });
+
+  for (final (reason, coral) in [
+    ('impostor_parity', true),
+    ('impostor_guessed_word', false),
+  ]) {
+    testWidgets('vote bars colour the voted-out citizen only on $reason',
+        (tester) async {
+      final api = FakeApi();
+      await startAtHome(tester, api);
+      await openCreatedRoom(tester, api);
+      api.channel.event('session.state', {
+        'playerId': 'p_me',
+        'activity': 'game',
+        'roomId': 'r_1',
+        'gameId': 'g_1',
+      });
+      api.channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(phase: 'ended', result: {
+          'winner': 'impostor',
+          'reason': reason,
+          'impostorPlayerId': 'p_4',
+          'secretWord': 'פיל',
+          // Parity: the table voted out p_2. A guess: they caught p_4.
+          'voteRounds': [
+            coral
+                ? {'p_me': 'p_2', 'p_3': 'p_2', 'p_4': 'p_2', 'p_2': 'p_4'}
+                : {'p_me': 'p_4', 'p_3': 'p_4', 'p_2': 'p_4', 'p_4': 'p_2'},
+          ],
+          'abstentions': [0],
+          'outcomes': {'p_me': 'loss', 'p_4': 'win'},
+        }),
+      );
+      await settle(tester);
+
+      final colors = tester
+          .widgetList<ColoredBox>(find.descendant(
+            of: find.byType(ResultVoteBars),
+            matching: find.byType(ColoredBox),
+          ))
+          .map((b) => b.color)
+          .toList();
+      expect(colors, contains(AppColors.purple));
+      expect(colors.contains(AppColors.coral), coral);
+    });
+  }
 
   testWidgets('a later round says which round it is', (tester) async {
     final api = FakeApi();
