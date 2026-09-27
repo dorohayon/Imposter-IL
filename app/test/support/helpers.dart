@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/main.dart';
 import 'package:imposter_il/screens/online_flow.dart';
@@ -183,4 +184,19 @@ Future<void> openPrivateRoom(WidgetTester tester) async {
 Future<void> openQuickGame(WidgetTester tester) async {
   await tapText(tester, 'משחק ברשת');
   await tapText(tester, 'משחק מהיר');
+}
+
+/// The fonts a phone actually uses. The test font draws every letter as a
+/// square, which makes Hebrew far wider than it is.
+Future<void> loadRealFonts() async {
+  for (final (family, files) in [
+    ('Rubik', ['Rubik-Regular.ttf', 'Rubik-Medium.ttf', 'Rubik-Bold.ttf']),
+    ('Secular One', ['SecularOne-Regular.ttf']),
+  ]) {
+    final loader = FontLoader(family);
+    for (final f in files) {
+      loader.addFont(rootBundle.load('assets/fonts/$f'));
+    }
+    await loader.load();
+  }
 }
