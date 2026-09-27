@@ -190,10 +190,6 @@ type Result struct {
 	// each round, whether they skipped it or were disconnected at the tally.
 	Abstentions []int
 	Outcomes    map[string]Outcome
-	// Guess is what a caught impostor guessed, shown on the result (design
-	// 15). Left empty when the same filter as hints would block it: the
-	// whole table sees it.
-	Guess string
 }
 
 type PlayerView struct {
@@ -563,9 +559,6 @@ func (g *Game) SubmitGuess(playerID, guess string, now time.Time) error {
 		g.end(TeamImpostor, ReasonImpostorGuessedWord)
 	} else {
 		g.end(TeamCitizens, ReasonImpostorGuessWrong)
-	}
-	if shown := strings.TrimSpace(guess); !g.policy.HintInappropriate(shown) {
-		g.result.Guess = shown
 	}
 	g.version++
 	return nil

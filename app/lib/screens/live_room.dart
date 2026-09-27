@@ -2789,6 +2789,8 @@ class _ImpostorGuess extends StatelessWidget {
 
 const _resultReasons = {
   'impostor_not_caught': 'ההצבעה סימנה אזרח, והמתחזה נשאר במשחק.',
+  // The same words as the one-device result.
+  'impostor_parity': 'נשארו אזרח אחד ומתחזה — ובשלב הזה המתחזה מנצח מיד.',
   'impostor_guessed_word': 'המתחזה נתפס, אבל הצליח לנחש את המילה.',
   'impostor_guess_wrong': 'המתחזה נתפס ולא הצליח לנחש את המילה.',
   'impostor_guess_timeout': 'המתחזה נתפס, אבל הזמן לניחוש נגמר.',
@@ -2905,7 +2907,6 @@ class _ResultState extends State<_Result> {
                 text: outcome == 'win' ? 'נרשם לכם ניצחון' : 'נרשם לכם הפסד',
                 positive: outcome == 'win',
               ),
-        guess: result.guess,
         children: [
           if (votes.isNotEmpty || abstained > 0)
             ResultVoteBars(

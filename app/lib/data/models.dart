@@ -164,7 +164,6 @@ class GameResult {
     required this.voteRounds,
     required this.abstentions,
     required this.outcomes,
-    this.guess,
   });
 
   factory GameResult.fromJson(Map<String, dynamic> json) => GameResult(
@@ -177,7 +176,6 @@ class GameResult {
             .map((round) => (round as Map).cast<String, String>())
             .toList(),
         outcomes: (json['outcomes'] as Map? ?? const {}).cast<String, String>(),
-        guess: json['guess'] as String?,
       );
 
   final String? winner; // citizens | impostor | null when stopped
@@ -189,9 +187,6 @@ class GameResult {
   /// Active players who did not vote, per round.
   final List<int> abstentions;
   final Map<String, String> outcomes;
-
-  /// What a caught impostor guessed, when the server shows it.
-  final String? guess;
 }
 
 class GameView {

@@ -158,6 +158,13 @@ void main() {
           .toList();
       expect(colors, contains(AppColors.purple));
       expect(colors.contains(AppColors.coral), coral);
+      // Every reason the server sends has its explanation.
+      expect(
+        find.text(coral
+            ? 'נשארו אזרח אחד ומתחזה — ובשלב הזה המתחזה מנצח מיד.'
+            : 'המתחזה נתפס, אבל הצליח לנחש את המילה.'),
+        findsOneWidget,
+      );
     });
   }
 

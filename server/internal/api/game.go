@@ -241,7 +241,6 @@ type resultJSON struct {
 	VoteRounds       []map[string]string     `json:"voteRounds"`
 	Abstentions      []int                   `json:"abstentions"`
 	Outcomes         map[string]game.Outcome `json:"outcomes"`
-	Guess            string                  `json:"guess,omitempty"`
 }
 
 type gameJSON struct {
@@ -322,7 +321,6 @@ func (s *Server) gameJSON(viewerID, gameID string, v game.View, entry *roomEntry
 			VoteRounds:       r.VoteRounds,
 			Abstentions:      r.Abstentions,
 			Outcomes:         r.Outcomes,
-			Guess:            r.Guess,
 		}
 	}
 	return out
