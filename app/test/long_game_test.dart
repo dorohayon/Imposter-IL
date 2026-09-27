@@ -259,6 +259,11 @@ void main() {
             await tester.tap(find.text(_name(2)).first);
             await settle(tester);
             expect(find.text('הרמזים של ${_name(2)}'), findsOneWidget);
+            // A hint gets the rest of the row, not half of it: squeezed, a
+            // long one stacked into lines of three letters beside a gap.
+            final hint = tester.getRect(find.text(_hint(1, 1)).last);
+            final label = tester.getRect(find.text('סיבוב 1').last);
+            expect(label.left - hint.right, lessThanOrEqualTo(12));
             await saveScreenshot(tester, _shots, '${name}_3history');
             await tester.drag(
                 find.byType(Scrollable).last, const Offset(0, -3000));

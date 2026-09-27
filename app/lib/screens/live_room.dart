@@ -2124,8 +2124,6 @@ class _HintHistorySheet extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'הרמזים של ${player.nickname}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: AppColors.night,
                           fontFamily: 'Secular One',
@@ -2191,8 +2189,11 @@ class _HintHistorySheet extends StatelessWidget {
                                     fontSize: 13,
                                   ),
                                 ),
-                                const Spacer(),
-                                Flexible(
+                                const SizedBox(width: 12),
+                                // All the rest of the row: a Spacer beside it
+                                // took half, and a long hint wrapped into a
+                                // column of three-letter lines.
+                                Expanded(
                                   child: Text(
                                     h.missing
                                         ? 'לא נשלח רמז'
