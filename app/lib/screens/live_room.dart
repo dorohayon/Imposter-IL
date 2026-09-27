@@ -2124,8 +2124,6 @@ class _HintHistorySheet extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'הרמזים של ${player.nickname}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: AppColors.night,
                           fontFamily: 'Secular One',
@@ -2191,8 +2189,11 @@ class _HintHistorySheet extends StatelessWidget {
                                     fontSize: 13,
                                   ),
                                 ),
-                                const Spacer(),
-                                Flexible(
+                                const SizedBox(width: 12),
+                                // All the rest of the row: a Spacer beside it
+                                // took half, and a long hint wrapped into a
+                                // column of three-letter lines.
+                                Expanded(
                                   child: Text(
                                     h.missing
                                         ? 'לא נשלח רמז'
@@ -2579,7 +2580,8 @@ class _GuessState extends State<_Guess> {
     final session = SessionScope.of(context);
     final game = widget.game;
     return GameScaffold(
-      title: 'נתפסתם',
+      // The impostor reads it over "עוד אפשר לנצח", not beside the timer.
+      title: game.isImpostor ? '' : 'נתפסתם',
       timer: _timer(game),
       onExit: widget.onLeave,
       accent: const Color(0xFF4A2A8C),
@@ -2649,6 +2651,15 @@ class _ImpostorGuess extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Text(
+                    'נתפסתם',
+                    style: TextStyle(
+                      color: Color(0xFFFF9B9B),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
                   Text(
                     'עוד אפשר לנצח',
                     style: Theme.of(context)
@@ -2686,72 +2697,21 @@ class _ImpostorGuess extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 9),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: others.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            mainAxisExtent: 80,
+        // The same cards as the vote: a full row each, so the whole match's
+        // hints fit instead of being cut off in a half-width tile.
+        for (final p in others)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: PlayerCard(
+              player: _player(
+                p,
+                session.playerId,
+                hint: _saidSoFar(game, session, p.id) ?? '',
+              ),
+              // No onTap: nothing to pick here. Not enabled: false, which
+              // would mark every row with the blocked icon.
+            ),
           ),
-          itemBuilder: (context, index) {
-            final p = others[index];
-            final said = _saidSoFar(game, session, p.id);
-            final spoke = said != null && said.isNotEmpty;
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-              decoration: BoxDecoration(
-                color: AppColors.cream.withValues(alpha: .07),
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(
-                  color: AppColors.cream.withValues(alpha: .12),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      AvatarView(asset: p.avatarAsset, size: 26),
-                      const SizedBox(width: 7),
-                      Expanded(
-                        child: Text(
-                          p.nickname,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: AppColors.cream.withValues(alpha: .72),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  Text(
-                    spoke ? said : 'לא נשלח רמז',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: spoke
-                        ? const TextStyle(
-                            fontFamily: 'Secular One',
-                            fontSize: 21,
-                            height: 1.1,
-                          )
-                        : const TextStyle(
-                            color: Color(0xFFFF9B9B),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
         const SizedBox(height: 14),
         TextField(
           controller: guess,

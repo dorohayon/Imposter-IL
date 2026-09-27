@@ -400,6 +400,12 @@ void main() {
       expect(
           tester.widget<Text>(find.text(value).last).textAlign, TextAlign.end);
     }
+    // Every value reaches the card's far edge, short or long.
+    final edges = {
+      for (final value in ['4', 'הכול', 'הצבעה פרטית במכשיר'])
+        tester.getRect(find.text(value).last).left,
+    };
+    expect(edges, hasLength(1));
   });
 
   testWidgets(

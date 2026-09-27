@@ -487,32 +487,28 @@ class _SummaryRow extends StatelessWidget {
                 ),
               ),
             ),
+      // The label at its own width, the value filling the rest up to the
+      // card's far edge (design L05).
       child: Row(
         children: [
-          Flexible(
-            child: Text(
-              label,
-              textAlign: TextAlign.start,
-              style: TextStyle(
-                color: AppColors.night.withValues(alpha: .6),
-                fontSize: 14,
-              ),
+          Text(
+            label,
+            textAlign: TextAlign.start,
+            style: TextStyle(
+              color: AppColors.night.withValues(alpha: .6),
+              fontSize: 14,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
-            child: Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: DefaultTextStyle.merge(
-                textAlign: TextAlign.end,
-                style: const TextStyle(
-                  color: AppColors.night,
-                  fontFamily: 'Secular One',
-                  fontSize: 19,
-                  height: 1.2,
-                ),
-                child: value,
+            child: DefaultTextStyle.merge(
+              style: const TextStyle(
+                color: AppColors.night,
+                fontFamily: 'Secular One',
+                fontSize: 19,
+                height: 1.2,
               ),
+              child: value,
             ),
           ),
         ],

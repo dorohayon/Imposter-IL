@@ -168,6 +168,52 @@ void main() {
     });
   }
 
+  testWidgets('the caught impostor reads every hint, nobody marked blocked',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    api.channel.snapshot(
+      'game.state',
+      'game',
+      gameJson(
+        phase: 'impostor_guess',
+        role: 'impostor',
+        players: [
+          player('p_me', 'דור'),
+          player('p_2', 'נועה'),
+          player('p_3', 'יובל'),
+        ],
+        hints: [
+          for (final (id, text, round) in [
+            ('p_2', 'מתח', 1),
+            ('p_2', 'התפתחות', 2),
+            ('p_3', 'אירוע', 1),
+          ])
+            {
+              'playerId': id,
+              'text': text,
+              'round': round,
+              'missing': false,
+              'reactions': <String, int>{},
+            },
+        ],
+      ),
+    );
+    await settle(tester);
+
+    expect(find.text('נתפסתם'), findsOneWidget);
+    expect(find.text('עוד אפשר לנצח'), findsOneWidget);
+    expect(find.text('מתח · התפתחות'), findsOneWidget);
+    expect(find.byIcon(Icons.block_rounded), findsNothing);
+  });
+
   testWidgets('a later round says which round it is', (tester) async {
     final api = FakeApi();
     await startAtHome(tester, api);
