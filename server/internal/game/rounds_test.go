@@ -380,6 +380,9 @@ func TestATieIsNotSilence(t *testing.T) {
 	if g.result != nil {
 		t.Fatalf("two ties ended the match: %+v", g.result)
 	}
+	wantPhase(t, g, PhaseEliminationReveal)
+	now = now.Add(DefaultConfig().EliminationRevealDuration)
+	g.Tick(now)
 	if g.silentVotes != 0 {
 		t.Fatalf("a second tie counted as silence: silentVotes = %d", g.silentVotes)
 	}

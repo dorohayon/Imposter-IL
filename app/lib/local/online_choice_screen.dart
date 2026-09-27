@@ -20,13 +20,18 @@ class OnlineChoiceScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'שני מצבים, אותו משחק. אפשר להצטרף לשחקנים אחרים או לפתוח חדר לחברים.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, height: 1.45),
+            style: TextStyle(
+              color: AppColors.cream.withValues(alpha: .62),
+              fontSize: 14,
+              height: 1.5,
+            ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
           _ModeCard(
+            highlighted: true,
             illustration: 'assets/illustrations/matchmaking-team.webp',
             title: 'משחק מהיר',
             description: 'בוחרים קטגוריות ומצטרפים לשחקנים ברשת.',
@@ -37,7 +42,7 @@ class OnlineChoiceScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           _ModeCard(
             illustration: 'assets/illustrations/private-room.webp',
             title: 'חדר פרטי',
@@ -60,6 +65,7 @@ class _ModeCard extends StatelessWidget {
     required this.description,
     required this.notes,
     required this.onTap,
+    this.highlighted = false,
   });
 
   final String illustration;
@@ -68,55 +74,117 @@ class _ModeCard extends StatelessWidget {
   final List<String> notes;
   final VoidCallback onTap;
 
+  /// Design L02: quick play is the lit card, yellow on yellow.
+  final bool highlighted;
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.cream.withValues(alpha: .06),
-      borderRadius: BorderRadius.circular(22),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Illustration(illustration, height: 84),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    final radius = BorderRadius.circular(26);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: highlighted
+            ? const [
+                BoxShadow(
+                  color: Color(0x47000000),
+                  blurRadius: 28,
+                  offset: Offset(0, 12),
+                ),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: highlighted
+            ? AppColors.yellow.withValues(alpha: .12)
+            : AppColors.cream.withValues(alpha: .06),
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(
+            color: highlighted
+                ? AppColors.yellow
+                : AppColors.cream.withValues(alpha: .14),
+            width: 2,
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontFamily: 'Secular One',
-                        fontSize: 21,
+                    Container(
+                      width: 86,
+                      height: 86,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.cream.withValues(alpha: .07),
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: Image.asset(illustration, width: 78, height: 78),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              fontFamily: 'Secular One',
+                              fontSize: 26,
+                              height: 1.1,
+                              color: highlighted
+                                  ? AppColors.yellow
+                                  : AppColors.cream,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            description,
+                            style: TextStyle(
+                              color: AppColors.cream
+                                  .withValues(alpha: highlighted ? .75 : .7),
+                              fontSize: 14,
+                              height: 1.45,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 13,
-                        height: 1.35,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
                     for (final note in notes)
-                      Text(
-                        '· $note',
-                        style: const TextStyle(
-                          color: AppColors.yellow,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: AppColors.cream
+                              .withValues(alpha: highlighted ? .1 : .08),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          note,
+                          style: TextStyle(
+                            color: AppColors.cream
+                                .withValues(alpha: highlighted ? .8 : .7),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                   ],
                 ),
-              ),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
-            ],
+              ],
+            ),
           ),
         ),
       ),

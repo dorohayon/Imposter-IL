@@ -615,16 +615,30 @@ func TestTieGoesToRunoffAmongTiedOnly(t *testing.T) {
 	t.Run("a runoff that ties again eliminates nobody", func(t *testing.T) {
 		must(t, g.Vote(c[0], c[1], now))
 		must(t, g.Vote(c[2], g.impostor, now))
-		g.Tick(now.Add(15 * time.Second))
+		now = now.Add(15 * time.Second)
+		g.Tick(now)
 		if g.result != nil {
 			t.Fatalf("a second tie ended the match: %+v", g.result)
 		}
+		// Everyone is told first: the reveal, naming nobody, with who tied.
+		wantPhase(t, g, PhaseEliminationReveal)
+		if v, _ := g.View(c[0]); v.EliminatedPlayerID != "" || !sameSet(v.Candidates, []string{c[1], g.impostor}) ||
+			v.PreviousVotes[c[1]] != 1 || v.PreviousVotes[g.impostor] != 1 {
+			t.Fatalf("tie reveal = eliminated %q, candidates %v, votes %v", v.EliminatedPlayerID, v.Candidates, v.PreviousVotes)
+		}
+		// A tied player leaving during the reveal does not erase their side
+		// of the tie.
+		must(t, g.Leave(c[1], now))
+		if v, _ := g.View(c[0]); !sameSet(v.Candidates, []string{c[1], g.impostor}) {
+			t.Fatalf("after a tied player left, candidates = %v", v.Candidates)
+		}
+		g.Tick(now.Add(DefaultConfig().EliminationRevealDuration))
 		if g.round != 2 {
 			t.Fatalf("round = %d, want 2", g.round)
 		}
 		wantPhase(t, g, PhaseHints)
 		for _, id := range g.order {
-			if g.players[id].status != StatusActive {
+			if id != c[1] && g.players[id].status != StatusActive {
 				t.Fatalf("%s was voted out by a tie", id)
 			}
 		}

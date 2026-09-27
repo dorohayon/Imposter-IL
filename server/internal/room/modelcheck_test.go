@@ -228,8 +228,9 @@ func (m *modelRun) checkState(s snap) {
 				}
 			}
 		}
-		if v.PreviousVotes != nil && s.phase != game.PhaseRunoffVoting {
-			m.failf("previousVotes outside runoff")
+		tieReveal := s.phase == game.PhaseEliminationReveal && v.EliminatedPlayerID == ""
+		if v.PreviousVotes != nil && s.phase != game.PhaseRunoffVoting && !tieReveal {
+			m.failf("previousVotes outside runoff and the tie reveal")
 		}
 		if v.Result == nil {
 			for _, h := range v.Hints {
@@ -255,8 +256,16 @@ func (m *modelRun) checkState(s snap) {
 			}
 		}
 	}
-	if s.phase == game.PhaseEliminationReveal && (v0.EliminatedPlayerID == "" || statusOf(s, v0.EliminatedPlayerID) == game.StatusActive) {
-		m.failf("elimination reveal of %q (status %s)", v0.EliminatedPlayerID, statusOf(s, v0.EliminatedPlayerID))
+	switch {
+	case s.phase != game.PhaseEliminationReveal:
+	case v0.EliminatedPlayerID == "":
+		// A runoff that tied again: nobody is out, and the reveal shows who
+		// tied and on how many votes.
+		if len(v0.Candidates) < 2 || len(v0.PreviousVotes) != len(v0.Candidates) {
+			m.failf("tie reveal with candidates %v, votes %v", v0.Candidates, v0.PreviousVotes)
+		}
+	case statusOf(s, v0.EliminatedPlayerID) == game.StatusActive:
+		m.failf("elimination reveal of active %q", v0.EliminatedPlayerID)
 	}
 	// Room invariants.
 	if len(s.room.Members) > MaxPlayers {
@@ -444,6 +453,18 @@ func (m *modelRun) checkTally(a, b snap) {
 		}
 		if b.dl.Sub(b.now) > 15*time.Second {
 			m.failf("runoff longer than 15s")
+		}
+	case len(top) > 1:
+		// A runoff that tied again: the reveal naming nobody, or already the
+		// next round if the step ran past it.
+		reveal := b.phase == game.PhaseEliminationReveal && v.EliminatedPlayerID == "" && sameSet(v.Candidates, top)
+		if !reveal && b.round != a.round+1 && b.phase != game.PhaseEnded {
+			m.failf("second tie %v -> phase %s candidates %v round %d->%d", top, b.phase, v.Candidates, a.round, b.round)
+		}
+		for _, id := range m.ids {
+			if statusOf(a, id) == game.StatusActive && statusOf(b, id) == game.StatusEliminated {
+				m.failf("second tie eliminated %s", id)
+			}
 		}
 	default:
 		if b.round != a.round+1 && b.phase != game.PhaseEnded {

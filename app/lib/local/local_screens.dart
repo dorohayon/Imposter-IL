@@ -337,6 +337,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   }
 
   Widget _ready() {
+    if (_game.round > 1) return _nextRound();
     final first = _game.players[_game.turnOrder.first];
     return GameScaffold(
       title: '',
@@ -390,6 +391,90 @@ class _LocalGameScreenState extends State<LocalGameScreen>
             'רמז של מילה אחת, בלי לחזור על רמז קודם ובלי לומר את המילה עצמה.',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, height: 1.45),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Design L18: the table again, the voted-out as watchers.
+  Widget _nextRound() {
+    return GameScaffold(
+      title: '',
+      showHeader: false,
+      bottom: PrimaryButton(
+        label: 'התחלת סיבוב ${_game.round}',
+        onPressed: () => _apply(_game.startRound),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 8),
+          const Text(
+            'סיבוב נוסף',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Secular One',
+              fontSize: 32,
+              height: 1.1,
+              color: AppColors.cream,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'המתחזה עדיין ביניכם. סדר התורות הוגרל מחדש.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.cream.withValues(alpha: .68),
+              fontSize: 15,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'סדר התורות בסיבוב זה',
+            style: TextStyle(
+              color: AppColors.cream.withValues(alpha: .6),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final i in _game.turnOrder) ...[
+            _RoundPlayerRow(
+              player: _game.players[i],
+              note: i == _game.turnOrder.first ? 'מתחיל/ה' : null,
+            ),
+            const SizedBox(height: 9),
+          ],
+          for (final i in _game.eliminatedSeats) ...[
+            _RoundPlayerRow(player: _game.players[i], watching: true),
+            const SizedBox(height: 9),
+          ],
+          const SizedBox(height: 7),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.cream.withValues(alpha: .05),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline_rounded,
+                    size: 18, color: AppColors.cream.withValues(alpha: .6)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'רמז של מילה אחת, בלי לחזור על רמז קודם ובלי לומר את המילה עצמה.',
+                    style: TextStyle(
+                      color: AppColors.cream.withValues(alpha: .6),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -628,118 +713,90 @@ class _LocalGameScreenState extends State<LocalGameScreen>
 
   Widget _result() {
     final impostor = _game.players[_game.impostor];
-    final citizensWon = _game.outcome == LocalOutcome.citizensWin;
+    final winner =
+        _game.outcome == LocalOutcome.citizensWin ? 'citizens' : 'impostor';
     return GameScaffold(
       title: '',
       showHeader: false,
       showBack: false,
-      accent: citizensWon ? const Color(0xFF14514A) : const Color(0xFF4A2A8C),
-      bottom: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          PrimaryButton(
-            label: 'משחק נוסף',
-            onPressed: _continuing
-                ? null
-                : () async {
-                    setState(() => _continuing = true);
-                    final navigator = Navigator.of(context);
-                    await LocalStore.clear();
-                    await _afterMatch();
-                    if (!mounted) return;
-                    navigator.pushReplacement(
-                      MaterialPageRoute<void>(
-                        builder: (_) => LocalRulesScreen(
-                          players: [
-                            for (final p in _game.players)
-                              LocalPlayer(name: p.name, avatar: p.avatar),
-                          ],
-                          initialCategoryIds: _game.categoryIds,
-                          initialHintSeconds: _game.hintSeconds,
-                        ),
-                      ),
-                    );
-                  },
-          ),
-          const SizedBox(height: 10),
-          PrimaryButton(
-            label: 'חזרה למסך הבית',
-            variant: ButtonVariant.quiet,
-            onPressed: _continuing
-                ? null
-                : () async {
-                    setState(() => _continuing = true);
-                    final navigator = Navigator.of(context);
-                    await LocalStore.clear();
-                    await _afterMatch();
-                    if (mounted) navigator.popUntil((r) => r.isFirst);
-                  },
-          ),
-        ],
+      accent: GameResultContent.accentFor(winner),
+      bottom: ResultButtons(
+        onAgain: _continuing
+            ? null
+            : () async {
+                setState(() => _continuing = true);
+                final navigator = Navigator.of(context);
+                await LocalStore.clear();
+                await _afterMatch();
+                if (!mounted) return;
+                navigator.pushReplacement(
+                  MaterialPageRoute<void>(
+                    builder: (_) => LocalRulesScreen(
+                      players: [
+                        for (final p in _game.players)
+                          LocalPlayer(name: p.name, avatar: p.avatar),
+                      ],
+                      initialCategoryIds: _game.categoryIds,
+                      initialHintSeconds: _game.hintSeconds,
+                    ),
+                  ),
+                );
+              },
+        onHome: _continuing
+            ? null
+            : () async {
+                setState(() => _continuing = true);
+                final navigator = Navigator.of(context);
+                await LocalStore.clear();
+                await _afterMatch();
+                if (mounted) navigator.popUntil((r) => r.isFirst);
+              },
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: GameResultContent(
+        winner: winner,
+        title: winner == 'citizens' ? 'האזרחים ניצחו!' : 'המתחזה ניצח!',
+        reason: switch (_game.endReason) {
+          LocalEndReason.impostorGuessedWord =>
+            'המתחזה נתפס וניחש נכון את המילה.',
+          LocalEndReason.impostorGuessWrong => 'המתחזה נתפס ולא ניחש את המילה.',
+          LocalEndReason.impostorGuessTimeout =>
+            'המתחזה נתפס, אבל הזמן לניחוש נגמר.',
+          LocalEndReason.impostorParity =>
+            'נשארו אזרח אחד ומתחזה — ובשלב הזה המתחזה מנצח מיד.',
+          null => '',
+        },
+        impostorName: impostor.name,
+        impostorAvatar: impostor.avatar,
+        secretWord: _game.secretWord,
+        impostorLabel: 'המתחזה',
+        cardLabel: 'איך זה נגמר',
+        guess: _game.submittedGuess,
+        rounds: _game.round,
         children: [
-          Illustration(
-            citizensWon
-                ? 'assets/illustrations/result-citizens-win.webp'
-                : 'assets/illustrations/result-impostor-win.webp',
-            height: 160,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            citizensWon ? 'האזרחים ניצחו!' : 'המתחזה ניצח!',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: citizensWon ? AppColors.turquoise : AppColors.yellow,
-                ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            switch (_game.endReason) {
-              LocalEndReason.impostorGuessedWord =>
-                'המתחזה נתפס וניחש נכון את המילה.',
-              LocalEndReason.impostorGuessWrong =>
-                'המתחזה נתפס ולא ניחש את המילה.',
-              LocalEndReason.impostorGuessTimeout =>
-                'המתחזה נתפס, אבל הזמן לניחוש נגמר.',
-              LocalEndReason.impostorParity =>
-                'נשארו אזרח אחד ומתחזה — ובשלב הזה המתחזה מנצח מיד.',
-              null => '',
-            },
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, fontSize: 17),
-          ),
-          const SizedBox(height: 16),
-          InfoCard(
-            label: 'איך זה נגמר',
-            child: Column(
+          if (_game.eliminations.isNotEmpty)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _SummaryLine('המתחזה', impostor.name),
-                _SummaryLine('המילה הייתה', _game.secretWord),
-                if (_game.submittedGuess case final guess?)
-                  _SummaryLine('הניחוש', guess),
-                _SummaryLine('סבבים', '${_game.round}'),
+                const ResultSectionLabel('מי הודח במהלך המשחק'),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final (who, round) in _game.eliminations)
+                      _EliminatedChip(
+                        player: _game.players[who],
+                        round: round,
+                        impostor: who == _game.impostor,
+                      ),
+                  ],
+                ),
               ],
             ),
-          ),
-          if (_game.eliminations.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            InfoCard(
-              label: 'מי הודח במהלך המשחק',
-              child: Column(
-                children: [
-                  for (final (who, round) in _game.eliminations)
-                    _SummaryLine(_game.players[who].name, 'סיבוב $round'),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          const Text(
-            'משחק במכשיר אחד אינו משנה את הסטטיסטיקה בפרופיל.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, fontSize: 13),
+          const ResultNote(
+            icon: Icons.info_outline_rounded,
+            color: AppColors.turquoise,
+            text: 'משחק במכשיר אחד אינו משנה את הסטטיסטיקה בפרופיל.',
           ),
         ],
       ),
@@ -747,25 +804,47 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   }
 }
 
-class _SummaryLine extends StatelessWidget {
-  const _SummaryLine(this.label, this.value);
+/// Design L20/L21: one voted-out player and the round they went in; the
+/// impostor's chip in purple.
+class _EliminatedChip extends StatelessWidget {
+  const _EliminatedChip({
+    required this.player,
+    required this.round,
+    required this.impostor,
+  });
 
-  final String label;
-  final String value;
+  final LocalPlayer player;
+  final int round;
+  final bool impostor;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: impostor
+            ? AppColors.purple.withValues(alpha: .16)
+            : AppColors.cream.withValues(alpha: .07),
+        borderRadius: BorderRadius.circular(14),
+        border: impostor
+            ? Border.all(color: AppColors.purple.withValues(alpha: .45))
+            : null,
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.muted)),
+          AvatarView(asset: player.avatar, size: 32, eliminated: !impostor),
+          const SizedBox(width: 9),
           Flexible(
             child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              '${player.name} · סיבוב $round',
+              style: TextStyle(
+                color: impostor
+                    ? const Color(0xFFD9C8FF)
+                    : AppColors.cream.withValues(alpha: .75),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -960,12 +1039,6 @@ class _TieAnnouncement extends StatelessWidget {
   final VoidCallback onExit;
   final VoidCallback onContinue;
 
-  /// The explanation's first sentence, which the design sets in bold.
-  String get _lead {
-    final end = explanation.indexOf('.');
-    return end < 0 ? explanation : explanation.substring(0, end + 1);
-  }
-
   @override
   Widget build(BuildContext context) {
     return GameScaffold(
@@ -973,103 +1046,104 @@ class _TieAnnouncement extends StatelessWidget {
       onExit: onExit,
       accent: const Color(0xFF42203C),
       bottom: PrimaryButton(label: action, onPressed: onContinue),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Illustration(
-            'assets/illustrations/tie-announcement.webp',
-            height: 190,
-          ),
-          const SizedBox(height: 14),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, fontSize: 15),
-          ),
-          const SizedBox(height: 16),
-          // Wrapped rather than a row: a tie can be between more than two, and
-          // the design says never to crop a name or show only the first pair.
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 14,
-            runSpacing: 14,
-            children: [
-              for (final i in game.tieCandidates)
-                SizedBox(
-                  width: 96,
-                  child: Column(
-                    children: [
-                      AvatarView(asset: game.players[i].avatar, size: 66),
-                      const SizedBox(height: 8),
-                      Text(
-                        game.players[i].name,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${game.tiedVotes} קולות',
-                        style: const TextStyle(
-                          color: AppColors.yellow,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
-            decoration: BoxDecoration(
-              color: AppColors.coral.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppColors.coral.withValues(alpha: .47)),
+      child: TieAnnouncementContent(
+        subtitle: subtitle,
+        explanation: explanation,
+        footnote: footnote,
+        candidates: [
+          for (final i in game.tieCandidates)
+            (
+              game.players[i].name,
+              game.players[i].avatar,
+              '${game.tiedVotes} קולות',
             ),
-            // Design 15ב/15ג: the scales inline, the first sentence in bold
-            // pink, the rest in cream.
-            child: Text.rich(
-              TextSpan(
-                style: const TextStyle(
-                  color: AppColors.cream,
-                  fontSize: 15,
-                  height: 1.55,
-                ),
-                children: [
-                  const WidgetSpan(
-                    alignment: PlaceholderAlignment.middle,
-                    child: Padding(
-                      padding: EdgeInsetsDirectional.only(end: 7),
-                      child: Icon(
-                        Icons.balance_rounded,
-                        color: AppColors.yellow,
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                  TextSpan(
-                    text: _lead,
-                    style: const TextStyle(
-                      color: Color(0xFFFFB7B7),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  TextSpan(text: explanation.substring(_lead.length)),
-                ],
+        ],
+      ),
+    );
+  }
+}
+
+/// A row of design L18: an active player, or a watcher behind a dashed line.
+class _RoundPlayerRow extends StatelessWidget {
+  const _RoundPlayerRow({
+    required this.player,
+    this.watching = false,
+    this.note,
+  });
+
+  final LocalPlayer player;
+  final bool watching;
+
+  /// The pill's text; watchers always read "צופה". None, no pill.
+  final String? note;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      decoration: BoxDecoration(
+        color: AppColors.cream.withValues(alpha: watching ? .035 : .07),
+        borderRadius: BorderRadius.circular(18),
+        border: watching
+            ? Border.all(color: AppColors.cream.withValues(alpha: .16))
+            : null,
+      ),
+      child: Row(
+        children: [
+          AvatarView(asset: player.avatar, size: 44, eliminated: watching),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              player.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: watching
+                    ? AppColors.cream.withValues(alpha: .5)
+                    : AppColors.cream,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          if (footnote case final note?) ...[
-            const SizedBox(height: 12),
-            Text(
-              note,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted, fontSize: 13),
+          if (watching || note != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+              decoration: BoxDecoration(
+                color: watching
+                    ? AppColors.cream.withValues(alpha: .1)
+                    : AppColors.turquoise.withValues(alpha: .14),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (watching)
+                    Icon(Icons.visibility_outlined,
+                        size: 13, color: AppColors.cream.withValues(alpha: .65))
+                  else
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: AppColors.turquoise,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  const SizedBox(width: 6),
+                  Text(
+                    watching ? 'צופה' : note!,
+                    style: TextStyle(
+                      color: watching
+                          ? AppColors.cream.withValues(alpha: .65)
+                          : AppColors.turquoise,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
         ],
       ),
     );

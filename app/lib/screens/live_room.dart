@@ -1131,6 +1131,52 @@ class _EliminationReveal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
+    final ready = game.player(session.playerId)?.roleConfirmed ?? false;
+    final continueButton = PrimaryButton(
+      label: ready
+          ? 'ממתינים לשאר השחקנים'
+          : game.eliminatedPlayerId == null
+              ? 'ממשיכים לסבב הבא'
+              : 'ממשיכים לסיבוב ${game.round + 1}',
+      onPressed: ready
+          ? null
+          : () => runCommand(
+                context,
+                session.send(
+                  'game.continueAfterElimination',
+                  {'gameId': game.id},
+                ),
+              ),
+    );
+    if (game.eliminatedPlayerId == null) {
+      // The runoff tied too (design 15ג): nobody is out and another round
+      // starts, which without this looked like the vote had simply vanished.
+      return GameScaffold(
+        title: 'שוב יש תיקו',
+        showHeader: true,
+        timer: _timer(game),
+        onExit: onLeave,
+        accent: const Color(0xFF42203C),
+        bottom: continueButton,
+        child: TieAnnouncementContent(
+          subtitle: 'גם הפעם הקולות התחלקו שווה בשווה',
+          explanation: 'איש לא הודח. ממשיכים לסבב רמזים נוסף.',
+          candidates: [
+            for (final id in game.voteCandidates)
+              if (game.player(id) case final p?)
+                (
+                  p.nickname,
+                  p.avatarAsset,
+                  switch (game.previousVotes[id]) {
+                    null => null,
+                    1 => 'קול אחד',
+                    final n => '$n קולות',
+                  },
+                ),
+          ],
+        ),
+      );
+    }
     final out = game.player(game.eliminatedPlayerId);
     if (out == null) {
       return GameScaffold(
@@ -1140,25 +1186,13 @@ class _EliminationReveal extends StatelessWidget {
         child: const Center(child: Text('טוענים…')),
       );
     }
-    final ready = game.player(session.playerId)?.roleConfirmed ?? false;
     return GameScaffold(
       title: '',
       showHeader: true,
       timer: _timer(game),
       onExit: onLeave,
-      bottom: PrimaryButton(
-        label:
-            ready ? 'ממתינים לשאר השחקנים' : 'ממשיכים לסיבוב ${game.round + 1}',
-        onPressed: ready
-            ? null
-            : () => runCommand(
-                  context,
-                  session.send(
-                    'game.continueAfterElimination',
-                    {'gameId': game.id},
-                  ),
-                ),
-      ),
+      accent: const Color(0xFF2A2455),
+      bottom: continueButton,
       child: EliminationRevealContent(
         eliminatedName: out.nickname,
         eliminatedAvatar: out.avatarAsset,
@@ -2755,6 +2789,8 @@ class _ImpostorGuess extends StatelessWidget {
 
 const _resultReasons = {
   'impostor_not_caught': 'ההצבעה סימנה אזרח, והמתחזה נשאר במשחק.',
+  // The same words as the one-device result.
+  'impostor_parity': 'נשארו אזרח אחד ומתחזה — ובשלב הזה המתחזה מנצח מיד.',
   'impostor_guessed_word': 'המתחזה נתפס, אבל הצליח לנחש את המילה.',
   'impostor_guess_wrong': 'המתחזה נתפס ולא הצליח לנחש את המילה.',
   'impostor_guess_timeout': 'המתחזה נתפס, אבל הזמן לניחוש נגמר.',
@@ -2813,174 +2849,85 @@ class _ResultState extends State<_Result> {
     if (result == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    final stopped = result.winner == null;
-    final citizensWon = result.winner == 'citizens';
-    final outcome = result.outcomes[session.playerId];
     final votes = <String, int>{};
     for (final target in (result.voteRounds.isEmpty
         ? const <String>[]
         : result.voteRounds.last.values)) {
       votes[target] = (votes[target] ?? 0) + 1;
     }
-    final mostVotes = votes.values.fold(0, (a, b) => a > b ? a : b);
     final abstained = result.abstentions.isEmpty ? 0 : result.abstentions.last;
     final impostor = game.player(result.impostorId);
+    final outcome = result.outcomes[session.playerId];
+    // The citizen the table voted out, when that handed the impostor the
+    // match: coral in the breakdown (design 16). Not when the impostor won
+    // by guessing the word: then nobody else was voted out.
+    final wronged = result.reason == 'impostor_parity'
+        ? (votes.entries.where((e) => e.key != result.impostorId).toList()
+              ..sort((a, b) => b.value.compareTo(a.value)))
+            .firstOrNull
+            ?.key
+        : null;
 
     return GameScaffold(
       title: '',
       showBack: false,
       showHeader: false,
-      accent: stopped
-          ? null
-          : citizensWon
-              ? const Color(0xFF14514A)
-              : const Color(0xFF4A2A8C),
-      bottom: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          PrimaryButton(
-            label: 'משחק נוסף',
-            onPressed: _continuing
-                ? null
-                : () => _continue(
-                      context,
-                      () => runCommand(
-                        context,
-                        session.send('game.playAgain', {'gameId': game.id}),
-                      ),
-                    ),
-          ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: _continuing ? null : () => _continue(context, onHome),
-            child: const Text('חזרה למסך הבית'),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Illustration(
-            stopped
-                ? 'assets/illustrations/connection-error.webp'
-                : citizensWon
-                    ? 'assets/illustrations/result-citizens-win.webp'
-                    : 'assets/illustrations/result-impostor-win.webp',
-            height: 168,
-          ),
-          Text(
-            result.reason == 'abandoned'
-                ? 'המשחק בוטל'
-                : stopped
-                    ? 'המשחק הופסק'
-                    : citizensWon
-                        ? 'האזרחים ניצחו!'
-                        : 'המתחזה ניצח!',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: stopped
-                      ? AppColors.cream
-                      : citizensWon
-                          ? AppColors.turquoise
-                          : AppColors.yellow,
+      accent: GameResultContent.accentFor(result.winner),
+      bottom: ResultButtons(
+        onAgain: _continuing
+            ? null
+            : () => _continue(
+                  context,
+                  () => runCommand(
+                    context,
+                    session.send('game.playAgain', {'gameId': game.id}),
+                  ),
                 ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            _resultReasons[result.reason] ?? '',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, fontSize: 17),
-          ),
-          // A match that was called off is recorded for nobody, so there is
-          // nothing to tell anyone they earned.
-          if (outcome != null && outcome != 'none') ...[
-            const SizedBox(height: 10),
-            StatusBanner(
-              text: outcome == 'win' ? 'נרשם לכם ניצחון' : 'נרשם לכם הפסד',
-              positive: outcome == 'win',
-            ),
-          ],
-          const SizedBox(height: 18),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                children: [
-                  ListTile(
-                    title: const Text('המתחזה היה'),
-                    trailing: Text(
-                      impostor?.nickname ?? '',
-                      style: const TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                  const Divider(),
-                  ListTile(
-                    title: const Text('המילה הייתה'),
-                    trailing: Text(
-                      result.secretWord,
-                      style: const TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                  if (votes.isNotEmpty || abstained > 0) ...[
-                    const Divider(),
-                    const ListTile(title: Text('חלוקת הקולות')),
-                    for (final entry
-                        in (votes.entries.toList()
-                          ..sort((a, b) => b.value.compareTo(a.value))))
-                      _VoteBar(
-                        name: game.player(entry.key)?.nickname ?? '',
-                        votes: entry.value,
-                        of: mostVotes,
-                      ),
-                    if (abstained > 0)
-                      _VoteBar(name: 'נמנעו', votes: abstained, of: mostVotes),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
+        onHome: _continuing ? null : () => _continue(context, onHome),
       ),
-    );
-  }
-}
-
-/// One row of the vote breakdown: a name, a bar and the number of votes.
-class _VoteBar extends StatelessWidget {
-  const _VoteBar({required this.name, required this.votes, required this.of});
-
-  final String name;
-  final int votes;
-  final int of;
-
-  @override
-  Widget build(BuildContext context) {
-    final muted = name == 'נמנעו';
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 92,
-            child: Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: muted ? AppColors.muted : null),
-            ),
-          ),
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                value: of == 0 ? 0 : votes / of,
-                minHeight: 10,
-                backgroundColor: AppColors.night,
-                color: muted ? AppColors.muted : AppColors.yellow,
+      child: GameResultContent(
+        winner: result.winner,
+        title: result.reason == 'abandoned'
+            ? 'המשחק בוטל'
+            : switch (result.winner) {
+                'citizens' => 'האזרחים ניצחו!',
+                'impostor' => 'המתחזה ניצח!',
+                _ => 'המשחק הופסק',
+              },
+        reason: _resultReasons[result.reason] ?? '',
+        impostorName: impostor?.nickname ?? '',
+        impostorAvatar: impostor?.avatarAsset ?? '',
+        secretWord: result.secretWord,
+        impostorLabel: 'המתחזה היה',
+        // A match that was called off is recorded for nobody, so there is
+        // nothing to tell anyone they earned.
+        above: outcome == null || outcome == 'none'
+            ? null
+            : StatusBanner(
+                text: outcome == 'win' ? 'נרשם לכם ניצחון' : 'נרשם לכם הפסד',
+                positive: outcome == 'win',
               ),
+        children: [
+          if (votes.isNotEmpty || abstained > 0)
+            ResultVoteBars(
+              of: game.players.length,
+              rows: [
+                for (final entry
+                    in (votes.entries.toList()
+                      ..sort((a, b) => b.value.compareTo(a.value))))
+                  (
+                    game.player(entry.key)?.nickname ?? '',
+                    entry.value,
+                    entry.key == result.impostorId
+                        ? AppColors.purple
+                        : entry.key == wronged
+                            ? AppColors.coral
+                            : AppColors.cream.withValues(alpha: .45),
+                  ),
+                if (abstained > 0)
+                  ('נמנעו', abstained, AppColors.cream.withValues(alpha: .25)),
+              ],
             ),
-          ),
-          const SizedBox(width: 10),
-          Text('$votes', style: const TextStyle(fontWeight: FontWeight.w900)),
         ],
       ),
     );

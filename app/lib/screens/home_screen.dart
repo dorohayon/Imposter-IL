@@ -205,26 +205,115 @@ class _HomeScreenState extends State<HomeScreen> {
           minimum: const EdgeInsets.all(20),
           child: Align(
             alignment: Alignment.bottomCenter,
+            // Design L06. Material for the buttons' ink.
             child: Material(
-              color: AppColors.cream,
-              borderRadius: BorderRadius.circular(28),
-              child: Padding(
-                padding: const EdgeInsets.all(22),
+              type: MaterialType.transparency,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.cream,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x73000000),
+                      blurRadius: 44,
+                      offset: Offset(0, -14),
+                    ),
+                  ],
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'להמשיך את המשחק?',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(color: AppColors.night),
+                    Row(
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: AppColors.turquoise.withValues(alpha: .18),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(Icons.refresh_rounded,
+                              color: Color(0xFF1A9C8B), size: 28),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'להמשיך את המשחק?',
+                                style: TextStyle(
+                                  color: AppColors.night,
+                                  fontFamily: 'Secular One',
+                                  fontSize: 26,
+                                  height: 1.1,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'סיבוב ${saved.round} נשמר במכשיר · ${saved.players.length} שחקנים',
+                                style: TextStyle(
+                                  color: AppColors.night.withValues(alpha: .62),
+                                  fontSize: 14,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'סיבוב ${saved.round} נשמר במכשיר · ${saved.players.length} שחקנים',
-                      style: const TextStyle(color: Color(0xFF625E70)),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 13, vertical: 11),
+                      decoration: BoxDecoration(
+                        color: AppColors.night.withValues(alpha: .05),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 30.0 +
+                                20 * (saved.players.length.clamp(1, 5) - 1),
+                            height: 30,
+                            child: Stack(
+                              children: [
+                                for (final (i, p)
+                                    in saved.players.take(5).indexed)
+                                  PositionedDirectional(
+                                    start: 20.0 * i,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                            color: AppColors.cream, width: 2),
+                                      ),
+                                      child:
+                                          AvatarView(asset: p.avatar, size: 26),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              saved.players.map((p) => p.name).join(' · '),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppColors.night.withValues(alpha: .6),
+                                fontSize: 13,
+                                height: 1.3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 14),
                     PrimaryButton(
@@ -234,16 +323,34 @@ class _HomeScreenState extends State<HomeScreen> {
                         _open(context, LocalGameScreen(resumed: saved));
                       },
                     ),
-                    const SizedBox(height: 8),
-                    PrimaryButton(
-                      label: 'מחיקת המשחק',
-                      variant: ButtonVariant.danger,
-                      onPressed: () async {
-                        await LocalStore.clear();
-                        if (mounted) {
-                          setState(() => _savedLocalGame = null);
-                        }
-                      },
+                    const SizedBox(height: 14),
+                    // Outlined in coral like the dark screens' danger button,
+                    // in a red dark enough to read on cream.
+                    SizedBox(
+                      height: 52,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFC4413F),
+                          side: BorderSide(
+                            color: AppColors.coral.withValues(alpha: .55),
+                            width: 2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        onPressed: () async {
+                          await LocalStore.clear();
+                          if (mounted) {
+                            setState(() => _savedLocalGame = null);
+                          }
+                        },
+                        child: const Text('מחיקת המשחק'),
+                      ),
                     ),
                   ],
                 ),

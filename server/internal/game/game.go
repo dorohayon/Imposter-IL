@@ -217,7 +217,8 @@ type View struct {
 	Hints        []Hint
 	Candidates   []string
 	// PreviousVotes counts the last round's votes per candidate. It is set
-	// during a runoff, so players see who tied.
+	// during a runoff, so players see who tied, and in the reveal after a
+	// runoff that tied again (Candidates are then the players who tied).
 	PreviousVotes map[string]int
 	MyVote        string
 	// EliminatedPlayerID is set during elimination_reveal after a citizen was
@@ -273,6 +274,11 @@ type Game struct {
 	abstentions []int
 
 	lastEliminated string
+	// tied is who a runoff left tied and on how many votes each, frozen for
+	// the reveal that follows: candidates is pruned when a player leaves, and
+	// the tie is history by then.
+	tied      []string
+	tiedVotes int
 
 	result *Result
 }
@@ -641,6 +647,13 @@ func (g *Game) View(playerID string) (View, error) {
 	}
 	if g.phase == PhaseEliminationReveal {
 		v.EliminatedPlayerID = g.lastEliminated
+		if g.lastEliminated == "" {
+			v.Candidates = slices.Clone(g.tied)
+			v.PreviousVotes = map[string]int{}
+			for _, id := range g.tied {
+				v.PreviousVotes[id] = g.tiedVotes
+			}
+		}
 	}
 	if g.phase == PhaseRunoffVoting && len(g.voteRounds) > 0 {
 		// Only the players in the runoff. Counting every target would tell
@@ -875,11 +888,16 @@ func (g *Game) tally(at time.Time) {
 		g.eliminate(top[0], at)
 	case len(top) > 1 && g.phase == PhaseVoting:
 		g.startVoting(PhaseRunoffVoting, top, at, g.cfg.RunoffVoteDuration)
+	case len(top) > 1:
+		// A tie the runoff could not break. Nobody leaves the table and the
+		// match goes another round, which is also what stops a second tie from
+		// handing the impostor the win it used to get for free. The reveal
+		// names nobody: jumping straight to hints left players unsure what
+		// had just happened.
+		g.tied, g.tiedVotes = top, most
+		g.showElimination("", at)
 	default:
-		// A tie the runoff could not break, or a round nobody voted in.
-		// Nobody leaves the table and the match goes another round, which is
-		// also what stops a second tie from handing the impostor the win it
-		// used to get for free.
+		// A round nobody voted in.
 		g.startRound(at)
 	}
 }
@@ -920,6 +938,8 @@ func (g *Game) ContinueAfterElimination(playerID string, now time.Time) error {
 	return nil
 }
 
+// showElimination names the voted-out citizen, or nobody after a runoff tie,
+// before the next round.
 func (g *Game) showElimination(id string, at time.Time) {
 	g.lastEliminated = id
 	g.resetAcks()
@@ -940,6 +960,7 @@ func (g *Game) hasHintThisRound() bool {
 
 func (g *Game) startRound(at time.Time) {
 	g.lastEliminated = ""
+	g.tied = nil
 	g.pendingReactions = nil
 	g.round++
 	g.candidates = nil

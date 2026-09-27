@@ -793,71 +793,168 @@ class EliminationRevealContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Design L17.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Center(
-          child: AvatarView(
-            asset: eliminatedAvatar,
-            size: 110,
-            eliminated: true,
+          child: Container(
+            width: 132,
+            height: 132,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.nightSoft,
+              border: Border.all(
+                color: AppColors.cream.withValues(alpha: .3),
+                width: 4,
+              ),
+            ),
+            child: ClipOval(
+              child: Opacity(
+                opacity: .55,
+                child: ColorFiltered(
+                  colorFilter: const ColorFilter.matrix(_grayscale85),
+                  child: Image.asset(eliminatedAvatar, fit: BoxFit.cover),
+                ),
+              ),
+            ),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 18),
         Text(
           '$eliminatedName הודח/ה',
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineLarge,
-        ),
-        const SizedBox(height: 12),
-        InfoCard(
-          label: 'התפקיד',
-          child: Text(
-            roleLine,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+          style: const TextStyle(
+            fontFamily: 'Secular One',
+            fontSize: 36,
+            height: 1.1,
+            color: AppColors.cream,
           ),
         ),
-        const SizedBox(height: 10),
-        const Text(
-          'המילה נשארת סודית — המשחק ממשיך.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.muted, height: 1.45),
-        ),
-        const SizedBox(height: 16),
-        InfoCard(
-          label: 'נשארו במשחק',
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.cream,
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: Column(
             children: [
-              for (final (name, avatar) in remaining)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5),
-                  child: Row(
-                    children: [
-                      AvatarView(asset: avatar, size: 30),
-                      const SizedBox(width: 9),
-                      Expanded(
-                        child: Text(
+              Text(
+                'התפקיד',
+                style: TextStyle(
+                  color: AppColors.night.withValues(alpha: .55),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: const BoxDecoration(
+                      color: AppColors.turquoise,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check_rounded,
+                        size: 18, color: AppColors.night),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      roleLine,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: 'Secular One',
+                        fontSize: 26,
+                        height: 1.1,
+                        color: AppColors.night,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                  height: 1, color: AppColors.night.withValues(alpha: .12)),
+              const SizedBox(height: 12),
+              Text(
+                'המילה נשארת סודית — המשחק ממשיך.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.night.withValues(alpha: .7),
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        Text(
+          'נשארו במשחק',
+          style: TextStyle(
+            color: AppColors.cream.withValues(alpha: .5),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Equal tiles, up to four a row: a phone of twelve still fits.
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final perRow = remaining.length.clamp(1, 4);
+            final width = (constraints.maxWidth - 8 * (perRow - 1)) / perRow;
+            return Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final (name, avatar) in remaining)
+                  Container(
+                    width: width,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.cream.withValues(alpha: .07),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        AvatarView(asset: avatar, size: 40),
+                        const SizedBox(height: 7),
+                        Text(
                           name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontWeight: FontWeight.w700,
                             color: AppColors.cream,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-            ],
-          ),
+              ],
+            );
+          },
         ),
       ],
     );
   }
 }
+
+/// CSS grayscale(.85).
+const _grayscale85 = <double>[
+  0.3307, 0.6079, 0.0614, 0, 0, //
+  0.1807, 0.7579, 0.0614, 0, 0, //
+  0.1807, 0.6079, 0.2114, 0, 0, //
+  0, 0, 0, 1, 0,
+];
 
 class StepCard extends StatelessWidget {
   const StepCard(
@@ -1536,6 +1633,519 @@ class ToVotingView extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Design 15ב/15ג: a tie, before the runoff or after a runoff that tied as
+/// well. Shared by pass-and-play and network games.
+class TieAnnouncementContent extends StatelessWidget {
+  const TieAnnouncementContent({
+    required this.subtitle,
+    required this.explanation,
+    required this.candidates,
+    this.footnote,
+    super.key,
+  });
+
+  final String subtitle;
+  final String explanation;
+
+  /// Who tied: name, avatar, and a line under them such as the vote count.
+  final List<(String name, String avatar, String? note)> candidates;
+  final String? footnote;
+
+  /// The explanation's first sentence, which the design sets in bold.
+  String get _lead {
+    final end = explanation.indexOf('.');
+    return end < 0 ? explanation : explanation.substring(0, end + 1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Illustration(
+          'assets/illustrations/tie-announcement.webp',
+          height: 190,
+        ),
+        const SizedBox(height: 14),
+        Text(
+          subtitle,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.muted, fontSize: 15),
+        ),
+        const SizedBox(height: 16),
+        // Wrapped rather than a row: a tie can be between more than two, and
+        // the design says never to crop a name or show only the first pair.
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 14,
+          runSpacing: 14,
+          children: [
+            for (final (name, avatar, note) in candidates)
+              SizedBox(
+                width: 96,
+                child: Column(
+                  children: [
+                    AvatarView(asset: avatar, size: 66),
+                    const SizedBox(height: 8),
+                    Text(
+                      name,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    if (note != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        note,
+                        style: const TextStyle(
+                          color: AppColors.yellow,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
+          decoration: BoxDecoration(
+            color: AppColors.coral.withValues(alpha: .12),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.coral.withValues(alpha: .47)),
+          ),
+          // Design 15ב/15ג: the scales inline, the first sentence in bold
+          // pink, the rest in cream.
+          child: Text.rich(
+            TextSpan(
+              style: const TextStyle(
+                color: AppColors.cream,
+                fontSize: 15,
+                height: 1.55,
+              ),
+              children: [
+                const WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: Padding(
+                    padding: EdgeInsetsDirectional.only(end: 7),
+                    child: Icon(
+                      Icons.balance_rounded,
+                      color: AppColors.yellow,
+                      size: 18,
+                    ),
+                  ),
+                ),
+                TextSpan(
+                  text: _lead,
+                  style: const TextStyle(
+                    color: Color(0xFFFFB7B7),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                TextSpan(text: explanation.substring(_lead.length)),
+              ],
+            ),
+          ),
+        ),
+        if (footnote case final line?) ...[
+          const SizedBox(height: 12),
+          Text(
+            line,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.muted, fontSize: 13),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Designs 15/16 (online) and L20/L21 (one device): the end of a match, one
+/// layout for both. [children] are the mode's own sections under the card:
+/// the vote breakdown online, who was voted out and a note on one device.
+class GameResultContent extends StatelessWidget {
+  const GameResultContent({
+    required this.winner,
+    required this.title,
+    required this.reason,
+    required this.impostorName,
+    required this.impostorAvatar,
+    required this.secretWord,
+    required this.impostorLabel,
+    this.guess,
+    this.rounds,
+    this.cardLabel,
+    this.above,
+    this.children = const [],
+    super.key,
+  });
+
+  /// The line over the impostor's name: "המתחזה היה" online, "המתחזה" on
+  /// one device.
+  final String impostorLabel;
+
+  /// A heading over the card, such as "איך זה נגמר".
+  final String? cardLabel;
+
+  /// Between the reason and the card, such as what the match recorded.
+  final Widget? above;
+
+  /// 'citizens', 'impostor', or null for a match that was stopped.
+  final String? winner;
+  final String title;
+  final String reason;
+  final String impostorName;
+  final String impostorAvatar;
+  final String secretWord;
+  final String? guess;
+  final int? rounds;
+  final List<Widget> children;
+
+  /// The accent behind the screen, for [GameScaffold.accent].
+  static Color? accentFor(String? winner) => switch (winner) {
+        'citizens' => const Color(0xFF14514A),
+        'impostor' => const Color(0xFF4A2A8C),
+        _ => null,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final label = TextStyle(
+      color: AppColors.night.withValues(alpha: .55),
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+    );
+    Widget line(String name, Widget value) => Row(
+          children: [
+            Text(name, style: label),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: value,
+              ),
+            ),
+          ],
+        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(
+          child: Image.asset(
+            switch (winner) {
+              'citizens' => 'assets/illustrations/result-citizens-win.webp',
+              'impostor' => 'assets/illustrations/result-impostor-win.webp',
+              _ => 'assets/illustrations/connection-error.webp',
+            },
+            width: 132,
+            height: 132,
+            fit: BoxFit.contain,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Secular One',
+            fontSize: 34,
+            height: 1.1,
+            color: switch (winner) {
+              'citizens' => AppColors.turquoise,
+              'impostor' => AppColors.yellow,
+              _ => AppColors.cream,
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          reason,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppColors.cream.withValues(alpha: .75),
+            fontSize: 15,
+            height: 1.5,
+          ),
+        ),
+        if (above case final above?) ...[
+          const SizedBox(height: 10),
+          above,
+        ],
+        const SizedBox(height: 14),
+        if (cardLabel case final label?) ...[
+          ResultSectionLabel(label),
+          const SizedBox(height: 8),
+        ],
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.cream,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.purple, width: 3),
+                    ),
+                    child: AvatarView(asset: impostorAvatar, size: 46),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(impostorLabel,
+                            style: label.copyWith(fontSize: 12)),
+                        const SizedBox(height: 4),
+                        Text(
+                          impostorName,
+                          style: const TextStyle(
+                            fontFamily: 'Secular One',
+                            fontSize: 22,
+                            height: 1.15,
+                            color: AppColors.night,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                  height: 1, color: AppColors.night.withValues(alpha: .12)),
+              const SizedBox(height: 12),
+              line(
+                'המילה הייתה',
+                Text(
+                  secretWord,
+                  style: const TextStyle(
+                    fontFamily: 'Secular One',
+                    fontSize: 26,
+                    height: 1,
+                    color: AppColors.night,
+                  ),
+                ),
+              ),
+              if (guess case final guess?) ...[
+                const SizedBox(height: 12),
+                line(
+                  'הניחוש',
+                  Text(
+                    guess,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFFC4413F),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+              if (rounds case final rounds?) ...[
+                const SizedBox(height: 12),
+                line(
+                  'סבבים',
+                  Text(
+                    '$rounds',
+                    style: const TextStyle(
+                      color: AppColors.night,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        for (final child in children) ...[
+          const SizedBox(height: 14),
+          child,
+        ],
+      ],
+    );
+  }
+}
+
+/// A section heading under the result card.
+class ResultSectionLabel extends StatelessWidget {
+  const ResultSectionLabel(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(
+        text,
+        style: TextStyle(
+          color: AppColors.cream.withValues(alpha: .6),
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+      );
+}
+
+/// Design 15/16: the last vote, one bar per player out of the whole table.
+class ResultVoteBars extends StatelessWidget {
+  const ResultVoteBars({required this.rows, required this.of, super.key});
+
+  /// Name, votes and the bar's colour, in the order shown.
+  final List<(String name, int votes, Color color)> rows;
+  final int of;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const ResultSectionLabel('חלוקת הקולות'),
+        for (final (name, votes, color) in rows) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              SizedBox(
+                width: 58,
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.cream,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    height: 22,
+                    color: AppColors.cream.withValues(alpha: .1),
+                    alignment: AlignmentDirectional.centerStart,
+                    child: FractionallySizedBox(
+                      widthFactor: of == 0 ? 0 : (votes / of).clamp(0, 1),
+                      heightFactor: 1,
+                      child: ColoredBox(color: color),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '$votes',
+                style: const TextStyle(
+                  color: AppColors.cream,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// A tinted note with an icon, as under results and eliminations.
+class ResultNote extends StatelessWidget {
+  const ResultNote({
+    required this.text,
+    required this.icon,
+    required this.color,
+    super.key,
+  });
+
+  final String text;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: .4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: AppColors.cream.withValues(alpha: .76),
+                fontSize: 13,
+                height: 1.45,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "משחק נוסף" over "חזרה למסך הבית", the end of every match (design 15).
+class ResultButtons extends StatelessWidget {
+  const ResultButtons({
+    required this.onAgain,
+    required this.onHome,
+    super.key,
+  });
+
+  final VoidCallback? onAgain;
+  final VoidCallback? onHome;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PrimaryButton(label: 'משחק נוסף', onPressed: onAgain),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 54,
+          child: OutlinedButton(
+            onPressed: onHome,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.cream,
+              side: BorderSide(
+                color: AppColors.cream.withValues(alpha: .28),
+                width: 2,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            child: const Text('חזרה למסך הבית'),
+          ),
+        ),
+      ],
     );
   }
 }
