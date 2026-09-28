@@ -116,21 +116,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Profile at the start, settings at the end: the
+                      // Hebrew design's right and left, mirrored in LTR.
                       Row(
-                        textDirection: TextDirection.ltr,
                         children: [
-                          IconButton.filledTonal(
-                            tooltip: context.l10n.settings,
-                            style: IconButton.styleFrom(
-                              side: BorderSide(
-                                color: AppColors.cream.withValues(alpha: .16),
-                              ),
-                            ),
-                            onPressed: () =>
-                                _open(context, const SettingsScreen()),
-                            icon: const Icon(Icons.settings_rounded, size: 21),
-                          ),
-                          const Spacer(),
                           IconButton.filledTonal(
                             tooltip: context.l10n.profile,
                             style: IconButton.styleFrom(
@@ -145,6 +134,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                   : const OnboardingScreen(),
                             ),
                             icon: const Icon(Icons.person_rounded, size: 21),
+                          ),
+                          const Spacer(),
+                          IconButton.filledTonal(
+                            tooltip: context.l10n.settings,
+                            style: IconButton.styleFrom(
+                              side: BorderSide(
+                                color: AppColors.cream.withValues(alpha: .16),
+                              ),
+                            ),
+                            onPressed: () =>
+                                _open(context, const SettingsScreen()),
+                            icon: const Icon(Icons.settings_rounded, size: 21),
                           ),
                         ],
                       ),

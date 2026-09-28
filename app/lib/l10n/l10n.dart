@@ -27,3 +27,14 @@ String languageName(Object? code) {
       ? lookupAppLocalizations(locale).languageName
       : '$code';
 }
+
+/// The first of the phone's languages the app has, or English: the one rule
+/// MaterialApp and the content requests share.
+Locale resolveLocale(Iterable<Locale>? phone) {
+  for (final locale in phone ?? const <Locale>[]) {
+    for (final supported in AppLocalizations.supportedLocales) {
+      if (supported.languageCode == locale.languageCode) return supported;
+    }
+  }
+  return const Locale('en');
+}

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
@@ -8,6 +10,7 @@ import 'package:imposter_il/screens/legal_screens.dart';
 import 'package:imposter_il/screens/online_flow.dart';
 import 'package:imposter_il/screens/private_flow.dart';
 import 'package:imposter_il/screens/secondary_screens.dart';
+import 'package:imposter_il/state/game_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/fake_monetization.dart';
@@ -40,6 +43,9 @@ void main() {
     expect(Directionality.of(tester.element(find.text('Online game'))),
         TextDirection.ltr);
     expect(session.language, 'en');
+    // The header mirrors: profile at the start (left), settings at the end.
+    expect(tester.getCenter(find.byTooltip('Profile')).dx,
+        lessThan(tester.getCenter(find.byTooltip('Settings')).dx));
     expect(tester.takeException(), isNull, reason: 'fits 320 px');
   });
 
@@ -54,6 +60,9 @@ void main() {
     _phone(const [Locale('fr'), Locale('he', 'IL')]);
     await startApp(tester, FakeApi(), saved: _signedIn);
     expect(find.text('משחק ברשת'), findsOneWidget);
+    // The Hebrew design: profile top right, settings top left.
+    expect(tester.getCenter(find.byTooltip('פרופיל')).dx,
+        greaterThan(tester.getCenter(find.byTooltip('הגדרות')).dx));
   });
 
   testWidgets('Settings switches the language and remembers the choice',
@@ -111,6 +120,14 @@ void main() {
     );
     await tapText(tester, 'Settings');
     expect(find.text('Language'), findsOneWidget);
+
+    // Switched from here, the message follows the new language.
+    await tapText(tester, 'Language');
+    await tapText(tester, 'עברית');
+    Navigator.of(tester.element(find.byType(SettingsScreen))).pop();
+    await tester.pumpAndSettle();
+    expect(find.text('שפת החדר: עברית. כדי להצטרף, מחליפים שפה בהגדרות.'),
+        findsOneWidget);
   });
 
   testWidgets('one-device play offers the English words', (tester) async {
@@ -169,10 +186,66 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  test('the language is resolved before anything loads', () async {
+    SharedPreferences.setMockInitialValues({});
+    final session = GameSession(FakeApi());
+    addTearDown(session.dispose);
+    await session.restore();
+    expect(session.language, 'en');
+  });
+
+  test('content answered after the language changed is asked for again',
+      () async {
+    final api = _HeldApi();
+    final session = GameSession(api)..token = 'token-1';
+    addTearDown(session.dispose);
+    session.language = 'he';
+    final load = session.loadContent();
+    session.languageResolved('en'); // while the Hebrew answer is on its way
+    api.release();
+    await load;
+    expect(api.requests.map((r) => r.$2).where((p) => p.contains('categories')),
+        ['/v1/categories?language=he', '/v1/categories?language=en']);
+    expect(session.categories.first.name, 'Food & Drink');
+  });
+
   test('every language the app has has one-device words', () {
     for (final code in ['he', 'en']) {
       expect(localCategoriesFor(code), hasLength(18), reason: code);
     }
     expect(localCategoriesFor('en').first.name, 'Food & Drink');
   });
+}
+
+/// Holds the first content answer until [release], and answers in the
+/// language asked for.
+class _HeldApi extends FakeApi {
+  final _held = Completer<void>();
+  var _first = true;
+
+  void release() => _held.complete();
+
+  @override
+  Future<Map<String, dynamic>> request(String method, String path,
+      {String? token, Object? body}) async {
+    if (_first && path.startsWith('/v1/categories')) {
+      _first = false;
+      requests.add((method, path, body));
+      await _held.future;
+      return {
+        'categories': [
+          {'id': 'food', 'name': 'אוכל ושתייה'},
+        ],
+      };
+    }
+    if (path.startsWith('/v1/categories?language=en')) {
+      requests.add((method, path, body));
+      return {
+        'categories': [
+          {'id': 'food', 'name': 'Food & Drink'},
+        ],
+      };
+    }
+    return super.request(method, path, token: token, body: body);
+  }
 }

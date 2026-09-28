@@ -293,11 +293,15 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
     // The same entitlements as online: a category that locked again (a
     // subscription ended, a refund) drops out, including one carried over
     // from the previous match by "משחק נוסף".
-    final picked = _categories?.where(money.isUnlocked).toSet();
-    final chosen = picked?.toList() ??
-        money.unlocked([
-          for (final c in localCategoriesFor(context.l10n.localeName)) c.id
-        ]);
+    // Only this language's categories: one picked before the language
+    // changed may not exist in it.
+    final ids = [
+      for (final c in localCategoriesFor(context.l10n.localeName)) c.id
+    ];
+    final picked = _categories
+        ?.where((id) => ids.contains(id) && money.isUnlocked(id))
+        .toSet();
+    final chosen = picked?.toList() ?? money.unlocked(ids);
     return GameScaffold(
       title: context.l10n.gameSettings,
       bannerPlacement: BannerPlacement.localRules,

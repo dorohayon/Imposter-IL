@@ -435,10 +435,24 @@ class GameScaffold extends StatelessWidget {
             if (showHeader)
               Padding(
                 padding: const EdgeInsets.fromLTRB(22, 10, 22, 8),
+                // Exit (or back) at the start, the timer at the end: top
+                // right and top left in Hebrew (docs/design-direction.md),
+                // mirrored in a left-to-right language.
                 child: Row(
-                  textDirection: TextDirection.ltr,
                   children: [
-                    SizedBox(width: 54, height: 54, child: timer),
+                    SizedBox(
+                      width: 54,
+                      height: 54,
+                      child: onExit != null
+                          ? IconButton.filledTonal(
+                              tooltip: context.l10n.leave,
+                              onPressed: onExit,
+                              icon: const Icon(Icons.close_rounded, size: 22),
+                            )
+                          : showBack && canPop
+                              ? BackButton(onPressed: onBack)
+                              : null,
+                    ),
                     Expanded(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -460,19 +474,7 @@ class GameScaffold extends StatelessWidget {
                         ],
                       ),
                     ),
-                    SizedBox(
-                      width: 54,
-                      height: 54,
-                      child: onExit != null
-                          ? IconButton.filledTonal(
-                              tooltip: context.l10n.leave,
-                              onPressed: onExit,
-                              icon: const Icon(Icons.close_rounded, size: 22),
-                            )
-                          : showBack && canPop
-                              ? BackButton(onPressed: onBack)
-                              : null,
-                    ),
+                    SizedBox(width: 54, height: 54, child: timer),
                   ],
                 ),
               ),
