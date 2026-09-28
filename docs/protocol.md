@@ -38,6 +38,7 @@
 | `GET` | `/v1/config` | מודל התמחור: קטגוריות חינמיות, מזהי מוצרים ופרסומות (ציבורי) |
 | `POST` | `/v1/sessions` | יצירת שחקן אורח |
 | `POST` | `/v1/entitlements` | הוכחות הרכישה מהחנות; מחזיר מה פתוח לשחקן |
+| `POST` | `/v1/rewarded-unlocks` | קטגוריה אחת למשחק הבא, אחרי צפייה במודעה |
 | `PATCH` | `/v1/sessions/me` | עריכת כינוי או אווטאר |
 | `GET` | `/v1/categories` | רשימת קטגוריות |
 | `GET` | `/v1/reactions` | רשימת התגובות |
@@ -101,6 +102,16 @@
 `status` הוא `granted`, `rejected` (הוכחה מזויפת, לאפליקציה או מוצר אחרים, הוחזרה, בוטלה או לא שולמה) או `unverifiable` (אין בשרת מאמת לפלטפורמה). שגיאות: `401 session_not_found`, `422 invalid_purchases` (יותר מ־20), `429 rate_limited` (10 לדקה לכל session ו־120 לכל IP), `503 verification_unavailable` — אי אפשר היה לשאול את החנות, ומה שה־session החזיק נשאר.
 
 כש־`serverEnforcement` פעיל, קטגוריה שאינה חינמית ואינה בבעלות השחקן נדחית ב־`403 category_locked` ביצירת חדר, וב־`category_locked` ב־`matchmaking.join` וב־`room.updateSettings`. בחדר פרטי רק הקטגוריות שבחר המנהל נבדקות, מול הרכישות שלו; המצטרפים אינם צריכים דבר. גם `game.playAgain` ברשת נבדק, כך שמנוי שפג עוצר את החיפוש הבא. `room.start` בודק שוב: המנהל שמתחיל מחזיק בקטגוריות, או שמי שבחר אותן עדיין בחדר ומחזיק בהן.
+
+### `POST /v1/rewarded-unlocks`
+
+```json
+{ "categoryId": "sports" }
+```
+
+נשלח אחרי ש־AdMob דיווח `onUserEarnedReward`. הקטגוריה נשמרת על ה־session בנפרד מהרכישות (סנכרון רכישות אינו מוחק אותה), נחשבת פתוחה בכל בדיקת `category_locked`, ונמחקת כשהשחקן משובץ במשחק הבא — ברשת או בחדר פרטי, בין שהמשחק הסתיים ובין שננטש. `game.playAgain` ברשת מחפש שוב בלעדיה; אם רק היא נבחרה — `category_locked`.
+
+`200`: `{ "categoryId": "sports", "nextAvailableAt": "2026-09-28T16:00:00Z" }`. בקשה חוזרת לאותה קטגוריה שעדיין מוחזקת מצליחה ואינה מזיזה את הזמן. שגיאות: `401 session_not_found`, `422 invalid_categories`, `403 rewarded_unavailable` (`ads.enabled` או `ads.rewardedEnabled` כבויים), `429 rewarded_cooldown` — פחות מ־4 שעות מהפתיחה הקודמת של ה־session, בכל קטגוריה.
 
 ### `POST /v1/sessions`
 

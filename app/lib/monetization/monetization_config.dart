@@ -12,6 +12,7 @@ class MonetizationConfig {
     this.bannerPlacements = BannerPlacement.all,
     this.interstitialEnabled = true,
     this.interstitialMinInterval = Duration.zero,
+    this.rewardedEnabled = true,
     this.maxAdContentRating = 'PG',
     this.units = const {},
   });
@@ -40,6 +41,7 @@ class MonetizationConfig {
       interstitialMinInterval: Duration(
         seconds: ads['interstitialMinIntervalSeconds'] as int? ?? 0,
       ),
+      rewardedEnabled: ads['rewardedEnabled'] as bool? ?? d.rewardedEnabled,
       maxAdContentRating:
           ads['maxAdContentRating'] as String? ?? d.maxAdContentRating,
       units: {
@@ -58,6 +60,9 @@ class MonetizationConfig {
   final Set<String> bannerPlacements;
   final bool interstitialEnabled;
   final Duration interstitialMinInterval;
+
+  /// "צפייה במודעה" in the purchase popup: one category for the next game.
+  final bool rewardedEnabled;
   final String maxAdContentRating;
 
   /// AdMob unit ids by platform (`android`, `ios`).
@@ -76,6 +81,7 @@ class MonetizationConfig {
           'bannerPlacements': bannerPlacements.toList(),
           'interstitialEnabled': interstitialEnabled,
           'interstitialMinIntervalSeconds': interstitialMinInterval.inSeconds,
+          'rewardedEnabled': rewardedEnabled,
           'maxAdContentRating': maxAdContentRating,
           'units': {for (final e in units.entries) e.key: e.value.toJson()},
         },
@@ -92,18 +98,20 @@ class MonetizationConfig {
 }
 
 class AdUnits {
-  const AdUnits({this.banner = '', this.interstitial = ''});
+  const AdUnits({this.banner = '', this.interstitial = '', this.rewarded = ''});
 
   factory AdUnits.fromJson(Map<String, dynamic> json) => AdUnits(
         banner: json['banner'] as String? ?? '',
         interstitial: json['interstitial'] as String? ?? '',
+        rewarded: json['rewarded'] as String? ?? '',
       );
 
   final String banner;
   final String interstitial;
+  final String rewarded;
 
   Map<String, String> toJson() =>
-      {'banner': banner, 'interstitial': interstitial};
+      {'banner': banner, 'interstitial': interstitial, 'rewarded': rewarded};
 }
 
 /// The non-game screens the design allows a banner on

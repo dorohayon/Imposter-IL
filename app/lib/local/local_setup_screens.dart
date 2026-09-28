@@ -301,7 +301,10 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
         label: 'מתחילים',
         onPressed: chosen.isEmpty
             ? null
-            : () => Navigator.of(context).pushReplacement(
+            : () {
+                // The game starts: a category a rewarded ad opened is spent.
+                money.useReward();
+                Navigator.of(context).pushReplacement(
                   MaterialPageRoute<void>(
                     builder: (_) => LocalGameScreen(
                       players: widget.players,
@@ -309,7 +312,8 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
                       hintSeconds: _hintSeconds,
                     ),
                   ),
-                ),
+                );
+              },
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

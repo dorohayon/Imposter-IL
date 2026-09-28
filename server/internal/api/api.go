@@ -70,6 +70,11 @@ type session struct {
 	// What the store proofs this device sent last prove it owns
 	// (POST /v1/entitlements). Checked only under ServerEnforcement.
 	entitlements monetization.Entitlements
+	// rewardCategory is open for the next game this player is dealt into,
+	// after a rewarded ad (POST /v1/rewarded-unlocks); rewardedAt spaces
+	// those unlocks. Kept apart from entitlements, which a sync replaces.
+	rewardCategory string
+	rewardedAt     time.Time
 
 	// The categories and start time of the player's latest online search.
 	searchCategories []string
@@ -273,6 +278,7 @@ func (s *Server) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v1/sessions", s.gate(s.createSession))
 	mux.HandleFunc("GET /v1/config", s.gate(s.getConfig))
 	mux.HandleFunc("POST /v1/entitlements", s.gate(s.syncEntitlements))
+	mux.HandleFunc("POST /v1/rewarded-unlocks", s.gate(s.withSession(s.rewardedUnlock)))
 	mux.HandleFunc("GET /v1/categories", s.gate(s.withSession(listCategories)))
 	mux.HandleFunc("GET /v1/reactions", s.gate(s.withSession(listReactions)))
 	mux.HandleFunc("PATCH /v1/sessions/me", s.gate(s.withSession(s.updateSession)))

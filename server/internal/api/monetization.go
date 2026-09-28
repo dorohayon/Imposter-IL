@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
+	"github.com/dorohayon/Imposter-IL/server/internal/content"
 	"github.com/dorohayon/Imposter-IL/server/internal/monetization"
 )
 
@@ -34,6 +36,9 @@ var (
 	errCategoryLocked       = apiError{http.StatusForbidden, "category_locked", "a chosen category is locked"}
 	errVerificationDown     = apiError{http.StatusServiceUnavailable, "verification_unavailable", "the store could not be reached, try again later"}
 	errInvalidEntitlementRq = apiError{http.StatusUnprocessableEntity, "invalid_purchases", "invalid purchases"}
+	errRewardedCooldown     = apiError{http.StatusTooManyRequests, "rewarded_cooldown", "a category was unlocked by an ad recently"}
+	errRewardedUnavailable  = apiError{http.StatusForbidden, "rewarded_unavailable", "rewarded ads are off"}
+	errInvalidCategories    = apiError{http.StatusUnprocessableEntity, "invalid_categories", "unknown category"}
 )
 
 // SetMonetization replaces the pricing model and the store verifiers, keyed
@@ -48,7 +53,64 @@ func (s *Server) SetMonetization(cfg monetization.Config, verifiers map[string]m
 // categoriesAllowed is the one entitlement check, for online searches and
 // private rooms alike. Called under s.mu.
 func (s *Server) categoriesAllowed(sess *session, ids []string, now time.Time) bool {
-	return !s.money.ServerEnforcement || s.money.Allowed(sess.entitlements, ids, now)
+	if !s.money.ServerEnforcement {
+		return true
+	}
+	e := sess.entitlements
+	if sess.rewardCategory != "" {
+		e.Categories = append(slices.Clip(e.Categories), sess.rewardCategory)
+	}
+	return s.money.Allowed(e, ids, now)
+}
+
+// rewardedUnlock opens one category for this player's next game, once the app
+// saw AdMob's onUserEarnedReward. The cooldown is the server's, per session.
+//
+// ponytail: the server trusts the app's word that the ad was watched, and a
+// new guest session starts without a cooldown. Both are the ceiling of having
+// no accounts (docs/monetization.md, accepted risks); AdMob server-side
+// verification callbacks would close the first if patched apps show up.
+func (s *Server) rewardedUnlock(w http.ResponseWriter, body []byte, sess *session) {
+	var req struct {
+		CategoryID string `json:"categoryId"`
+	}
+	if !decode(w, body, &req) {
+		return
+	}
+	now := s.now()
+	switch {
+	case !content.ValidIDs([]string{req.CategoryID}):
+		writeError(w, errInvalidCategories)
+		return
+	case !s.money.Ads.Enabled || !s.money.Ads.RewardedEnabled:
+		writeError(w, errRewardedUnavailable)
+		return
+	// Asking again for the reward it holds is a retry, not a second unlock.
+	case sess.rewardCategory != req.CategoryID && now.Before(sess.rewardedAt.Add(monetization.RewardedCooldown)):
+		writeError(w, errRewardedCooldown)
+		return
+	}
+	if sess.rewardCategory != req.CategoryID {
+		sess.rewardCategory, sess.rewardedAt = req.CategoryID, now
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"categoryId":      sess.rewardCategory,
+		"nextAvailableAt": sess.rewardedAt.Add(monetization.RewardedCooldown).UTC().Format(time.RFC3339),
+	})
+}
+
+// useReward spends a player's rewarded category on the game they were just
+// dealt into, finished or not. An online "משחק נוסף" searches again without
+// it, unless they own it otherwise.
+func (s *Server) useReward(sess *session, now time.Time) {
+	id := sess.rewardCategory
+	if id == "" {
+		return
+	}
+	sess.rewardCategory = ""
+	if !s.categoriesAllowed(sess, []string{id}, now) {
+		sess.searchCategories = slices.DeleteFunc(slices.Clone(sess.searchCategories), func(c string) bool { return c == id })
+	}
 }
 
 func (s *Server) getConfig(w http.ResponseWriter, _ *http.Request) {

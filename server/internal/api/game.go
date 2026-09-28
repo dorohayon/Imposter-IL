@@ -134,6 +134,11 @@ func (s *Server) gameCommand(sess *session, typ string, p commandPayload, now ti
 			return "wrong_phase"
 		}
 		if entry.public {
+			// Only a category opened by an ad was searched for, and that ad
+			// was spent on this game.
+			if len(sess.searchCategories) == 0 {
+				return "category_locked"
+			}
 			// Players who continue search again in the match's room, so they
 			// stay together while new players fill the empty spots.
 			return s.joinSearch(sess, entry, sess.searchCategories, now)

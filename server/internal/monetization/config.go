@@ -59,6 +59,9 @@ type Ads struct {
 	// InterstitialMinIntervalSeconds spaces out interstitials. Zero shows one
 	// after every completed match.
 	InterstitialMinIntervalSeconds int `json:"interstitialMinIntervalSeconds"`
+	// RewardedEnabled offers "watch an ad" in the purchase popup: one locked
+	// category for the player's next game, at most once per RewardedCooldown.
+	RewardedEnabled bool `json:"rewardedEnabled"`
 	// MaxAdContentRating is AdMob's G, PG, T or MA.
 	MaxAdContentRating string `json:"maxAdContentRating"`
 	// Units are the AdMob ad unit ids per platform ("android", "ios"). Release
@@ -70,7 +73,13 @@ type Ads struct {
 type AdUnits struct {
 	Banner       string `json:"banner"`
 	Interstitial string `json:"interstitial"`
+	// Rewarded is empty until the unit exists in AdMob; release builds then
+	// do not offer the rewarded unlock.
+	Rewarded string `json:"rewarded"`
 }
+
+// RewardedCooldown spaces rewarded unlocks, across all categories.
+const RewardedCooldown = 4 * time.Hour
 
 // BannerPlacements lists the screens the design allows a banner on
 // (design/claude/Imposter IL Monetization.dc.html): home, the online choice,
@@ -95,6 +104,7 @@ func Default() Config {
 			Enabled:             true,
 			BannerPlacements:    slices.Clone(BannerPlacements),
 			InterstitialEnabled: true,
+			RewardedEnabled:     true,
 			MaxAdContentRating:  "PG",
 			// The AdMob units (publisher pub-9035143252838544). Not secrets:
 			// every build that shows an ad carries them.

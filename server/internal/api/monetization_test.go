@@ -296,3 +296,64 @@ func TestPrivateRoomStartNeedsAnOwnerInTheRoom(t *testing.T) {
 	c.syncPurchases(newHost.token, proof("android", "premium_monthly", "guest-token"))
 	wantOK(t, newHost.w.command("owned", "room.start", map[string]any{"roomId": roomID}))
 }
+
+// A rewarded ad opens one category for the player's next game only, and the
+// next unlock waits out the cooldown whatever the category.
+func TestRewardedUnlockOpensOneGame(t *testing.T) {
+	c := enforcingClient(t, fakeStore{})
+	hostToken, _ := c.session("מנהל")
+	unlock := func(category string) (int, map[string]any) {
+		return c.do("POST", "/v1/rewarded-unlocks", hostToken, map[string]any{"categoryId": category})
+	}
+	if status, body := unlock("gaming"); status != http.StatusOK || body["categoryId"] != "gaming" {
+		t.Fatalf("unlock: %d %v", status, body)
+	}
+	c.syncPurchases(hostToken) // a store sync replaces purchases, not the reward
+	if status, body := unlock("sports"); status != http.StatusTooManyRequests {
+		t.Fatalf("second unlock inside the cooldown: %d %v", status, body)
+	}
+	if status, body := unlock("gaming"); status != http.StatusOK {
+		t.Fatalf("retrying the same unlock: %d %v", status, body)
+	}
+
+	status, body := c.roomWith(hostToken, "gaming")
+	if status != http.StatusCreated {
+		t.Fatalf("create room with the rewarded category: %d %v", status, body)
+	}
+	room := body["room"].(map[string]any)
+	host := c.dial(hostToken)
+	for i := range 3 {
+		token, _ := c.session(fmt.Sprintf("אורח%d", i+1))
+		if status, body := c.join(token, room["code"].(string)); status != http.StatusOK {
+			t.Fatalf("join: %d %v", status, body)
+		}
+		c.dial(token)
+	}
+	wantOK(t, host.command("start", "room.start", map[string]any{"roomId": room["roomId"]}))
+
+	c.srv.mu.Lock()
+	open := c.srv.categoriesAllowed(c.srv.sessions[hostToken], []string{"gaming"}, c.srv.now())
+	c.srv.mu.Unlock()
+	if open {
+		t.Fatal("the rewarded category is still open after the game started")
+	}
+
+	c.advance(monetization.RewardedCooldown)
+	if status, body := unlock("sports"); status != http.StatusOK {
+		t.Fatalf("unlock after the cooldown: %d %v", status, body)
+	}
+}
+
+// Online "משחק נוסף" searches again without the category the ad opened.
+func TestSpentRewardLeavesTheSearch(t *testing.T) {
+	c := enforcingClient(t, fakeStore{})
+	token, _ := c.session("דור")
+	c.srv.mu.Lock()
+	defer c.srv.mu.Unlock()
+	sess := c.srv.sessions[token]
+	sess.rewardCategory, sess.searchCategories = "gaming", []string{"food", "gaming"}
+	c.srv.useReward(sess, c.srv.now())
+	if sess.rewardCategory != "" || !slices.Equal(sess.searchCategories, []string{"food"}) {
+		t.Fatalf("after the game: reward %q, search %v", sess.rewardCategory, sess.searchCategories)
+	}
+}

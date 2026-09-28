@@ -25,6 +25,15 @@ enum PurchaseStep {
   restoredOther,
   purchased,
   restored,
+
+  /// The rewarded ad is loading or showing.
+  watchingAd,
+
+  /// No ad, or it closed before the reward. Nothing opened.
+  adFailed,
+
+  /// The ad was watched: the category is open for the next game.
+  rewarded,
 }
 
 enum RestoreResult { found, none, failed }
@@ -68,6 +77,12 @@ class Monetization extends ChangeNotifier {
   static const _lifetimeKey = 'monetization.lifetime';
   static const _premiumUntilKey = 'monetization.premiumUntil';
   static const _interstitialKey = 'monetization.lastInterstitial';
+  static const _rewardCategoryKey = 'monetization.rewardCategory';
+  static const _rewardedAtKey = 'monetization.rewardedAt';
+
+  /// One rewarded unlock per this long, whatever the category. The server
+  /// enforces its own for online play (server/internal/monetization).
+  static const rewardedCooldown = Duration(hours: 4);
 
   /// A subscription the store says is current but did not date (Play) stays
   /// open this long offline, until the next answer from the store.
@@ -79,6 +94,13 @@ class Monetization extends ChangeNotifier {
 
   /// When monthly Premium lapses on this device, or null without one.
   DateTime? premiumUntil;
+
+  /// A category a rewarded ad opened for the next game, in any mode. Spent
+  /// when that game starts, whether it finishes or not.
+  String? rewardCategory;
+
+  /// When the last rewarded ad was watched, for the cooldown.
+  DateTime? rewardedAt;
 
   Map<String, StoreProduct> products = const {};
   bool productsLoading = false;
@@ -148,7 +170,10 @@ class Monetization extends ChangeNotifier {
       ];
 
   bool isUnlocked(String categoryId) =>
-      premium || isFree(categoryId) || ownedCategories.contains(categoryId);
+      premium ||
+      isFree(categoryId) ||
+      ownedCategories.contains(categoryId) ||
+      rewardCategory == categoryId;
 
   /// Bought on its own, for the "נרכשה" tag. Premium makes that moot.
   bool isPurchased(String categoryId) =>
@@ -186,6 +211,8 @@ class Monetization extends ChangeNotifier {
     premiumUntil = DateTime.tryParse(prefs.getString(_premiumUntilKey) ?? '');
     _lastInterstitial =
         DateTime.tryParse(prefs.getString(_interstitialKey) ?? '');
+    rewardCategory = prefs.getString(_rewardCategoryKey);
+    rewardedAt = DateTime.tryParse(prefs.getString(_rewardedAtKey) ?? '');
     _purchases = store.purchases.listen(_onPurchases);
     _notify();
     unawaited(_loadConfig());
@@ -207,18 +234,26 @@ class Monetization extends ChangeNotifier {
   /// category is locked.
   void attach(GameSession session) {
     _token = () => session.token;
-    session.resyncEntitlements = () => syncServer(force: true);
-    void tokenChanged() {
+    session.resyncEntitlements = () async {
+      await syncServer(force: true);
+      await _claimReward();
+    };
+    String? gameId;
+    void sessionChanged() {
+      // Online or in a private room, the next game has started.
+      if (session.gameId != null && session.gameId != gameId) useReward();
+      gameId = session.gameId;
       if (session.token == _attachedToken) return;
       _attachedToken = session.token;
+      if (_attachedToken != null) unawaited(_claimReward());
       // A store answer on its way syncs by itself once it lands.
       if (_attachedToken != null && _refreshing == null) {
         unawaited(syncServer(force: true));
       }
     }
 
-    session.addListener(tokenChanged);
-    tokenChanged();
+    session.addListener(sessionChanged);
+    sessionChanged();
   }
 
   Future<void> _loadConfig() async {
@@ -397,6 +432,15 @@ class Monetization extends ChangeNotifier {
     } else {
       await prefs.setString(_premiumUntilKey, until.toIso8601String());
     }
+    final reward = rewardCategory;
+    if (reward == null) {
+      await prefs.remove(_rewardCategoryKey);
+    } else {
+      await prefs.setString(_rewardCategoryKey, reward);
+    }
+    if (rewardedAt case final at?) {
+      await prefs.setString(_rewardedAtKey, at.toIso8601String());
+    }
   }
 
   /// Sends the store's proofs to the server, which checks them with Apple or
@@ -458,7 +502,9 @@ class Monetization extends ChangeNotifier {
   // ---- the purchase popup ----------------------------------------------
 
   bool get busy =>
-      step == PurchaseStep.processing || step == PurchaseStep.restoring;
+      step == PurchaseStep.processing ||
+      step == PurchaseStep.restoring ||
+      step == PurchaseStep.watchingAd;
 
   /// The three products the popup offers for [categoryId].
   List<String> offerFor(String categoryId) => [
@@ -471,6 +517,7 @@ class Monetization extends ChangeNotifier {
     step = PurchaseStep.choose;
     _flowProduct = null;
     monthlyBeforePurchase = monthlyActive;
+    _preloadRewarded();
   }
 
   Future<void> loadProducts(String categoryId) async {
@@ -533,6 +580,86 @@ class Monetization extends ChangeNotifier {
     return _proofs.isEmpty ? RestoreResult.none : RestoreResult.found;
   }
 
+  // ---- rewarded unlock ----------------------------------------------------
+
+  /// "צפייה במודעה" is in the popup: never for Premium, and only once ads
+  /// may be requested and a rewarded unit exists.
+  bool get rewardOffered =>
+      showsAds &&
+      config.rewardedEnabled &&
+      adsReady &&
+      (_units?.rewarded ?? '').isNotEmpty;
+
+  /// How long until the next rewarded unlock, or null when one is available.
+  Duration? get rewardCooldownLeft {
+    final next = rewardedAt?.add(rewardedCooldown);
+    return next != null && next.isAfter(now) ? next.difference(now) : null;
+  }
+
+  /// Shows a rewarded ad and, only once AdMob reports the reward earned,
+  /// opens [categoryId] for the next game. A missing or failed ad leaves
+  /// everything as it was.
+  Future<void> watchAdFor(String categoryId) async {
+    if (busy || !rewardOffered || rewardCooldownLeft != null) return;
+    _flowProduct = null;
+    step = PurchaseStep.watchingAd;
+    _notify();
+    var earned = false;
+    try {
+      await ads
+          .loadRewarded(_units!.rewarded)
+          .timeout(const Duration(seconds: 10));
+      earned = await ads.showRewarded();
+    } on Object catch (e) {
+      adsLog('rewarded failed: $e');
+    }
+    if (!earned) {
+      step = PurchaseStep.adFailed;
+      _notify();
+      _preloadRewarded();
+      return;
+    }
+    rewardCategory = categoryId;
+    rewardedAt = now;
+    unawaited(_persist());
+    // Before the popup says it opened, so the next search already finds it
+    // on the server. Failing is recovered by the category_locked resync.
+    await _claimReward();
+    step = PurchaseStep.rewarded;
+    _notify();
+  }
+
+  /// Tells the server this session holds the rewarded category, so online
+  /// and private-room games allow it. Retrying for the same category is
+  /// harmless; the server refuses another inside its cooldown.
+  Future<void> _claimReward() async {
+    final token = _token?.call();
+    final category = rewardCategory;
+    if (token == null || category == null) return;
+    try {
+      await api.request('POST', '/v1/rewarded-unlocks',
+          token: token, body: {'categoryId': category});
+    } on Object {
+      // Offline, or refused: one-device play still has it.
+    }
+  }
+
+  /// The next game started — online, in a private room or on one device —
+  /// so the rewarded category is spent.
+  void useReward() {
+    if (rewardCategory == null) return;
+    rewardCategory = null;
+    unawaited(_persist());
+    _notify();
+  }
+
+  void _preloadRewarded() {
+    if (!rewardOffered || rewardCooldownLeft != null) return;
+    unawaited(ads
+        .loadRewarded(_units!.rewarded)
+        .catchError((Object e) => adsLog('rewarded load threw: $e')));
+  }
+
   /// Leaves a notice step for the plain choice, once the player picks again.
   void backToChoice() {
     if (busy) return;
@@ -563,13 +690,16 @@ class Monetization extends ChangeNotifier {
     if (_adsStarting || adsReady) return;
     if (!showsAds ||
         units == null ||
-        (units.banner.isEmpty && units.interstitial.isEmpty)) {
+        (units.banner.isEmpty &&
+            units.interstitial.isEmpty &&
+            units.rewarded.isEmpty)) {
       adsLog('ads not started: premium=$premium, '
           'enabled=${config.adsEnabled}, units=${units == null ? 'none' : 'set'}');
       return;
     }
     adsLog('${useTestAds ? 'TEST' : 'PRODUCTION'} ads on ${store.platform}: '
-        'banner ${units.banner}, interstitial ${units.interstitial}');
+        'banner ${units.banner}, interstitial ${units.interstitial}, '
+        'rewarded ${units.rewarded}');
     _adsStarting = true;
     try {
       adsReady = await ads.start(maxAdContentRating: config.maxAdContentRating);
@@ -577,6 +707,7 @@ class Monetization extends ChangeNotifier {
       adsLog('ads ready: $adsReady');
       _notify();
       _preloadInterstitial();
+      _preloadRewarded();
     } on Object catch (e) {
       adsLog('ads start failed: $e');
       adsReady = false;

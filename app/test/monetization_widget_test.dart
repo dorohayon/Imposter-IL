@@ -50,6 +50,11 @@ Future<void> _tapLocked(WidgetTester tester, String name) async {
 }
 
 Future<void> _buy(WidgetTester tester) async {
+  // The ad is chosen first; buying means choosing the category.
+  await tester.ensureVisible(find.textContaining('רק ״'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.textContaining('רק ״'));
+  await tester.pumpAndSettle();
   await tester.tap(find.textContaining('קנייה'));
   await tester.pumpAndSettle();
 }
@@ -121,9 +126,10 @@ void main() {
       expect(find.text('9.90 ₪'), findsOneWidget);
       expect(find.text('14.90 ₪'), findsOneWidget);
       expect(find.text('59.90 ₪'), findsOneWidget);
-      // The category the player tapped is chosen for them.
-      expect(find.textContaining('קנייה'), findsOneWidget);
-      expect(find.textContaining('הפרסומות ממשיכות להופיע'), findsOneWidget);
+      // The ad, listed first, is chosen for them: its title and the button.
+      expect(find.text('צפייה במודעה'), findsNWidgets(2));
+      expect(find.textContaining('למשחק הבא בלבד'), findsWidgets);
+      expect(find.textContaining('הפרסומות נשארות'), findsOneWidget);
       expect(find.text('שחזור רכישות'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'fits 320px');
     });
@@ -147,6 +153,51 @@ void main() {
       expect(find.byIcon(Icons.lock_rounded), findsNWidgets(14));
       await tapLive(tester, 'חפש משחק');
       expect(_searched(api), ['food', 'sports']);
+    });
+
+    testWidgets('an ad opens a category for one game, then the cooldown shows',
+        (tester) async {
+      final (api, _, ads) = await _freePlayer(tester);
+      await _openPicker(tester);
+      await tapText(tester, categoryTileName('אוכל ושתייה'));
+      await _tapLocked(tester, 'ספורט וכושר');
+
+      // The ad is the first option, and the one chosen.
+      final titles = [
+        'צפייה במודעה',
+        'רק ״ספורט וכושר״',
+        'פרימיום חודשי',
+        'פרימיום לכל החיים'
+      ];
+      final ys = [
+        for (final t in titles) tester.getTopLeft(find.text(t).first).dy
+      ];
+      expect(ys, [...ys]..sort());
+      expect(find.textContaining('קנייה'), findsNothing);
+
+      await tester.tap(find.text('צפייה במודעה').last); // the button
+      await tester.pumpAndSettle();
+      expect(ads.rewardedShown, 1);
+      expect(find.text('״ספורט וכושר״ פתוחה למשחק הבא'), findsOneWidget);
+      await tapText(tester, 'בוחרים ב״ספורט וכושר״');
+
+      await _tapLocked(tester, 'גיימינג');
+      // Cooling down, the ad is disabled and the category is chosen.
+      expect(find.text('אפשר לצפות שוב בעוד 4 שע׳'), findsOneWidget);
+      expect(find.textContaining('קנייה'), findsOneWidget);
+      expect(tester.takeException(), isNull, reason: 'fits 320px');
+      await tester.tap(find.bySemanticsLabel('סגירה'));
+      await tester.pumpAndSettle();
+
+      await tapLive(tester, 'חפש משחק');
+      expect(_searched(api), ['food', 'sports']);
+    });
+
+    testWidgets('Premium players never see the ad option', (tester) async {
+      await _freePlayer(tester, owned: {monthly});
+      await _openPicker(tester);
+      expect(find.byIcon(Icons.lock_rounded), findsNothing);
+      expect(find.text('צפייה במודעה'), findsNothing);
     });
 
     testWidgets('monthly Premium states the renewal before joining',
@@ -199,6 +250,8 @@ void main() {
       await _buy(tester);
 
       expect(find.text('הרכישה בוטלה. לא בוצע חיוב.'), findsOneWidget);
+      await tester.ensureVisible(find.byIcon(Icons.close_rounded));
+      await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.close_rounded));
       await tester.pumpAndSettle();
       expect(find.text('״ספורט וכושר״ נעולה'), findsNothing);

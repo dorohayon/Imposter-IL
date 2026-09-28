@@ -152,6 +152,10 @@ class FakeApi extends ApiClient {
       'entitlements': {'premium': false, 'lifetime': false, 'categoryIds': []},
       'results': <Object>[],
     },
+    'POST /v1/rewarded-unlocks': {
+      'categoryId': 'sports',
+      'nextAvailableAt': '2026-09-28T16:00:00Z',
+    },
     'GET /v1/reactions': {
       'reactions': [
         {'id': 'laugh', 'text': '😂'},

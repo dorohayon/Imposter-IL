@@ -137,6 +137,28 @@ class FakeAds implements AdsGateway {
   }
 
   void close() => open?.complete(true);
+
+  bool rewardedLoaded = false;
+  bool rewardedFills = true;
+
+  /// Whether the player watches the rewarded ad to the end.
+  bool earnsReward = true;
+  int rewardedShown = 0;
+  final rewardedLoads = <String>[];
+
+  @override
+  Future<void> loadRewarded(String unitId) async {
+    rewardedLoads.add(unitId);
+    rewardedLoaded = rewardedFills;
+  }
+
+  @override
+  Future<bool> showRewarded() async {
+    if (!rewardedLoaded) return false;
+    rewardedLoaded = false;
+    rewardedShown++;
+    return earnsReward;
+  }
 }
 
 Monetization fakeMonetization(

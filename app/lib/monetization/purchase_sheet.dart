@@ -100,31 +100,55 @@ class _PurchaseSheet extends StatefulWidget {
 }
 
 const _sheetColor = Color(0xFF1E1C3B);
+
+/// The rewarded-ad option, listed first; not a store product.
+const _adOption = 'rewarded_ad';
+
 const _soft = Color(0xB8FFF8E7); // cream at ~72%
 
 class _PurchaseSheetState extends State<_PurchaseSheet> {
   String? _selected;
 
+  /// Keeps the rewarded cooldown's minutes current while the popup is open.
+  late final Timer _tick =
+      Timer.periodic(const Duration(seconds: 30), (_) => setState(() {}));
+
+  @override
+  void initState() {
+    super.initState();
+    _tick;
+  }
+
+  @override
+  void dispose() {
+    _tick.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final m = MonetizationScope.of(context);
     final offer = m.offerFor(widget.id);
+    final adOffered = m.rewardOffered;
     final available = [
+      if (adOffered && m.rewardCooldownLeft == null) _adOption,
       for (final id in offer)
         if (m.products.containsKey(id)) id,
     ];
-    // The first option is chosen for them: the category they tapped, or the
-    // first product the store actually sells.
-    final selected = available.contains(_selected)
-        ? _selected!
-        : available.isEmpty
-            ? offer.first
-            : available.first;
     final step = m.step;
     final loading = m.productsLoading;
     final pricesFailed = !loading && m.productsFailed;
-    final succeeded =
-        step == PurchaseStep.purchased || step == PurchaseStep.restored;
+    // The first option is chosen for them: the ad, else the category they
+    // tapped or the first product the store sells. Prices that failed keep
+    // a product chosen, so their retry button shows.
+    final selected = available.contains(_selected)
+        ? _selected!
+        : pricesFailed
+            ? offer.first
+            : available.firstOrNull ?? offer.first;
+    final succeeded = step == PurchaseStep.purchased ||
+        step == PurchaseStep.restored ||
+        step == PurchaseStep.rewarded;
 
     return PopScope(
       canPop: !m.busy,
@@ -163,8 +187,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                   padding: const EdgeInsets.fromLTRB(18, 6, 18, 4),
                   child: succeeded
                       ? _success(m, step)
-                      : _choose(
-                          m, offer, available, selected, loading, pricesFailed),
+                      : _choose(m, offer, available, adOffered, selected,
+                          loading, pricesFailed),
                 ),
               ),
               _footer(m, selected, succeeded, loading, pricesFailed,
@@ -180,11 +204,14 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     Monetization m,
     List<String> offer,
     List<String> available,
+    bool adOffered,
     String selected,
     bool loading,
     bool pricesFailed,
   ) {
     final notice = switch (m.step) {
+      PurchaseStep.adFailed => _Notice.warning(
+          'לא הצלחנו להציג מודעה עד הסוף, ולכן ״${widget.name}״ לא נפתחה. אפשר לנסות שוב מאוחר יותר או לבחור אפשרות אחרת.'),
       _ when pricesFailed && m.productsMissing => const _Notice.error(
           'הרכישות אינן זמינות כרגע. אנא נסו שוב מאוחר יותר.'),
       _ when pricesFailed => const _Notice.error(
@@ -253,7 +280,12 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
         ),
         if (notice != null) ...[const SizedBox(height: 10), notice],
         const SizedBox(height: 10),
-        for (final id in loading ? offer : available) ...[
+        if (adOffered) ...[
+          _adChoice(m, selected == _adOption, disabled),
+          const SizedBox(height: 9),
+        ],
+        for (final id
+            in loading ? offer : available.where((id) => id != _adOption)) ...[
           _Option(
             title: _title(m, id),
             description: _description(m, id),
@@ -268,6 +300,29 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
         ],
       ],
     );
+  }
+
+  Widget _adChoice(Monetization m, bool selected, bool disabled) {
+    final wait = m.rewardCooldownLeft;
+    return _Option(
+      title: 'צפייה במודעה',
+      description: wait == null
+          ? 'פותחת את ״${widget.name}״ למשחק הבא בלבד'
+          : 'אפשר לצפות שוב בעוד ${_duration(wait)}',
+      price: 'חינם',
+      priceNote: 'משחק אחד',
+      loading: false,
+      selected: selected && wait == null,
+      enabled: !disabled && wait == null,
+      onTap: () => setState(() => _selected = _adOption),
+    );
+  }
+
+  /// "3 שע׳ ו־12 דק׳", rounded up to the minute.
+  static String _duration(Duration d) {
+    final minutes = (d.inSeconds / 60).ceil();
+    final h = minutes ~/ 60, min = minutes % 60;
+    return [if (h > 0) '$h שע׳', if (min > 0 || h == 0) '$min דק׳'].join(' ו־');
   }
 
   String _title(Monetization m, String id) => id == m.config.premiumMonthly
@@ -290,19 +345,24 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
             product == m.config.premiumLifetime);
     final (title, body) = step == PurchaseStep.restored
         ? ('הרכישות שוחזרו', '״${widget.name}״ פתוחה שוב במכשיר הזה.')
-        : premium
+        : step == PurchaseStep.rewarded
             ? (
-                'ברוכים הבאים לפרימיום',
-                product == m.config.premiumMonthly
-                    ? 'המנוי החודשי פעיל. אפשר לנהל או לבטל אותו בהגדרות המנויים בחנות.'
-                    : m.monthlyBeforePurchase
-                        ? 'הכול פתוח לתמיד — כולל קטגוריות שיתווספו בעתיד. המנוי החודשי שלכם עדיין פעיל; אפשר לבטל אותו בהגדרות המנויים בחנות.'
-                        : 'הכול פתוח לתמיד — כולל קטגוריות שיתווספו בעתיד.',
+                '״${widget.name}״ פתוחה למשחק הבא',
+                'תודה שצפיתם. אחרי המשחק הבא הקטגוריה תינעל שוב.',
               )
-            : (
-                '״${widget.name}״ נפתחה!',
-                'הקטגוריה שלכם לתמיד. הפרסומות ממשיכות להופיע.',
-              );
+            : premium
+                ? (
+                    'ברוכים הבאים לפרימיום',
+                    product == m.config.premiumMonthly
+                        ? 'המנוי החודשי פעיל. אפשר לנהל או לבטל אותו בהגדרות המנויים בחנות.'
+                        : m.monthlyBeforePurchase
+                            ? 'הכול פתוח לתמיד — כולל קטגוריות שיתווספו בעתיד. המנוי החודשי שלכם עדיין פעיל; אפשר לבטל אותו בהגדרות המנויים בחנות.'
+                            : 'הכול פתוח לתמיד — כולל קטגוריות שיתווספו בעתיד.',
+                  )
+                : (
+                    '״${widget.name}״ נפתחה!',
+                    'הקטגוריה שלכם לתמיד. הפרסומות ממשיכות להופיע.',
+                  );
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 16, 0, 6),
       child: Column(
@@ -391,13 +451,38 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
       final categoryBought = m.step == PurchaseStep.purchased &&
           product == m.config.categoryProduct(widget.id);
       final premium = m.step == PurchaseStep.purchased && !categoryBought;
+      final pick = categoryBought || m.step == PurchaseStep.rewarded;
       child = PrimaryButton(
         label: m.step == PurchaseStep.restored
             ? 'סגירה'
             : premium
                 ? 'מתחילים לשחק'
                 : 'בוחרים ב״${widget.name}״',
-        onPressed: () => Navigator.of(context).pop(categoryBought),
+        onPressed: () => Navigator.of(context).pop(pick),
+      );
+    } else if (selected == _adOption) {
+      final watching = m.step == PurchaseStep.watchingAd;
+      child = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          PrimaryButton(
+            label: watching ? 'טוענים מודעה…' : 'צפייה במודעה',
+            onPressed: watching ? null : () => m.watchAdFor(widget.id),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '״${widget.name}״ תיפתח אחרי צפייה מלאה במודעה, למשחק הבא בלבד. אפשר לפתוח כך קטגוריה פעם בארבע שעות.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.cream.withValues(alpha: .66),
+              fontSize: 12,
+              height: 1.5,
+            ),
+          ),
+          // Restore and the legal links stay one tap away, as for a purchase.
+          _links(m),
+        ],
       );
     } else {
       final (label, onPressed) = switch (m.step) {
@@ -443,30 +528,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
               ),
             ),
           ],
-          Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 14,
-            children: [
-              TextButton(
-                onPressed: m.busy ? null : () => m.restoreFor(widget.id),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.turquoise,
-                  minimumSize: const Size(44, 44),
-                  textStyle: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-                child: Text(m.step == PurchaseStep.restoring
-                    ? 'משחזרים רכישות…'
-                    : 'שחזור רכישות'),
-              ),
-              _Link('תנאי שימוש', () => const TermsScreen()),
-              _Link('מדיניות פרטיות', () => const PrivacyScreen()),
-            ],
-          ),
+          _links(m),
         ],
       );
     }
@@ -480,6 +542,31 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
       child: child,
     );
   }
+
+  Widget _links(Monetization m) => Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 14,
+        children: [
+          TextButton(
+            onPressed: m.busy ? null : () => m.restoreFor(widget.id),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.turquoise,
+              minimumSize: const Size(44, 44),
+              textStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+            child: Text(m.step == PurchaseStep.restoring
+                ? 'משחזרים רכישות…'
+                : 'שחזור רכישות'),
+          ),
+          _Link('תנאי שימוש', () => const TermsScreen()),
+          _Link('מדיניות פרטיות', () => const PrivacyScreen()),
+        ],
+      );
 
   String _ctaFor(Monetization m, String selected, String p) =>
       selected == m.config.premiumMonthly ? 'הצטרפות לפרימיום' : 'קנייה · $p';
