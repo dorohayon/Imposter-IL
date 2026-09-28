@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
+import '../local/local_game.dart';
+import '../local/local_screens.dart';
+import '../local/local_setup_screens.dart';
+import '../local/local_store.dart';
+import '../local/online_choice_screen.dart';
 import '../monetization/ad_banner.dart';
 import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
 import '../state/game_session.dart';
+import '../theme/app_theme.dart';
+import '../widgets/game_ui.dart';
 import 'live_room.dart';
 import 'onboarding_screen.dart';
-import '../theme/app_theme.dart';
-import '../local/local_game.dart';
-import '../local/local_screens.dart';
-import '../local/local_setup_screens.dart';
-import '../local/online_choice_screen.dart';
-import '../local/local_store.dart';
-import '../widgets/game_ui.dart';
 import 'secondary_screens.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -115,23 +116,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Profile at the start, settings at the end: the
+                      // Hebrew design's right and left, mirrored in LTR.
                       Row(
-                        textDirection: TextDirection.ltr,
                         children: [
                           IconButton.filledTonal(
-                            tooltip: 'הגדרות',
-                            style: IconButton.styleFrom(
-                              side: BorderSide(
-                                color: AppColors.cream.withValues(alpha: .16),
-                              ),
-                            ),
-                            onPressed: () =>
-                                _open(context, const SettingsScreen()),
-                            icon: const Icon(Icons.settings_rounded, size: 21),
-                          ),
-                          const Spacer(),
-                          IconButton.filledTonal(
-                            tooltip: 'פרופיל',
+                            tooltip: context.l10n.profile,
                             style: IconButton.styleFrom(
                               side: BorderSide(
                                 color: AppColors.cream.withValues(alpha: .16),
@@ -145,19 +135,31 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             icon: const Icon(Icons.person_rounded, size: 21),
                           ),
+                          const Spacer(),
+                          IconButton.filledTonal(
+                            tooltip: context.l10n.settings,
+                            style: IconButton.styleFrom(
+                              side: BorderSide(
+                                color: AppColors.cream.withValues(alpha: .16),
+                              ),
+                            ),
+                            onPressed: () =>
+                                _open(context, const SettingsScreen()),
+                            icon: const Icon(Icons.settings_rounded, size: 21),
+                          ),
                         ],
                       ),
                       const Spacer(),
                       const Illustration('assets/illustrations/home-hero.webp',
                           height: 196),
                       Text(
-                        'מי המתחזה?',
+                        context.l10n.gameName,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.displayLarge,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'כולם יודעים את המילה. חוץ מאחד.',
+                      Text(
+                        context.l10n.homeTagline,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: AppColors.yellow,
@@ -167,13 +169,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const Spacer(),
                       PrimaryButton(
-                        label: 'משחק ברשת',
+                        label: context.l10n.onlineGame,
                         icon: Icons.language_rounded,
                         onPressed: () => _openOnline(context, session),
                       ),
                       const SizedBox(height: 12),
                       PrimaryButton(
-                        label: 'משחק במכשיר אחד',
+                        label: context.l10n.oneDeviceGame,
                         icon: Icons.smartphone_rounded,
                         variant: ButtonVariant.secondary,
                         onPressed: () =>
@@ -184,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         onPressed: () =>
                             _open(context, const HowToPlayScreen()),
                         variant: ButtonVariant.quiet,
-                        label: 'איך משחקים?',
+                        label: context.l10n.howToPlay,
                       ),
                     ],
                   ),
@@ -243,8 +245,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'להמשיך את המשחק?',
+                              Text(
+                                context.l10n.resumeGameTitle,
                                 style: TextStyle(
                                   color: AppColors.night,
                                   fontFamily: 'Secular One',
@@ -254,7 +256,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'סיבוב ${saved.round} נשמר במכשיר · ${saved.players.length} שחקנים',
+                                context.l10n.resumeGameDetails(
+                                    saved.round, saved.players.length),
                                 style: TextStyle(
                                   color: AppColors.night.withValues(alpha: .62),
                                   fontSize: 14,
@@ -317,7 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 14),
                     PrimaryButton(
-                      label: 'המשך משחק',
+                      label: context.l10n.resumeGame,
                       onPressed: () {
                         setState(() => _savedLocalGame = null);
                         _open(context, LocalGameScreen(resumed: saved));
@@ -350,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             setState(() => _savedLocalGame = null);
                           }
                         },
-                        child: const Text('מחיקת המשחק'),
+                        child: Text(context.l10n.deleteGame),
                       ),
                     ),
                   ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import 'monetization.dart';
 
 /// The adaptive banner strip at the bottom of a non-game screen
@@ -22,7 +23,7 @@ class AdBanner extends StatelessWidget {
     if (monetization == null || unit == null) return const SizedBox.shrink();
     return Semantics(
       container: true,
-      label: 'פרסומת',
+      label: context.l10n.adLabel,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: const Color(0xFF0C0B1F),

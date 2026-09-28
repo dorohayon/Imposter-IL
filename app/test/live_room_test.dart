@@ -93,6 +93,7 @@ void main() {
       'maxPlayers': 8,
       'hintSeconds': 30,
       'categoryIds': ['home'],
+      'language': 'he',
     });
     expect(find.text('482 913'), findsOneWidget); // grouped in the lobby
     expect(
@@ -194,7 +195,7 @@ void main() {
     await tapText(tester, '7'); // a seventh digit is ignored
     await tester.pump(); // typing clears the error and restores the label
     await tapLive(tester, 'הצטרפות');
-    expect(api.requests.last.$3, {'code': '482913'});
+    expect(api.requests.last.$3, {'code': '482913', 'language': 'he'});
     expect(find.text('החדר של נועה'), findsOneWidget);
     expect(isEnabled(tester, 'רק מנהל החדר יכול להתחיל'), isFalse);
     expect(find.byIcon(Icons.person_remove_rounded), findsNothing);

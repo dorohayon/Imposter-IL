@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/server.dart';
+import '../l10n/l10n.dart';
 import '../models/player.dart';
 import '../state/game_session.dart';
 import '../theme/app_theme.dart';
@@ -15,10 +16,10 @@ class OnboardingScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: ProfileForm(
-          title: 'מי אתם במשחק?',
-          subtitle: 'בוחרים כינוי ואווטאר ומתחילים. בלי הרשמה.',
-          submitLabel: 'ממשיכים',
-          busyLabel: 'מתחברים...',
+          title: context.l10n.whoAreYou,
+          subtitle: context.l10n.onboardingSubtitle,
+          submitLabel: context.l10n.continueLabel,
+          busyLabel: context.l10n.connecting,
           onSubmit: (nickname, avatarId) async {
             await SessionScope.read(context).signIn(nickname, avatarId);
             if (!context.mounted) return;
@@ -38,13 +39,13 @@ class ProfileEditScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final session = SessionScope.read(context);
     return GameScaffold(
-      title: 'עריכת פרטים',
+      title: context.l10n.editDetails,
       child: ProfileForm(
         scrollable: false,
         initialNickname: session.nickname ?? '',
         initialAvatarId: session.avatarId,
-        submitLabel: 'שמירה',
-        busyLabel: 'שומרים...',
+        submitLabel: context.l10n.save,
+        busyLabel: context.l10n.saving,
         onSubmit: (nickname, avatarId) async {
           await session.updateProfile(nickname, avatarId);
           if (context.mounted) Navigator.of(context).pop();
@@ -57,8 +58,7 @@ class ProfileEditScreen extends StatelessWidget {
 /// The server's nickname bounds (docs/decisions.md).
 const maxNicknameLength = 18;
 
-const _nicknameLengthMessage =
-    'בחרו כינוי באורך 2–18 תווים, כולל ניקוד ואימוג׳י.';
+String get _nicknameLengthMessage => l10n.nicknameRule;
 
 /// Matches the server's UTF-8 rune limit without splitting a visible
 /// grapheme (for example an emoji sequence) at the boundary.
@@ -148,8 +148,8 @@ class _ProfileFormState extends State<ProfileForm> {
         _busy = false;
         _error = switch (e.code) {
           'invalid_nickname' => _nicknameLengthMessage,
-          'nickname_blocked' => 'הכינוי הזה לא מתאים למשחק. בחרו כינוי אחר.',
-          _ => 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
+          'nickname_blocked' => context.l10n.nicknameBlocked,
+          _ => context.l10n.errNetwork,
         };
       });
     }
@@ -181,8 +181,8 @@ class _ProfileFormState extends State<ProfileForm> {
         ),
       ),
       const SizedBox(height: 20),
-      const Text(
-        'הכינוי שלכם',
+      Text(
+        context.l10n.yourNickname,
         style: TextStyle(
           color: AppColors.muted,
           fontSize: 13,
@@ -200,8 +200,8 @@ class _ProfileFormState extends State<ProfileForm> {
           fontWeight: FontWeight.w700,
         ),
         decoration: InputDecoration(
-          hintText: 'למשל: דורון',
-          helperText: '2–$maxNicknameLength תווים',
+          hintText: context.l10n.nicknameExample,
+          helperText: context.l10n.nicknameLength(maxNicknameLength),
           errorText: _error,
         ),
         onChanged: (_) {
@@ -210,8 +210,8 @@ class _ProfileFormState extends State<ProfileForm> {
         onSubmitted: (_) => _submit(),
       ),
       const SizedBox(height: 8),
-      const Text(
-        'בחירת אווטאר',
+      Text(
+        context.l10n.chooseAvatar,
         style: TextStyle(
           color: AppColors.muted,
           fontSize: 13,
@@ -231,7 +231,7 @@ class _ProfileFormState extends State<ProfileForm> {
         itemBuilder: (context, index) => Semantics(
           button: true,
           selected: index == _selectedAvatar,
-          label: 'דמות ${index + 1}',
+          label: context.l10n.avatarN(index + 1),
           child: InkWell(
             customBorder: const CircleBorder(),
             onTap: () => setState(() => _selectedAvatar = index),

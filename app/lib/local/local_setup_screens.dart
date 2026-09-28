@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/player.dart';
 import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
@@ -41,7 +42,7 @@ class _LocalPlayersScreenState extends State<LocalPlayersScreen> {
   void _setCount(int count) {
     while (_names.length < count) {
       final seat = _names.length + 1;
-      _names.add(TextEditingController(text: 'שחקן $seat'));
+      _names.add(TextEditingController(text: l10n.playerN(seat)));
       _avatars.add(
         avatarAssets.firstWhere((avatar) => !_avatars.contains(avatar)),
       );
@@ -57,9 +58,9 @@ class _LocalPlayersScreenState extends State<LocalPlayersScreen> {
     return [
       for (final name in trimmed)
         if (name.isEmpty)
-          'לכל שחקן צריך להיות שם'
+          context.l10n.everyPlayerNeedsName
         else if (trimmed.where((other) => other == name).length > 1)
-          'לכל שחקן צריך להיות שם שונה'
+          context.l10n.namesMustDiffer
         else
           null,
     ];
@@ -103,11 +104,11 @@ class _LocalPlayersScreenState extends State<LocalPlayersScreen> {
   Widget build(BuildContext context) {
     final problems = _problems;
     return GameScaffold(
-      title: 'משחק במכשיר אחד',
+      title: context.l10n.oneDeviceGame,
       accent: const Color(0xFF1B4F4A),
       bannerPlacement: BannerPlacement.localPlayers,
       bottom: PrimaryButton(
-        label: 'המשך להגדרות',
+        label: context.l10n.continueToSettings,
         onPressed: problems.any((problem) => problem != null)
             ? null
             : () => Navigator.of(context).push(
@@ -132,10 +133,11 @@ class _LocalPlayersScreenState extends State<LocalPlayersScreen> {
           const Illustration('assets/illustrations/local-one-device.webp',
               height: 130),
           const SizedBox(height: 12),
-          Text('מי משחק?', style: Theme.of(context).textTheme.headlineLarge),
+          Text(context.l10n.whoIsPlaying,
+              style: Theme.of(context).textTheme.headlineLarge),
           const SizedBox(height: 6),
-          const Text(
-            'מכשיר אחד עובר בין כולם. הרמזים נאמרים בקול.',
+          Text(
+            context.l10n.oneDevicePassed,
             style: TextStyle(color: AppColors.muted, height: 1.45),
           ),
           const SizedBox(height: 16),
@@ -175,8 +177,8 @@ class _LocalPlayersScreenState extends State<LocalPlayersScreen> {
               ),
             ),
           const SizedBox(height: 8),
-          const Text(
-            'לחיצה על אווטאר מחליפה אותו באחד שלא בשימוש.',
+          Text(
+            context.l10n.tapAvatarToChange,
             style: TextStyle(color: AppColors.muted, fontSize: 13),
           ),
         ],
@@ -207,13 +209,13 @@ class _Stepper extends StatelessWidget {
                 ? () => onChanged(count - 1)
                 : null,
             icon: const Icon(Icons.remove_rounded),
-            tooltip: 'פחות שחקנים',
+            tooltip: context.l10n.fewerPlayers,
           ),
           Expanded(
             child: Column(
               children: [
                 Text(
-                  '$count שחקנים',
+                  context.l10n.nPlayers(count),
                   maxLines: 1,
                   style: const TextStyle(
                     fontFamily: 'Secular One',
@@ -236,7 +238,7 @@ class _Stepper extends StatelessWidget {
               foregroundColor: AppColors.night,
             ),
             icon: const Icon(Icons.add_rounded),
-            tooltip: 'עוד שחקנים',
+            tooltip: context.l10n.morePlayers,
           ),
         ],
       ),
@@ -278,7 +280,7 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
   @override
   void initState() {
     super.initState();
-    final allIds = {for (final c in localCategoriesFor('he')) c.id};
+    final allIds = {for (final c in localCategoriesFor(l10n.localeName)) c.id};
     final initial = widget.initialCategoryIds?.toSet();
     _categories =
         initial == null || initial.containsAll(allIds) ? null : {...initial};
@@ -291,14 +293,20 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
     // The same entitlements as online: a category that locked again (a
     // subscription ended, a refund) drops out, including one carried over
     // from the previous match by "משחק נוסף".
-    final picked = _categories?.where(money.isUnlocked).toSet();
-    final chosen = picked?.toList() ??
-        money.unlocked([for (final c in localCategoriesFor('he')) c.id]);
+    // Only this language's categories: one picked before the language
+    // changed may not exist in it.
+    final ids = [
+      for (final c in localCategoriesFor(context.l10n.localeName)) c.id
+    ];
+    final picked = _categories
+        ?.where((id) => ids.contains(id) && money.isUnlocked(id))
+        .toSet();
+    final chosen = picked?.toList() ?? money.unlocked(ids);
     return GameScaffold(
-      title: 'הגדרות המשחק',
+      title: context.l10n.gameSettings,
       bannerPlacement: BannerPlacement.localRules,
       bottom: PrimaryButton(
-        label: 'מתחילים',
+        label: context.l10n.start,
         onPressed: chosen.isEmpty
             ? null
             : () {
@@ -310,6 +318,7 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
                       players: widget.players,
                       categoryIds: chosen,
                       hintSeconds: _hintSeconds,
+                      language: context.l10n.localeName,
                     ),
                   ),
                 );
@@ -322,13 +331,16 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
           const SizedBox(height: 16),
           Row(
             children: [
-              const Text('קטגוריות', style: _sectionLabel),
+              Text(context.l10n.categories, style: _sectionLabel),
               const SizedBox(width: 10),
               if (!money.premium)
                 Expanded(
                   child: Text(
-                    categoryCount(money,
-                        [for (final c in localCategoriesFor('he')) c.id]),
+                    categoryCount(money, [
+                      for (final c
+                          in localCategoriesFor(context.l10n.localeName))
+                        c.id
+                    ]),
                     textAlign: TextAlign.end,
                     style:
                         const TextStyle(color: AppColors.muted, fontSize: 13),
@@ -342,14 +354,14 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
             runSpacing: 8,
             children: [
               _Chip(
-                label: 'הכול',
+                label: context.l10n.all,
                 selected: _categories == null,
                 onTap: () => setState(() {
                   _categories = _categories == null ? <String>{} : null;
                 }),
               ),
-              for (final c
-                  in money.openFirst(localCategoriesFor('he'), (c) => c.id))
+              for (final c in money.openFirst(
+                  localCategoriesFor(context.l10n.localeName), (c) => c.id))
                 if (money.isUnlocked(c.id))
                   _Chip(
                     label: c.name,
@@ -372,7 +384,7 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          const Text('זמן לכל רמז', style: _sectionLabel),
+          Text(context.l10n.timeForEachHint, style: _sectionLabel),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -380,7 +392,7 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
             children: [
               for (final seconds in _times)
                 _Chip(
-                  label: seconds == null ? 'ללא טיימר' : '$seconds',
+                  label: seconds == null ? context.l10n.noTimer : '$seconds',
                   number: seconds != null,
                   selected: _hintSeconds == seconds,
                   onTap: () => setState(() => _hintSeconds = seconds),
@@ -388,7 +400,7 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          const Text('סיכום', style: _sectionLabel),
+          Text(context.l10n.summary, style: _sectionLabel),
           const SizedBox(height: 10),
           // Design L05: a cream card of label / value rows.
           Container(
@@ -399,28 +411,30 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
             ),
             child: Column(
               children: [
-                _SummaryRow('שחקנים', _value('${widget.players.length}')),
                 _SummaryRow(
-                  'קטגוריות',
+                    context.l10n.players, _value('${widget.players.length}')),
+                _SummaryRow(
+                  context.l10n.categories,
                   _value(
                     picked == null
-                        ? 'הכול'
-                        : localCategoriesFor('he')
+                        ? context.l10n.all
+                        : localCategoriesFor(context.l10n.localeName)
                             .where((c) => picked.contains(c.id))
                             .map((c) => c.name)
                             .join(', '),
                   ),
                 ),
                 _SummaryRow(
-                  'זמן לרמז',
+                  context.l10n.timePerHint,
                   _value(_hintSeconds == null
-                      ? 'ללא טיימר'
-                      : '$_hintSeconds שניות'),
+                      ? context.l10n.noTimer
+                      : context.l10n.nSeconds(_hintSeconds!)),
                 ),
-                _SummaryRow('מתחזים', _value('מתחזה אחד')),
                 _SummaryRow(
-                  'הצבעה',
-                  _value('הצבעה פרטית במכשיר'),
+                    context.l10n.impostors, _value(context.l10n.oneImpostor)),
+                _SummaryRow(
+                  context.l10n.voting,
+                  _value(context.l10n.privateVoteOnDevice),
                   last: true,
                 ),
               ],

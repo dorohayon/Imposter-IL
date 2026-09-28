@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/player.dart';
 import '../monetization/ad_banner.dart';
 import '../theme/app_theme.dart';
@@ -241,7 +242,7 @@ class TimerBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final ring = color ?? (seconds <= 5 ? AppColors.coral : AppColors.yellow);
     return Semantics(
-      label: '$seconds שניות',
+      label: context.l10n.nSeconds(seconds),
       child: SizedBox(
         width: size,
         height: size,
@@ -434,10 +435,24 @@ class GameScaffold extends StatelessWidget {
             if (showHeader)
               Padding(
                 padding: const EdgeInsets.fromLTRB(22, 10, 22, 8),
+                // Exit (or back) at the start, the timer at the end: top
+                // right and top left in Hebrew (docs/design-direction.md),
+                // mirrored in a left-to-right language.
                 child: Row(
-                  textDirection: TextDirection.ltr,
                   children: [
-                    SizedBox(width: 54, height: 54, child: timer),
+                    SizedBox(
+                      width: 54,
+                      height: 54,
+                      child: onExit != null
+                          ? IconButton.filledTonal(
+                              tooltip: context.l10n.leave,
+                              onPressed: onExit,
+                              icon: const Icon(Icons.close_rounded, size: 22),
+                            )
+                          : showBack && canPop
+                              ? BackButton(onPressed: onBack)
+                              : null,
+                    ),
                     Expanded(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -459,19 +474,7 @@ class GameScaffold extends StatelessWidget {
                         ],
                       ),
                     ),
-                    SizedBox(
-                      width: 54,
-                      height: 54,
-                      child: onExit != null
-                          ? IconButton.filledTonal(
-                              tooltip: 'יציאה',
-                              onPressed: onExit,
-                              icon: const Icon(Icons.close_rounded, size: 22),
-                            )
-                          : showBack && canPop
-                              ? BackButton(onPressed: onBack)
-                              : null,
-                    ),
+                    SizedBox(width: 54, height: 54, child: timer),
                   ],
                 ),
               ),
@@ -675,7 +678,9 @@ class PlayerCard extends StatelessWidget {
                     ),
                     if (player.hint != null)
                       Text(
-                        player.hint!.isEmpty ? 'לא נשלח רמז' : player.hint!,
+                        player.hint!.isEmpty
+                            ? context.l10n.noHintSent
+                            : player.hint!,
                         style: TextStyle(
                           color: player.hint!.isEmpty
                               ? AppColors.coral
@@ -704,7 +709,7 @@ class PlayerCard extends StatelessWidget {
                 ),
               ),
               if (player.isMe)
-                const Chip(label: Text('אתם'))
+                Chip(label: Text(context.l10n.you))
               else if (!enabled)
                 const Icon(Icons.block_rounded, color: AppColors.muted)
               else if (selected)
@@ -825,7 +830,7 @@ class EliminationRevealContent extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         Text(
-          '$eliminatedName הודח/ה',
+          context.l10n.playerEliminated(eliminatedName),
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontFamily: 'Secular One',
@@ -844,7 +849,7 @@ class EliminationRevealContent extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                'התפקיד',
+                context.l10n.role,
                 style: TextStyle(
                   color: AppColors.night.withValues(alpha: .55),
                   fontSize: 12,
@@ -885,7 +890,7 @@ class EliminationRevealContent extends StatelessWidget {
                   height: 1, color: AppColors.night.withValues(alpha: .12)),
               const SizedBox(height: 12),
               Text(
-                'המילה נשארת סודית — המשחק ממשיך.',
+                context.l10n.wordStaysSecret,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.night.withValues(alpha: .7),
@@ -898,7 +903,7 @@ class EliminationRevealContent extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         Text(
-          'נשארו במשחק',
+          context.l10n.stillInGame,
           style: TextStyle(
             color: AppColors.cream.withValues(alpha: .5),
             fontSize: 12,
@@ -1107,7 +1112,7 @@ class LastHintCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'הרמז הקודם · $nickname',
+                  context.l10n.previousHint(nickname),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: AppColors.muted, fontSize: 12),
@@ -1294,7 +1299,7 @@ class _ReactionBubbleState extends State<_ReactionBubble>
   @override
   Widget build(BuildContext context) {
     // Emoji get the bigger, tighter pill; the structured messages are text.
-    final emoji = !RegExp(r'[֐-׿]').hasMatch(widget.text);
+    final emoji = !RegExp(r'\p{L}', unicode: true).hasMatch(widget.text);
     return Positioned(
       left: widget.origin.dx,
       top: widget.origin.dy,
@@ -1367,7 +1372,7 @@ class RoundBadge extends StatelessWidget {
           border: Border.all(color: AppColors.purple.withValues(alpha: .6)),
         ),
         child: Text(
-          'סבב $round',
+          context.l10n.roundLabel(round),
           style: const TextStyle(
             color: Color(0xFFD9C8FF),
             fontSize: 13,
@@ -1394,12 +1399,12 @@ class SpectatorNote extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.coral.withValues(alpha: .42)),
       ),
-      child: const Column(
+      child: Column(
         children: [
           Icon(Icons.visibility_outlined, color: AppColors.coral, size: 26),
           SizedBox(height: 8),
           Text(
-            'הודחתם מהמשחק',
+            context.l10n.youWereEliminated,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Secular One',
@@ -1409,8 +1414,7 @@ class SpectatorNote extends StatelessWidget {
           ),
           SizedBox(height: 4),
           Text(
-            'אתם ממשיכים לצפות ולהגיב, בלי רמזים והצבעות. '
-            'התוצאה שלכם היא של הקבוצה שלכם.',
+            context.l10n.spectatorExplain,
             textAlign: TextAlign.center,
             style: TextStyle(color: Color(0xFFFFD9D9), height: 1.4),
           ),
@@ -1440,7 +1444,7 @@ class RoundDivider extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Text(
-            'סבב $round',
+            context.l10n.roundLabel(round),
             style: TextStyle(
               color: AppColors.cream.withValues(alpha: .55),
               fontSize: 12,
@@ -1473,8 +1477,8 @@ class CategoryPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'קטגוריה',
+          Text(
+            context.l10n.category,
             style: TextStyle(color: Color(0xFFD9C8FF), fontSize: 13),
           ),
           const SizedBox(width: 8),
@@ -1513,7 +1517,7 @@ class SecretWordCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InfoCard(
-      label: 'המילה הסודית',
+      label: context.l10n.secretWord,
       light: !impostor,
       child: impostor
           // Not a row of letter boxes. Four of them said the word was four
@@ -1539,8 +1543,8 @@ class SecretWordCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 14),
-                const Text(
-                  'המילה לא מוצגת לכם — רק הקטגוריה.',
+                Text(
+                  context.l10n.wordNotShown,
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 15, height: 1.45),
                 ),
@@ -1572,7 +1576,7 @@ class ToVotingView extends StatelessWidget {
     required this.note,
     this.onExit,
     this.bottom,
-    this.footnote = 'מסך ההצבעה נפתח אוטומטית',
+    this.footnote,
     super.key,
   });
 
@@ -1584,7 +1588,9 @@ class ToVotingView extends StatelessWidget {
   final String note;
   final VoidCallback? onExit;
   final Widget? bottom;
-  final String footnote;
+
+  /// Defaults to "the voting screen opens automatically".
+  final String? footnote;
 
   @override
   Widget build(BuildContext context) {
@@ -1601,8 +1607,8 @@ class ToVotingView extends StatelessWidget {
             height: 190,
           ),
           const SizedBox(height: 18),
-          const Text(
-            'כל הרמזים נשלחו',
+          Text(
+            context.l10n.allHintsSent,
             style: TextStyle(
               color: AppColors.muted,
               fontSize: 15,
@@ -1611,7 +1617,7 @@ class ToVotingView extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'עוברים להצבעה',
+            context.l10n.toVoting,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.displayLarge,
           ),
@@ -1629,7 +1635,7 @@ class ToVotingView extends StatelessWidget {
           countdown,
           const SizedBox(height: 14),
           Text(
-            footnote,
+            footnote ?? context.l10n.votingOpensAuto,
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, fontSize: 13),
           ),
@@ -1930,7 +1936,7 @@ class GameResultContent extends StatelessWidget {
                   height: 1, color: AppColors.night.withValues(alpha: .12)),
               const SizedBox(height: 12),
               line(
-                'המילה הייתה',
+                context.l10n.wordWas,
                 Text(
                   secretWord,
                   style: const TextStyle(
@@ -1944,7 +1950,7 @@ class GameResultContent extends StatelessWidget {
               if (guess case final guess?) ...[
                 const SizedBox(height: 12),
                 line(
-                  'הניחוש',
+                  context.l10n.theGuess,
                   Text(
                     guess,
                     textAlign: TextAlign.end,
@@ -1959,7 +1965,7 @@ class GameResultContent extends StatelessWidget {
               if (rounds case final rounds?) ...[
                 const SizedBox(height: 12),
                 line(
-                  'סבבים',
+                  context.l10n.rounds,
                   Text(
                     '$rounds',
                     style: const TextStyle(
@@ -2012,7 +2018,7 @@ class ResultVoteBars extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const ResultSectionLabel('חלוקת הקולות'),
+        ResultSectionLabel(context.l10n.voteBreakdown),
         for (final (name, votes, color) in rows) ...[
           const SizedBox(height: 8),
           Row(
@@ -2123,7 +2129,7 @@ class ResultButtons extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        PrimaryButton(label: 'משחק נוסף', onPressed: onAgain),
+        PrimaryButton(label: context.l10n.playAgain, onPressed: onAgain),
         const SizedBox(height: 12),
         SizedBox(
           height: 54,
@@ -2144,7 +2150,7 @@ class ResultButtons extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            child: const Text('חזרה למסך הבית'),
+            child: Text(context.l10n.backToHome),
           ),
         ),
       ],

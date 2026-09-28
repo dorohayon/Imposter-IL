@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
 import '../monetization/purchase_sheet.dart';
@@ -13,24 +14,23 @@ import 'secondary_screens.dart';
 const _allId = '';
 
 String searchErrorMessage(String code) => switch (code) {
-      'already_in_activity' => 'כבר הצטרפתם למשחק או לחדר אחר.',
-      'content_unavailable' => 'אי אפשר להתחיל משחק כרגע. נסו שוב בעוד רגע.',
+      'already_in_activity' => l10n.errAlreadyInActivity,
+      'content_unavailable' => l10n.errContentUnavailable,
       'category_locked' => lockedCategoryMessage,
       _ => connectionMessage(code),
     };
 
 /// The server refused a category this device believes it owns, and a fresh
 /// sync did not help.
-const lockedCategoryMessage =
-    'אחת הקטגוריות נעולה. אפשר לשחזר רכישות מחלון הפתיחה של הקטגוריה.';
+String get lockedCategoryMessage => l10n.errCategoryLocked;
 
 /// "אפשר לבחור כמה קטגוריות", with how many are open (design 04).
 String categoryHint(Monetization m, Iterable<String> ids) {
-  const base = 'אפשר לבחור כמה קטגוריות';
+  final base = l10n.canPickSeveral;
   if (m.premium) return base;
   final open = m.unlocked(ids).length;
   final onlyFree = ids.where(m.isUnlocked).every(m.isFree);
-  return '$base · $open ${onlyFree ? 'פתוחות בחינם' : 'פתוחות'}';
+  return '$base · ${onlyFree ? l10n.openFreeCount(open) : l10n.openCount(open)}';
 }
 
 /// Online play: choose categories, then search on the server.
@@ -103,16 +103,16 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
         });
 
     final tiles = [
-      (id: _allId, name: 'הכול'),
+      (id: _allId, name: context.l10n.all),
       for (final c in money.openFirst(categories, (c) => c.id))
         (id: c.id, name: c.name),
     ];
 
     return GameScaffold(
-      title: 'בחירת קטגוריות',
+      title: context.l10n.chooseCategories,
       bannerPlacement: BannerPlacement.categories,
       bottom: PrimaryButton(
-        label: _busy ? 'מחפשים משחק...' : 'חפש משחק',
+        label: _busy ? context.l10n.searchingGame : context.l10n.searchGame,
         // Nothing chosen means nothing to search for.
         onPressed: categories.isEmpty || _busy || (!all && selected.isEmpty)
             ? null
@@ -122,7 +122,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                 ]),
       ),
       child: categories.isEmpty
-          ? const Padding(
+          ? Padding(
               padding: EdgeInsets.only(top: 180),
               child: Center(
                 child: Column(
@@ -130,7 +130,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                     CircularProgressIndicator(color: AppColors.yellow),
                     SizedBox(height: 18),
                     Text(
-                      'טוענים את הקטגוריות...',
+                      context.l10n.loadingCategories,
                       style: TextStyle(color: AppColors.muted),
                     ),
                   ],
@@ -224,8 +224,8 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                                         start: 30),
                                     child: Text(
                                       money.premium
-                                          ? 'כל הקטגוריות'
-                                          : 'כל הקטגוריות הפתוחות',
+                                          ? context.l10n.allCategories
+                                          : context.l10n.allOpenCategories,
                                       textAlign: TextAlign.end,
                                       maxLines: 2,
                                       style: TextStyle(
@@ -297,13 +297,13 @@ class PremiumBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: AppColors.yellow.withValues(alpha: .5)),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.check_rounded, size: 12, color: AppColors.yellow),
           SizedBox(width: 5),
           Text(
-            'פרימיום',
+            context.l10n.premium,
             style: TextStyle(
               color: AppColors.yellow,
               fontSize: 12,
@@ -363,7 +363,7 @@ class LockedCategoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: '$name — נעולה, לחצו לפתיחה',
+      label: context.l10n.lockedTapToOpen(name),
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
@@ -446,8 +446,8 @@ class _PurchasedTag extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: AppColors.turquoise.withValues(alpha: .4)),
       ),
-      child: const Text(
-        '✓ נרכשה',
+      child: Text(
+        context.l10n.purchasedTag,
         style: TextStyle(
           color: Color(0xFF8FF3E6),
           fontSize: 11,

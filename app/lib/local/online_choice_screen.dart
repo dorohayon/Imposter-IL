@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../monetization/monetization_config.dart';
 import '../screens/online_flow.dart';
 import '../screens/private_flow.dart';
@@ -15,13 +16,13 @@ class OnlineChoiceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GameScaffold(
-      title: 'משחק ברשת',
+      title: context.l10n.onlineGame,
       bannerPlacement: BannerPlacement.onlineChoice,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'שני מצבים, אותו משחק. אפשר להצטרף לשחקנים אחרים או לפתוח חדר לחברים.',
+            context.l10n.onlineChoiceSubtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.cream.withValues(alpha: .62),
@@ -32,9 +33,9 @@ class OnlineChoiceScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _ModeCard(
             illustration: 'assets/illustrations/matchmaking-team.webp',
-            title: 'משחק מהיר',
-            description: 'בוחרים קטגוריות ומצטרפים לשחקנים ברשת.',
-            notes: const ['4–8 שחקנים'],
+            title: context.l10n.quickGame,
+            description: context.l10n.quickGameSubtitle,
+            notes: [context.l10n.players4to8],
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const CategorySelectionScreen(),
@@ -44,9 +45,9 @@ class OnlineChoiceScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _ModeCard(
             illustration: 'assets/illustrations/private-room.webp',
-            title: 'חדר פרטי',
-            description: 'יוצרים חדר ושולחים קוד, או מצטרפים לחדר קיים.',
-            notes: const ['4–8 שחקנים', 'אתם קובעים מתי מתחילים'],
+            title: context.l10n.privateRoom,
+            description: context.l10n.privateRoomSubtitle,
+            notes: [context.l10n.players4to8, context.l10n.youDecideStart],
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const FriendsScreen()),
             ),
