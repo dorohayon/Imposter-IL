@@ -177,7 +177,8 @@ class FakeApi extends ApiClient {
     if (unknownTokens.contains(token)) {
       throw const ApiException('session_not_found', 401);
     }
-    final response = responses['$method $path'];
+    // Content requests carry ?language=; the canned answers ignore it.
+    final response = responses['$method ${path.split('?').first}'];
     if (response is ApiException) {
       // Mirror ApiClient: the real one reports this before it throws.
       if (response.code == 'client_too_old') onClientTooOld?.call();

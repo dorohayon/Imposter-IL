@@ -1,0 +1,1087 @@
+{
+  "@@locale": "he",
+  "appTitle": "מי המתחזה?‏",
+  "settings": "הגדרות",
+  "profile": "פרופיל",
+  "gameName": "מי המתחזה?",
+  "homeTagline": "כולם יודעים את המילה. חוץ מאחד.",
+  "onlineGame": "משחק ברשת",
+  "oneDeviceGame": "משחק במכשיר אחד",
+  "howToPlay": "איך משחקים?",
+  "resumeGameTitle": "להמשיך את המשחק?",
+  "resumeGameDetails": "סיבוב {round} נשמר במכשיר · {playersLength} שחקנים",
+  "@resumeGameDetails": {
+    "placeholders": {
+      "round": {
+        "type": "Object"
+      },
+      "playersLength": {
+        "type": "Object"
+      }
+    }
+  },
+  "resumeGame": "המשך משחק",
+  "deleteGame": "מחיקת המשחק",
+  "legalDate": "26 בספטמבר 2026",
+  "legalGateTitle": "לפני שמתחילים",
+  "legalConsent": "קראתי ואני מסכים/ה לתנאי השימוש ומאשר/ת שקראתי את מדיניות הפרטיות.",
+  "saving": "שומרים...",
+  "acceptAndContinue": "אישור והמשך",
+  "legalGateHeadline": "משחק הוגן מתחיל בכללים ברורים",
+  "legalGateBody": "במשחק כותבים כינויים ורמזים ששחקנים אחרים יכולים לראות. אנחנו מסננים תוכן לא מתאים ומאפשרים לדווח ולהסתיר שחקנים.",
+  "termsTitle": "תנאי שימוש",
+  "termsSubtitle": "כללי המשחק, תוכן אסור ודיווחים",
+  "privacyTitle": "מדיניות פרטיות",
+  "privacySubtitle": "איזה מידע נשמר, איפה ולכמה זמן",
+  "legalDocsVersion": "גרסת מסמכים {legalVersion} · {legalDate}",
+  "@legalDocsVersion": {
+    "placeholders": {
+      "legalVersion": {
+        "type": "Object"
+      },
+      "legalDate": {
+        "type": "Object"
+      }
+    }
+  },
+  "termsIntro": "גרסה {legalVersion} · בתוקף מ־{legalDate}\n\nהשימוש ב״מי המתחזה?״ כפוף לתנאים הבאים. המשחק מיועד לבני 13 ומעלה. אם מלאו לכם 13 אך אינכם בגיל שמאפשר לכם להסכים לתנאים במקום מגוריכם, השתמשו במשחק רק באישור ובהשגחת הורה או אפוטרופוס.",
+  "@termsIntro": {
+    "placeholders": {
+      "legalVersion": {
+        "type": "Object"
+      },
+      "legalDate": {
+        "type": "Object"
+      }
+    }
+  },
+  "terms1Title": "1. השירות",
+  "terms1": "״מי המתחזה?״ הוא משחק חברתי מקוון המופעל על ידי Imposter IL (imposteril36@gmail.com). אין צורך בחשבון. אתם בוחרים כינוי ואווטאר ומקבלים מזהה אורח זמני לצורך המשחק.",
+  "terms2Title": "2. כללי התנהגות ותוכן",
+  "terms2": "אין לפרסם בכינוי או ברמז תוכן מיני מפורש, איומים, דברי שנאה, השפלה או הטרדה, תוכן בלתי חוקי, התחזות לאדם אחר, פרטים אישיים של אדם אחר או תוכן שנועד לפגוע בשחקנים. אין לנסות לעקוף את מסנני התוכן או לנצל לרעה את השרת, החדרים, מנגנון הדיווח או המשחק.",
+  "terms3Title": "3. תוכן של שחקנים",
+  "terms3": "כינויים ורמזים שכתבתם מוצגים לשחקנים אחרים במשחק. אתם אחראים לתוכן שאתם שולחים. המשחק רשאי לסרב לתוכן, להסתירו או להפסיק גישה במקרה של הפרת הכללים. שחקנים יכולים לדווח על תוכן ולהסתיר תוכן של שחקן שדווח במכשיר שלהם. דיווחים נבדקים בתוך 24 שעות, ותוכן שמפר את הכללים מתווסף לסינון.",
+  "terms4Title": "4. משחקים, תוצאות וסטטיסטיקה",
+  "terms4": "המשחק עשוי להסתיים עקב ניתוק, תקלה או תחזוקה. ניצחונות והפסדים נשמרים במכשיר בלבד ואינם חשבון, דירוג או נכס שניתן לשחזר לאחר מחיקת האפליקציה או מעבר מכשיר.",
+  "terms5Title": "5. רכישות, מנויים ופרסומות",
+  "terms5": "שלוש קטגוריות פתוחות בחינם. את שאר הקטגוריות אפשר לפתוח ברכישה של קטגוריה אחת לתמיד, במנוי פרימיום חודשי או ברכישת פרימיום לכל החיים. פרימיום פותח את כל הקטגוריות, גם כאלה שיתווספו, ומסיר את הפרסומות; רכישת קטגוריה בודדת אינה מסירה פרסומות. התשלום, החיוב, החידוש וההחזרים מתבצעים דרך App Store או Google Play, בכפוף לתנאים שלהם ובמחיר שהחנות מציגה במטבע של חשבונכם. המנוי החודשי מתחדש אוטומטית בכל חודש עד לביטול. אפשר לבטל אותו בכל עת בהגדרות המנויים בחנות, לפחות 24 שעות לפני מועד החידוש, והגישה נשארת עד סוף התקופה ששולמה. רכישה שהוחזרה או בוטלה בחנות מפסיקה לפתוח את מה שפתחה. רכישות שייכות לחשבון החנות ולא למכשיר, ואפשר לשחזר אותן בכל מכשיר עם אותו חשבון באמצעות ״שחזור רכישות״. למי שאין לו פרימיום מוצגות פרסומות של צד שלישי במסכים שמחוץ למשחק ואחרי משחק שהסתיים. במכשירי Apple חל גם הסכם הרישיון הסטנדרטי של Apple למשתמש קצה (EULA). אין באמור כדי לגרוע מזכויות שלכם לפי דיני הגנת הצרכן החלים, לרבות ביטול עסקה.",
+  "terms6Title": "6. זמינות ושינויים",
+  "terms6": "השירות ניתן כפי שהוא ובהתאם לזמינות. מפעיל השירות רשאי לתקן באגים, לשנות כללים ותוכן, להגביל גרסאות ישנות או להפסיק חלקים מהשירות. כששינוי מהותי בתנאים דורש הסכמה מחודשת, האפליקציה תציג את הגרסה החדשה לפני המשך המשחק.",
+  "terms7Title": "7. קניין רוחני",
+  "terms7": "השם, העיצוב, הקוד, האיורים ותוכן המשחק שייכים לבעליהם ומוגנים לפי הדין החל. אין להעתיק, להפיץ, לבצע הנדסה לאחור או להשתמש בנכסי המשחק מעבר למה שמותר בדין או ברישיונות החלים.",
+  "terms8Title": "8. אחריות",
+  "terms8": "במידה המרבית המותרת לפי דין, אין התחייבות שהשירות יהיה רציף או נטול שגיאות. אין בתנאים כדי לגרוע מזכויות צרכניות שלא ניתן לוותר עליהן לפי הדין החל.",
+  "terms9Title": "9. פרטיות",
+  "terms9": "מדיניות הפרטיות מתארת את המידע שבו השירות משתמש ואת תקופות השמירה והיא חלק מהשימוש בשירות.",
+  "terms10Title": "10. שינויים בתנאים",
+  "terms10": "שינוי מהותי יקבל גרסת מסמכים חדשה. האפליקציה שומרת במכשיר את גרסת התנאים שאושרה ויכולה לדרוש אישור מחדש לגרסה חדשה.",
+  "terms11Title": "11. דין וסמכות שיפוט",
+  "terms11": "על תנאים אלה חלים דיני מדינת ישראל, וסמכות השיפוט הבלעדית נתונה לבתי המשפט המוסמכים במחוז תל אביב־יפו. אין באמור כדי לגרוע מזכותכם לתבוע במקום מגוריכם כאשר הדין החל עליכם מקנה לכם זכות כזו.",
+  "terms12Title": "12. יצירת קשר",
+  "terms12": "Imposter IL · imposteril36@gmail.com\nלתמיכה, לדיווח על תוכן פוגעני ולכל שאלה על התנאים האלה.",
+  "privacyIntro": "גרסה {legalVersion} · בתוקף מ־{legalDate}\n\nהמדיניות מתארת את המידע שבו ״מי המתחזה?״ משתמש כדי להפעיל משחקים, לשמור העדפות ולהגן על שחקנים.",
+  "@privacyIntro": {
+    "placeholders": {
+      "legalVersion": {
+        "type": "Object"
+      },
+      "legalDate": {
+        "type": "Object"
+      }
+    }
+  },
+  "privacy1Title": "1. מי אנחנו",
+  "privacy1": "המשחק ״מי המתחזה?״ מופעל על ידי Imposter IL, והמדיניות הזאת חלה על האפליקציה ועל השרת שמפעיל אותה. לפניות בנושא פרטיות: imposteril36@gmail.com.",
+  "privacy2Title": "2. מידע שנשמר במכשיר",
+  "privacy2": "האפליקציה שומרת במכשיר את מזהה ה־session וה־player הזמניים, הכינוי והאווטאר, ניצחונות והפסדים, הגדרות רטט ותגובות, גרסת המסמכים שאושרה ורשימת מזהי שחקנים שדיווחתם עליהם כדי להסתיר את התוכן שלהם. מחיקת האפליקציה או נתוניה עשויה למחוק מידע זה. לאחר רכישה נשמרים גם הקטגוריות והפרימיום שבבעלותכם ומועד התוקף של המנוי, כדי שיישארו פתוחים גם בלי חיבור, וכן הגדרות הפרסומות שהתקבלו מהשרת ומועד המודעה האחרונה במסך מלא.",
+  "privacy3Title": "3. מידע שנשלח לשרת",
+  "privacy3": "כדי להפעיל משחקים השרת מקבל מזהה שחקן ו־session, כינוי, אווטאר, כתובת IP לצורכי אבטחה והגבלת קצב, חברות בחדרים ובמשחקים, קטגוריות שנבחרו, רמזים, תגובות, הצבעות, ניחושים ודיווחים. אין צורך בשם אמיתי, מספר טלפון או כתובת דוא״ל כדי לשחק. כדי לפתוח ברשת קטגוריות שרכשתם, האפליקציה שולחת לשרת את ההוכחה שהחנות מספקת לרכישה — עסקה חתומה של Apple או אסימון רכישה של Google, הכוללים את מזהה המוצר, מזהה העסקה ומועדיה. השרת מאמת אותה מול Apple או Google. אנחנו לא מקבלים את פרטי התשלום שלכם.",
+  "privacy4Title": "4. מטרות השימוש",
+  "privacy4": "המידע משמש להפעלת matchmaking וחדרים, סנכרון המשחק בזמן אמת, חיבור מחדש, אכיפת כללי המשחק, מניעת abuse, טיפול בדיווחים, אבטחה, איתור תקלות ומדידת בריאות השרת. המידע משמש גם לאימות רכישות ולאכיפת הקטגוריות הפתוחות, ולהצגת פרסומות למי שאין לו פרימיום.",
+  "privacy5Title": "5. מה שחקנים אחרים רואים",
+  "privacy5": "שחקנים באותו משחק יכולים לראות את הכינוי והאווטאר שלכם, רמזים ששלחתם, מצב החיבור ומידע משחק הנדרש להצבעה ולתוצאה. המילה הסודית אינה נשלחת למתחזה לפני שלב התוצאה.",
+  "privacy6Title": "6. שמירה ומחיקה",
+  "privacy6": "מצב המשחק והחדרים נשמר בזיכרון השרת ולא במסד נתונים קבוע. session מנותק שאינו נמצא בחדר נמחק לאחר תקופת חוסר פעילות של עד 24 שעות, וחדר ריק נסגר לאחר 30 דקות. אתחול שרת מוחק את מצב המשחק שבזיכרון. לוגים תפעוליים עשויים להישמר לצורכי אבטחה ואבחון ולכלול מזהי שחקן בדויים ומטא־דאטה של דיווחים. תוצאת אימות הרכישות נשמרת בזיכרון השרת לצד ה־session בלבד ונמחקת איתו. דיווח נשמר בלוג יחד עם הרמז והכינוי שדווחו, כדי שאפשר יהיה לבדוק אותו.",
+  "privacy7Title": "7. שירותים חיצוניים",
+  "privacy7": "השרת מתארח ב־Google Cloud Platform (Cloud Run, אזור us-central1), וגוגל מעבדת מידע טכני הנדרש להעברת התעבורה ולשמירת הלוגים התפעוליים, כמעבדת מידע מטעמנו ובכפוף להתחייבויות אבטחה ופרטיות ברמה זהה או טובה יותר מזו שמתוארת כאן. התשלומים מתבצעים ב־App Store של Apple וב־Google Play, לפי מדיניות הפרטיות שלהם. למי שאין לו פרימיום מוצגות פרסומות של Google AdMob. AdMob עשויה לאסוף מזהי מכשיר ומזהה פרסום, כתובת IP, מידע על אינטראקציה עם מודעות, מידע אבחון וביצועים, לצורך הצגת מודעות, מדידתן ומניעת הונאה, לפי מדיניות הפרסום של Google (policies.google.com/technologies/ads). במקומות שבהם הדין מחייב, ובהם האיחוד האירופי ובריטניה, מתבקשת הסכמתכם לפני פרסום מותאם אישית; ב־iPhone לא נעשה שימוש במזהה הפרסום ללא הרשאתכם. כדי לאתר ולתקן תקלות, כשהאפליקציה קורסת או נתקלת בשגיאה היא שולחת דוח ל־Firebase Crashlytics של Google: פרטי השגיאה ומיקומה בקוד, דגם המכשיר, מערכת ההפעלה, גרסת האפליקציה ומזהה התקנה אקראי של Crashlytics. הדוח אינו כולל כינוי, רמזים או מזהה פרסום, והוא נשמר עד 90 יום. אין מכירת מידע אישי, ואין SDK צד שלישי ל־analytics.",
+  "privacy8Title": "8. ילדים ופרטים אישיים",
+  "privacy8": "המשחק אינו מבקש שם אמיתי או פרטי קשר. אין לכתוב בכינוי או ברמז מידע אישי שלכם או של אחרים. המשחק מיועד לבני 13 ומעלה ואינו מיועד לילדים. איננו אוספים ביודעין מידע מילדים מתחת לגיל 13, ואם ייוודע לנו על כך נמחק את המידע הקשור אליהם. המודעות מוגבלות לתוכן בדירוג שמתאים לקהל רחב.",
+  "privacy9Title": "9. בחירה ושליטה",
+  "privacy9": "אפשר לשנות כינוי ואווטאר, לכבות רטט או תגובות, לדווח על שחקן ולנקות את רשימת השחקנים שהוסתרו. מחיקת נתוני האפליקציה מסירה את המידע המקומי. מאחר שאין חשבון קבוע, אין מנגנון שחזור של נתונים מקומיים. אפשר גם לשנות את העדפות הפרטיות לפרסומות בהגדרות, כשהדין מחייב, לסרב להרשאת מעקב ב־iPhone או לאפס את מזהה הפרסום בהגדרות המכשיר. פרימיום מסיר את כל הפרסומות.",
+  "privacy10Title": "10. הזכויות שלכם",
+  "privacy10": "לפי חוק הגנת הפרטיות התשמ״א־1981 ותיקון 13 לו, ובמקומות שבהם חל ה־GDPR, יש לכם זכות לעיין במידע שנשמר עליכם, לבקש את תיקונו, למחוק אותו, להגביל או להתנגד לעיבודו ולקבלו בפורמט נגיש. מאחר שאין חשבון, נדרש מזהה השחקן או ה־session שמופיע במסך ההגדרות כדי לאתר מידע שקשור אליכם. לבקשה כתבו ל־imposteril36@gmail.com; נענה בתוך 30 יום. מרבית המידע נמחק ממילא מאליו — מצב המשחק בסיום המשחק, session לאחר 24 שעות והלוגים לאחר 30 יום.",
+  "privacy11Title": "11. אבטחה",
+  "privacy11": "התעבורה בגרסאות הפצה נועדה לעבור בחיבור מוצפן. השרת מפעיל מגבלות קצב, מגבלות גודל הודעה וסינון תוכן כדי להפחית שימוש לרעה. אין מערכת שיכולה להבטיח אבטחה מוחלטת.",
+  "privacy12Title": "12. שינויים במדיניות",
+  "privacy12": "שינוי מהותי במדיניות יקבל גרסה חדשה. כאשר נדרשת הסכמה מחודשת, האפליקציה תציג את הגרסה החדשה לפני המשך המשחק.",
+  "privacy13Title": "13. יצירת קשר",
+  "privacy13": "Imposter IL · imposteril36@gmail.com\nלפניות בנושא פרטיות, בקשות למימוש זכויות ודיווח על תוכן פוגעני. נשתדל להשיב בתוך 30 יום.",
+  "legalPublicCopy": "עותק ציבורי: {value}",
+  "@legalPublicCopy": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "errNotRoomHost": "רק מנהל החדר יכול לבצע את הפעולה הזאת.",
+  "errNotEnoughPlayers": "צריך לפחות 4 שחקנים כדי להתחיל.",
+  "errContentUnavailable": "אי אפשר להתחיל משחק כרגע. נסו שוב בעוד רגע.",
+  "errRoomInGame": "כבר מתנהל משחק בחדר הזה.",
+  "errWrongPhase": "השלב הזה כבר הסתיים.",
+  "errNotYourTurn": "זה לא התור שלכם.",
+  "errHintEmpty": "כתבו רמז לפני השליחה.",
+  "errHintNotOneWord": "אפשר לשלוח מילה אחת בלבד.",
+  "errHintTooLong": "הרמז יכול להכיל עד 25 תווים.",
+  "errHintInappropriate": "הרמז הזה לא מתאים. נסו מילה אחרת.",
+  "errHintContainsSecret": "הרמז מכיל את המילה הסודית. בחרו מילה אחרת.",
+  "errHintDuplicate": "הרמז הזה כבר נשלח במשחק. בחרו מילה אחרת.",
+  "errSelfVote": "אי אפשר להצביע לעצמכם.",
+  "errInvalidVoteTarget": "אי אפשר להצביע לשחקן הזה.",
+  "errNetwork": "אין חיבור לשרת. בדקו את החיבור ונסו שוב.",
+  "errCategoryLockedRoom": "אחת הקטגוריות כבר לא פתוחה. קטגוריה שנפתחה בצפייה במודעה פתוחה למשחק אחד בלבד. אפשר לחדש את הפרימיום, לשחזר רכישות או ליצור חדר חדש.",
+  "errGeneric": "משהו השתבש. נסו שוב בעוד רגע.",
+  "leaveGameTitle": "לצאת מהמשחק?",
+  "leaveGameBody": "יציאה באמצע המשחק נרשמת כהפסד.",
+  "leave": "יציאה",
+  "stillCantConnect": "עדיין אי אפשר להתחבר. נסו שוב בעוד רגע.",
+  "kickedByHost": "מנהל החדר הסיר אתכם מהחדר.",
+  "reconnecting": "מתחברים מחדש...",
+  "connectionLostOnTurn": "החיבור אבד בזמן התור שלכם. ננסה להחזיר אתכם למשחק במשך 30 שניות.",
+  "connectionLost": "החיבור אבד. ננסה להחזיר אתכם למשחק במשך 30 שניות.",
+  "disconnectFinalWarning": "אם לא תחזרו בתוך 30 שניות, זה ייספר כניתוק 3 מתוך 3 ותוצאו מהמשחק.",
+  "disconnectWarning": "אם לא תחזרו בתוך 30 שניות, זה ייספר כניתוק {disconnectNumber} מתוך 3.",
+  "@disconnectWarning": {
+    "placeholders": {
+      "disconnectNumber": {
+        "type": "Object"
+      }
+    }
+  },
+  "turnTimerRunning": " הזמן בתור ממשיך לרוץ.",
+  "leaveGameButton": "יציאה מהמשחק",
+  "disconnectCount": "ניתוק {disconnectNumber} מתוך 3",
+  "@disconnectCount": {
+    "placeholders": {
+      "disconnectNumber": {
+        "type": "Object"
+      }
+    }
+  },
+  "groupReady": "הקבוצה מוכנה!",
+  "gameStartingSoon": "המשחק מתחיל בעוד רגע.",
+  "enoughPlayers": "יש מספיק שחקנים!",
+  "waitingForMore": "מחכים כמה שניות לשחקנים נוספים ומתחילים כשהזמן מסתיים.",
+  "oneMorePlayer": "עוד שחקן אחד כדי להתחיל",
+  "stillSearching": "ממשיכים לחפש שחקנים מתאימים בקטגוריות שבחרתם.",
+  "morePlayersNeeded": "עוד {missing} שחקנים כדי להתחיל",
+  "@morePlayersNeeded": {
+    "placeholders": {
+      "missing": {
+        "type": "Object"
+      }
+    }
+  },
+  "searchingPlayers": "מחפשים שחקנים",
+  "buildingGroup": "מרכיבים קבוצת שחקנים",
+  "cancelSearch": "ביטול חיפוש",
+  "yourGroup": "הקבוצה שלך",
+  "countOfMax": "{count} מתוך {maxPlayers}",
+  "@countOfMax": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "maxPlayers": {
+        "type": "Object"
+      }
+    }
+  },
+  "dontLeavePage": "נא לא לעזוב עמוד זה.",
+  "you": "אתם",
+  "searchingPlayer": "מחפשים שחקן...",
+  "noMatchTitle": "לא נמצא משחק בקטגוריות שבחרתם",
+  "noMatchBody": "אפשר לנסות שוב עם אותן קטגוריות, או לבחור קטגוריות אחרות.",
+  "tryAgain": "ניסיון נוסף",
+  "chooseOtherCategories": "בחירת קטגוריות אחרות",
+  "privateRoom": "חדר פרטי",
+  "roomOf": "החדר של {hostNickname}",
+  "@roomOf": {
+    "placeholders": {
+      "hostNickname": {
+        "type": "Object"
+      }
+    }
+  },
+  "startGame": "התחלת משחק",
+  "onlyHostCanStart": "רק מנהל החדר יכול להתחיל",
+  "roomCode": "קוד החדר",
+  "shareCode": "שיתוף הקוד",
+  "shareInvite": "בואו לשחק איתי ב״מי המתחזה?״\nקוד החדר: {code}\n{value}",
+  "@shareInvite": {
+    "placeholders": {
+      "code": {
+        "type": "Object"
+      },
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "copyCode": "העתקת הקוד",
+  "codeCopied": "קוד החדר הועתק",
+  "hostDisconnected": "מנהל החדר התנתק. ממתינים שיחזור.",
+  "waitingForNewHost": "מחכים ששחקן נוסף יתחבר ויקבל את ניהול החדר.",
+  "hostTransferredToYou": "מנהל החדר לא חזר בזמן. הניהול עבר אליכם.",
+  "hostTransferredTo": "הניהול עבר ל־{hostNickname}.",
+  "@hostTransferredTo": {
+    "placeholders": {
+      "hostNickname": {
+        "type": "Object"
+      }
+    }
+  },
+  "playersOfMax": "{playersLength} מתוך {maxPlayers} שחקנים",
+  "@playersOfMax": {
+    "placeholders": {
+      "playersLength": {
+        "type": "Object"
+      },
+      "maxPlayers": {
+        "type": "Object"
+      }
+    }
+  },
+  "needFourPlayers": "צריך לפחות 4 שחקנים כדי להתחיל",
+  "roomHost": "מנהל החדר",
+  "disconnected": "מנותק",
+  "removePlayer": "הסרת {pNickname}",
+  "@removePlayer": {
+    "placeholders": {
+      "pNickname": {
+        "type": "Object"
+      }
+    }
+  },
+  "categoriesList": "קטגוריות: {categoryNames}",
+  "@categoriesList": {
+    "placeholders": {
+      "categoryNames": {
+        "type": "Object"
+      }
+    }
+  },
+  "secondsPerHint": "{hintSeconds} שניות לרמז",
+  "@secondsPerHint": {
+    "placeholders": {
+      "hintSeconds": {
+        "type": "Object"
+      }
+    }
+  },
+  "settingsLockedSinceJoin": "ההגדרות נעולות מאז שהצטרפו שחקנים",
+  "waitingForOthers": "ממתינים לשאר השחקנים",
+  "gotIt": "הבנתי",
+  "youAreImpostor": "את/ה המתחזה",
+  "youAreCitizen": "את/ה אזרח/ית",
+  "impostorDoesntKnow": "המתחזה לא יודע את המילה הסודית. שמרו עליה בסוד.",
+  "impostorTip1": "הקשיבו לרמזים של האחרים ונסו להשתלב.",
+  "impostorTip2": "אם תיתפסו — תקבלו הזדמנות אחת לנחש את המילה ולנצח.",
+  "citizenTip1": "בתורכם, כתבו רמז של מילה אחת שמתאים למילה הסודית.",
+  "citizenTip2": "רמז ברור מדי יעזור למתחזה. רמז דק מדי יעורר חשד.",
+  "nextRoundContinues": "ממשיכים לסבב הבא",
+  "continuingToRound": "ממשיכים לסיבוב {value}",
+  "@continuingToRound": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "tieAgain": "שוב יש תיקו",
+  "votesSplitAgain": "גם הפעם הקולות התחלקו שווה בשווה",
+  "noOneEliminatedNextRound": "איש לא הודח. ממשיכים לסבב רמזים נוסף.",
+  "oneVote": "קול אחד",
+  "nVotes": "{n} קולות",
+  "@nVotes": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "loading": "טוענים…",
+  "wasCitizen": "{outNickname} היה/הייתה אזרח/ית",
+  "@wasCitizen": {
+    "placeholders": {
+      "outNickname": {
+        "type": "Object"
+      }
+    }
+  },
+  "decideImpostor": "זה הזמן להחליט מי המתחזה",
+  "youEliminatedSpectator": "הודחת · צופה",
+  "eliminatedSpectator": "הודח/ה · צופה",
+  "leftGame": "יצא/ה מהמשחק",
+  "disconnectedWaiting": "מנותק · ממתינים 30 שניות",
+  "writingHint": "כותב/ת רמז",
+  "waitingTurn": "ממתין/ה לתור",
+  "oneHint": "1 רמז",
+  "nHints": "{said} רמזים",
+  "@nHints": {
+    "placeholders": {
+      "said": {
+        "type": "Object"
+      }
+    }
+  },
+  "noHintSent": "לא נשלח רמז",
+  "hidden": "הוסתר",
+  "category": "קטגוריה",
+  "roundTurnOf": "סיבוב {round} · תור {turn} מתוך {playingLength}",
+  "@roundTurnOf": {
+    "placeholders": {
+      "round": {
+        "type": "Object"
+      },
+      "turn": {
+        "type": "Object"
+      },
+      "playingLength": {
+        "type": "Object"
+      }
+    }
+  },
+  "roundHints": "הרמזים בסיבוב",
+  "playerWriting": "{currentNickname} כותב/ת עכשיו. אפשר להמשיך להגיב למטה.",
+  "@playerWriting": {
+    "placeholders": {
+      "currentNickname": {
+        "type": "Object"
+      }
+    }
+  },
+  "playerMe": "{playerNickname} · אני",
+  "@playerMe": {
+    "placeholders": {
+      "playerNickname": {
+        "type": "Object"
+      }
+    }
+  },
+  "yourHintOneWord": "הרמז שלך · מילה אחת",
+  "yourHint": "הרמז שלכם",
+  "hintNotSent": "{error} הרמז לא נשלח.",
+  "@hintNotSent": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "sendHint": "שליחת רמז",
+  "send": "שליחה",
+  "showMyWord": "הצגת המילה שלי",
+  "myWord": "המילה שלי",
+  "close": "סגירה",
+  "categoryIs": "קטגוריה: {category}",
+  "@categoryIs": {
+    "placeholders": {
+      "category": {
+        "type": "Object"
+      }
+    }
+  },
+  "roundN": "סיבוב {first}",
+  "@roundN": {
+    "placeholders": {
+      "first": {
+        "type": "Object"
+      }
+    }
+  },
+  "roundsRange": "סיבובים {first}–{last}",
+  "@roundsRange": {
+    "placeholders": {
+      "first": {
+        "type": "Object"
+      },
+      "last": {
+        "type": "Object"
+      }
+    }
+  },
+  "hintsOf": "הרמזים של {playerNickname}",
+  "@hintsOf": {
+    "placeholders": {
+      "playerNickname": {
+        "type": "Object"
+      }
+    }
+  },
+  "noHintsYet": "עוד לא נשלחו רמזים.",
+  "reportHint": "דיווח על הרמז",
+  "playerDisconnectedTurn": "{nickname} התנתק. ממתינים לו עד 30 שניות — אחר כך התור שלו ידולג.",
+  "@playerDisconnectedTurn": {
+    "placeholders": {
+      "nickname": {
+        "type": "Object"
+      }
+    }
+  },
+  "reactions": "תגובות",
+  "swipeForReactions": "גררו לצדדים לעוד תגובות ↔",
+  "revote": "הצבעה חוזרת",
+  "voteReceived": "ההצבעה נקלטה",
+  "confirmVote": "אישור הצבעה",
+  "choosePlayer": "בחרו שחקן אחד. אפשר לשנות את הבחירה עד שהזמן נגמר.",
+  "tieRevoteExplain": "היה תיקו. מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף — איש לא מודח והמשחק ממשיך לסבב נוסף.",
+  "cantVoteSelf": "אי אפשר להצביע לעצמכם",
+  "oneVotePrevious": "קול אחד בסבב הקודם",
+  "nVotesPrevious": "{votes} קולות בסבב הקודם",
+  "@nVotesPrevious": {
+    "placeholders": {
+      "votes": {
+        "type": "Object"
+      }
+    }
+  },
+  "youWereCaught": "נתפסתם",
+  "sendGuess": "שליחת ניחוש",
+  "stillCanWin": "עוד אפשר לנצח",
+  "impostorGuessing": "המתחזה נתפס ועכשיו הוא מנסה לנחש את המילה.",
+  "guessWinsExplain": "ניחוש נכון של המילה הסודית מעניק לכם את הניצחון. יש לכם ניסיון אחד.",
+  "othersHints": "הרמזים של שאר השחקנים",
+  "whatsTheWord": "מה המילה?",
+  "guessHidden": "הניחוש לא מוצג לשחקנים בזמן ההקלדה",
+  "guessFailExplain": "אם הזמן ייגמר או שהניחוש יהיה שגוי — האזרחים מנצחים.",
+  "reasonCitizenVoted": "ההצבעה סימנה אזרח, והמתחזה נשאר במשחק.",
+  "reasonParity": "נשארו אזרח אחד ומתחזה — ובשלב הזה המתחזה מנצח מיד.",
+  "reasonGuessed": "המתחזה נתפס, אבל הצליח לנחש את המילה.",
+  "reasonWrongGuess": "המתחזה נתפס ולא הצליח לנחש את המילה.",
+  "reasonGuessTimeout": "המתחזה נתפס, אבל הזמן לניחוש נגמר.",
+  "reasonImpostorLeft": "המתחזה עזב את המשחק.",
+  "reasonNotEnoughPlayers": "נשארו פחות משלושה שחקנים, ולכן המשחק הופסק.",
+  "reasonAbandoned": "שני סבבי הצבעה עברו בלי אף הצבעה, ולכן המשחק בוטל. הוא לא נספר לאף אחד — לא כניצחון ולא כהפסד.",
+  "gameCancelled": "המשחק בוטל",
+  "citizensWon": "האזרחים ניצחו!",
+  "impostorWon": "המתחזה ניצח!",
+  "gameStopped": "המשחק הופסק",
+  "impostorWas": "המתחזה היה",
+  "winRecorded": "נרשם לכם ניצחון",
+  "lossRecorded": "נרשם לכם הפסד",
+  "abstained": "נמנעו",
+  "youLeftGame": "יצאתם מהמשחק",
+  "removedThirdDisconnect": "התנתקתם שלוש פעמים במשחק הזה, ולכן שאר השחקנים ממשיכים בלעדיכם.",
+  "backToHome": "חזרה למסך הבית",
+  "reportHintTitle": "לדווח על הרמז?",
+  "reportHintBody": "הרמז יישלח לבדיקה ונטפל בו בתוך 24 שעות. לא תראו יותר רמזים של {nickname} במכשיר הזה.",
+  "@reportHintBody": {
+    "placeholders": {
+      "nickname": {
+        "type": "Object"
+      }
+    }
+  },
+  "cancel": "ביטול",
+  "report": "דיווח",
+  "reportThanks": "תודה, הדיווח התקבל ויטופל. הרמזים של השחקן יוסתרו במכשיר שלכם.",
+  "reportNotSent": "הרמזים האלה יוסתרו, אבל הדיווח לא נשלח. {value}",
+  "@reportNotSent": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "whoAreYou": "מי אתם במשחק?",
+  "onboardingSubtitle": "בוחרים כינוי ואווטאר ומתחילים. בלי הרשמה.",
+  "continueLabel": "ממשיכים",
+  "connecting": "מתחברים...",
+  "editDetails": "עריכת פרטים",
+  "save": "שמירה",
+  "nicknameRule": "בחרו כינוי באורך 2–18 תווים, כולל ניקוד ואימוג׳י.",
+  "nicknameBlocked": "הכינוי הזה לא מתאים למשחק. בחרו כינוי אחר.",
+  "yourNickname": "הכינוי שלכם",
+  "nicknameExample": "למשל: דורון",
+  "nicknameLength": "2–{maxNicknameLength} תווים",
+  "@nicknameLength": {
+    "placeholders": {
+      "maxNicknameLength": {
+        "type": "Object"
+      }
+    }
+  },
+  "chooseAvatar": "בחירת אווטאר",
+  "avatarN": "דמות {value}",
+  "@avatarN": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "errAlreadyInActivity": "כבר הצטרפתם למשחק או לחדר אחר.",
+  "errCategoryLocked": "אחת הקטגוריות נעולה. אפשר לשחזר רכישות מחלון הפתיחה של הקטגוריה.",
+  "canPickSeveral": "אפשר לבחור כמה קטגוריות",
+  "all": "הכול",
+  "chooseCategories": "בחירת קטגוריות",
+  "searchingGame": "מחפשים משחק...",
+  "searchGame": "חפש משחק",
+  "loadingCategories": "טוענים את הקטגוריות...",
+  "allCategories": "כל הקטגוריות",
+  "allOpenCategories": "כל הקטגוריות הפתוחות",
+  "premium": "פרימיום",
+  "lockedTapToOpen": "{name} — נעולה, לחצו לפתיחה",
+  "@lockedTapToOpen": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "purchasedTag": "✓ נרכשה",
+  "playWithFriends": "משחק עם חברים",
+  "createRoom": "יצירת חדר",
+  "createRoomSubtitle": "בוחרים הגדרות, מקבלים קוד ומשתפים עם החברים.",
+  "joinRoom": "הצטרפות לחדר",
+  "joinRoomSubtitle": "יש לכם קוד בן שש ספרות? מזינים ונכנסים.",
+  "playersRange4to8": "המשחק מתאים ל־4 עד 8 שחקנים",
+  "creatingRoom": "יוצרים חדר...",
+  "settingsLockNotice": "לאחר יצירת החדר, לא יהיה ניתן לשנות את ההגדרות.",
+  "maxPlayers": "מספר שחקנים מרבי",
+  "timePerHint": "זמן לרמז",
+  "nSeconds": "{value} שניות",
+  "@nSeconds": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "categories": "קטגוריות",
+  "loadingCategoriesShort": "טוענים קטגוריות...",
+  "settingsLockAfterJoin": "אחרי ששחקן נוסף יצטרף, אי אפשר יהיה לשנות את ההגדרות.",
+  "roomCodeSixDigits": "קוד החדר צריך להיות בן שש ספרות",
+  "roomNotFound": "החדר לא נמצא או שאינו זמין. בדקו את הקוד עם מי שפתח את החדר.",
+  "roomFull": "החדר מלא או שהמשחק כבר התחיל.",
+  "alreadyInOtherGame": "כבר הצטרפתם למשחק אחר.",
+  "join": "הצטרפות",
+  "enterRoomCode": "הזינו את קוד החדר בן שש הספרות שקיבלתם.",
+  "delete": "מחיקה",
+  "myProfile": "הפרופיל שלי",
+  "editNicknameAvatar": "עריכת כינוי ואווטאר",
+  "wins": "ניצחונות",
+  "losses": "הפסדים",
+  "sounds": "צלילים",
+  "comingSoon": "בקרוב",
+  "vibration": "רטט",
+  "showReactions": "הצגת תגובות",
+  "language": "שפה",
+  "languageName": "עברית",
+  "versionN": "גרסה {legalVersion}",
+  "@versionN": {
+    "placeholders": {
+      "legalVersion": {
+        "type": "Object"
+      }
+    }
+  },
+  "manageSubscription": "ניהול המנוי",
+  "premiumMonthly": "פרימיום חודשי",
+  "adPrivacy": "העדפות פרטיות לפרסומות",
+  "appVersion": "מי המתחזה? · גרסה 1.0",
+  "contact": "יצירת קשר",
+  "reportedPlayers": "שחקנים שדיווחתם עליהם",
+  "hiddenPlayersCount": "{mutedLength} שחקנים מוסתרים",
+  "@hiddenPlayersCount": {
+    "placeholders": {
+      "mutedLength": {
+        "type": "Object"
+      }
+    }
+  },
+  "clear": "ניקוי",
+  "purchasesRestored": "הרכישות שוחזרו.",
+  "noPurchasesFound": "לא נמצאו רכישות קודמות בחשבון החנות הזה.",
+  "restoreFailed": "השחזור לא הושלם. בדקו את החיבור לאינטרנט ונסו שוב.",
+  "restoringPurchases": "משחזרים רכישות…",
+  "restorePurchases": "שחזור רכישות",
+  "howStep1": "כולם מקבלים את אותה מילה סודית — חוץ מהמתחזה, שרואה רק את הקטגוריה.",
+  "howStep2": "כל שחקן כותב בתורו רמז של מילה אחת. לכל תור יש 60 שניות.",
+  "howStep4": "אפשר להגיב לרמזים באמצעות אימוג׳ים והודעות מוכנות.",
+  "howStep5": "בסוף הסבב מצביעים מי המתחזה. יש 20 שניות להצביע.",
+  "howStep6": "אם המתחזה נתפס, יש לו 60 שניות לנחש את המילה ולנצח בכל זאת.",
+  "updateNeeded": "צריך לעדכן",
+  "newVersion": "יש גרסה חדשה של המשחק",
+  "versionUnsupported": "הגרסה שמותקנת אצלכם כבר לא נתמכת.\nעדכנו את האפליקציה בחנות כדי להמשיך לשחק.",
+  "somethingWrong": "משהו השתבש",
+  "serverFaultStopped": "המשחק הופסק בגלל תקלה בחיבור לשרת. זו לא אשמתכם.",
+  "serverUnavailable": "השרת לא זמין כרגע. נסו שוב בעוד רגע.",
+  "noLossRecorded": "לא נרשם לכם הפסד",
+  "localDeleteWarning": "המשחק הנוכחי יימחק ולא יהיה אפשר להמשיך אותו.",
+  "leaveAndDelete": "יציאה ומחיקה",
+  "iAmVote": "אני {currentName} — להצבעה",
+  "@iAmVote": {
+    "placeholders": {
+      "currentName": {
+        "type": "Object"
+      }
+    }
+  },
+  "iAmShow": "אני {currentName} — הציגו לי",
+  "@iAmShow": {
+    "placeholders": {
+      "currentName": {
+        "type": "Object"
+      }
+    }
+  },
+  "votedOf": "הצביעו {done} מתוך {activePlayersLength}",
+  "@votedOf": {
+    "placeholders": {
+      "done": {
+        "type": "Object"
+      },
+      "activePlayersLength": {
+        "type": "Object"
+      }
+    }
+  },
+  "passDeviceTo": "העבירו את המכשיר ל{currentName}",
+  "@passDeviceTo": {
+    "placeholders": {
+      "currentName": {
+        "type": "Object"
+      }
+    }
+  },
+  "noOneElseLooking": "אף אחד אחר לא מסתכל על המסך.",
+  "onlyPlayerLooking": "רק {currentName} מסתכל/ת על המסך.",
+  "@onlyPlayerLooking": {
+    "placeholders": {
+      "currentName": {
+        "type": "Object"
+      }
+    }
+  },
+  "gotItHide": "הבנתי — הסתירו",
+  "localImpostorTip": "הקשיבו לרמזים, השתלבו ונסו לגלות את המילה.",
+  "localCitizenTip": "בתור שלכם אומרים בקול רמז של מילה אחת.",
+  "startRound1": "מתחילים סיבוב 1",
+  "startRoundN": "התחלת סיבוב {round}",
+  "@startRoundN": {
+    "placeholders": {
+      "round": {
+        "type": "Object"
+      }
+    }
+  },
+  "everyoneKnowsRoles": "כולם יודעים מי הם",
+  "anotherRound": "סיבוב נוסף",
+  "placeDevice": "מניחים את המכשיר במקום שכולם רואים.",
+  "impostorStillAmong": "המתחזה עדיין ביניכם. סדר התורות הוגרל מחדש.",
+  "turnOrderThisRound": "סדר התורות בסיבוב זה",
+  "startsFirst": "מתחיל/ה",
+  "spectator": "צופה",
+  "hintRuleLocal": "רמז של מילה אחת, בלי לחזור על רמז קודם ובלי לומר את המילה עצמה.",
+  "roundCategory": "סיבוב {round} · {category}",
+  "@roundCategory": {
+    "placeholders": {
+      "round": {
+        "type": "Object"
+      },
+      "category": {
+        "type": "Object"
+      }
+    }
+  },
+  "hintSaid": "הרמז נאמר",
+  "turnOf": "התור של {speakerName}",
+  "@turnOf": {
+    "placeholders": {
+      "speakerName": {
+        "type": "Object"
+      }
+    }
+  },
+  "sayHintAloud": "אומרים בקול רמז של מילה אחת",
+  "turnOrder": "סדר התורות",
+  "now": "עכשיו",
+  "nextUp": "הבא בתור",
+  "noHintSaid": "לא נאמר רמז",
+  "said": "אמר/ה",
+  "waiting": "ממתין/ה",
+  "hintsSpokenAloud": "הרמזים נאמרים בקול — אין הקלדה ואין לוח רמזים.",
+  "passDeviceVote": "מעבירים את המכשיר בין השחקנים. אל תגלו למי הצבעתם.",
+  "tie": "יש תיקו",
+  "tieCandidates": "{tieCandidatesLength} מועמדים קיבלו {tiedVotes} קולות",
+  "@tieCandidates": {
+    "placeholders": {
+      "tieCandidatesLength": {
+        "type": "Object"
+      },
+      "tiedVotes": {
+        "type": "Object"
+      }
+    }
+  },
+  "startRevote": "מתחילים הצבעה חוזרת",
+  "thenPassNext": "אחר כך מעבירים את המכשיר לשחקן הבא",
+  "youreCaught": "{impostorName}, נתפסת",
+  "@youreCaught": {
+    "placeholders": {
+      "impostorName": {
+        "type": "Object"
+      }
+    }
+  },
+  "guessWinsLocal": "ניחוש נכון של המילה הסודית מעניק לך את הניצחון. יש ניסיון אחד.",
+  "onlyPlayerLookingNoDot": "רק {impostorName} מסתכל/ת על המסך",
+  "@onlyPlayerLookingNoDot": {
+    "placeholders": {
+      "impostorName": {
+        "type": "Object"
+      }
+    }
+  },
+  "localReasonGuessed": "המתחזה נתפס וניחש נכון את המילה.",
+  "localReasonMissed": "המתחזה נתפס ולא ניחש את המילה.",
+  "theImpostor": "המתחזה",
+  "howItEnded": "איך זה נגמר",
+  "whoWasEliminated": "מי הודח במהלך המשחק",
+  "localNoStats": "משחק במכשיר אחד אינו משנה את הסטטיסטיקה בפרופיל.",
+  "playerRound": "{playerName} · סיבוב {round}",
+  "@playerRound": {
+    "placeholders": {
+      "playerName": {
+        "type": "Object"
+      },
+      "round": {
+        "type": "Object"
+      }
+    }
+  },
+  "hiddenNextPlayer": "הסתרתי — לשחקן הבא",
+  "voteSaved": "ההצבעה נשמרה",
+  "choiceHidden": "הבחירה הוסתרה מהמסך. אף אחד לא יראה למי הצבעת.",
+  "votingAgainSecret": "{meName} מצביע/ה שוב · הבחירה תישאר סודית",
+  "@votingAgainSecret": {
+    "placeholders": {
+      "meName": {
+        "type": "Object"
+      }
+    }
+  },
+  "votingSecret": "{meName} מצביע/ה · הבחירה תישאר סודית",
+  "@votingSecret": {
+    "placeholders": {
+      "meName": {
+        "type": "Object"
+      }
+    }
+  },
+  "ifTieAgain": "אם גם עכשיו יהיה תיקו — אף אחד לא יודח ומתחיל סיבוב רמזים חדש.",
+  "screenClearsNext": "אחרי האישור המסך יתנקה לפני ההעברה לשחקן הבא.",
+  "playerN": "שחקן {seat}",
+  "@playerN": {
+    "placeholders": {
+      "seat": {
+        "type": "Object"
+      }
+    }
+  },
+  "everyPlayerNeedsName": "לכל שחקן צריך להיות שם",
+  "namesMustDiffer": "לכל שחקן צריך להיות שם שונה",
+  "continueToSettings": "המשך להגדרות",
+  "whoIsPlaying": "מי משחק?",
+  "oneDevicePassed": "מכשיר אחד עובר בין כולם. הרמזים נאמרים בקול.",
+  "tapAvatarToChange": "לחיצה על אווטאר מחליפה אותו באחד שלא בשימוש.",
+  "fewerPlayers": "פחות שחקנים",
+  "nPlayers": "{count} שחקנים",
+  "@nPlayers": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "morePlayers": "עוד שחקנים",
+  "gameSettings": "הגדרות המשחק",
+  "start": "מתחילים",
+  "timeForEachHint": "זמן לכל רמז",
+  "noTimer": "ללא טיימר",
+  "summary": "סיכום",
+  "players": "שחקנים",
+  "impostors": "מתחזים",
+  "oneImpostor": "מתחזה אחד",
+  "voting": "הצבעה",
+  "privateVoteOnDevice": "הצבעה פרטית במכשיר",
+  "onlineChoiceSubtitle": "שני מצבים, אותו משחק. אפשר להצטרף לשחקנים אחרים או לפתוח חדר לחברים.",
+  "quickGame": "משחק מהיר",
+  "quickGameSubtitle": "בוחרים קטגוריות ומצטרפים לשחקנים ברשת.",
+  "players4to8": "4–8 שחקנים",
+  "privateRoomSubtitle": "יוצרים חדר ושולחים קוד, או מצטרפים לחדר קיים.",
+  "youDecideStart": "אתם קובעים מתי מתחילים",
+  "adLabel": "פרסומת",
+  "adFailed": "לא הצלחנו להציג מודעה עד הסוף, ולכן ״{widgetName}״ לא נפתחה. אפשר לנסות שוב מאוחר יותר או לבחור אפשרות אחרת.",
+  "@adFailed": {
+    "placeholders": {
+      "widgetName": {
+        "type": "Object"
+      }
+    }
+  },
+  "purchasesUnavailableLater": "הרכישות אינן זמינות כרגע. אנא נסו שוב מאוחר יותר.",
+  "pricesFailed": "לא הצלחנו לטעון את המחירים מהחנות. בדקו את החיבור לאינטרנט ונסו שוב.",
+  "purchaseCancelled": "הרכישה בוטלה. לא בוצע חיוב.",
+  "purchaseFailed": "הרכישה לא הושלמה ולא בוצע חיוב. בדקו את החיבור לאינטרנט ונסו שוב.",
+  "purchasePending": "הרכישה ממתינה לאישור. ״{widgetName}״ תיפתח ברגע שהתשלום יאושר.",
+  "@purchasePending": {
+    "placeholders": {
+      "widgetName": {
+        "type": "Object"
+      }
+    }
+  },
+  "restoredOther": "הרכישות שוחזרו, אבל ״{widgetName}״ לא נמצאה ביניהן.",
+  "@restoredOther": {
+    "placeholders": {
+      "widgetName": {
+        "type": "Object"
+      }
+    }
+  },
+  "purchasesUnavailableRestore": "הרכישות אינן זמינות כרגע. אפשר לשחזר רכישות קודמות.",
+  "categoryLockedTitle": "״{widgetName}״ נעולה",
+  "@categoryLockedTitle": {
+    "placeholders": {
+      "widgetName": {
+        "type": "Object"
+      }
+    }
+  },
+  "chooseHowToUnlock": "בחרו איך לפתוח אותה",
+  "perMonth": "לחודש",
+  "oneTimePayment": "תשלום אחד",
+  "watchAd": "צפייה במודעה",
+  "adUnlocksNextGame": "פותחת את ״{widgetName}״ למשחק הבא בלבד",
+  "@adUnlocksNextGame": {
+    "placeholders": {
+      "widgetName": {
+        "type": "Object"
+      }
+    }
+  },
+  "watchAgainIn": "אפשר לצפות שוב בעוד {value}",
+  "@watchAgainIn": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "free": "חינם",
+  "oneGame": "משחק אחד",
+  "durationHours": "{h} שע׳",
+  "@durationHours": {
+    "placeholders": {
+      "h": {
+        "type": "Object"
+      }
+    }
+  },
+  "durationMinutes": "{min} דק׳",
+  "@durationMinutes": {
+    "placeholders": {
+      "min": {
+        "type": "Object"
+      }
+    }
+  },
+  "durationAnd": " ו־",
+  "premiumLifetime": "פרימיום לכל החיים",
+  "onlyCategory": "רק ״{widgetName}״",
+  "@onlyCategory": {
+    "placeholders": {
+      "widgetName": {
+        "type": "Object"
+      }
+    }
+  },
+  "premiumMonthlyDesc": "כל הקטגוריות ותכונות הפרימיום, בלי פרסומות — כל עוד המנוי פעיל",
+  "premiumLifetimeDesc": "כל הקטגוריות, גם אלה שיתווספו בעתיד, ותכונות הפרימיום. בלי פרסומות לתמיד",
+  "categoryForeverDesc": "פתוחה לתמיד · הפרסומות נשארות",
+  "purchasesRestoredTitle": "הרכישות שוחזרו",
+  "categoryOpenAgain": "״{widgetName}״ פתוחה שוב במכשיר הזה.",
+  "@categoryOpenAgain": {
+    "placeholders": {
+      "widgetName": {
+        "type": "Object"
+      }
+    }
+  },
+  "categoryOpenNextGame": "״{widgetName}״ פתוחה למשחק הבא",
+  "@categoryOpenNextGame": {
+    "placeholders": {
+      "widgetName": {
+        "type": "Object"
+      }
+    }
+  },
+  "thanksForWatching": "תודה שצפיתם. אחרי המשחק הבא הקטגוריה תינעל שוב.",
+  "welcomePremium": "ברוכים הבאים לפרימיום",
+  "monthlyActive": "המנוי החודשי פעיל. אפשר לנהל או לבטל אותו בהגדרות המנויים בחנות.",
+  "lifetimeWithMonthly": "הכול פתוח לתמיד — כולל קטגוריות שיתווספו בעתיד. המנוי החודשי שלכם עדיין פעיל; אפשר לבטל אותו בהגדרות המנויים בחנות.",
+  "lifetimeUnlocked": "הכול פתוח לתמיד — כולל קטגוריות שיתווספו בעתיד.",
+  "categoryUnlocked": "״{widgetName}״ נפתחה!",
+  "@categoryUnlocked": {
+    "placeholders": {
+      "widgetName": {
+        "type": "Object"
+      }
+    }
+  },
+  "categoryYoursForever": "הקטגוריה שלכם לתמיד. הפרסומות ממשיכות להופיע.",
+  "allCategoriesOpen": "כל הקטגוריות פתוחות",
+  "premiumFeaturesActive": "תכונות הפרימיום פעילות",
+  "noBannersNoAds": "בלי באנרים ובלי מודעות במסך מלא",
+  "startPlaying": "מתחילים לשחק",
+  "chooseCategoryN": "בוחרים ב״{widgetName}״",
+  "@chooseCategoryN": {
+    "placeholders": {
+      "widgetName": {
+        "type": "Object"
+      }
+    }
+  },
+  "loadingAd": "טוענים מודעה…",
+  "adDisclosure": "״{widgetName}״ תיפתח אחרי צפייה מלאה במודעה, למשחק הבא בלבד. אפשר לפתוח כך קטגוריה פעם בארבע שעות.",
+  "@adDisclosure": {
+    "placeholders": {
+      "widgetName": {
+        "type": "Object"
+      }
+    }
+  },
+  "loadingPrices": "טוענים מחירים…",
+  "connectingStore": "מתחברים לחנות…",
+  "pricesInStoreCurrency": "המחירים מוצגים במטבע של חשבון החנות שלכם.",
+  "continueInStore": "ממשיכים בחלון התשלום של החנות. אין לסגור את האפליקציה.",
+  "subscriptionDisclosure": "המנוי מתחדש אוטומטית ב־{p} בכל חודש עד לביטול. אפשר לבטל בכל עת בהגדרות המנויים בחנות, לפחות 24 שעות לפני מועד החידוש.",
+  "@subscriptionDisclosure": {
+    "placeholders": {
+      "p": {
+        "type": "Object"
+      }
+    }
+  },
+  "categoryPurchaseDisclosure": "תשלום אחד של {p} דרך החנות. ״{widgetName}״ נשארת פתוחה לתמיד; הפרסומות ממשיכות להופיע.",
+  "@categoryPurchaseDisclosure": {
+    "placeholders": {
+      "p": {
+        "type": "Object"
+      },
+      "widgetName": {
+        "type": "Object"
+      }
+    }
+  },
+  "premiumPurchaseDisclosure": "תשלום אחד של {p} דרך החנות. בלי מנוי ובלי חיובים נוספים.",
+  "@premiumPurchaseDisclosure": {
+    "placeholders": {
+      "p": {
+        "type": "Object"
+      }
+    }
+  },
+  "joinPremium": "הצטרפות לפרימיום",
+  "buyPrice": "קנייה · {p}",
+  "@buyPrice": {
+    "placeholders": {
+      "p": {
+        "type": "Object"
+      }
+    }
+  },
+  "playerEliminated": "{eliminatedName} הודח/ה",
+  "@playerEliminated": {
+    "placeholders": {
+      "eliminatedName": {
+        "type": "Object"
+      }
+    }
+  },
+  "role": "התפקיד",
+  "wordStaysSecret": "המילה נשארת סודית — המשחק ממשיך.",
+  "stillInGame": "נשארו במשחק",
+  "previousHint": "הרמז הקודם · {nickname}",
+  "@previousHint": {
+    "placeholders": {
+      "nickname": {
+        "type": "Object"
+      }
+    }
+  },
+  "roundLabel": "סבב {round}",
+  "@roundLabel": {
+    "placeholders": {
+      "round": {
+        "type": "Object"
+      }
+    }
+  },
+  "youWereEliminated": "הודחתם מהמשחק",
+  "spectatorExplain": "אתם ממשיכים לצפות ולהגיב, בלי רמזים והצבעות. התוצאה שלכם היא של הקבוצה שלכם.",
+  "secretWord": "המילה הסודית",
+  "wordNotShown": "המילה לא מוצגת לכם — רק הקטגוריה.",
+  "votingOpensAuto": "מסך ההצבעה נפתח אוטומטית",
+  "allHintsSent": "כל הרמזים נשלחו",
+  "toVoting": "עוברים להצבעה",
+  "wordWas": "המילה הייתה",
+  "theGuess": "הניחוש",
+  "rounds": "סבבים",
+  "voteBreakdown": "חלוקת הקולות",
+  "playAgain": "משחק נוסף",
+  "openFreeCount": "{count} פתוחות בחינם",
+  "@openFreeCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "openCount": "{count} פתוחות",
+  "@openCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "rewardRefused": "אפשר לפתוח קטגוריה בצפייה במודעה פעם בארבע שעות, ולכן ״{name}״ לא נפתחה.",
+  "@rewardRefused": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "watchAgainInSentence": " אפשר לצפות שוב בעוד {time}.",
+  "@watchAgainInSentence": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "phoneLanguage": "שפת הטלפון",
+  "roomLanguageMismatch": "שפת החדר: {language}. כדי להצטרף, מחליפים שפה בהגדרות.",
+  "@roomLanguageMismatch": {
+    "placeholders": {
+      "language": {
+        "type": "Object"
+      }
+    }
+  }
+}

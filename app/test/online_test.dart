@@ -36,6 +36,7 @@ Future<FakeChannel> startSearching(WidgetTester tester, FakeApi api) async {
   final channel = api.channel;
   expect(channel.commands('matchmaking.join').single['payload'], {
     'categoryIds': ['food'],
+    'language': 'he',
   });
   channel.event('session.state',
       {'playerId': 'p_me', 'activity': 'matchmaking', 'roomId': 'r_pub'});
@@ -186,6 +187,7 @@ void main() {
     expect(channel.commands('matchmaking.join'), hasLength(2));
     expect(channel.commands('matchmaking.join').last['payload'], {
       'categoryIds': ['food'],
+      'language': 'he',
     });
     channel.event('session.state',
         {'playerId': 'p_me', 'activity': 'matchmaking', 'roomId': 'r_pub2'});

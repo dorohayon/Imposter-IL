@@ -11,9 +11,12 @@
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>he</string>
+		<string>en</string>
 	</array>
+	<!-- The name under the icon: <lang>.lproj/InfoPlist.strings; this one for
+	     any other phone language, like the app's English fallback. -->
 	<key>CFBundleDisplayName</key>
-	<string>מי המתחזה?‏</string>
+	<string>Who's the Impostor?</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- Development builds talk to a local server over plain http/ws. -->

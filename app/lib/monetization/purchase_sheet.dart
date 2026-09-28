@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../screens/legal_screens.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
@@ -53,7 +54,9 @@ Future<void> openLockedCategory(
 /// "3 פתוחות בחינם", next to a category chip list (design L05).
 String categoryCount(Monetization m, Iterable<String> ids) {
   final open = m.unlocked(ids);
-  return '${open.length} ${open.every(m.isFree) ? 'פתוחות בחינם' : 'פתוחות'}';
+  return open.every(m.isFree)
+      ? l10n.openFreeCount(open.length)
+      : l10n.openCount(open.length);
 }
 
 /// A locked category in a chip list: a lock and a dimmed name. Tapping it
@@ -68,7 +71,7 @@ class LockedChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: '$label — נעולה, לחצו לפתיחה',
+      label: context.l10n.lockedTapToOpen(label),
       excludeSemantics: true,
       child: ActionChip(
         avatar:
@@ -211,28 +214,26 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   ) {
     final notice = switch (m.step) {
       PurchaseStep.rewardRefused => _Notice.warning(
-          'אפשר לפתוח קטגוריה בצפייה במודעה פעם בארבע שעות, ולכן ״${widget.name}״ לא נפתחה.'
-          '${m.rewardCooldownLeft == null ? '' : ' אפשר לצפות שוב בעוד ${_duration(m.rewardCooldownLeft!)}.'}'),
-      PurchaseStep.adFailed => _Notice.warning(
-          'לא הצלחנו להציג מודעה עד הסוף, ולכן ״${widget.name}״ לא נפתחה. אפשר לנסות שוב מאוחר יותר או לבחור אפשרות אחרת.'),
-      _ when pricesFailed && m.productsMissing => const _Notice.error(
-          'הרכישות אינן זמינות כרגע. אנא נסו שוב מאוחר יותר.'),
-      _ when pricesFailed => const _Notice.error(
-          'לא הצלחנו לטעון את המחירים מהחנות. בדקו את החיבור לאינטרנט ונסו שוב.'),
-      PurchaseStep.cancelled =>
-        const _Notice.warning('הרכישה בוטלה. לא בוצע חיוב.'),
-      PurchaseStep.failed => const _Notice.error(
-          'הרכישה לא הושלמה ולא בוצע חיוב. בדקו את החיבור לאינטרנט ונסו שוב.'),
-      PurchaseStep.pending => _Notice.warning(
-          'הרכישה ממתינה לאישור. ״${widget.name}״ תיפתח ברגע שהתשלום יאושר.'),
-      PurchaseStep.restoreNone =>
-        const _Notice.info('לא נמצאו רכישות קודמות בחשבון החנות הזה.'),
+          context.l10n.rewardRefused(widget.name) +
+              (m.rewardCooldownLeft == null
+                  ? ''
+                  : context.l10n
+                      .watchAgainInSentence(_duration(m.rewardCooldownLeft!)))),
+      PurchaseStep.adFailed =>
+        _Notice.warning(context.l10n.adFailed(widget.name)),
+      _ when pricesFailed && m.productsMissing =>
+        _Notice.error(context.l10n.purchasesUnavailableLater),
+      _ when pricesFailed => _Notice.error(context.l10n.pricesFailed),
+      PurchaseStep.cancelled => _Notice.warning(context.l10n.purchaseCancelled),
+      PurchaseStep.failed => _Notice.error(context.l10n.purchaseFailed),
+      PurchaseStep.pending =>
+        _Notice.warning(context.l10n.purchasePending(widget.name)),
+      PurchaseStep.restoreNone => _Notice.info(context.l10n.noPurchasesFound),
       PurchaseStep.restoredOther =>
-        _Notice.info('הרכישות שוחזרו, אבל ״${widget.name}״ לא נמצאה ביניהן.'),
-      PurchaseStep.restoreFailed => const _Notice.error(
-          'השחזור לא הושלם. בדקו את החיבור לאינטרנט ונסו שוב.'),
-      _ when !m.config.purchasesEnabled => const _Notice.warning(
-          'הרכישות אינן זמינות כרגע. אפשר לשחזר רכישות קודמות.'),
+        _Notice.info(context.l10n.restoredOther(widget.name)),
+      PurchaseStep.restoreFailed => _Notice.error(context.l10n.restoreFailed),
+      _ when !m.config.purchasesEnabled =>
+        _Notice.warning(context.l10n.purchasesUnavailableRestore),
       _ => null,
     };
     final disabled = m.busy;
@@ -258,7 +259,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          '״${widget.name}״ נעולה',
+                          context.l10n.categoryLockedTitle(widget.name),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontFamily: 'Secular One',
@@ -270,8 +271,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'בחרו איך לפתוח אותה',
+                  Text(
+                    context.l10n.chooseHowToUnlock,
                     textAlign: TextAlign.center,
                     style: TextStyle(color: _soft, fontSize: 13),
                   ),
@@ -293,7 +294,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
             title: _title(m, id),
             description: _description(m, id),
             price: m.products[id]?.price,
-            priceNote: id == m.config.premiumMonthly ? 'לחודש' : 'תשלום אחד',
+            priceNote: id == m.config.premiumMonthly
+                ? context.l10n.perMonth
+                : context.l10n.oneTimePayment,
             loading: loading,
             selected: !loading && id == selected,
             enabled: !disabled && !loading,
@@ -308,12 +311,12 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   Widget _adChoice(Monetization m, bool selected, bool disabled) {
     final wait = m.rewardCooldownLeft;
     return _Option(
-      title: 'צפייה במודעה',
+      title: context.l10n.watchAd,
       description: wait == null
-          ? 'פותחת את ״${widget.name}״ למשחק הבא בלבד'
-          : 'אפשר לצפות שוב בעוד ${_duration(wait)}',
-      price: 'חינם',
-      priceNote: 'משחק אחד',
+          ? context.l10n.adUnlocksNextGame(widget.name)
+          : context.l10n.watchAgainIn(_duration(wait)),
+      price: context.l10n.free,
+      priceNote: context.l10n.oneGame,
       loading: false,
       selected: selected && wait == null,
       enabled: !disabled && wait == null,
@@ -325,21 +328,24 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   static String _duration(Duration d) {
     final minutes = (d.inSeconds / 60).ceil();
     final h = minutes ~/ 60, min = minutes % 60;
-    return [if (h > 0) '$h שע׳', if (min > 0 || h == 0) '$min דק׳'].join(' ו־');
+    return [
+      if (h > 0) l10n.durationHours(h),
+      if (min > 0 || h == 0) l10n.durationMinutes(min)
+    ].join(l10n.durationAnd);
   }
 
   String _title(Monetization m, String id) => id == m.config.premiumMonthly
-      ? 'פרימיום חודשי'
+      ? context.l10n.premiumMonthly
       : id == m.config.premiumLifetime
-          ? 'פרימיום לכל החיים'
-          : 'רק ״${widget.name}״';
+          ? context.l10n.premiumLifetime
+          : context.l10n.onlyCategory(widget.name);
 
-  String _description(Monetization m, String id) => id ==
-          m.config.premiumMonthly
-      ? 'כל הקטגוריות ותכונות הפרימיום, בלי פרסומות — כל עוד המנוי פעיל'
-      : id == m.config.premiumLifetime
-          ? 'כל הקטגוריות, גם אלה שיתווספו בעתיד, ותכונות הפרימיום. בלי פרסומות לתמיד'
-          : 'פתוחה לתמיד · הפרסומות נשארות';
+  String _description(Monetization m, String id) =>
+      id == m.config.premiumMonthly
+          ? context.l10n.premiumMonthlyDesc
+          : id == m.config.premiumLifetime
+              ? context.l10n.premiumLifetimeDesc
+              : context.l10n.categoryForeverDesc;
 
   Widget _success(Monetization m, PurchaseStep step) {
     final product = m.flowProduct;
@@ -347,24 +353,27 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
         (product == m.config.premiumMonthly ||
             product == m.config.premiumLifetime);
     final (title, body) = step == PurchaseStep.restored
-        ? ('הרכישות שוחזרו', '״${widget.name}״ פתוחה שוב במכשיר הזה.')
+        ? (
+            context.l10n.purchasesRestoredTitle,
+            context.l10n.categoryOpenAgain(widget.name)
+          )
         : step == PurchaseStep.rewarded
             ? (
-                '״${widget.name}״ פתוחה למשחק הבא',
-                'תודה שצפיתם. אחרי המשחק הבא הקטגוריה תינעל שוב.',
+                context.l10n.categoryOpenNextGame(widget.name),
+                context.l10n.thanksForWatching,
               )
             : premium
                 ? (
-                    'ברוכים הבאים לפרימיום',
+                    context.l10n.welcomePremium,
                     product == m.config.premiumMonthly
-                        ? 'המנוי החודשי פעיל. אפשר לנהל או לבטל אותו בהגדרות המנויים בחנות.'
+                        ? context.l10n.monthlyActive
                         : m.monthlyBeforePurchase
-                            ? 'הכול פתוח לתמיד — כולל קטגוריות שיתווספו בעתיד. המנוי החודשי שלכם עדיין פעיל; אפשר לבטל אותו בהגדרות המנויים בחנות.'
-                            : 'הכול פתוח לתמיד — כולל קטגוריות שיתווספו בעתיד.',
+                            ? context.l10n.lifetimeWithMonthly
+                            : context.l10n.lifetimeUnlocked,
                   )
                 : (
-                    '״${widget.name}״ נפתחה!',
-                    'הקטגוריה שלכם לתמיד. הפרסומות ממשיכות להופיע.',
+                    context.l10n.categoryUnlocked(widget.name),
+                    context.l10n.categoryYoursForever,
                   );
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 16, 0, 6),
@@ -418,13 +427,13 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                 color: AppColors.cream.withValues(alpha: .06),
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: const Column(
+              child: Column(
                 children: [
-                  _Included('כל הקטגוריות פתוחות'),
+                  _Included(context.l10n.allCategoriesOpen),
                   SizedBox(height: 10),
-                  _Included('תכונות הפרימיום פעילות'),
+                  _Included(context.l10n.premiumFeaturesActive),
                   SizedBox(height: 10),
-                  _Included('בלי באנרים ובלי מודעות במסך מלא'),
+                  _Included(context.l10n.noBannersNoAds),
                 ],
               ),
             ),
@@ -457,10 +466,10 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
       final pick = categoryBought || m.step == PurchaseStep.rewarded;
       child = PrimaryButton(
         label: m.step == PurchaseStep.restored
-            ? 'סגירה'
+            ? context.l10n.close
             : premium
-                ? 'מתחילים לשחק'
-                : 'בוחרים ב״${widget.name}״',
+                ? context.l10n.startPlaying
+                : context.l10n.chooseCategoryN(widget.name),
         onPressed: () => Navigator.of(context).pop(pick),
       );
     } else if (selected == _adOption) {
@@ -470,13 +479,13 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PrimaryButton(
-            label: watching ? 'טוענים מודעה…' : 'צפייה במודעה',
+            label: watching ? context.l10n.loadingAd : context.l10n.watchAd,
             // Busy restoring too: the restore link shows that state.
             onPressed: m.busy ? null : () => m.watchAdFor(widget.id),
           ),
           const SizedBox(height: 8),
           Text(
-            '״${widget.name}״ תיפתח אחרי צפייה מלאה במודעה, למשחק הבא בלבד. אפשר לפתוח כך קטגוריה פעם בארבע שעות.',
+            context.l10n.adDisclosure(widget.name),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.cream.withValues(alpha: .66),
@@ -490,28 +499,29 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
       );
     } else {
       final (label, onPressed) = switch (m.step) {
-        _ when loading => ('טוענים מחירים…', null),
+        _ when loading => (context.l10n.loadingPrices, null),
         _ when pricesFailed => (
-            'ניסיון נוסף',
+            context.l10n.tryAgain,
             () => unawaited(m.loadProducts(widget.id)),
           ),
-        PurchaseStep.processing => ('מתחברים לחנות…', null),
+        PurchaseStep.processing => (context.l10n.connectingStore, null),
         PurchaseStep.restoring => (_ctaFor(m, selected, p), null),
-        PurchaseStep.failed => ('ניסיון נוסף', () => m.buy(selected)),
+        PurchaseStep.failed => (context.l10n.tryAgain, () => m.buy(selected)),
         _ => (_ctaFor(m, selected, p), () => m.buy(selected)),
       };
       final canBuy = m.config.purchasesEnabled && anyProduct;
       final disclosure = loading
-          ? 'המחירים מוצגים במטבע של חשבון החנות שלכם.'
+          ? context.l10n.pricesInStoreCurrency
           : m.step == PurchaseStep.processing
-              ? 'ממשיכים בחלון התשלום של החנות. אין לסגור את האפליקציה.'
+              ? context.l10n.continueInStore
               : !anyProduct
                   ? ''
                   : selected == m.config.premiumMonthly
-                      ? 'המנוי מתחדש אוטומטית ב־$p בכל חודש עד לביטול. אפשר לבטל בכל עת בהגדרות המנויים בחנות, לפחות 24 שעות לפני מועד החידוש.'
+                      ? context.l10n.subscriptionDisclosure(p)
                       : isCategory
-                          ? 'תשלום אחד של $p דרך החנות. ״${widget.name}״ נשארת פתוחה לתמיד; הפרסומות ממשיכות להופיע.'
-                          : 'תשלום אחד של $p דרך החנות. בלי מנוי ובלי חיובים נוספים.';
+                          ? context.l10n
+                              .categoryPurchaseDisclosure(p, widget.name)
+                          : context.l10n.premiumPurchaseDisclosure(p);
       child = Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -564,16 +574,18 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
               ),
             ),
             child: Text(m.step == PurchaseStep.restoring
-                ? 'משחזרים רכישות…'
-                : 'שחזור רכישות'),
+                ? context.l10n.restoringPurchases
+                : context.l10n.restorePurchases),
           ),
-          _Link('תנאי שימוש', () => const TermsScreen()),
-          _Link('מדיניות פרטיות', () => const PrivacyScreen()),
+          _Link(context.l10n.termsTitle, () => const TermsScreen()),
+          _Link(context.l10n.privacyTitle, () => const PrivacyScreen()),
         ],
       );
 
   String _ctaFor(Monetization m, String selected, String p) =>
-      selected == m.config.premiumMonthly ? 'הצטרפות לפרימיום' : 'קנייה · $p';
+      selected == m.config.premiumMonthly
+          ? context.l10n.joinPremium
+          : context.l10n.buyPrice(p);
 }
 
 class _Option extends StatelessWidget {
@@ -867,11 +879,13 @@ class _CloseButton extends StatelessWidget {
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(14),
-          child: const SizedBox(
+          child: SizedBox(
             width: 44,
             height: 44,
             child: Icon(Icons.close_rounded,
-                size: 18, color: AppColors.cream, semanticLabel: 'סגירה'),
+                size: 18,
+                color: AppColors.cream,
+                semanticLabel: context.l10n.close),
           ),
         ),
       ),

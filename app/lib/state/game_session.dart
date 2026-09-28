@@ -31,6 +31,7 @@ class GameSession extends ChangeNotifier {
   static const _countedKey = 'stats.countedGames';
   static const _vibrationKey = 'settings.vibration';
   static const _reactionsKey = 'settings.showReactions';
+  static const _languageKey = 'settings.language';
   static const _mutedKey = 'moderation.muted';
 
   String? token;
@@ -65,6 +66,16 @@ class GameSession extends ChangeNotifier {
   int losses = 0;
   List<String> _countedGames = [];
   bool vibrationOn = true;
+
+  /// The language chosen in Settings, or null to follow the phone. Its own
+  /// notifier, so MaterialApp rebuilds for it and not for every game update.
+  final languageChoice = ValueNotifier<String?>(null);
+  String? get languageOverride => languageChoice.value;
+
+  /// The language the app shows, which MaterialApp resolves from the phone's
+  /// languages and [languageOverride] (see [languageResolved]). Content,
+  /// rooms and searches are in it (docs/localization.md).
+  String language = 'he';
   bool showReactions = true;
 
   /// Sends this device's purchases to the server again. Set by Monetization;
@@ -131,6 +142,7 @@ class GameSession extends ChangeNotifier {
     losses = prefs.getInt(_lossesKey) ?? 0;
     _countedGames = prefs.getStringList(_countedKey) ?? [];
     vibrationOn = prefs.getBool(_vibrationKey) ?? true;
+    languageChoice.value = prefs.getString(_languageKey);
     showReactions = prefs.getBool(_reactionsKey) ?? true;
     muted = (prefs.getStringList(_mutedKey) ?? const []).toSet();
     if (signedIn) unawaited(_start());
@@ -192,8 +204,8 @@ class GameSession extends ChangeNotifier {
     _notify();
     try {
       final results = await Future.wait([
-        api.request('GET', '/v1/categories', token: token),
-        api.request('GET', '/v1/reactions', token: token),
+        api.request('GET', '/v1/categories?language=$language', token: token),
+        api.request('GET', '/v1/reactions?language=$language', token: token),
       ]);
       categories = (results[0]['categories'] as List)
           .cast<Map<String, dynamic>>()
@@ -455,6 +467,7 @@ class GameSession extends ChangeNotifier {
       'maxPlayers': maxPlayers,
       'hintSeconds': hintSeconds,
       'categoryIds': categoryIds,
+      'language': language,
     };
     Map<String, dynamic> json;
     try {
@@ -473,7 +486,7 @@ class GameSession extends ChangeNotifier {
       'POST',
       '/v1/rooms/join',
       token: token,
-      body: {'code': code},
+      body: {'code': code, 'language': language},
     );
     _enterRoom(json['room'] as Map<String, dynamic>);
   }
@@ -565,10 +578,11 @@ class GameSession extends ChangeNotifier {
     activity = 'matchmaking'; // until session.state confirms it
     search = null;
     _notify();
-    var code = await send('matchmaking.join', {'categoryIds': categoryIds});
+    final join = {'categoryIds': categoryIds, 'language': language};
+    var code = await send('matchmaking.join', join);
     if (code == 'category_locked' && resyncEntitlements != null) {
       await resyncEntitlements!();
-      code = await send('matchmaking.join', {'categoryIds': categoryIds});
+      code = await send('matchmaking.join', join);
     }
     if (code != null) {
       activity = 'none';
@@ -660,6 +674,27 @@ class GameSession extends ChangeNotifier {
     await (await SharedPreferences.getInstance()).setBool(_vibrationKey, on);
   }
 
+  /// A language from Settings, or null for the phone's.
+  Future<void> setLanguage(String? code) async {
+    languageChoice.value = code;
+    _notify();
+    final prefs = await SharedPreferences.getInstance();
+    await (code == null
+        ? prefs.remove(_languageKey)
+        : prefs.setString(_languageKey, code));
+  }
+
+  /// MaterialApp settled on [code]. Content already loaded in another
+  /// language is loaded again, after this frame.
+  void languageResolved(String code) {
+    if (code == language) return;
+    language = code;
+    if (!contentLoaded && categories.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(loadContent().catchError((Object _) {}));
+    });
+  }
+
   Future<void> setShowReactions(bool on) async {
     showReactions = on;
     _notify();
@@ -692,6 +727,7 @@ class GameSession extends ChangeNotifier {
 
   @override
   void dispose() {
+    languageChoice.dispose();
     _disposed = true;
     unawaited(_channel?.close());
     _failPending();

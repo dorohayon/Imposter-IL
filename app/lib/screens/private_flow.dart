@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/server.dart';
+import '../l10n/l10n.dart';
 import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
 import '../monetization/purchase_sheet.dart';
@@ -9,14 +10,14 @@ import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'live_room.dart';
+import 'secondary_screens.dart';
 
 // Private rooms run against the real server (docs/protocol.md).
 
 String connectionMessage(String code) => switch (code) {
-      'network_error' => 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
-      'category_locked' =>
-        'אחת הקטגוריות נעולה. אפשר לשחזר רכישות מחלון הפתיחה של הקטגוריה.',
-      _ => 'משהו השתבש. נסו שוב בעוד רגע.',
+      'network_error' => l10n.errNetwork,
+      'category_locked' => l10n.errCategoryLocked,
+      _ => l10n.errGeneric,
     };
 
 class FriendsScreen extends StatelessWidget {
@@ -29,7 +30,7 @@ class FriendsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GameScaffold(
-      title: 'משחק עם חברים',
+      title: context.l10n.playWithFriends,
       bannerPlacement: BannerPlacement.friends,
       child: Column(
         children: [
@@ -39,21 +40,21 @@ class FriendsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _FriendsChoiceCard(
-            title: 'יצירת חדר',
-            description: 'בוחרים הגדרות, מקבלים קוד ומשתפים עם החברים.',
+            title: context.l10n.createRoom,
+            description: context.l10n.createRoomSubtitle,
             icon: Icons.add_home_work_rounded,
             onPressed: () => _open(context, const CreateRoomScreen()),
           ),
           const SizedBox(height: 12),
           _FriendsChoiceCard(
-            title: 'הצטרפות לחדר',
-            description: 'יש לכם קוד בן שש ספרות? מזינים ונכנסים.',
+            title: context.l10n.joinRoom,
+            description: context.l10n.joinRoomSubtitle,
             icon: Icons.login_rounded,
             onPressed: () => _open(context, const JoinRoomScreen()),
           ),
           const SizedBox(height: 18),
-          const Text(
-            'המשחק מתאים ל־4 עד 8 שחקנים',
+          Text(
+            context.l10n.playersRange4to8,
             style: TextStyle(color: AppColors.muted, fontSize: 13),
           ),
         ],
@@ -204,23 +205,23 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         });
 
     return GameScaffold(
-      title: 'יצירת חדר',
+      title: context.l10n.createRoom,
       bannerPlacement: BannerPlacement.createRoom,
       bottom: PrimaryButton(
-        label: _busy ? 'יוצרים חדר...' : 'יצירת חדר',
+        label: _busy ? context.l10n.creatingRoom : context.l10n.createRoom,
         onPressed:
             loaded && !_busy && (all || selected.isNotEmpty) ? _create : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'לאחר יצירת החדר, לא יהיה ניתן לשנות את ההגדרות.',
+          Text(
+            context.l10n.settingsLockNotice,
             style: TextStyle(color: AppColors.muted, height: 1.45),
           ),
           const SizedBox(height: 18),
-          const Text(
-            'מספר שחקנים מרבי',
+          Text(
+            context.l10n.maxPlayers,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
@@ -231,22 +232,22 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
             onSelected: (value) => setState(() => players = value),
           ),
           const SizedBox(height: 18),
-          const Text(
-            'זמן לרמז',
+          Text(
+            context.l10n.timePerHint,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           _OptionRow<int>(
             values: const [30, 60, 90],
             selected: hintSeconds,
-            label: (value) => '$value שניות',
+            label: (value) => context.l10n.nSeconds(value),
             onSelected: (value) => setState(() => hintSeconds = value),
           ),
           const SizedBox(height: 22),
           Row(
             children: [
-              const Text(
-                'קטגוריות',
+              Text(
+                context.l10n.categories,
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               const SizedBox(width: 10),
@@ -265,15 +266,15 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
           if (!loaded)
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'טוענים קטגוריות...',
+                    context.l10n.loadingCategoriesShort,
                     style: TextStyle(color: AppColors.muted),
                   ),
                 ),
                 TextButton(
                   onPressed: _retryCategories,
-                  child: const Text('ניסיון נוסף'),
+                  child: Text(context.l10n.tryAgain),
                 ),
               ],
             )
@@ -283,7 +284,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               runSpacing: 8,
               children: [
                 FilterChip(
-                  label: const Text('הכול'),
+                  label: Text(context.l10n.all),
                   selected: all,
                   onSelected: (_) =>
                       setState(() => _selected = all ? <String>{} : null),
@@ -317,14 +318,14 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppColors.yellow.withValues(alpha: .4)),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(Icons.lock_clock_rounded,
                     color: AppColors.yellow, size: 20),
                 SizedBox(width: 9),
                 Expanded(
                   child: Text(
-                    'אחרי ששחקן נוסף יצטרף, אי אפשר יהיה לשנות את ההגדרות.',
+                    context.l10n.settingsLockAfterJoin,
                     style: TextStyle(color: Color(0xFFFFF0C2), fontSize: 13),
                   ),
                 ),
@@ -411,6 +412,9 @@ class JoinRoomScreen extends StatefulWidget {
 class _JoinRoomScreenState extends State<JoinRoomScreen> {
   late final code = TextEditingController(text: widget.code ?? '');
   String? _error;
+
+  /// The room plays in another language: Settings is where to switch.
+  bool _wrongLanguage = false;
   bool _busy = false;
 
   @override
@@ -428,13 +432,15 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
       setState(() {
         _busy = false;
         _error = switch (e.code) {
-          'invalid_room_code' => 'קוד החדר צריך להיות בן שש ספרות',
-          'room_not_found' =>
-            'החדר לא נמצא או שאינו זמין. בדקו את הקוד עם מי שפתח את החדר.',
-          'room_unavailable' => 'החדר מלא או שהמשחק כבר התחיל.',
-          'already_in_activity' => 'כבר הצטרפתם למשחק אחר.',
+          'invalid_room_code' => context.l10n.roomCodeSixDigits,
+          'room_not_found' => context.l10n.roomNotFound,
+          'room_unavailable' => context.l10n.roomFull,
+          'already_in_activity' => context.l10n.alreadyInOtherGame,
+          'room_language_mismatch' => context.l10n
+              .roomLanguageMismatch(languageName(e.details['language'])),
           _ => connectionMessage(e.code),
         };
+        _wrongLanguage = e.code == 'room_language_mismatch';
       });
     }
   }
@@ -443,16 +449,16 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
   Widget build(BuildContext context) {
     final ready = code.text.length == 6 && !_busy;
     return GameScaffold(
-      title: 'הצטרפות לחדר',
+      title: context.l10n.joinRoom,
       bannerPlacement: BannerPlacement.joinRoom,
       bottom: PrimaryButton(
-        label: _error == null ? 'הצטרפות' : 'ניסיון נוסף',
+        label: _error == null ? context.l10n.join : context.l10n.tryAgain,
         onPressed: ready ? _join : null,
       ),
       child: Column(
         children: [
-          const Text(
-            'הזינו את קוד החדר בן שש הספרות שקיבלתם.',
+          Text(
+            context.l10n.enterRoomCode,
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, fontSize: 15),
           ),
@@ -468,6 +474,15 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
           if (_error != null) ...[
             const SizedBox(height: 12),
             StatusBanner(text: _error!, positive: false),
+            if (_wrongLanguage)
+              TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SettingsScreen(),
+                  ),
+                ),
+                child: Text(context.l10n.settings),
+              ),
           ],
           const SizedBox(height: 18),
           _Keypad(
@@ -614,7 +629,7 @@ class _Keypad extends StatelessWidget {
             key(digit, () => onDigit(digit)),
           const SizedBox.shrink(),
           key('0', () => onDigit('0')),
-          key('מחיקה', onDelete),
+          key(context.l10n.delete, onDelete),
         ],
       ),
     );

@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/player.dart';
 import '../monetization/monetization.dart';
 import '../theme/app_theme.dart';
@@ -22,6 +23,7 @@ class LocalGameScreen extends StatefulWidget {
     this.players,
     this.categoryIds,
     this.hintSeconds,
+    this.language = 'he',
     this.resumed,
     super.key,
   });
@@ -29,6 +31,9 @@ class LocalGameScreen extends StatefulWidget {
   final List<LocalPlayer>? players;
   final List<String>? categoryIds;
   final int? hintSeconds;
+
+  /// The language of a new match's words (one-device play has no server).
+  final String language;
 
   /// A match read back off the device, instead of a new one.
   final LocalGame? resumed;
@@ -53,6 +58,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           categoryIds: widget.categoryIds!,
           hintSeconds: widget.hintSeconds,
           rng: Random(),
+          language: widget.language,
         );
     unawaited(LocalStore.save(_game));
     _syncTimer();
@@ -133,19 +139,19 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.nightRaised,
-        title: const Text('לצאת מהמשחק?'),
-        content: const Text(
-          'המשחק הנוכחי יימחק ולא יהיה אפשר להמשיך אותו.',
+        title: Text(context.l10n.leaveGameTitle),
+        content: Text(
+          context.l10n.localDeleteWarning,
           style: TextStyle(height: 1.45),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('המשך משחק'),
+            child: Text(context.l10n.resumeGame),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('יציאה ומחיקה',
+            child: Text(context.l10n.leaveAndDelete,
                 style: TextStyle(color: AppColors.coral)),
           ),
         ],
@@ -195,8 +201,8 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       accent: forVoting ? const Color(0xFF42203C) : const Color(0xFF3A3470),
       bottom: PrimaryButton(
         label: forVoting
-            ? 'אני ${_current.name} — להצבעה'
-            : 'אני ${_current.name} — הציגו לי',
+            ? context.l10n.iAmVote(_current.name)
+            : context.l10n.iAmShow(_current.name),
         onPressed: () => _apply(_game.reveal),
       ),
       child: Column(
@@ -205,8 +211,8 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           const SizedBox(height: 10),
           Text(
             forVoting
-                ? 'הצביעו $done מתוך ${_game.activePlayers.length}'
-                : '${done + 1} מתוך ${_game.players.length}',
+                ? context.l10n.votedOf(done, _game.activePlayers.length)
+                : context.l10n.countOfMax(done + 1, _game.players.length),
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, fontSize: 13),
           ),
@@ -215,15 +221,15 @@ class _LocalGameScreenState extends State<LocalGameScreen>
               height: 180),
           const SizedBox(height: 16),
           Text(
-            'העבירו את המכשיר ל${_current.name}',
+            context.l10n.passDeviceTo(_current.name),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineLarge,
           ),
           const SizedBox(height: 8),
           Text(
             forVoting
-                ? 'אף אחד אחר לא מסתכל על המסך.'
-                : 'רק ${_current.name} מסתכל/ת על המסך.',
+                ? context.l10n.noOneElseLooking
+                : context.l10n.onlyPlayerLooking(_current.name),
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, height: 1.45),
           ),
@@ -239,7 +245,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       showHeader: false,
       accent: const Color(0xFF3A3470),
       bottom: PrimaryButton(
-        label: 'אני ${impostor.name} — הציגו לי',
+        label: context.l10n.iAmShow(impostor.name),
         onPressed: () => _apply(_game.reveal),
       ),
       child: Column(
@@ -249,13 +255,13 @@ class _LocalGameScreenState extends State<LocalGameScreen>
               height: 180),
           const SizedBox(height: 16),
           Text(
-            'העבירו את המכשיר ל${impostor.name}',
+            context.l10n.passDeviceTo(impostor.name),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineLarge,
           ),
           const SizedBox(height: 8),
           Text(
-            'רק ${impostor.name} מסתכל/ת על המסך.',
+            context.l10n.onlyPlayerLooking(impostor.name),
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, height: 1.45),
           ),
@@ -274,7 +280,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       showHeader: false,
       accent: impostor ? const Color(0xFF4A2A8C) : const Color(0xFF1B4F4A),
       bottom: PrimaryButton(
-        label: 'הבנתי — הסתירו',
+        label: context.l10n.gotItHide,
         onPressed: () => _apply(() => _game.roleSeen(player)),
       ),
       child: Column(
@@ -296,7 +302,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           ),
           const SizedBox(height: 10),
           Text(
-            impostor ? 'את/ה המתחזה' : 'את/ה אזרח/ית',
+            impostor ? context.l10n.youAreImpostor : context.l10n.youAreCitizen,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   color: impostor ? AppColors.yellow : AppColors.cream,
@@ -306,8 +312,8 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           SecretWordCard(word: _game.secretWord, impostor: impostor),
           if (!impostor) ...[
             const SizedBox(height: 12),
-            const Text(
-              'המתחזה לא יודע את המילה הסודית. שמרו עליה בסוד.',
+            Text(
+              context.l10n.impostorDoesntKnow,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.muted,
@@ -318,13 +324,13 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           ],
           const SizedBox(height: 14),
           for (final (i, tip) in (impostor
-                  ? const [
-                      'הקשיבו לרמזים, השתלבו ונסו לגלות את המילה.',
-                      'אם תיתפסו — תקבלו הזדמנות אחת לנחש את המילה ולנצח.',
+                  ? [
+                      context.l10n.localImpostorTip,
+                      context.l10n.impostorTip2,
                     ]
-                  : const [
-                      'בתור שלכם אומרים בקול רמז של מילה אחת.',
-                      'רמז ברור מדי יעזור למתחזה. רמז דק מדי יעורר חשד.',
+                  : [
+                      context.l10n.localCitizenTip,
+                      context.l10n.citizenTip2,
                     ])
               .indexed)
             Padding(
@@ -344,8 +350,9 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       showHeader: false,
       accent: _game.round == 1 ? const Color(0xFF2A2455) : null,
       bottom: PrimaryButton(
-        label:
-            _game.round == 1 ? 'מתחילים סיבוב 1' : 'התחלת סיבוב ${_game.round}',
+        label: _game.round == 1
+            ? context.l10n.startRound1
+            : context.l10n.startRoundN(_game.round),
         onPressed: () => _apply(_game.startRound),
       ),
       child: Column(
@@ -355,30 +362,35 @@ class _LocalGameScreenState extends State<LocalGameScreen>
               height: 140),
           const SizedBox(height: 12),
           Text(
-            _game.round == 1 ? 'כולם יודעים מי הם' : 'סיבוב נוסף',
+            _game.round == 1
+                ? context.l10n.everyoneKnowsRoles
+                : context.l10n.anotherRound,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineLarge,
           ),
           const SizedBox(height: 8),
           Text(
             _game.round == 1
-                ? 'מניחים את המכשיר במקום שכולם רואים.'
-                : 'המתחזה עדיין ביניכם. סדר התורות הוגרל מחדש.',
+                ? context.l10n.placeDevice
+                : context.l10n.impostorStillAmong,
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, height: 1.45),
           ),
           const SizedBox(height: 16),
           InfoCard(
-            label: 'סדר התורות בסיבוב זה',
+            label: context.l10n.turnOrderThisRound,
             child: Column(
               children: [
                 for (final i in _game.turnOrder)
                   _PlayerRow(
                     player: _game.players[i],
-                    note: i == _game.turnOrder.first ? 'מתחיל/ה' : null,
+                    note: i == _game.turnOrder.first
+                        ? context.l10n.startsFirst
+                        : null,
                   ),
                 for (final i in _game.eliminatedSeats)
-                  _PlayerRow(player: _game.players[i], note: 'צופה'),
+                  _PlayerRow(
+                      player: _game.players[i], note: context.l10n.spectator),
               ],
             ),
           ),
@@ -387,8 +399,8 @@ class _LocalGameScreenState extends State<LocalGameScreen>
             first.name.isEmpty ? '' : '',
             style: const TextStyle(fontSize: 0),
           ),
-          const Text(
-            'רמז של מילה אחת, בלי לחזור על רמז קודם ובלי לומר את המילה עצמה.',
+          Text(
+            context.l10n.hintRuleLocal,
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, height: 1.45),
           ),
@@ -403,15 +415,15 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       title: '',
       showHeader: false,
       bottom: PrimaryButton(
-        label: 'התחלת סיבוב ${_game.round}',
+        label: context.l10n.startRoundN(_game.round),
         onPressed: () => _apply(_game.startRound),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 8),
-          const Text(
-            'סיבוב נוסף',
+          Text(
+            context.l10n.anotherRound,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Secular One',
@@ -422,7 +434,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'המתחזה עדיין ביניכם. סדר התורות הוגרל מחדש.',
+            context.l10n.impostorStillAmong,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.cream.withValues(alpha: .68),
@@ -432,7 +444,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'סדר התורות בסיבוב זה',
+            context.l10n.turnOrderThisRound,
             style: TextStyle(
               color: AppColors.cream.withValues(alpha: .6),
               fontSize: 13,
@@ -443,7 +455,8 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           for (final i in _game.turnOrder) ...[
             _RoundPlayerRow(
               player: _game.players[i],
-              note: i == _game.turnOrder.first ? 'מתחיל/ה' : null,
+              note:
+                  i == _game.turnOrder.first ? context.l10n.startsFirst : null,
             ),
             const SizedBox(height: 9),
           ],
@@ -465,7 +478,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'רמז של מילה אחת, בלי לחזור על רמז קודם ובלי לומר את המילה עצמה.',
+                    context.l10n.hintRuleLocal,
                     style: TextStyle(
                       color: AppColors.cream.withValues(alpha: .6),
                       fontSize: 13,
@@ -487,7 +500,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     final speakerSeat = _game.currentPlayer;
     final speaker = _game.players[speakerSeat];
     return GameScaffold(
-      title: 'סיבוב ${_game.round} · ${_game.category}',
+      title: context.l10n.roundCategory(_game.round, _game.category),
       onExit: _leave,
       timer: _game.hintSeconds == null
           ? const Icon(Icons.timer_off_outlined, color: AppColors.muted)
@@ -497,7 +510,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
                   _game.hintSeconds!,
             ),
       bottom: PrimaryButton(
-        label: 'הרמז נאמר',
+        label: context.l10n.hintSaid,
         variant: ButtonVariant.confirm,
         onPressed: () => _apply(() => _game.hintSpoken(speakerSeat)),
       ),
@@ -507,43 +520,44 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           Center(child: AvatarView(asset: speaker.avatar, size: 96)),
           const SizedBox(height: 12),
           Text(
-            'התור של ${speaker.name}',
+            context.l10n.turnOf(speaker.name),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineLarge,
           ),
           const SizedBox(height: 6),
-          const Text(
-            'אומרים בקול רמז של מילה אחת',
+          Text(
+            context.l10n.sayHintAloud,
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, fontSize: 15),
           ),
           const SizedBox(height: 16),
           InfoCard(
-            label: 'סדר התורות',
+            label: context.l10n.turnOrder,
             child: Column(
               children: [
                 for (final (i, seat) in _game.turnOrder.indexed)
                   _PlayerRow(
                     player: _game.players[seat],
                     note: switch (i) {
-                      _ when i == _game.seat => 'עכשיו',
-                      _ when i == _game.seat + 1 => 'הבא בתור',
+                      _ when i == _game.seat => context.l10n.now,
+                      _ when i == _game.seat + 1 => context.l10n.nextUp,
                       _
                           when i < _game.seat &&
                               _game.missedHintSeats.contains(seat) =>
-                        'לא נאמר רמז',
-                      _ when i < _game.seat => 'אמר/ה',
-                      _ => 'ממתין/ה',
+                        context.l10n.noHintSaid,
+                      _ when i < _game.seat => context.l10n.said,
+                      _ => context.l10n.waiting,
                     },
                   ),
                 for (final i in _game.eliminatedSeats)
-                  _PlayerRow(player: _game.players[i], note: 'צופה'),
+                  _PlayerRow(
+                      player: _game.players[i], note: context.l10n.spectator),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'הרמזים נאמרים בקול — אין הקלדה ואין לוח רמזים.',
+          Text(
+            context.l10n.hintsSpokenAloud,
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, fontSize: 13),
           ),
@@ -558,7 +572,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       onExit: _leave,
       // The one line the two games say differently: online is deciding, and
       // here the phone has to go round the table first.
-      note: 'מעבירים את המכשיר בין השחקנים. אל תגלו למי הצבעתם.',
+      note: context.l10n.passDeviceVote,
       countdown: TimerBadge(
         seconds: left,
         remaining: left / LocalGame.voteTransitionSeconds,
@@ -588,13 +602,12 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   /// going round again.
   Widget _tie() => _TieAnnouncement(
         game: _game,
-        title: 'יש תיקו',
-        subtitle: '${_game.tieCandidates.length} מועמדים קיבלו '
-            '${_game.tiedVotes} קולות',
-        explanation:
-            'היה תיקו. מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף — איש לא מודח והמשחק ממשיך לסבב נוסף.',
-        action: 'מתחילים הצבעה חוזרת',
-        footnote: 'אחר כך מעבירים את המכשיר לשחקן הבא',
+        title: context.l10n.tie,
+        subtitle: context.l10n
+            .tieCandidates(_game.tieCandidates.length, _game.tiedVotes),
+        explanation: context.l10n.tieRevoteExplain,
+        action: context.l10n.startRevote,
+        footnote: context.l10n.thenPassNext,
         onExit: _leave,
         onContinue: () => _apply(_game.startRunoff),
       );
@@ -603,10 +616,10 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   /// difference between a rule and a round that looks like nothing happened.
   Widget _tieAgain() => _TieAnnouncement(
         game: _game,
-        title: 'שוב יש תיקו',
-        subtitle: 'גם הפעם הקולות התחלקו שווה בשווה',
-        explanation: 'איש לא הודח. ממשיכים לסבב רמזים נוסף.',
-        action: 'ממשיכים לסבב הבא',
+        title: context.l10n.tieAgain,
+        subtitle: context.l10n.votesSplitAgain,
+        explanation: context.l10n.noOneEliminatedNextRound,
+        action: context.l10n.nextRoundContinues,
         onExit: _leave,
         onContinue: () => _apply(_game.afterSecondTie),
       );
@@ -618,13 +631,13 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       showHeader: false,
       accent: const Color(0xFF2A2455),
       bottom: PrimaryButton(
-        label: 'ממשיכים לסיבוב ${_game.round + 1}',
+        label: context.l10n.continuingToRound(_game.round + 1),
         onPressed: () => _apply(_game.afterElimination),
       ),
       child: EliminationRevealContent(
         eliminatedName: out.name,
         eliminatedAvatar: out.avatar,
-        roleLine: '${out.name} היה/הייתה אזרח/ית',
+        roleLine: context.l10n.wasCitizen(out.name),
         remaining: [
           for (final i in _game.activePlayers)
             (_game.players[i].name, _game.players[i].avatar),
@@ -636,7 +649,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   Widget _guessScreen() {
     final impostor = _game.players[_game.impostor];
     return GameScaffold(
-      title: '${impostor.name}, נתפסת',
+      title: context.l10n.youreCaught(impostor.name),
       showHeader: true,
       onExit: _leave,
       timer: TimerBadge(
@@ -646,7 +659,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       ),
       accent: const Color(0xFF4A2A8C),
       bottom: PrimaryButton(
-        label: 'שליחת ניחוש',
+        label: context.l10n.sendGuess,
         onPressed: _guess.text.trim().isEmpty
             ? null
             : () => _apply(() => _game.submitGuess(_guess.text)),
@@ -658,13 +671,13 @@ class _LocalGameScreenState extends State<LocalGameScreen>
               height: 140),
           const SizedBox(height: 12),
           Text(
-            'עוד אפשר לנצח',
+            context.l10n.stillCanWin,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineLarge,
           ),
           const SizedBox(height: 8),
-          const Text(
-            'ניחוש נכון של המילה הסודית מעניק לך את הניצחון. יש ניסיון אחד.',
+          Text(
+            context.l10n.guessWinsLocal,
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, height: 1.45),
           ),
@@ -677,18 +690,18 @@ class _LocalGameScreenState extends State<LocalGameScreen>
               fontSize: 20,
               fontWeight: FontWeight.w700,
             ),
-            decoration: const InputDecoration(hintText: 'מה המילה?'),
+            decoration: InputDecoration(hintText: context.l10n.whatsTheWord),
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 10),
-          const Text(
-            'הניחוש לא מוצג לשחקנים בזמן ההקלדה',
+          Text(
+            context.l10n.guessHidden,
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, fontSize: 13),
           ),
           const SizedBox(height: 10),
           Text(
-            'רק ${impostor.name} מסתכל/ת על המסך',
+            context.l10n.onlyPlayerLookingNoDot(impostor.name),
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, fontSize: 13),
           ),
@@ -754,22 +767,22 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       ),
       child: GameResultContent(
         winner: winner,
-        title: winner == 'citizens' ? 'האזרחים ניצחו!' : 'המתחזה ניצח!',
+        title: winner == 'citizens'
+            ? context.l10n.citizensWon
+            : context.l10n.impostorWon,
         reason: switch (_game.endReason) {
-          LocalEndReason.impostorGuessedWord =>
-            'המתחזה נתפס וניחש נכון את המילה.',
-          LocalEndReason.impostorGuessWrong => 'המתחזה נתפס ולא ניחש את המילה.',
+          LocalEndReason.impostorGuessedWord => context.l10n.localReasonGuessed,
+          LocalEndReason.impostorGuessWrong => context.l10n.localReasonMissed,
           LocalEndReason.impostorGuessTimeout =>
-            'המתחזה נתפס, אבל הזמן לניחוש נגמר.',
-          LocalEndReason.impostorParity =>
-            'נשארו אזרח אחד ומתחזה — ובשלב הזה המתחזה מנצח מיד.',
+            context.l10n.reasonGuessTimeout,
+          LocalEndReason.impostorParity => context.l10n.reasonParity,
           null => '',
         },
         impostorName: impostor.name,
         impostorAvatar: impostor.avatar,
         secretWord: _game.secretWord,
-        impostorLabel: 'המתחזה',
-        cardLabel: 'איך זה נגמר',
+        impostorLabel: context.l10n.theImpostor,
+        cardLabel: context.l10n.howItEnded,
         guess: _game.submittedGuess,
         rounds: _game.round,
         children: [
@@ -777,7 +790,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const ResultSectionLabel('מי הודח במהלך המשחק'),
+                ResultSectionLabel(context.l10n.whoWasEliminated),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -793,10 +806,10 @@ class _LocalGameScreenState extends State<LocalGameScreen>
                 ),
               ],
             ),
-          const ResultNote(
+          ResultNote(
             icon: Icons.info_outline_rounded,
             color: AppColors.turquoise,
-            text: 'משחק במכשיר אחד אינו משנה את הסטטיסטיקה בפרופיל.',
+            text: context.l10n.localNoStats,
           ),
         ],
       ),
@@ -837,7 +850,7 @@ class _EliminatedChip extends StatelessWidget {
           const SizedBox(width: 9),
           Flexible(
             child: Text(
-              '${player.name} · סיבוב $round',
+              context.l10n.playerRound(player.name, round),
               style: TextStyle(
                 color: impostor
                     ? const Color(0xFFD9C8FF)
@@ -924,7 +937,7 @@ class _BallotState extends State<_Ballot> {
         showHeader: false,
         accent: const Color(0xFF14514A),
         bottom: PrimaryButton(
-          label: 'הסתרתי — לשחקן הבא',
+          label: context.l10n.hiddenNextPlayer,
           variant: ButtonVariant.confirm,
           onPressed: widget.onHidden,
         ),
@@ -932,7 +945,7 @@ class _BallotState extends State<_Ballot> {
           children: [
             const SizedBox(height: 30),
             Text(
-              'הצביעו $voted מתוך ${game.activePlayers.length}',
+              context.l10n.votedOf(voted, game.activePlayers.length),
               style: const TextStyle(color: AppColors.muted, fontSize: 13),
             ),
             const SizedBox(height: 20),
@@ -940,12 +953,12 @@ class _BallotState extends State<_Ballot> {
                 color: AppColors.turquoise, size: 78),
             const SizedBox(height: 16),
             Text(
-              'ההצבעה נשמרה',
+              context.l10n.voteSaved,
               style: Theme.of(context).textTheme.headlineLarge,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'הבחירה הוסתרה מהמסך. אף אחד לא יראה למי הצבעת.',
+            Text(
+              context.l10n.choiceHidden,
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.muted, height: 1.45),
             ),
@@ -958,11 +971,11 @@ class _BallotState extends State<_Ballot> {
         widget.runoff ? game.runoffCandidates : game.activePlayers;
     final me = game.players[widget.voter];
     return GameScaffold(
-      title: widget.runoff ? 'יש תיקו' : 'מי המתחזה?',
+      title: widget.runoff ? context.l10n.tie : context.l10n.gameName,
       showBack: false,
       accent: const Color(0xFF42203C),
       bottom: PrimaryButton(
-        label: 'אישור הצבעה',
+        label: context.l10n.confirmVote,
         onPressed:
             _selected == null ? null : () => widget.onConfirm(_selected!),
       ),
@@ -971,8 +984,8 @@ class _BallotState extends State<_Ballot> {
         children: [
           Text(
             widget.runoff
-                ? '${me.name} מצביע/ה שוב · הבחירה תישאר סודית'
-                : '${me.name} מצביע/ה · הבחירה תישאר סודית',
+                ? context.l10n.votingAgainSecret(me.name)
+                : context.l10n.votingSecret(me.name),
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted),
           ),
@@ -986,12 +999,12 @@ class _BallotState extends State<_Ballot> {
                   avatar: game.players[i].avatar,
                 ),
                 note: widget.runoff && game.previousVotes[i] != null
-                    ? '${game.previousVotes[i]} קולות בסבב הקודם'
+                    ? context.l10n.nVotesPrevious(game.previousVotes[i]!)
                     : i == widget.voter
-                        ? 'אי אפשר להצביע לעצמכם'
+                        ? context.l10n.cantVoteSelf
                         : null,
                 secondaryNote: widget.runoff && i == widget.voter
-                    ? 'אי אפשר להצביע לעצמכם'
+                    ? context.l10n.cantVoteSelf
                     : null,
                 enabled: i != widget.voter,
                 selected: _selected == i,
@@ -1003,8 +1016,8 @@ class _BallotState extends State<_Ballot> {
           const SizedBox(height: 8),
           Text(
             widget.runoff
-                ? 'אם גם עכשיו יהיה תיקו — אף אחד לא יודח ומתחיל סיבוב רמזים חדש.'
-                : 'אחרי האישור המסך יתנקה לפני ההעברה לשחקן הבא.',
+                ? context.l10n.ifTieAgain
+                : context.l10n.screenClearsNext,
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.muted, fontSize: 13),
           ),
@@ -1055,7 +1068,7 @@ class _TieAnnouncement extends StatelessWidget {
             (
               game.players[i].name,
               game.players[i].avatar,
-              '${game.tiedVotes} קולות',
+              context.l10n.nVotes(game.tiedVotes),
             ),
         ],
       ),
@@ -1132,7 +1145,7 @@ class _RoundPlayerRow extends StatelessWidget {
                     ),
                   const SizedBox(width: 6),
                   Text(
-                    watching ? 'צופה' : note!,
+                    watching ? context.l10n.spectator : note!,
                     style: TextStyle(
                       color: watching
                           ? AppColors.cream.withValues(alpha: .65)

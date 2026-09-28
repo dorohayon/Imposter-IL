@@ -1,0 +1,2 @@
+/* The app name under the icon. U+200F (RLM) keeps the "?" on the left. */
+CFBundleDisplayName = "מי המתחזה?\U200F";

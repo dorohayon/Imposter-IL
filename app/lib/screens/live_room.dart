@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../data/invite.dart';
 import '../data/models.dart';
+import '../l10n/l10n.dart';
 import '../models/player.dart';
 import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
@@ -18,32 +19,30 @@ import 'secondary_screens.dart';
 // A private room and its games, driven entirely by the server's room.state
 // and game.state snapshots. Every timer counts down to a server deadline.
 
-const _commandErrors = {
-  'not_room_host': 'רק מנהל החדר יכול לבצע את הפעולה הזאת.',
-  'not_enough_players': 'צריך לפחות 4 שחקנים כדי להתחיל.',
-  'content_unavailable': 'אי אפשר להתחיל משחק כרגע. נסו שוב בעוד רגע.',
-  'room_in_game': 'כבר מתנהל משחק בחדר הזה.',
-  'wrong_phase': 'השלב הזה כבר הסתיים.',
-  'not_your_turn': 'זה לא התור שלכם.',
-  'hint_empty': 'כתבו רמז לפני השליחה.',
-  'hint_not_one_word': 'אפשר לשלוח מילה אחת בלבד.',
-  'hint_too_long': 'הרמז יכול להכיל עד 25 תווים.',
-  'hint_inappropriate': 'הרמז הזה לא מתאים. נסו מילה אחרת.',
-  'hint_contains_secret': 'הרמז מכיל את המילה הסודית. בחרו מילה אחרת.',
-  'hint_duplicate': 'הרמז הזה כבר נשלח במשחק. בחרו מילה אחרת.',
-  'self_vote': 'אי אפשר להצביע לעצמכם.',
-  'invalid_vote_target': 'אי אפשר להצביע לשחקן הזה.',
-  'network_error': 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
-  'category_locked': 'אחת הקטגוריות כבר לא פתוחה. קטגוריה שנפתחה בצפייה במודעה '
-      'פתוחה למשחק אחד בלבד. אפשר לחדש את הפרימיום, לשחזר רכישות או ליצור חדר חדש.',
-};
+Map<String, String> get _commandErrors => {
+      'not_room_host': l10n.errNotRoomHost,
+      'not_enough_players': l10n.errNotEnoughPlayers,
+      'content_unavailable': l10n.errContentUnavailable,
+      'room_in_game': l10n.errRoomInGame,
+      'wrong_phase': l10n.errWrongPhase,
+      'not_your_turn': l10n.errNotYourTurn,
+      'hint_empty': l10n.errHintEmpty,
+      'hint_not_one_word': l10n.errHintNotOneWord,
+      'hint_too_long': l10n.errHintTooLong,
+      'hint_inappropriate': l10n.errHintInappropriate,
+      'hint_contains_secret': l10n.errHintContainsSecret,
+      'hint_duplicate': l10n.errHintDuplicate,
+      'self_vote': l10n.errSelfVote,
+      'invalid_vote_target': l10n.errInvalidVoteTarget,
+      'network_error': l10n.errNetwork,
+      'category_locked': l10n.errCategoryLockedRoom,
+    };
 
 /// Opens the system share sheet. Tests replace it.
 Future<void> Function(String text) shareText =
     (text) => SharePlus.instance.share(ShareParams(text: text));
 
-String commandMessage(String code) =>
-    _commandErrors[code] ?? 'משהו השתבש. נסו שוב בעוד רגע.';
+String commandMessage(String code) => _commandErrors[code] ?? l10n.errGeneric;
 
 /// Sends a command and shows its error, if any, as a snack bar.
 Future<void> runCommand(BuildContext context, Future<String?> command) async {
@@ -197,20 +196,20 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: AppColors.nightRaised,
-          title: const Text('לצאת מהמשחק?'),
-          content: const Text(
-            'יציאה באמצע המשחק נרשמת כהפסד.',
+          title: Text(context.l10n.leaveGameTitle),
+          content: Text(
+            context.l10n.leaveGameBody,
             style: TextStyle(height: 1.45),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('המשך משחק'),
+              child: Text(context.l10n.resumeGame),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child:
-                  const Text('יציאה', style: TextStyle(color: AppColors.coral)),
+              child: Text(context.l10n.leave,
+                  style: TextStyle(color: AppColors.coral)),
             ),
           ],
         ),
@@ -268,8 +267,8 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
           } on Object {
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('עדיין אי אפשר להתחבר. נסו שוב בעוד רגע.'),
+                SnackBar(
+                  content: Text(context.l10n.stillCantConnect),
                 ),
               );
             }
@@ -302,7 +301,7 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     if (session.kicked) {
       _afterFrame(() {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('מנהל החדר הסיר אתכם מהחדר.')),
+          SnackBar(content: Text(context.l10n.kickedByHost)),
         );
         session.consumeKicked();
         _goHome();
@@ -379,14 +378,14 @@ class _Reconnecting extends StatelessWidget {
               LiveCountdown(deadline: deadline, large: true),
               const SizedBox(height: 20),
               Text(
-                'מתחברים מחדש...',
+                context.l10n.reconnecting,
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
               const SizedBox(height: 10),
               Text(
                 disconnectedDuringMyTurn
-                    ? 'החיבור אבד בזמן התור שלכם. ננסה להחזיר אתכם למשחק במשך 30 שניות.'
-                    : 'החיבור אבד. ננסה להחזיר אתכם למשחק במשך 30 שניות.',
+                    ? context.l10n.connectionLostOnTurn
+                    : context.l10n.connectionLost,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                     color: AppColors.muted, fontSize: 15, height: 1.5),
@@ -403,10 +402,10 @@ class _Reconnecting extends StatelessWidget {
                 ),
                 child: Text(
                   (disconnectNumber == 3
-                          ? 'אם לא תחזרו בתוך 30 שניות, זה ייספר כניתוק 3 מתוך 3 ותוצאו מהמשחק.'
-                          : 'אם לא תחזרו בתוך 30 שניות, זה ייספר כניתוק $disconnectNumber מתוך 3.') +
+                          ? context.l10n.disconnectFinalWarning
+                          : context.l10n.disconnectWarning(disconnectNumber)) +
                       (disconnectedDuringMyTurn
-                          ? ' הזמן בתור ממשיך לרוץ.'
+                          ? context.l10n.turnTimerRunning
                           : ''),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
@@ -418,7 +417,7 @@ class _Reconnecting extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: PrimaryButton(
-                    label: 'יציאה מהמשחק',
+                    label: context.l10n.leaveGameButton,
                     variant: ButtonVariant.danger,
                     onPressed: onLeaveGame,
                   ),
@@ -454,8 +453,8 @@ class _Reconnecting extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'מתחברים מחדש...',
+                      Text(
+                        context.l10n.reconnecting,
                         style: TextStyle(
                           color: AppColors.cream,
                           fontWeight: FontWeight.w800,
@@ -464,7 +463,7 @@ class _Reconnecting extends StatelessWidget {
                       if (inPlay)
                         Text(
                           // The server counts this drop once it notices it.
-                          'ניתוק $disconnectNumber מתוך 3',
+                          context.l10n.disconnectCount(disconnectNumber),
                           style: const TextStyle(color: AppColors.cream),
                         ),
                     ],
@@ -500,37 +499,37 @@ class _Search extends StatelessWidget {
         switch (search.status) {
       'countdown' => (
           AppColors.yellow,
-          'הקבוצה מוכנה!',
-          'המשחק מתחיל בעוד רגע.',
+          context.l10n.groupReady,
+          context.l10n.gameStartingSoon,
         ),
       'waiting_for_more' => (
           AppColors.turquoise,
-          'יש מספיק שחקנים!',
-          'מחכים כמה שניות לשחקנים נוספים ומתחילים כשהזמן מסתיים.',
+          context.l10n.enoughPlayers,
+          context.l10n.waitingForMore,
         ),
       _ when missing == 1 => (
           AppColors.turquoise,
-          'עוד שחקן אחד כדי להתחיל',
-          'ממשיכים לחפש שחקנים מתאימים בקטגוריות שבחרתם.',
+          context.l10n.oneMorePlayer,
+          context.l10n.stillSearching,
         ),
       _ when missing > 1 => (
           AppColors.turquoise,
-          'עוד $missing שחקנים כדי להתחיל',
-          'ממשיכים לחפש שחקנים מתאימים בקטגוריות שבחרתם.',
+          context.l10n.morePlayersNeeded(missing),
+          context.l10n.stillSearching,
         ),
       _ => (
           AppColors.turquoise,
-          'מחפשים שחקנים',
-          'ממשיכים לחפש שחקנים מתאימים בקטגוריות שבחרתם.',
+          context.l10n.searchingPlayers,
+          context.l10n.stillSearching,
         ),
     };
 
     return GameScaffold(
       bannerPlacement: BannerPlacement.search,
-      title: 'מרכיבים קבוצת שחקנים',
+      title: context.l10n.buildingGroup,
       onExit: onCancel,
       bottom: PrimaryButton(
-        label: 'ביטול חיפוש',
+        label: context.l10n.cancelSearch,
         variant: ButtonVariant.danger,
         onPressed: onCancel,
       ),
@@ -583,14 +582,14 @@ class _Search extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'הקבוצה שלך',
+                  context.l10n.yourGroup,
                   style: TextStyle(fontFamily: 'Secular One', fontSize: 17),
                 ),
               ),
               Text(
-                '$count מתוך ${search.maxPlayers}',
+                context.l10n.countOfMax(count, search.maxPlayers),
                 style: const TextStyle(
                   color: AppColors.turquoise,
                   fontSize: 14,
@@ -625,8 +624,8 @@ class _Search extends StatelessWidget {
           const SizedBox(height: 14),
           // Leaving the screen leaves the queue, and the players already found
           // go back to waiting.
-          const Text(
-            'נא לא לעזוב עמוד זה.',
+          Text(
+            context.l10n.dontLeavePage,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.yellow,
@@ -685,8 +684,8 @@ class _Seat extends StatelessWidget {
                   ),
                 ),
                 if (isMe)
-                  const Text(
-                    'אתם',
+                  Text(
+                    context.l10n.you,
                     style: TextStyle(
                       color: AppColors.turquoise,
                       fontSize: 11,
@@ -735,7 +734,7 @@ class _EmptySeat extends StatelessWidget {
           const SizedBox(width: 9),
           Expanded(
             child: Text(
-              'מחפשים שחקן...',
+              context.l10n.searchingPlayer,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -760,11 +759,11 @@ class _NoMatch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _StateMessage(
-      title: 'לא נמצא משחק בקטגוריות שבחרתם',
-      body: 'אפשר לנסות שוב עם אותן קטגוריות, או לבחור קטגוריות אחרות.',
+      title: context.l10n.noMatchTitle,
+      body: context.l10n.noMatchBody,
       image: 'assets/illustrations/no-category-match.webp',
-      primary: ('ניסיון נוסף', onRetry),
-      secondary: ('בחירת קטגוריות אחרות', onCategories),
+      primary: (context.l10n.tryAgain, onRetry),
+      secondary: (context.l10n.chooseOtherCategories, onCategories),
     );
   }
 }
@@ -789,13 +788,15 @@ class _Lobby extends StatelessWidget {
 
     return GameScaffold(
       bannerPlacement: BannerPlacement.lobby,
-      title: host == null ? 'חדר פרטי' : 'החדר של ${host.nickname}',
+      title: host == null
+          ? context.l10n.privateRoom
+          : context.l10n.roomOf(host.nickname),
       onExit: onLeave,
       timer: room.hostReconnectDeadline == null
           ? null
           : LiveCountdown(deadline: room.hostReconnectDeadline!),
       bottom: PrimaryButton(
-        label: iAmHost ? 'התחלת משחק' : 'רק מנהל החדר יכול להתחיל',
+        label: iAmHost ? context.l10n.startGame : context.l10n.onlyHostCanStart,
         onPressed: iAmHost && room.players.length >= 4
             ? () => runCommand(
                   context,
@@ -814,8 +815,8 @@ class _Lobby extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'קוד החדר',
+                        Text(
+                          context.l10n.roomCode,
                           style: TextStyle(color: AppColors.muted),
                         ),
                         LtrText(
@@ -834,21 +835,22 @@ class _Lobby extends StatelessWidget {
                     ),
                   ),
                   IconButton.filledTonal(
-                    tooltip: 'שיתוף הקוד',
+                    tooltip: context.l10n.shareCode,
                     onPressed: () => shareText(
-                      'בואו לשחק איתי ב״מי המתחזה?״\nקוד החדר: ${room.code}\n'
-                      '${inviteLink(room.code)}',
+                      context.l10n
+                          .shareInvite(room.code, inviteLink(room.code)),
                     ),
                     icon: const Icon(Icons.share_rounded),
                   ),
                   const SizedBox(width: 8),
                   IconButton.filled(
-                    tooltip: 'העתקת הקוד',
+                    tooltip: context.l10n.copyCode,
                     onPressed: () async {
                       final messenger = ScaffoldMessenger.of(context);
+                      final copied = context.l10n.codeCopied;
                       await Clipboard.setData(ClipboardData(text: room.code));
                       messenger.showSnackBar(
-                        const SnackBar(content: Text('קוד החדר הועתק')),
+                        SnackBar(content: Text(copied)),
                       );
                     },
                     icon: const Icon(Icons.copy_rounded),
@@ -858,28 +860,28 @@ class _Lobby extends StatelessWidget {
             ),
           ),
           if (room.hostReconnectDeadline != null)
-            const _Notice('מנהל החדר התנתק. ממתינים שיחזור.'),
-          if (host == null)
-            const _Notice('מחכים ששחקן נוסף יתחבר ויקבל את ניהול החדר.'),
+            _Notice(context.l10n.hostDisconnected),
+          if (host == null) _Notice(context.l10n.waitingForNewHost),
           if (transfer != null && host != null)
             _Notice(
               transfer.to == me
-                  ? 'מנהל החדר לא חזר בזמן. הניהול עבר אליכם.'
-                  : 'הניהול עבר ל־${host.nickname}.',
+                  ? context.l10n.hostTransferredToYou
+                  : context.l10n.hostTransferredTo(host.nickname),
+              positive: true,
             ),
           const SizedBox(height: 12),
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: Text(
-              '${room.players.length} מתוך ${room.maxPlayers} שחקנים',
+              context.l10n.playersOfMax(room.players.length, room.maxPlayers),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
           ),
           if (iAmHost && room.players.length < 4)
-            const Align(
+            Align(
               alignment: AlignmentDirectional.centerStart,
               child: Text(
-                'צריך לפחות 4 שחקנים כדי להתחיל',
+                context.l10n.needFourPlayers,
                 style: TextStyle(
                   color: AppColors.coral,
                   fontWeight: FontWeight.w700,
@@ -902,15 +904,15 @@ class _Lobby extends StatelessWidget {
                 subtitle: p.id == room.hostId || p.id == me || !p.connected
                     ? Text(
                         [
-                          if (p.id == room.hostId) 'מנהל החדר',
-                          if (p.id == me) 'אתם',
-                          if (!p.connected) 'מנותק',
+                          if (p.id == room.hostId) context.l10n.roomHost,
+                          if (p.id == me) context.l10n.you,
+                          if (!p.connected) context.l10n.disconnected,
                         ].join(' · '),
                       )
                     : null,
                 trailing: iAmHost && p.id != me
                     ? IconButton(
-                        tooltip: 'הסרת ${p.nickname}',
+                        tooltip: context.l10n.removePlayer(p.nickname),
                         onPressed: () => runCommand(
                           context,
                           session.send(
@@ -937,20 +939,20 @@ class _Lobby extends StatelessWidget {
                     alignment: WrapAlignment.spaceBetween,
                     spacing: 12,
                     children: [
-                      Text('קטגוריות: $categoryNames'),
-                      Text('${room.hintSeconds} שניות לרמז'),
+                      Text(context.l10n.categoriesList(categoryNames)),
+                      Text(context.l10n.secondsPerHint(room.hintSeconds)),
                     ],
                   ),
                   if (room.settingsLocked) ...[
                     const SizedBox(height: 10),
-                    const Row(
+                    Row(
                       children: [
                         Icon(Icons.lock_rounded,
                             size: 16, color: AppColors.yellow),
                         SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            'ההגדרות נעולות מאז שהצטרפו שחקנים',
+                            context.l10n.settingsLockedSinceJoin,
                             style: TextStyle(
                               color: AppColors.yellow,
                               fontSize: 13,
@@ -971,13 +973,15 @@ class _Lobby extends StatelessWidget {
 }
 
 class _Notice extends StatelessWidget {
-  const _Notice(this.text);
+  const _Notice(this.text, {this.positive = false});
 
   final String text;
 
+  /// Good news (the room has a host again) rather than a wait.
+  final bool positive;
+
   @override
   Widget build(BuildContext context) {
-    final positive = text.contains('עבר');
     final color = positive ? AppColors.turquoise : AppColors.yellow;
     return Padding(
       padding: const EdgeInsets.only(top: 12),
@@ -1058,7 +1062,7 @@ class _RoleReveal extends StatelessWidget {
       onExit: onLeave,
       accent: impostor ? const Color(0xFF4A2A8C) : const Color(0xFF1B4F4A),
       bottom: PrimaryButton(
-        label: confirmed ? 'ממתינים לשאר השחקנים' : 'הבנתי',
+        label: confirmed ? context.l10n.waitingForOthers : context.l10n.gotIt,
         onPressed: confirmed
             ? null
             : () => runCommand(
@@ -1078,7 +1082,7 @@ class _RoleReveal extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            impostor ? 'את/ה המתחזה' : 'את/ה אזרח/ית',
+            impostor ? context.l10n.youAreImpostor : context.l10n.youAreCitizen,
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   color: impostor ? AppColors.yellow : AppColors.cream,
                 ),
@@ -1090,8 +1094,8 @@ class _RoleReveal extends StatelessWidget {
             const SizedBox(height: 12),
             // Screen 07 carries this line under the word card, before the
             // numbered tips.
-            const Text(
-              'המתחזה לא יודע את המילה הסודית. שמרו עליה בסוד.',
+            Text(
+              context.l10n.impostorDoesntKnow,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.muted,
@@ -1102,13 +1106,13 @@ class _RoleReveal extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           for (final (index, tip) in (impostor
-                  ? const [
-                      'הקשיבו לרמזים של האחרים ונסו להשתלב.',
-                      'אם תיתפסו — תקבלו הזדמנות אחת לנחש את המילה ולנצח.',
+                  ? [
+                      context.l10n.impostorTip1,
+                      context.l10n.impostorTip2,
                     ]
-                  : const [
-                      'בתורכם, כתבו רמז של מילה אחת שמתאים למילה הסודית.',
-                      'רמז ברור מדי יעזור למתחזה. רמז דק מדי יעורר חשד.',
+                  : [
+                      context.l10n.citizenTip1,
+                      context.l10n.citizenTip2,
                     ])
               .indexed)
             Padding(
@@ -1134,10 +1138,10 @@ class _EliminationReveal extends StatelessWidget {
     final ready = game.player(session.playerId)?.roleConfirmed ?? false;
     final continueButton = PrimaryButton(
       label: ready
-          ? 'ממתינים לשאר השחקנים'
+          ? context.l10n.waitingForOthers
           : game.eliminatedPlayerId == null
-              ? 'ממשיכים לסבב הבא'
-              : 'ממשיכים לסיבוב ${game.round + 1}',
+              ? context.l10n.nextRoundContinues
+              : context.l10n.continuingToRound(game.round + 1),
       onPressed: ready
           ? null
           : () => runCommand(
@@ -1152,15 +1156,15 @@ class _EliminationReveal extends StatelessWidget {
       // The runoff tied too (design 15ג): nobody is out and another round
       // starts, which without this looked like the vote had simply vanished.
       return GameScaffold(
-        title: 'שוב יש תיקו',
+        title: context.l10n.tieAgain,
         showHeader: true,
         timer: _timer(game),
         onExit: onLeave,
         accent: const Color(0xFF42203C),
         bottom: continueButton,
         child: TieAnnouncementContent(
-          subtitle: 'גם הפעם הקולות התחלקו שווה בשווה',
-          explanation: 'איש לא הודח. ממשיכים לסבב רמזים נוסף.',
+          subtitle: context.l10n.votesSplitAgain,
+          explanation: context.l10n.noOneEliminatedNextRound,
           candidates: [
             for (final id in game.voteCandidates)
               if (game.player(id) case final p?)
@@ -1169,8 +1173,8 @@ class _EliminationReveal extends StatelessWidget {
                   p.avatarAsset,
                   switch (game.previousVotes[id]) {
                     null => null,
-                    1 => 'קול אחד',
-                    final n => '$n קולות',
+                    1 => context.l10n.oneVote,
+                    final n => context.l10n.nVotes(n),
                   },
                 ),
           ],
@@ -1183,7 +1187,7 @@ class _EliminationReveal extends StatelessWidget {
         title: '',
         showHeader: false,
         onExit: onLeave,
-        child: const Center(child: Text('טוענים…')),
+        child: Center(child: Text(context.l10n.loading)),
       );
     }
     return GameScaffold(
@@ -1196,7 +1200,7 @@ class _EliminationReveal extends StatelessWidget {
       child: EliminationRevealContent(
         eliminatedName: out.nickname,
         eliminatedAvatar: out.avatarAsset,
-        roleLine: '${out.nickname} היה/הייתה אזרח/ית',
+        roleLine: context.l10n.wasCitizen(out.nickname),
         remaining: [
           for (final p in game.players)
             if (p.status == 'active') (p.nickname, p.avatarAsset),
@@ -1218,7 +1222,7 @@ class _ToVoting extends StatelessWidget {
   Widget build(BuildContext context) {
     return ToVotingView(
       onExit: onLeave,
-      note: 'זה הזמן להחליט מי המתחזה',
+      note: context.l10n.decideImpostor,
       countdown: game.deadline == null
           ? const SizedBox.shrink()
           : LiveCountdown(deadline: game.deadline!, large: true),
@@ -1364,26 +1368,38 @@ class _HintsState extends State<_Hints> {
   (String, Color, bool) _line(PlayerInfo p, {required bool active}) {
     final me = p.id == SessionScope.read(context).playerId;
     if (p.status == 'eliminated') {
-      return (me ? 'הודחת · צופה' : 'הודח/ה · צופה', AppColors.coral, false);
+      return (
+        me
+            ? context.l10n.youEliminatedSpectator
+            : context.l10n.eliminatedSpectator,
+        AppColors.coral,
+        false
+      );
     }
-    if (p.status != 'active') return ('יצא/ה מהמשחק', AppColors.muted, false);
+    if (p.status != 'active') {
+      return (context.l10n.leftGame, AppColors.muted, false);
+    }
     if (!p.connected) {
-      return ('מנותק · ממתינים 30 שניות', AppColors.coral, false);
+      return (context.l10n.disconnectedWaiting, AppColors.coral, false);
     }
-    if (active) return ('כותב/ת רמז', AppColors.yellow, true);
+    if (active) return (context.l10n.writingHint, AppColors.yellow, true);
     final said = [
       for (final h in widget.game.hints)
         if (h.playerId == p.id && !h.missing) h,
     ].length;
-    if (said == 0) return ('ממתין/ה לתור', AppColors.muted, false);
-    return (said == 1 ? '1 רמז' : '$said רמזים', AppColors.muted, false);
+    if (said == 0) return (context.l10n.waitingTurn, AppColors.muted, false);
+    return (
+      said == 1 ? context.l10n.oneHint : context.l10n.nHints(said),
+      AppColors.muted,
+      false
+    );
   }
 
   /// A reported player's hints are hidden wherever they are shown.
   String _hintText(HintView h) {
-    if (h.missing) return 'לא נשלח רמז';
+    if (h.missing) return context.l10n.noHintSent;
     return h.hidden || SessionScope.read(context).hides(h.playerId)
-        ? 'הוסתר'
+        ? context.l10n.hidden
         : h.text;
   }
 
@@ -1413,7 +1429,7 @@ class _HintsState extends State<_Hints> {
 
     return GameScaffold(
       title: game.category,
-      titleLabel: 'קטגוריה',
+      titleLabel: context.l10n.category,
       timer: _timer(game),
       onExit: widget.onLeave,
       scrollable: false,
@@ -1446,7 +1462,7 @@ class _HintsState extends State<_Hints> {
                 ],
                 Expanded(
                   child: Text(
-                    'סיבוב ${game.round} · תור $turn מתוך ${playing.length}',
+                    context.l10n.roundTurnOf(game.round, turn, playing.length),
                     textAlign: TextAlign.end,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1463,12 +1479,12 @@ class _HintsState extends State<_Hints> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.fromLTRB(20, 14, 20, 0),
                       child: Row(
                         children: [
                           Text(
-                            'הרמזים בסיבוב',
+                            context.l10n.roundHints,
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -1526,8 +1542,7 @@ class _HintsState extends State<_Hints> {
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
                         child: _DashedNote(
-                          text: '${current.nickname} כותב/ת עכשיו. '
-                              'אפשר להמשיך להגיב למטה.',
+                          text: context.l10n.playerWriting(current.nickname),
                         ),
                       ),
                   ],
@@ -1654,7 +1669,9 @@ class _ParticipantCard extends StatelessWidget {
                   const SizedBox(width: 7),
                   Expanded(
                     child: Text(
-                      isMe ? '${player.nickname} · אני' : player.nickname,
+                      isMe
+                          ? context.l10n.playerMe(player.nickname)
+                          : player.nickname,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1790,7 +1807,7 @@ class _Composer extends StatelessWidget {
             children: [
               Expanded(
                 child: Semantics(
-                  label: 'הרמז שלך · מילה אחת',
+                  label: context.l10n.yourHintOneWord,
                   child: TextField(
                     controller: controller,
                     maxLength: 25,
@@ -1802,7 +1819,7 @@ class _Composer extends StatelessWidget {
                       fontSize: 19,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'הרמז שלכם',
+                      hintText: context.l10n.yourHint,
                       counterText: '',
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
@@ -1863,7 +1880,7 @@ class _Composer extends StatelessWidget {
                   const SizedBox(width: 7),
                   Expanded(
                     child: Text(
-                      '$error הרמז לא נשלח.',
+                      context.l10n.hintNotSent(error ?? ''),
                       style: const TextStyle(
                         color: Color(0xFFFFD9D9),
                         fontSize: 12.5,
@@ -1894,12 +1911,12 @@ class _SendButton extends StatelessWidget {
         ? const Color(0xFF0E2B2A)
         : AppColors.cream.withValues(alpha: .45);
     return Tooltip(
-      message: 'שליחת רמז',
+      message: context.l10n.sendHint,
       excludeFromSemantics: true,
       child: Semantics(
         button: true,
         enabled: enabled,
-        label: 'שליחת רמז',
+        label: context.l10n.sendHint,
         excludeSemantics: true,
         child: DecoratedBox(
           decoration: BoxDecoration(
@@ -1926,7 +1943,7 @@ class _SendButton extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'שליחה',
+                        context.l10n.send,
                         style: TextStyle(
                           color: ink,
                           fontFamily: 'Secular One',
@@ -1986,7 +2003,7 @@ class _WordButton extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'הצגת המילה שלי',
+                context.l10n.showMyWord,
                 style: TextStyle(
                   color: open ? AppColors.yellow : AppColors.cream,
                   fontSize: 13,
@@ -2027,8 +2044,8 @@ class _WordCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Text(
-                  'המילה שלי',
+                Text(
+                  context.l10n.myWord,
                   style: TextStyle(
                     color: AppColors.night,
                     fontFamily: 'Secular One',
@@ -2038,7 +2055,7 @@ class _WordCard extends StatelessWidget {
                 const Spacer(),
                 IconButton(
                   onPressed: onClose,
-                  tooltip: 'סגירה',
+                  tooltip: context.l10n.close,
                   icon: const Icon(Icons.close_rounded),
                   color: AppColors.night.withValues(alpha: .65),
                 ),
@@ -2053,7 +2070,7 @@ class _WordCard extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    'קטגוריה: $category',
+                    context.l10n.categoryIs(category),
                     style: TextStyle(
                       color: AppColors.night.withValues(alpha: .6),
                       fontSize: 13,
@@ -2104,9 +2121,11 @@ class _HintHistorySheet extends StatelessWidget {
     final rounds = hints.isEmpty
         ? ''
         : first == last
-            ? 'סיבוב $first'
-            : 'סיבובים $first–$last';
-    final count = hints.length == 1 ? '1 רמז' : '${hints.length} רמזים';
+            ? context.l10n.roundN(first)
+            : context.l10n.roundsRange(first, last);
+    final count = hints.length == 1
+        ? context.l10n.oneHint
+        : context.l10n.nHints(hints.length);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -2123,7 +2142,7 @@ class _HintHistorySheet extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'הרמזים של ${player.nickname}',
+                        context.l10n.hintsOf(player.nickname),
                         style: const TextStyle(
                           color: AppColors.night,
                           fontFamily: 'Secular One',
@@ -2133,7 +2152,7 @@ class _HintHistorySheet extends StatelessWidget {
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      tooltip: 'סגירה',
+                      tooltip: context.l10n.close,
                       icon: const Icon(Icons.close_rounded),
                       color: AppColors.night.withValues(alpha: .65),
                     ),
@@ -2148,7 +2167,7 @@ class _HintHistorySheet extends StatelessWidget {
                       Expanded(
                         child: Text(
                           hints.isEmpty
-                              ? 'עוד לא נשלחו רמזים.'
+                              ? context.l10n.noHintsYet
                               : '$count · $rounds',
                           style: TextStyle(
                             color: AppColors.night.withValues(alpha: .65),
@@ -2182,7 +2201,7 @@ class _HintHistorySheet extends StatelessWidget {
                             child: Row(
                               children: [
                                 Text(
-                                  'סיבוב ${h.round}',
+                                  context.l10n.roundN(h.round),
                                   style: TextStyle(
                                     color:
                                         AppColors.night.withValues(alpha: .55),
@@ -2196,9 +2215,9 @@ class _HintHistorySheet extends StatelessWidget {
                                 Expanded(
                                   child: Text(
                                     h.missing
-                                        ? 'לא נשלח רמז'
+                                        ? context.l10n.noHintSent
                                         : hidden
-                                            ? 'הוסתר'
+                                            ? context.l10n.hidden
                                             : h.text,
                                     textAlign: TextAlign.end,
                                     style: const TextStyle(
@@ -2214,7 +2233,7 @@ class _HintHistorySheet extends StatelessWidget {
                                 // its own.
                                 if (canReport && !h.missing)
                                   IconButton(
-                                    tooltip: 'דיווח על הרמז',
+                                    tooltip: context.l10n.reportHint,
                                     icon: const Icon(
                                       Icons.flag_outlined,
                                       size: 20,
@@ -2297,8 +2316,7 @@ class _DisconnectBanner extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              '$nickname התנתק. ממתינים לו עד 30 שניות — '
-              'אחר כך התור שלו ידולג.',
+              context.l10n.playerDisconnectedTurn(nickname),
               style: const TextStyle(
                 color: Color(0xFFFFD9D9),
                 fontSize: 13,
@@ -2339,14 +2357,14 @@ class _ReactionDock extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(4, 0, 4, 7),
             child: Row(
               children: [
-                const Text(
-                  'תגובות',
+                Text(
+                  context.l10n.reactions,
                   style: TextStyle(color: AppColors.muted, fontSize: 11),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'גררו לצדדים לעוד תגובות ↔',
+                    context.l10n.swipeForReactions,
                     textAlign: TextAlign.end,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -2389,7 +2407,7 @@ class _ReactionChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Emoji get the bigger, tighter pill; the structured messages are text.
-    final emoji = !RegExp(r'[֐-׿]').hasMatch(reaction.text);
+    final emoji = !RegExp(r'\p{L}', unicode: true).hasMatch(reaction.text);
     return Opacity(
       opacity: onTap == null ? .45 : 1,
       child: Material(
@@ -2438,7 +2456,7 @@ class _Voting extends StatefulWidget {
 String? _saidSoFar(GameView game, GameSession session, String id) {
   final said = game.hintsOf(id);
   if (said.isEmpty) return null;
-  if (session.hides(id)) return 'הוסתר';
+  if (session.hides(id)) return l10n.hidden;
   final words = [
     for (final h in said)
       if (!h.missing) h.text,
@@ -2470,14 +2488,16 @@ class _VotingState extends State<_Voting> {
     final watching = game.isEliminated(me);
 
     return GameScaffold(
-      title: runoff ? 'הצבעה חוזרת' : 'מי המתחזה?',
+      title: runoff ? context.l10n.revote : context.l10n.gameName,
       timer: _timer(game),
       onExit: widget.onLeave,
       accent: const Color(0xFF42203C),
       bottom: watching
           ? null
           : PrimaryButton(
-              label: isConfirmed ? 'ההצבעה נקלטה' : 'אישור הצבעה',
+              label: isConfirmed
+                  ? context.l10n.voteReceived
+                  : context.l10n.confirmVote,
               onPressed: selected == null || isConfirmed
                   ? null
                   : () => runCommand(
@@ -2499,10 +2519,10 @@ class _VotingState extends State<_Voting> {
             const SizedBox(height: 14),
           ],
           if (!runoff && !watching)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(bottom: 14),
               child: Text(
-                'בחרו שחקן אחד. אפשר לשנות את הבחירה עד שהזמן נגמר.',
+                context.l10n.choosePlayer,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.muted),
               ),
@@ -2518,8 +2538,8 @@ class _VotingState extends State<_Voting> {
                   border:
                       Border.all(color: AppColors.coral.withValues(alpha: .42)),
                 ),
-                child: const Text(
-                  'היה תיקו. מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף — איש לא מודח והמשחק ממשיך לסבב נוסף.',
+                child: Text(
+                  context.l10n.tieRevoteExplain,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Color(0xFFFFD9D9), height: 1.4),
                 ),
@@ -2539,11 +2559,11 @@ class _VotingState extends State<_Voting> {
                     hint: _saidSoFar(game, session, id),
                   ),
                   note: id == me
-                      ? 'אי אפשר להצביע לעצמכם'
+                      ? context.l10n.cantVoteSelf
                       : switch (game.previousVotes[id]) {
                           null => null,
-                          1 => 'קול אחד בסבב הקודם',
-                          final votes => '$votes קולות בסבב הקודם',
+                          1 => context.l10n.oneVotePrevious,
+                          final votes => context.l10n.nVotesPrevious(votes),
                         },
                   enabled: id != me && !watching,
                   selected: selected == id,
@@ -2581,13 +2601,13 @@ class _GuessState extends State<_Guess> {
     final game = widget.game;
     return GameScaffold(
       // The impostor reads it over "עוד אפשר לנצח", not beside the timer.
-      title: game.isImpostor ? '' : 'נתפסתם',
+      title: game.isImpostor ? '' : context.l10n.youWereCaught,
       timer: _timer(game),
       onExit: widget.onLeave,
       accent: const Color(0xFF4A2A8C),
       bottom: game.isImpostor
           ? PrimaryButton(
-              label: 'שליחת ניחוש',
+              label: context.l10n.sendGuess,
               onPressed: () => runCommand(
                 context,
                 session.send(
@@ -2606,13 +2626,13 @@ class _GuessState extends State<_Guess> {
                   height: 170,
                 ),
                 Text(
-                  'עוד אפשר לנצח',
+                  context.l10n.stillCanWin,
                   style: Theme.of(context).textTheme.headlineLarge,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'המתחזה נתפס ועכשיו הוא מנסה לנחש את המילה.',
+                Text(
+                  context.l10n.impostorGuessing,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.muted, fontSize: 17),
                 ),
@@ -2651,8 +2671,8 @@ class _ImpostorGuess extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'נתפסתם',
+                  Text(
+                    context.l10n.youWereCaught,
                     style: TextStyle(
                       color: Color(0xFFFF9B9B),
                       fontSize: 14,
@@ -2661,15 +2681,15 @@ class _ImpostorGuess extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'עוד אפשר לנצח',
+                    context.l10n.stillCanWin,
                     style: Theme.of(context)
                         .textTheme
                         .headlineMedium
                         ?.copyWith(fontSize: 24),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'ניחוש נכון של המילה הסודית מעניק לכם את הניצחון. יש לכם ניסיון אחד.',
+                  Text(
+                    context.l10n.guessWinsExplain,
                     style: TextStyle(
                         color: AppColors.muted, fontSize: 13, height: 1.5),
                   ),
@@ -2683,15 +2703,15 @@ class _ImpostorGuess extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
-                'הרמזים של שאר השחקנים',
+                context.l10n.othersHints,
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
               ),
             ),
             const SizedBox(width: 8),
             Text(
-              'קטגוריה: ${game.category}',
+              context.l10n.categoryIs(game.category),
               style: const TextStyle(color: AppColors.muted, fontSize: 12),
             ),
           ],
@@ -2721,13 +2741,13 @@ class _ImpostorGuess extends StatelessWidget {
             fontFamily: 'Secular One',
             fontSize: 24,
           ),
-          decoration: const InputDecoration(hintText: 'מה המילה?'),
+          decoration: InputDecoration(hintText: context.l10n.whatsTheWord),
         ),
         const SizedBox(height: 8),
         // Screen 14 reassures the impostor that typing is private, and spells
         // out what losing the clock costs.
-        const Text(
-          'הניחוש לא מוצג לשחקנים בזמן ההקלדה',
+        Text(
+          context.l10n.guessHidden,
           style: TextStyle(color: AppColors.muted, fontSize: 13),
         ),
         const SizedBox(height: 10),
@@ -2737,8 +2757,8 @@ class _ImpostorGuess extends StatelessWidget {
             color: AppColors.cream.withValues(alpha: .06),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: const Text(
-            'אם הזמן ייגמר או שהניחוש יהיה שגוי — האזרחים מנצחים.',
+          child: Text(
+            context.l10n.guessFailExplain,
             style: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.5),
           ),
         ),
@@ -2747,18 +2767,17 @@ class _ImpostorGuess extends StatelessWidget {
   }
 }
 
-const _resultReasons = {
-  'impostor_not_caught': 'ההצבעה סימנה אזרח, והמתחזה נשאר במשחק.',
-  // The same words as the one-device result.
-  'impostor_parity': 'נשארו אזרח אחד ומתחזה — ובשלב הזה המתחזה מנצח מיד.',
-  'impostor_guessed_word': 'המתחזה נתפס, אבל הצליח לנחש את המילה.',
-  'impostor_guess_wrong': 'המתחזה נתפס ולא הצליח לנחש את המילה.',
-  'impostor_guess_timeout': 'המתחזה נתפס, אבל הזמן לניחוש נגמר.',
-  'impostor_gone': 'המתחזה עזב את המשחק.',
-  'not_enough_players': 'נשארו פחות משלושה שחקנים, ולכן המשחק הופסק.',
-  'abandoned': 'שני סבבי הצבעה עברו בלי אף הצבעה, ולכן המשחק בוטל. '
-      'הוא לא נספר לאף אחד — לא כניצחון ולא כהפסד.',
-};
+Map<String, String> get _resultReasons => {
+      'impostor_not_caught': l10n.reasonCitizenVoted,
+      // The same words as the one-device result.
+      'impostor_parity': l10n.reasonParity,
+      'impostor_guessed_word': l10n.reasonGuessed,
+      'impostor_guess_wrong': l10n.reasonWrongGuess,
+      'impostor_guess_timeout': l10n.reasonGuessTimeout,
+      'impostor_gone': l10n.reasonImpostorLeft,
+      'not_enough_players': l10n.reasonNotEnoughPlayers,
+      'abandoned': l10n.reasonAbandoned,
+    };
 
 class _Result extends StatefulWidget {
   const _Result({required this.game, required this.onHome});
@@ -2848,23 +2867,25 @@ class _ResultState extends State<_Result> {
       child: GameResultContent(
         winner: result.winner,
         title: result.reason == 'abandoned'
-            ? 'המשחק בוטל'
+            ? context.l10n.gameCancelled
             : switch (result.winner) {
-                'citizens' => 'האזרחים ניצחו!',
-                'impostor' => 'המתחזה ניצח!',
-                _ => 'המשחק הופסק',
+                'citizens' => context.l10n.citizensWon,
+                'impostor' => context.l10n.impostorWon,
+                _ => context.l10n.gameStopped,
               },
         reason: _resultReasons[result.reason] ?? '',
         impostorName: impostor?.nickname ?? '',
         impostorAvatar: impostor?.avatarAsset ?? '',
         secretWord: result.secretWord,
-        impostorLabel: 'המתחזה היה',
+        impostorLabel: context.l10n.impostorWas,
         // A match that was called off is recorded for nobody, so there is
         // nothing to tell anyone they earned.
         above: outcome == null || outcome == 'none'
             ? null
             : StatusBanner(
-                text: outcome == 'win' ? 'נרשם לכם ניצחון' : 'נרשם לכם הפסד',
+                text: outcome == 'win'
+                    ? context.l10n.winRecorded
+                    : context.l10n.lossRecorded,
                 positive: outcome == 'win',
               ),
         children: [
@@ -2885,7 +2906,11 @@ class _ResultState extends State<_Result> {
                             : AppColors.cream.withValues(alpha: .45),
                   ),
                 if (abstained > 0)
-                  ('נמנעו', abstained, AppColors.cream.withValues(alpha: .25)),
+                  (
+                    context.l10n.abstained,
+                    abstained,
+                    AppColors.cream.withValues(alpha: .25)
+                  ),
               ],
             ),
         ],
@@ -2902,10 +2927,10 @@ class _Removed extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _StateMessage(
-      title: 'יצאתם מהמשחק',
-      body: 'התנתקתם שלוש פעמים במשחק הזה, ולכן שאר השחקנים ממשיכים בלעדיכם.',
-      banner: ('נרשם לכם הפסד', false),
-      primary: ('חזרה למסך הבית', onHome),
+      title: context.l10n.youLeftGame,
+      body: context.l10n.removedThirdDisconnect,
+      banner: (context.l10n.lossRecorded, false),
+      primary: (context.l10n.backToHome, onHome),
     );
   }
 }
@@ -2994,21 +3019,22 @@ Future<void> _reportHint(
 }) async {
   final session = SessionScope.read(context);
   final messenger = ScaffoldMessenger.of(context);
+  final texts = context.l10n;
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('לדווח על הרמז?'),
+      title: Text(context.l10n.reportHintTitle),
       content: Text(
-        'הרמז יישלח לבדיקה ונטפל בו בתוך 24 שעות. לא תראו יותר רמזים של $nickname במכשיר הזה.',
+        context.l10n.reportHintBody(nickname),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('ביטול'),
+          child: Text(context.l10n.cancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('דיווח'),
+          child: Text(context.l10n.report),
         ),
       ],
     ),
@@ -3021,8 +3047,8 @@ Future<void> _reportHint(
     SnackBar(
       content: Text(
         code == null
-            ? 'תודה, הדיווח התקבל ויטופל. הרמזים של השחקן יוסתרו במכשיר שלכם.'
-            : 'הרמזים האלה יוסתרו, אבל הדיווח לא נשלח. ${commandMessage(code)}',
+            ? texts.reportThanks
+            : texts.reportNotSent(commandMessage(code)),
       ),
     ),
   );
