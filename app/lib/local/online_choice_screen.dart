@@ -31,7 +31,6 @@ class OnlineChoiceScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _ModeCard(
-            highlighted: true,
             illustration: 'assets/illustrations/matchmaking-team.webp',
             title: 'משחק מהיר',
             description: 'בוחרים קטגוריות ומצטרפים לשחקנים ברשת.',
@@ -65,7 +64,6 @@ class _ModeCard extends StatelessWidget {
     required this.description,
     required this.notes,
     required this.onTap,
-    this.highlighted = false,
   });
 
   final String illustration;
@@ -73,9 +71,6 @@ class _ModeCard extends StatelessWidget {
   final String description;
   final List<String> notes;
   final VoidCallback onTap;
-
-  /// Quick play: the same card as the private room, with a yellow title.
-  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -120,17 +115,14 @@ class _ModeCard extends StatelessWidget {
                             fontFamily: 'Secular One',
                             fontSize: 26,
                             height: 1.1,
-                            color: highlighted
-                                ? AppColors.yellow
-                                : AppColors.cream,
+                            color: AppColors.cream,
                           ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           description,
                           style: TextStyle(
-                            color: AppColors.cream
-                                .withValues(alpha: highlighted ? .75 : .7),
+                            color: AppColors.cream.withValues(alpha: .7),
                             fontSize: 14,
                             height: 1.45,
                           ),
@@ -150,15 +142,13 @@ class _ModeCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
-                        color: AppColors.cream
-                            .withValues(alpha: highlighted ? .1 : .08),
+                        color: AppColors.cream.withValues(alpha: .08),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
                         note,
                         style: TextStyle(
-                          color: AppColors.cream
-                              .withValues(alpha: highlighted ? .8 : .7),
+                          color: AppColors.cream.withValues(alpha: .7),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
