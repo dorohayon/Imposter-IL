@@ -210,6 +210,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     bool pricesFailed,
   ) {
     final notice = switch (m.step) {
+      PurchaseStep.rewardRefused => _Notice.warning(
+          'אפשר לפתוח קטגוריה בצפייה במודעה פעם בארבע שעות, ולכן ״${widget.name}״ לא נפתחה.'
+          '${m.rewardCooldownLeft == null ? '' : ' אפשר לצפות שוב בעוד ${_duration(m.rewardCooldownLeft!)}.'}'),
       PurchaseStep.adFailed => _Notice.warning(
           'לא הצלחנו להציג מודעה עד הסוף, ולכן ״${widget.name}״ לא נפתחה. אפשר לנסות שוב מאוחר יותר או לבחור אפשרות אחרת.'),
       _ when pricesFailed && m.productsMissing => const _Notice.error(
@@ -468,7 +471,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
         children: [
           PrimaryButton(
             label: watching ? 'טוענים מודעה…' : 'צפייה במודעה',
-            onPressed: watching ? null : () => m.watchAdFor(widget.id),
+            // Busy restoring too: the restore link shows that state.
+            onPressed: m.busy ? null : () => m.watchAdFor(widget.id),
           ),
           const SizedBox(height: 8),
           Text(

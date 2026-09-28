@@ -78,6 +78,7 @@ func (s *Server) rewardedUnlock(w http.ResponseWriter, body []byte, sess *sessio
 		return
 	}
 	now := s.now()
+	next := sess.rewardedAt.Add(monetization.RewardedCooldown)
 	switch {
 	case !content.ValidIDs([]string{req.CategoryID}):
 		writeError(w, errInvalidCategories)
@@ -86,8 +87,12 @@ func (s *Server) rewardedUnlock(w http.ResponseWriter, body []byte, sess *sessio
 		writeError(w, errRewardedUnavailable)
 		return
 	// Asking again for the reward it holds is a retry, not a second unlock.
-	case sess.rewardCategory != req.CategoryID && now.Before(sess.rewardedAt.Add(monetization.RewardedCooldown)):
-		writeError(w, errRewardedCooldown)
+	case sess.rewardCategory != req.CategoryID && now.Before(next):
+		// With the time, so the app shows the server's cooldown, not its own.
+		writeJSON(w, errRewardedCooldown.status, map[string]any{"error": map[string]string{
+			"code": errRewardedCooldown.code, "message": errRewardedCooldown.message,
+			"nextAvailableAt": next.UTC().Format(time.RFC3339),
+		}})
 		return
 	}
 	if sess.rewardCategory != req.CategoryID {

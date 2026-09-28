@@ -31,10 +31,13 @@ Uri defaultServerUrl({bool releaseMode = kReleaseMode}) {
 /// A protocol error code from the server (docs/protocol.md), or
 /// `network_error` when the server could not be reached.
 class ApiException implements Exception {
-  const ApiException(this.code, [this.status = 0]);
+  const ApiException(this.code, [this.status = 0, this.details = const {}]);
 
   final String code;
   final int status;
+
+  /// The rest of the server's `error` object, e.g. `nextAvailableAt`.
+  final Map<String, dynamic> details;
 
   @override
   String toString() => 'ApiException($status $code)';
@@ -78,7 +81,7 @@ class ApiClient {
         final error = json['error'] as Map<String, dynamic>?;
         final code = error?['code'] as String? ?? 'internal_error';
         if (code == 'client_too_old') onClientTooOld?.call();
-        throw ApiException(code, response.statusCode);
+        throw ApiException(code, response.statusCode, error ?? const {});
       }
       return json;
     } on ApiException {

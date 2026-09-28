@@ -34,6 +34,10 @@ enum PurchaseStep {
 
   /// The ad was watched: the category is open for the next game.
   rewarded,
+
+  /// The ad was watched, but the server's cooldown refused the unlock (the
+  /// device's clock or state disagreed with it). Nothing opened.
+  rewardRefused,
 }
 
 enum RestoreResult { found, none, failed }
@@ -622,26 +626,53 @@ class Monetization extends ChangeNotifier {
     rewardCategory = categoryId;
     rewardedAt = now;
     unawaited(_persist());
-    // Before the popup says it opened, so the next search already finds it
-    // on the server. Failing is recovered by the category_locked resync.
-    await _claimReward();
-    step = PurchaseStep.rewarded;
+    // Before the popup says it opened, so it never reports an unlock the
+    // server refused, and the next search already finds it there.
+    final held = await _claimReward();
+    step = held ? PurchaseStep.rewarded : PurchaseStep.rewardRefused;
     _notify();
   }
 
   /// Tells the server this session holds the rewarded category, so online
-  /// and private-room games allow it. Retrying for the same category is
-  /// harmless; the server refuses another inside its cooldown.
-  Future<void> _claimReward() async {
+  /// and private-room games allow it, and takes on the server's cooldown.
+  /// Retrying for the same category is harmless.
+  ///
+  /// Returns false only when the server refused it inside its cooldown; the
+  /// unlock is then withdrawn everywhere. Offline or unreachable keeps it:
+  /// one-device play has it, and the category_locked resync claims it again.
+  Future<bool> _claimReward() async {
     final token = _token?.call();
     final category = rewardCategory;
-    if (token == null || category == null) return;
+    if (token == null || category == null) return true;
     try {
-      await api.request('POST', '/v1/rewarded-unlocks',
+      final json = await api.request('POST', '/v1/rewarded-unlocks',
           token: token, body: {'categoryId': category});
+      _adoptServerCooldown(json['nextAvailableAt']);
+    } on ApiException catch (e) {
+      if (e.code != 'rewarded_cooldown') return true;
+      // The refused watch granted nothing, so only the server's cooldown counts.
+      rewardedAt = null;
+      _adoptServerCooldown(e.details['nextAvailableAt']);
+      if (rewardCategory == category) rewardCategory = null;
+      unawaited(_persist());
+      _notify();
+      return false;
     } on Object {
-      // Offline, or refused: one-device play still has it.
+      return true;
     }
+    return true;
+  }
+
+  /// The server's cooldown wins when it ends later than this device's: a
+  /// claim made late (after offline play) or a device clock that moved.
+  void _adoptServerCooldown(Object? nextAvailableAt) {
+    final next = DateTime.tryParse(nextAvailableAt as String? ?? '');
+    if (next == null) return;
+    final start = next.subtract(rewardedCooldown);
+    if (rewardedAt case final at? when !start.isAfter(at)) return;
+    rewardedAt = start;
+    unawaited(_persist());
+    _notify();
   }
 
   /// The next game started — online, in a private room or on one device —

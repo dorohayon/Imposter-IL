@@ -309,7 +309,8 @@ func TestRewardedUnlockOpensOneGame(t *testing.T) {
 		t.Fatalf("unlock: %d %v", status, body)
 	}
 	c.syncPurchases(hostToken) // a store sync replaces purchases, not the reward
-	if status, body := unlock("sports"); status != http.StatusTooManyRequests {
+	if status, body := unlock("sports"); status != http.StatusTooManyRequests ||
+		body["error"].(map[string]any)["nextAvailableAt"] != t0.Add(monetization.RewardedCooldown).UTC().Format(time.RFC3339) {
 		t.Fatalf("second unlock inside the cooldown: %d %v", status, body)
 	}
 	if status, body := unlock("gaming"); status != http.StatusOK {

@@ -111,7 +111,7 @@
 
 נשלח אחרי ש־AdMob דיווח `onUserEarnedReward`. הקטגוריה נשמרת על ה־session בנפרד מהרכישות (סנכרון רכישות אינו מוחק אותה), נחשבת פתוחה בכל בדיקת `category_locked`, ונמחקת כשהשחקן משובץ במשחק הבא — ברשת או בחדר פרטי, בין שהמשחק הסתיים ובין שננטש. `game.playAgain` ברשת מחפש שוב בלעדיה; אם רק היא נבחרה — `category_locked`.
 
-`200`: `{ "categoryId": "sports", "nextAvailableAt": "2026-09-28T16:00:00Z" }`. בקשה חוזרת לאותה קטגוריה שעדיין מוחזקת מצליחה ואינה מזיזה את הזמן. שגיאות: `401 session_not_found`, `422 invalid_categories`, `403 rewarded_unavailable` (`ads.enabled` או `ads.rewardedEnabled` כבויים), `429 rewarded_cooldown` — פחות מ־4 שעות מהפתיחה הקודמת של ה־session, בכל קטגוריה.
+`200`: `{ "categoryId": "sports", "nextAvailableAt": "2026-09-28T16:00:00Z" }`. בקשה חוזרת לאותה קטגוריה שעדיין מוחזקת מצליחה ואינה מזיזה את הזמן. שגיאות: `401 session_not_found`, `422 invalid_categories`, `403 rewarded_unavailable` (`ads.enabled` או `ads.rewardedEnabled` כבויים), `429 rewarded_cooldown` — פחות מ־4 שעות מהפתיחה הקודמת של ה־session, בכל קטגוריה; אובייקט ה־`error` כולל `nextAvailableAt`.
 
 ### `POST /v1/sessions`
 

@@ -781,6 +781,49 @@ void main() {
       expect(m.isUnlocked('sports'), isFalse);
     });
 
+    test('a claim the server refuses opens nothing and takes its cooldown',
+        () async {
+      final now = DateTime.utc(2026, 9, 28, 12);
+      final serverNext = now.add(const Duration(hours: 2));
+      final api = FakeApi();
+      api.responses['POST /v1/rewarded-unlocks'] = ApiException(
+          'rewarded_cooldown',
+          429,
+          {'nextAvailableAt': serverNext.toIso8601String()});
+      final session = GameSession(api);
+      addTearDown(session.dispose);
+      session.token = 'token-1';
+      final m = await ready(FakeAds(), api: api, clock: () => now);
+      m.attach(session);
+
+      await m.watchAdFor('sports');
+      expect(m.step, PurchaseStep.rewardRefused);
+      expect(m.isUnlocked('sports'), isFalse);
+      expect(m.rewardCooldownLeft, const Duration(hours: 2),
+          reason: "the server's cooldown, not a fresh four hours");
+    });
+
+    test("a late claim takes the server's later cooldown", () async {
+      final now = DateTime.utc(2026, 9, 28, 12);
+      final api = FakeApi();
+      final m = await ready(FakeAds(), api: api, clock: () => now);
+      await m.watchAdFor('sports'); // offline: no session yet
+      expect(m.step, PurchaseStep.rewarded);
+
+      // Online an hour later: the server starts its cooldown at the claim.
+      api.responses['POST /v1/rewarded-unlocks'] = {
+        'categoryId': 'sports',
+        'nextAvailableAt': now.add(const Duration(hours: 5)).toIso8601String(),
+      };
+      final session = GameSession(api);
+      addTearDown(session.dispose);
+      session.token = 'token-1';
+      m.attach(session);
+      await flush();
+      expect(m.isUnlocked('sports'), isTrue);
+      expect(m.rewardCooldownLeft, const Duration(hours: 5));
+    });
+
     test('the reward and its cooldown survive a restart', () async {
       final now = DateTime(2026, 9, 28, 12);
       final m = await ready(FakeAds(), clock: () => now);
