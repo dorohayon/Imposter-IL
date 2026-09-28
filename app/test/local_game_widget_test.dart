@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:imposter_il/l10n/l10n.dart';
 import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/local/local_game.dart';
 import 'package:imposter_il/local/local_screens.dart';
@@ -68,6 +69,8 @@ Future<void> _pumpGame(WidgetTester tester, LocalGame game) async {
       child: MaterialApp(
         key: UniqueKey(),
         theme: AppTheme.dark,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: LocalGameScreen(resumed: game),
       ),
     ),
@@ -358,8 +361,8 @@ void main() {
               request.$2 == '/v1/config' ||
               request.$2 == '/v1/entitlements' ||
               request.$1 == 'GET' &&
-                  (request.$2 == '/v1/categories' ||
-                      request.$2 == '/v1/reactions'),
+                  (request.$2.startsWith('/v1/categories') ||
+                      request.$2.startsWith('/v1/reactions')),
         ),
       ),
     );

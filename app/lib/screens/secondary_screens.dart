@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../l10n/l10n.dart';
 import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
 import '../state/game_session.dart';
@@ -18,7 +19,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
     return GameScaffold(
-      title: 'הפרופיל שלי',
+      title: context.l10n.myProfile,
       bannerPlacement: BannerPlacement.profile,
       child: Column(
         children: [
@@ -39,7 +40,7 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             icon: const Icon(Icons.edit_rounded),
-            label: const Text('עריכת כינוי ואווטאר'),
+            label: Text(context.l10n.editNicknameAvatar),
           ),
           const SizedBox(height: 20),
           Row(
@@ -47,7 +48,7 @@ class ProfileScreen extends StatelessWidget {
               Expanded(
                 child: _StatCard(
                   value: '${session.wins}',
-                  label: 'ניצחונות',
+                  label: context.l10n.wins,
                   color: AppColors.turquoise,
                 ),
               ),
@@ -55,7 +56,7 @@ class ProfileScreen extends StatelessWidget {
               Expanded(
                 child: _StatCard(
                   value: '${session.losses}',
-                  label: 'הפסדים',
+                  label: context.l10n.losses,
                   color: AppColors.coral,
                 ),
               ),
@@ -118,42 +119,48 @@ class SettingsScreen extends StatelessWidget {
     final session = SessionScope.of(context);
     final money = MonetizationScope.of(context);
     return GameScaffold(
-      title: 'הגדרות',
+      title: context.l10n.settings,
       bannerPlacement: BannerPlacement.settings,
       child: Column(
         children: [
-          const _SettingsRow(
-            title: 'צלילים',
+          _SettingsRow(
+            title: context.l10n.sounds,
             value: false,
             enabled: false,
-            note: 'בקרוב',
+            note: context.l10n.comingSoon,
           ),
           const SizedBox(height: 10),
           _SettingsRow(
-            title: 'רטט',
+            title: context.l10n.vibration,
             value: session.vibrationOn,
             onChanged: session.setVibration,
           ),
           const SizedBox(height: 10),
           _SettingsRow(
-            title: 'הצגת תגובות',
+            title: context.l10n.showReactions,
             value: session.showReactions,
             onChanged: session.setShowReactions,
           ),
           const SizedBox(height: 10),
-          const _LinkRow(title: 'שפה', value: 'עברית'),
+          _LinkRow(
+            title: context.l10n.language,
+            value: session.languageOverride == null
+                ? '${context.l10n.phoneLanguage} · ${context.l10n.languageName}'
+                : context.l10n.languageName,
+            onTap: () => _chooseLanguage(context),
+          ),
           const SizedBox(height: 20),
           _LinkRow(
-            title: 'תנאי שימוש',
-            value: 'גרסה $legalVersion',
+            title: context.l10n.termsTitle,
+            value: context.l10n.versionN(legalVersion),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const TermsScreen()),
             ),
           ),
           const SizedBox(height: 10),
           _LinkRow(
-            title: 'מדיניות פרטיות',
-            value: 'גרסה $legalVersion',
+            title: context.l10n.privacyTitle,
+            value: context.l10n.versionN(legalVersion),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const PrivacyScreen()),
             ),
@@ -164,8 +171,8 @@ class SettingsScreen extends StatelessWidget {
           if (money.monthlyActive) ...[
             const SizedBox(height: 10),
             _LinkRow(
-              title: 'ניהול המנוי',
-              value: 'פרימיום חודשי',
+              title: context.l10n.manageSubscription,
+              value: context.l10n.premiumMonthly,
               onTap: () => openSubscriptions(money.config.premiumMonthly),
             ),
           ],
@@ -174,30 +181,31 @@ class SettingsScreen extends StatelessWidget {
           if (money.privacyOptionsRequired) ...[
             const SizedBox(height: 10),
             _LinkRow(
-              title: 'העדפות פרטיות לפרסומות',
+              title: context.l10n.adPrivacy,
               value: '',
               onTap: money.showPrivacyOptions,
             ),
           ],
           const SizedBox(height: 36),
-          const Text(
-            'מי המתחזה? · גרסה 1.0',
+          Text(
+            context.l10n.appVersion,
             style: TextStyle(color: AppColors.muted, fontSize: 12),
           ),
           if (supportEmail.isNotEmpty)
-            const ListTile(
+            ListTile(
               leading: Icon(Icons.mail_outline_rounded),
-              title: Text('יצירת קשר'),
+              title: Text(context.l10n.contact),
               subtitle: Text(supportEmail),
             ),
           if (session.muted.isNotEmpty)
             ListTile(
               leading: const Icon(Icons.flag_outlined),
-              title: const Text('שחקנים שדיווחתם עליהם'),
-              subtitle: Text('${session.muted.length} שחקנים מוסתרים'),
+              title: Text(context.l10n.reportedPlayers),
+              subtitle:
+                  Text(context.l10n.hiddenPlayersCount(session.muted.length)),
               trailing: TextButton(
                 onPressed: session.clearMuted,
-                child: const Text('ניקוי'),
+                child: Text(context.l10n.clear),
               ),
             ),
         ],
@@ -240,10 +248,9 @@ class _RestoreRowState extends State<_RestoreRow> {
     setState(() => _busy = false);
     messenger.showSnackBar(SnackBar(
       content: Text(switch (result) {
-        RestoreResult.found => 'הרכישות שוחזרו.',
-        RestoreResult.none => 'לא נמצאו רכישות קודמות בחשבון החנות הזה.',
-        RestoreResult.failed =>
-          'השחזור לא הושלם. בדקו את החיבור לאינטרנט ונסו שוב.',
+        RestoreResult.found => context.l10n.purchasesRestored,
+        RestoreResult.none => context.l10n.noPurchasesFound,
+        RestoreResult.failed => context.l10n.restoreFailed,
       }),
     ));
   }
@@ -252,11 +259,47 @@ class _RestoreRowState extends State<_RestoreRow> {
   Widget build(BuildContext context) {
     final money = MonetizationScope.of(context);
     return _LinkRow(
-      title: _busy ? 'משחזרים רכישות…' : 'שחזור רכישות',
-      value: money.premium ? 'פרימיום' : '',
+      title: _busy
+          ? context.l10n.restoringPurchases
+          : context.l10n.restorePurchases,
+      value: money.premium ? context.l10n.premium : '',
       onTap: _busy ? null : _restore,
     );
   }
+}
+
+/// The phone's language, then every language the app has, each in its own
+/// name: a new ARB file adds its row by itself.
+Future<void> _chooseLanguage(BuildContext context) async {
+  final session = SessionScope.read(context);
+  final choice = await showModalBottomSheet<(String?,)>(
+    context: context,
+    backgroundColor: AppColors.nightSoft,
+    builder: (sheet) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final code in [
+            null,
+            for (final l in AppLocalizations.supportedLocales) l.languageCode,
+          ])
+            ListTile(
+              minTileHeight: 56,
+              title: Text(
+                code == null
+                    ? sheet.l10n.phoneLanguage
+                    : lookupAppLocalizations(Locale(code)).languageName,
+              ),
+              trailing: session.languageOverride == code
+                  ? const Icon(Icons.check_rounded, color: AppColors.yellow)
+                  : null,
+              onTap: () => Navigator.of(sheet).pop((code,)),
+            ),
+        ],
+      ),
+    ),
+  );
+  if (choice != null) await session.setLanguage(choice.$1);
 }
 
 class _SettingsRow extends StatelessWidget {
@@ -289,19 +332,24 @@ class _SettingsRow extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: enabled ? AppColors.cream : AppColors.muted,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                    // Flexible: a longer language must wrap at 320 px.
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          color: enabled ? AppColors.cream : AppColors.muted,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     if (note != null) ...[
                       const SizedBox(width: 8),
-                      Text(
-                        note!,
-                        style: const TextStyle(color: AppColors.muted),
+                      Flexible(
+                        child: Text(
+                          note!,
+                          style: const TextStyle(color: AppColors.muted),
+                        ),
                       ),
                     ],
                   ],
@@ -349,7 +397,15 @@ class _LinkRow extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(value, style: const TextStyle(color: AppColors.muted)),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppColors.muted),
+                ),
+              ),
               const SizedBox(width: 6),
               const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
             ],
@@ -363,23 +419,23 @@ class _LinkRow extends StatelessWidget {
 class HowToPlayScreen extends StatelessWidget {
   const HowToPlayScreen({super.key});
 
-  static const steps = [
-    'כולם מקבלים את אותה מילה סודית — חוץ מהמתחזה, שרואה רק את הקטגוריה.',
-    'כל שחקן כותב בתורו רמז של מילה אחת. לכל תור יש 60 שניות.',
-    'רמז ברור מדי יעזור למתחזה. רמז דק מדי יעורר חשד.',
-    'אפשר להגיב לרמזים באמצעות אימוג׳ים והודעות מוכנות.',
-    'בסוף הסבב מצביעים מי המתחזה. יש 20 שניות להצביע.',
-    'אם המתחזה נתפס, יש לו 60 שניות לנחש את המילה ולנצח בכל זאת.',
-  ];
+  static List<String> get steps => [
+        l10n.howStep1,
+        l10n.howStep2,
+        l10n.citizenTip2,
+        l10n.howStep4,
+        l10n.howStep5,
+        l10n.howStep6,
+      ];
 
   @override
   Widget build(BuildContext context) {
     return GameScaffold(
-      title: 'איך משחקים?',
+      title: context.l10n.howToPlay,
       bannerPlacement: BannerPlacement.howToPlay,
       accent: const Color(0xFF2A2455),
       bottom: PrimaryButton(
-        label: 'הבנתי',
+        label: context.l10n.gotIt,
         onPressed: () => Navigator.of(context).pop(),
       ),
       child: Column(
@@ -413,7 +469,7 @@ class UpdateRequiredScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GameScaffold(
-      title: 'צריך לעדכן',
+      title: context.l10n.updateNeeded,
       showBack: false,
       child: Column(
         children: [
@@ -421,14 +477,13 @@ class UpdateRequiredScreen extends StatelessWidget {
           const Illustration('assets/illustrations/connection-error.webp'),
           const SizedBox(height: 20),
           Text(
-            'יש גרסה חדשה של המשחק',
+            context.l10n.newVersion,
             style: Theme.of(context).textTheme.headlineLarge,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          const Text(
-            'הגרסה שמותקנת אצלכם כבר לא נתמכת.\n'
-            'עדכנו את האפליקציה בחנות כדי להמשיך לשחק.',
+          Text(
+            context.l10n.versionUnsupported,
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, height: 1.5),
           ),
@@ -461,10 +516,10 @@ class ServerErrorScreen extends StatelessWidget {
       bottom: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          PrimaryButton(label: 'ניסיון נוסף', onPressed: onRetry),
+          PrimaryButton(label: context.l10n.tryAgain, onPressed: onRetry),
           const SizedBox(height: 8),
           PrimaryButton(
-            label: 'חזרה למסך הבית',
+            label: context.l10n.backToHome,
             variant: ButtonVariant.secondary,
             onPressed: onHome,
           ),
@@ -477,15 +532,15 @@ class ServerErrorScreen extends StatelessWidget {
             height: 170,
           ),
           Text(
-            'משהו השתבש',
+            context.l10n.somethingWrong,
             style: Theme.of(context).textTheme.headlineLarge,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           Text(
             gameStopped
-                ? 'המשחק הופסק בגלל תקלה בחיבור לשרת. זו לא אשמתכם.'
-                : 'השרת לא זמין כרגע. נסו שוב בעוד רגע.',
+                ? context.l10n.serverFaultStopped
+                : context.l10n.serverUnavailable,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: AppColors.muted,
@@ -495,7 +550,7 @@ class ServerErrorScreen extends StatelessWidget {
           ),
           if (gameStopped) ...[
             const SizedBox(height: 16),
-            const StatusBanner(text: 'לא נרשם לכם הפסד', positive: true),
+            StatusBanner(text: context.l10n.noLossRecorded, positive: true),
           ],
         ],
       ),

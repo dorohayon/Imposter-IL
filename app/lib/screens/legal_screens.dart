@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../crash_reporting.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 
@@ -11,7 +12,7 @@ import '../widgets/game_ui.dart';
 /// acknowledgement. The acknowledgement is deliberately device-local: the
 /// product has no account system and no legal-consent profile on the server.
 const legalVersion = '1.3';
-const legalDate = '26 בספטמבר 2026';
+String get legalDate => l10n.legalDate;
 const legalAcceptedVersionKey = 'legal.acceptedVersion';
 
 /// Public copies for App Store Connect, Google Play and anyone who wants to
@@ -102,7 +103,7 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
   @override
   Widget build(BuildContext context) {
     return GameScaffold(
-      title: 'לפני שמתחילים',
+      title: context.l10n.legalGateTitle,
       showBack: false,
       bottom: Column(
         mainAxisSize: MainAxisSize.min,
@@ -121,16 +122,15 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
               controlAffinity: ListTileControlAffinity.leading,
               activeColor: AppColors.turquoise,
               checkColor: AppColors.night,
-              title: const Text(
-                'קראתי ואני מסכים/ה לתנאי השימוש ומאשר/ת שקראתי את מדיניות '
-                'הפרטיות.',
+              title: Text(
+                context.l10n.legalConsent,
                 style: TextStyle(fontWeight: FontWeight.w700, height: 1.35),
               ),
             ),
           ),
           const SizedBox(height: 10),
           PrimaryButton(
-            label: _busy ? 'שומרים...' : 'אישור והמשך',
+            label: _busy ? context.l10n.saving : context.l10n.acceptAndContinue,
             onPressed: _checked && !_busy ? _submit : null,
           ),
         ],
@@ -145,36 +145,35 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
           ),
           const SizedBox(height: 18),
           Text(
-            'משחק הוגן מתחיל בכללים ברורים',
+            context.l10n.legalGateHeadline,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineLarge,
           ),
           const SizedBox(height: 12),
-          const Text(
-            'במשחק כותבים כינויים ורמזים ששחקנים אחרים יכולים לראות. '
-            'אנחנו מסננים תוכן לא מתאים ומאפשרים לדווח ולהסתיר שחקנים.',
+          Text(
+            context.l10n.legalGateBody,
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, height: 1.5),
           ),
           const SizedBox(height: 22),
           _LegalLink(
-            title: 'תנאי שימוש',
-            subtitle: 'כללי המשחק, תוכן אסור ודיווחים',
+            title: context.l10n.termsTitle,
+            subtitle: context.l10n.termsSubtitle,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const TermsScreen()),
             ),
           ),
           const SizedBox(height: 10),
           _LegalLink(
-            title: 'מדיניות פרטיות',
-            subtitle: 'איזה מידע נשמר, איפה ולכמה זמן',
+            title: context.l10n.privacyTitle,
+            subtitle: context.l10n.privacySubtitle,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const PrivacyScreen()),
             ),
           ),
           const SizedBox(height: 18),
-          const Text(
-            'גרסת מסמכים $legalVersion · $legalDate',
+          Text(
+            context.l10n.legalDocsVersion(legalVersion, legalDate),
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, fontSize: 12),
           ),
@@ -189,58 +188,57 @@ class TermsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _LegalDocument(
-      title: 'תנאי שימוש',
-      intro:
-          'גרסה $legalVersion · בתוקף מ־$legalDate\n\nהשימוש ב״מי המתחזה?״ כפוף לתנאים הבאים. המשחק מיועד לבני 13 ומעלה. אם מלאו לכם 13 אך אינכם בגיל שמאפשר לכם להסכים לתנאים במקום מגוריכם, השתמשו במשחק רק באישור ובהשגחת הורה או אפוטרופוס.',
+    return _LegalDocument(
+      title: context.l10n.termsTitle,
+      intro: context.l10n.termsIntro(legalVersion, legalDate),
       sections: [
         _LegalSection(
-          '1. השירות',
-          '״מי המתחזה?״ הוא משחק חברתי מקוון המופעל על ידי Imposter IL (imposteril36@gmail.com). אין צורך בחשבון. אתם בוחרים כינוי ואווטאר ומקבלים מזהה אורח זמני לצורך המשחק.',
+          context.l10n.terms1Title,
+          context.l10n.terms1,
         ),
         _LegalSection(
-          '2. כללי התנהגות ותוכן',
-          'אין לפרסם בכינוי או ברמז תוכן מיני מפורש, איומים, דברי שנאה, השפלה או הטרדה, תוכן בלתי חוקי, התחזות לאדם אחר, פרטים אישיים של אדם אחר או תוכן שנועד לפגוע בשחקנים. אין לנסות לעקוף את מסנני התוכן או לנצל לרעה את השרת, החדרים, מנגנון הדיווח או המשחק.',
+          context.l10n.terms2Title,
+          context.l10n.terms2,
         ),
         _LegalSection(
-          '3. תוכן של שחקנים',
-          'כינויים ורמזים שכתבתם מוצגים לשחקנים אחרים במשחק. אתם אחראים לתוכן שאתם שולחים. המשחק רשאי לסרב לתוכן, להסתירו או להפסיק גישה במקרה של הפרת הכללים. שחקנים יכולים לדווח על תוכן ולהסתיר תוכן של שחקן שדווח במכשיר שלהם. דיווחים נבדקים בתוך 24 שעות, ותוכן שמפר את הכללים מתווסף לסינון.',
+          context.l10n.terms3Title,
+          context.l10n.terms3,
         ),
         _LegalSection(
-          '4. משחקים, תוצאות וסטטיסטיקה',
-          'המשחק עשוי להסתיים עקב ניתוק, תקלה או תחזוקה. ניצחונות והפסדים נשמרים במכשיר בלבד ואינם חשבון, דירוג או נכס שניתן לשחזר לאחר מחיקת האפליקציה או מעבר מכשיר.',
+          context.l10n.terms4Title,
+          context.l10n.terms4,
         ),
         _LegalSection(
-          '5. רכישות, מנויים ופרסומות',
-          'שלוש קטגוריות פתוחות בחינם. את שאר הקטגוריות אפשר לפתוח ברכישה של קטגוריה אחת לתמיד, במנוי פרימיום חודשי או ברכישת פרימיום לכל החיים. פרימיום פותח את כל הקטגוריות, גם כאלה שיתווספו, ומסיר את הפרסומות; רכישת קטגוריה בודדת אינה מסירה פרסומות. התשלום, החיוב, החידוש וההחזרים מתבצעים דרך App Store או Google Play, בכפוף לתנאים שלהם ובמחיר שהחנות מציגה במטבע של חשבונכם. המנוי החודשי מתחדש אוטומטית בכל חודש עד לביטול. אפשר לבטל אותו בכל עת בהגדרות המנויים בחנות, לפחות 24 שעות לפני מועד החידוש, והגישה נשארת עד סוף התקופה ששולמה. רכישה שהוחזרה או בוטלה בחנות מפסיקה לפתוח את מה שפתחה. רכישות שייכות לחשבון החנות ולא למכשיר, ואפשר לשחזר אותן בכל מכשיר עם אותו חשבון באמצעות ״שחזור רכישות״. למי שאין לו פרימיום מוצגות פרסומות של צד שלישי במסכים שמחוץ למשחק ואחרי משחק שהסתיים. במכשירי Apple חל גם הסכם הרישיון הסטנדרטי של Apple למשתמש קצה (EULA). אין באמור כדי לגרוע מזכויות שלכם לפי דיני הגנת הצרכן החלים, לרבות ביטול עסקה.',
+          context.l10n.terms5Title,
+          context.l10n.terms5,
         ),
         _LegalSection(
-          '6. זמינות ושינויים',
-          'השירות ניתן כפי שהוא ובהתאם לזמינות. מפעיל השירות רשאי לתקן באגים, לשנות כללים ותוכן, להגביל גרסאות ישנות או להפסיק חלקים מהשירות. כששינוי מהותי בתנאים דורש הסכמה מחודשת, האפליקציה תציג את הגרסה החדשה לפני המשך המשחק.',
+          context.l10n.terms6Title,
+          context.l10n.terms6,
         ),
         _LegalSection(
-          '7. קניין רוחני',
-          'השם, העיצוב, הקוד, האיורים ותוכן המשחק שייכים לבעליהם ומוגנים לפי הדין החל. אין להעתיק, להפיץ, לבצע הנדסה לאחור או להשתמש בנכסי המשחק מעבר למה שמותר בדין או ברישיונות החלים.',
+          context.l10n.terms7Title,
+          context.l10n.terms7,
         ),
         _LegalSection(
-          '8. אחריות',
-          'במידה המרבית המותרת לפי דין, אין התחייבות שהשירות יהיה רציף או נטול שגיאות. אין בתנאים כדי לגרוע מזכויות צרכניות שלא ניתן לוותר עליהן לפי הדין החל.',
+          context.l10n.terms8Title,
+          context.l10n.terms8,
         ),
         _LegalSection(
-          '9. פרטיות',
-          'מדיניות הפרטיות מתארת את המידע שבו השירות משתמש ואת תקופות השמירה והיא חלק מהשימוש בשירות.',
+          context.l10n.terms9Title,
+          context.l10n.terms9,
         ),
         _LegalSection(
-          '10. שינויים בתנאים',
-          'שינוי מהותי יקבל גרסת מסמכים חדשה. האפליקציה שומרת במכשיר את גרסת התנאים שאושרה ויכולה לדרוש אישור מחדש לגרסה חדשה.',
+          context.l10n.terms10Title,
+          context.l10n.terms10,
         ),
         _LegalSection(
-          '11. דין וסמכות שיפוט',
-          'על תנאים אלה חלים דיני מדינת ישראל, וסמכות השיפוט הבלעדית נתונה לבתי המשפט המוסמכים במחוז תל אביב־יפו. אין באמור כדי לגרוע מזכותכם לתבוע במקום מגוריכם כאשר הדין החל עליכם מקנה לכם זכות כזו.',
+          context.l10n.terms11Title,
+          context.l10n.terms11,
         ),
         _LegalSection(
-          '12. יצירת קשר',
-          'Imposter IL · imposteril36@gmail.com\nלתמיכה, לדיווח על תוכן פוגעני ולכל שאלה על התנאים האלה.',
+          context.l10n.terms12Title,
+          context.l10n.terms12,
         ),
       ],
       publicPath: termsPath,
@@ -253,62 +251,61 @@ class PrivacyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _LegalDocument(
-      title: 'מדיניות פרטיות',
-      intro:
-          'גרסה $legalVersion · בתוקף מ־$legalDate\n\nהמדיניות מתארת את המידע שבו ״מי המתחזה?״ משתמש כדי להפעיל משחקים, לשמור העדפות ולהגן על שחקנים.',
+    return _LegalDocument(
+      title: context.l10n.privacyTitle,
+      intro: context.l10n.privacyIntro(legalVersion, legalDate),
       sections: [
         _LegalSection(
-          '1. מי אנחנו',
-          'המשחק ״מי המתחזה?״ מופעל על ידי Imposter IL, והמדיניות הזאת חלה על האפליקציה ועל השרת שמפעיל אותה. לפניות בנושא פרטיות: imposteril36@gmail.com.',
+          context.l10n.privacy1Title,
+          context.l10n.privacy1,
         ),
         _LegalSection(
-          '2. מידע שנשמר במכשיר',
-          'האפליקציה שומרת במכשיר את מזהה ה־session וה־player הזמניים, הכינוי והאווטאר, ניצחונות והפסדים, הגדרות רטט ותגובות, גרסת המסמכים שאושרה ורשימת מזהי שחקנים שדיווחתם עליהם כדי להסתיר את התוכן שלהם. מחיקת האפליקציה או נתוניה עשויה למחוק מידע זה. לאחר רכישה נשמרים גם הקטגוריות והפרימיום שבבעלותכם ומועד התוקף של המנוי, כדי שיישארו פתוחים גם בלי חיבור, וכן הגדרות הפרסומות שהתקבלו מהשרת ומועד המודעה האחרונה במסך מלא.',
+          context.l10n.privacy2Title,
+          context.l10n.privacy2,
         ),
         _LegalSection(
-          '3. מידע שנשלח לשרת',
-          'כדי להפעיל משחקים השרת מקבל מזהה שחקן ו־session, כינוי, אווטאר, כתובת IP לצורכי אבטחה והגבלת קצב, חברות בחדרים ובמשחקים, קטגוריות שנבחרו, רמזים, תגובות, הצבעות, ניחושים ודיווחים. אין צורך בשם אמיתי, מספר טלפון או כתובת דוא״ל כדי לשחק. כדי לפתוח ברשת קטגוריות שרכשתם, האפליקציה שולחת לשרת את ההוכחה שהחנות מספקת לרכישה — עסקה חתומה של Apple או אסימון רכישה של Google, הכוללים את מזהה המוצר, מזהה העסקה ומועדיה. השרת מאמת אותה מול Apple או Google. אנחנו לא מקבלים את פרטי התשלום שלכם.',
+          context.l10n.privacy3Title,
+          context.l10n.privacy3,
         ),
         _LegalSection(
-          '4. מטרות השימוש',
-          'המידע משמש להפעלת matchmaking וחדרים, סנכרון המשחק בזמן אמת, חיבור מחדש, אכיפת כללי המשחק, מניעת abuse, טיפול בדיווחים, אבטחה, איתור תקלות ומדידת בריאות השרת. המידע משמש גם לאימות רכישות ולאכיפת הקטגוריות הפתוחות, ולהצגת פרסומות למי שאין לו פרימיום.',
+          context.l10n.privacy4Title,
+          context.l10n.privacy4,
         ),
         _LegalSection(
-          '5. מה שחקנים אחרים רואים',
-          'שחקנים באותו משחק יכולים לראות את הכינוי והאווטאר שלכם, רמזים ששלחתם, מצב החיבור ומידע משחק הנדרש להצבעה ולתוצאה. המילה הסודית אינה נשלחת למתחזה לפני שלב התוצאה.',
+          context.l10n.privacy5Title,
+          context.l10n.privacy5,
         ),
         _LegalSection(
-          '6. שמירה ומחיקה',
-          'מצב המשחק והחדרים נשמר בזיכרון השרת ולא במסד נתונים קבוע. session מנותק שאינו נמצא בחדר נמחק לאחר תקופת חוסר פעילות של עד 24 שעות, וחדר ריק נסגר לאחר 30 דקות. אתחול שרת מוחק את מצב המשחק שבזיכרון. לוגים תפעוליים עשויים להישמר לצורכי אבטחה ואבחון ולכלול מזהי שחקן בדויים ומטא־דאטה של דיווחים. תוצאת אימות הרכישות נשמרת בזיכרון השרת לצד ה־session בלבד ונמחקת איתו. דיווח נשמר בלוג יחד עם הרמז והכינוי שדווחו, כדי שאפשר יהיה לבדוק אותו.',
+          context.l10n.privacy6Title,
+          context.l10n.privacy6,
         ),
         _LegalSection(
-          '7. שירותים חיצוניים',
-          'השרת מתארח ב־Google Cloud Platform (Cloud Run, אזור us-central1), וגוגל מעבדת מידע טכני הנדרש להעברת התעבורה ולשמירת הלוגים התפעוליים, כמעבדת מידע מטעמנו ובכפוף להתחייבויות אבטחה ופרטיות ברמה זהה או טובה יותר מזו שמתוארת כאן. התשלומים מתבצעים ב־App Store של Apple וב־Google Play, לפי מדיניות הפרטיות שלהם. למי שאין לו פרימיום מוצגות פרסומות של Google AdMob. AdMob עשויה לאסוף מזהי מכשיר ומזהה פרסום, כתובת IP, מידע על אינטראקציה עם מודעות, מידע אבחון וביצועים, לצורך הצגת מודעות, מדידתן ומניעת הונאה, לפי מדיניות הפרסום של Google (policies.google.com/technologies/ads). במקומות שבהם הדין מחייב, ובהם האיחוד האירופי ובריטניה, מתבקשת הסכמתכם לפני פרסום מותאם אישית; ב־iPhone לא נעשה שימוש במזהה הפרסום ללא הרשאתכם. כדי לאתר ולתקן תקלות, כשהאפליקציה קורסת או נתקלת בשגיאה היא שולחת דוח ל־Firebase Crashlytics של Google: פרטי השגיאה ומיקומה בקוד, דגם המכשיר, מערכת ההפעלה, גרסת האפליקציה ומזהה התקנה אקראי של Crashlytics. הדוח אינו כולל כינוי, רמזים או מזהה פרסום, והוא נשמר עד 90 יום. אין מכירת מידע אישי, ואין SDK צד שלישי ל־analytics.',
+          context.l10n.privacy7Title,
+          context.l10n.privacy7,
         ),
         _LegalSection(
-          '8. ילדים ופרטים אישיים',
-          'המשחק אינו מבקש שם אמיתי או פרטי קשר. אין לכתוב בכינוי או ברמז מידע אישי שלכם או של אחרים. המשחק מיועד לבני 13 ומעלה ואינו מיועד לילדים. איננו אוספים ביודעין מידע מילדים מתחת לגיל 13, ואם ייוודע לנו על כך נמחק את המידע הקשור אליהם. המודעות מוגבלות לתוכן בדירוג שמתאים לקהל רחב.',
+          context.l10n.privacy8Title,
+          context.l10n.privacy8,
         ),
         _LegalSection(
-          '9. בחירה ושליטה',
-          'אפשר לשנות כינוי ואווטאר, לכבות רטט או תגובות, לדווח על שחקן ולנקות את רשימת השחקנים שהוסתרו. מחיקת נתוני האפליקציה מסירה את המידע המקומי. מאחר שאין חשבון קבוע, אין מנגנון שחזור של נתונים מקומיים. אפשר גם לשנות את העדפות הפרטיות לפרסומות בהגדרות, כשהדין מחייב, לסרב להרשאת מעקב ב־iPhone או לאפס את מזהה הפרסום בהגדרות המכשיר. פרימיום מסיר את כל הפרסומות.',
+          context.l10n.privacy9Title,
+          context.l10n.privacy9,
         ),
         _LegalSection(
-          '10. הזכויות שלכם',
-          'לפי חוק הגנת הפרטיות התשמ״א־1981 ותיקון 13 לו, ובמקומות שבהם חל ה־GDPR, יש לכם זכות לעיין במידע שנשמר עליכם, לבקש את תיקונו, למחוק אותו, להגביל או להתנגד לעיבודו ולקבלו בפורמט נגיש. מאחר שאין חשבון, נדרש מזהה השחקן או ה־session שמופיע במסך ההגדרות כדי לאתר מידע שקשור אליכם. לבקשה כתבו ל־imposteril36@gmail.com; נענה בתוך 30 יום. מרבית המידע נמחק ממילא מאליו — מצב המשחק בסיום המשחק, session לאחר 24 שעות והלוגים לאחר 30 יום.',
+          context.l10n.privacy10Title,
+          context.l10n.privacy10,
         ),
         _LegalSection(
-          '11. אבטחה',
-          'התעבורה בגרסאות הפצה נועדה לעבור בחיבור מוצפן. השרת מפעיל מגבלות קצב, מגבלות גודל הודעה וסינון תוכן כדי להפחית שימוש לרעה. אין מערכת שיכולה להבטיח אבטחה מוחלטת.',
+          context.l10n.privacy11Title,
+          context.l10n.privacy11,
         ),
         _LegalSection(
-          '12. שינויים במדיניות',
-          'שינוי מהותי במדיניות יקבל גרסה חדשה. כאשר נדרשת הסכמה מחודשת, האפליקציה תציג את הגרסה החדשה לפני המשך המשחק.',
+          context.l10n.privacy12Title,
+          context.l10n.privacy12,
         ),
         _LegalSection(
-          '13. יצירת קשר',
-          'Imposter IL · imposteril36@gmail.com\nלפניות בנושא פרטיות, בקשות למימוש זכויות ודיווח על תוכן פוגעני. נשתדל להשיב בתוך 30 יום.',
+          context.l10n.privacy13Title,
+          context.l10n.privacy13,
         ),
       ],
       publicPath: privacyPath,
@@ -383,7 +380,7 @@ class _LegalDocument extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
             ),
             child: SelectableText(
-              'עותק ציבורי: ${publicLegalUrl(publicPath)}',
+              context.l10n.legalPublicCopy(publicLegalUrl(publicPath)),
               textDirection: TextDirection.ltr,
               style: const TextStyle(color: AppColors.muted, fontSize: 12),
             ),

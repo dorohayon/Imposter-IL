@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'crash_reporting.dart';
 import 'data/invite.dart';
 import 'data/server.dart';
+import 'l10n/l10n.dart';
 import 'monetization/ads.dart';
 import 'monetization/monetization.dart';
 import 'monetization/store.dart';
 import 'screens/home_screen.dart';
-import 'screens/private_flow.dart';
 import 'screens/legal_screens.dart';
+import 'screens/private_flow.dart';
 import 'screens/secondary_screens.dart';
 import 'state/game_session.dart';
 import 'theme/app_theme.dart';
@@ -115,28 +115,51 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
       monetization: widget.monetization,
       child: SessionScope(
         session: widget.session,
-        child: MaterialApp(
-          navigatorKey: _navigator,
-          // The trailing "?" is a neutral character, so in the LTR context of the
-          // task switcher it would sit on the wrong side. \u200f (RLM) pins it.
-          title: 'מי המתחזה?\u200f',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.dark,
-          // Hebrew everywhere: RTL layout and Hebrew text in built-in widgets.
-          locale: const Locale('he'),
-          supportedLocales: const [Locale('he')],
-          localizationsDelegates: GlobalMaterialLocalizations.delegates,
-          // builder wraps the Navigator, so an unsupported build is covered
-          // wherever the player happens to be — home is not enough, since
-          // client_too_old can arrive while they are deep in a pushed route.
-          builder: (context, child) => SessionScope.of(context).needsUpdate
-              ? const UpdateRequiredScreen()
-              : child!,
-          // Legal acknowledgement is outside onboarding: no guest session and no
-          // user-written nickname reaches the server before the current Terms are
-          // accepted. Bumping legalVersion gates returning installs as well.
-          home:
-              LegalGate(onAccepted: _openPendingInvite, child: const _Start()),
+        child: ValueListenableBuilder(
+          valueListenable: widget.session.languageChoice,
+          builder: (context, languageChoice, _) => MaterialApp(
+            navigatorKey: _navigator,
+            // In Hebrew the trailing "?" is a neutral character, so in the LTR
+            // task switcher it would sit on the wrong side; app_he.arb pins it
+            // with \u200f (RLM).
+            onGenerateTitle: (context) => context.l10n.appTitle,
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.dark,
+            // The phone's language, or the one chosen in Settings; a language
+            // the app does not have yet falls back to English
+            // (docs/localization.md). Layout direction follows it.
+            locale: switch (languageChoice) {
+              final code? => Locale(code),
+              null => null,
+            },
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localeListResolutionCallback: (locales, supported) {
+              for (final locale in locales ?? const <Locale>[]) {
+                for (final s in supported) {
+                  if (s.languageCode == locale.languageCode) return s;
+                }
+              }
+              return const Locale('en');
+            },
+            // builder wraps the Navigator, so an unsupported build is covered
+            // wherever the player happens to be — home is not enough, since
+            // client_too_old can arrive while they are deep in a pushed route.
+            builder: (context, child) {
+              final session = SessionScope.of(context);
+              currentL10n = context.l10n;
+              session.languageResolved(
+                  Localizations.localeOf(context).languageCode);
+              return session.needsUpdate
+                  ? const UpdateRequiredScreen()
+                  : child!;
+            },
+            // Legal acknowledgement is outside onboarding: no guest session and no
+            // user-written nickname reaches the server before the current Terms are
+            // accepted. Bumping legalVersion gates returning installs as well.
+            home: LegalGate(
+                onAccepted: _openPendingInvite, child: const _Start()),
+          ),
         ),
       ),
     );

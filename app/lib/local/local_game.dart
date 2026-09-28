@@ -74,10 +74,11 @@ class LocalGame {
     required this.categoryIds,
     required this.hintSeconds,
     required Random rng,
+    String language = 'he',
   })  : _rng = rng,
         assert(players.length >= minPlayers && players.length <= maxPlayers) {
     final pool = <(String, String)>[
-      for (final c in localCategoriesFor('he'))
+      for (final c in localCategoriesFor(language))
         if (categoryIds.contains(c.id))
           for (final word in c.words) (c.name, word),
     ];
@@ -460,9 +461,10 @@ class LocalGame {
   }
 }
 
-/// The same forgiving Hebrew comparison used by the approved online rules:
-/// punctuation and niqqud are ignored, final letters are folded, and up to
-/// three Hebrew use-prefix letters may precede the secret word.
+/// The same forgiving comparison used by the approved online rules, in any
+/// language: case, punctuation and marks (niqqud) are ignored, Hebrew final
+/// letters are folded, and up to three Hebrew use-prefix letters may precede
+/// the secret word.
 bool isCorrectLocalGuess(String guess, String secretWord) {
   if (_matchesLocalGuess(guess, secretWord)) return true;
   for (final alias in localGuessAliases[secretWord] ?? const <String>[]) {
@@ -490,7 +492,7 @@ String _normaliseHebrewWord(String value) => value
     .replaceAll('ן', 'נ')
     .replaceAll('ף', 'פ')
     .replaceAll('ץ', 'צ')
-    .replaceAll(RegExp(r'[^\u05D0-\u05EAa-z0-9]'), '');
+    .replaceAll(RegExp(r'[^\p{L}\p{N}]', unicode: true), '');
 
 /// Saving and restoring a match in progress.
 ///
