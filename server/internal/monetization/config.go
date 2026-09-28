@@ -145,6 +145,13 @@ func (c Config) validate() error {
 	switch {
 	case len(c.FreeCategoryIDs) == 0 || slices.ContainsFunc(c.FreeCategoryIDs, func(id string) bool { return !content.KnownCategory(id) }):
 		return errors.New("monetization config: freeCategoryIds must name known categories")
+	case slices.ContainsFunc(content.Languages(), func(code string) bool {
+		// A language none of them is in would leave its free players nothing
+		// to play once enforcement is on.
+		lang, _ := content.For(code)
+		return !slices.ContainsFunc(c.FreeCategoryIDs, func(id string) bool { return lang.ValidIDs([]string{id}) })
+	}):
+		return errors.New("monetization config: freeCategoryIds must include a category of every language")
 	case c.Products.CategoryPrefix == "" || c.Products.PremiumMonthly == "" || c.Products.PremiumLifetime == "":
 		return errors.New("monetization config: every product id is required")
 	case c.Products.PremiumMonthly == c.Products.PremiumLifetime:
