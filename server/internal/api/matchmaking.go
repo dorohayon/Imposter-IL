@@ -315,9 +315,11 @@ func (s *Server) beginGame(entry *roomEntry) {
 	entry.reported = nil
 	g := entry.room.Game()
 	entry.profiles = map[string]playerProfile{}
+	now := s.now()
 	for _, id := range g.PlayerIDs() {
 		if player := s.players[id]; player != nil {
 			player.gameID, player.game, player.gameRoom = entry.gameID, g, entry
+			s.useReward(player, now)
 			entry.profiles[id] = playerProfile{player.nickname, player.avatarID}
 			s.sendSessionState(player)
 		}

@@ -29,6 +29,14 @@ abstract interface class AdsGateway {
   /// Shows the loaded interstitial and completes once it is closed. Completes
   /// with false at once when none is loaded, so the caller moves on.
   Future<bool> showInterstitial();
+
+  /// Completes once the rewarded ad has loaded or failed to.
+  Future<void> loadRewarded(String unitId);
+
+  /// Shows the loaded rewarded ad and completes once it is closed, with
+  /// whether AdMob called onUserEarnedReward. False at once when none is
+  /// loaded or it cannot be shown.
+  Future<bool> showRewarded();
 }
 
 /// Ad diagnostics, in debug builds and TEST_ADS tester builds only. Unit ids,
@@ -44,10 +52,12 @@ AdUnits testAdUnits(String platform) => platform == 'ios'
     ? const AdUnits(
         banner: 'ca-app-pub-3940256099942544/2435281174',
         interstitial: 'ca-app-pub-3940256099942544/4411468910',
+        rewarded: 'ca-app-pub-3940256099942544/1712485313',
       )
     : const AdUnits(
         banner: 'ca-app-pub-3940256099942544/9214589741',
         interstitial: 'ca-app-pub-3940256099942544/1033173712',
+        rewarded: 'ca-app-pub-3940256099942544/5224354917',
       );
 
 /// Hashed ids of our own phones (the SDK logs a phone's id on first ad
@@ -58,6 +68,8 @@ const testDeviceIds = ['97A34F8CB0EEDBDD235DCDFE48F7C855'];
 class AdMobAds implements AdsGateway {
   InterstitialAd? _interstitial;
   bool _loadingInterstitial = false;
+  RewardedAd? _rewarded;
+  Future<void>? _loadingRewarded;
 
   @override
   Future<bool> start({required String maxAdContentRating}) async {
@@ -167,6 +179,64 @@ class AdMobAds implements AdsGateway {
       await ad.show();
     } on Object catch (e) {
       adsLog('interstitial show threw: $e');
+      ad.dispose();
+      return false;
+    }
+    return closed.future;
+  }
+
+  @override
+  Future<void> loadRewarded(String unitId) {
+    if (_rewarded != null) return Future.value();
+    return _loadingRewarded ??= () async {
+      final done = Completer<void>();
+      await RewardedAd.load(
+        adUnitId: unitId,
+        request: const AdRequest(),
+        rewardedAdLoadCallback: RewardedAdLoadCallback(
+          onAdLoaded: (ad) {
+            adsLog('rewarded loaded ($unitId)');
+            _rewarded = ad;
+            done.complete();
+          },
+          onAdFailedToLoad: (error) {
+            adsLog('rewarded failed to load ($unitId): ${_describe(error)}');
+            done.complete();
+          },
+        ),
+      );
+      await done.future;
+    }()
+        .whenComplete(() => _loadingRewarded = null);
+  }
+
+  @override
+  Future<bool> showRewarded() async {
+    final ad = _rewarded;
+    if (ad == null) {
+      adsLog('rewarded not shown: none loaded');
+      return false;
+    }
+    _rewarded = null;
+    var earned = false;
+    final closed = Completer<bool>();
+    ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (_) => adsLog('rewarded shown'),
+      onAdDismissedFullScreenContent: (ad) {
+        adsLog('rewarded dismissed, earned: $earned');
+        ad.dispose();
+        if (!closed.isCompleted) closed.complete(earned);
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        adsLog('rewarded failed to show ${error.code}: ${error.message}');
+        ad.dispose();
+        if (!closed.isCompleted) closed.complete(false);
+      },
+    );
+    try {
+      await ad.show(onUserEarnedReward: (_, __) => earned = true);
+    } on Object catch (e) {
+      adsLog('rewarded show threw: $e');
       ad.dispose();
       return false;
     }

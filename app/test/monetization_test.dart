@@ -685,6 +685,157 @@ void main() {
     });
   });
 
+  group('rewarded unlock', () {
+    Future<Monetization> ready(FakeAds ads,
+        {FakeStore? store, FakeApi? api, DateTime Function()? clock}) async {
+      final m = await started(store: store, ads: ads, api: api, clock: clock);
+      await m.startAds();
+      return m;
+    }
+
+    test('a watched ad opens the category for the next game only', () async {
+      var now = DateTime(2026, 9, 28, 12);
+      final ads = FakeAds();
+      final m = await ready(ads, clock: () => now);
+      expect(m.rewardOffered, isTrue);
+      expect(ads.rewardedLoads, isNotEmpty, reason: 'preloaded with the SDK');
+
+      await m.watchAdFor('sports');
+      expect(m.step, PurchaseStep.rewarded);
+      expect(m.isUnlocked('sports'), isTrue);
+      expect(m.isPurchased('sports'), isFalse);
+      expect(m.rewardCooldownLeft, Monetization.rewardedCooldown);
+
+      m.useReward(); // the game started
+      expect(m.isUnlocked('sports'), isFalse);
+
+      // Once every four hours, whatever the category.
+      m.openPopup();
+      await m.watchAdFor('gaming');
+      expect(ads.rewardedShown, 1);
+      expect(m.isUnlocked('gaming'), isFalse);
+      now = now.add(Monetization.rewardedCooldown);
+      expect(m.rewardCooldownLeft, isNull);
+      await m.watchAdFor('gaming');
+      expect(m.isUnlocked('gaming'), isTrue);
+    });
+
+    test('an ad closed early or not filled opens nothing and never blocks',
+        () async {
+      final ads = FakeAds()..earnsReward = false;
+      final m = await ready(ads);
+      await m.watchAdFor('sports');
+      expect(m.step, PurchaseStep.adFailed);
+      expect(m.isUnlocked('sports'), isFalse);
+      expect(m.rewardCooldownLeft, isNull);
+
+      ads
+        ..earnsReward = true
+        ..rewardedFills = false
+        ..rewardedLoaded = false;
+      await m.watchAdFor('sports');
+      expect(m.step, PurchaseStep.adFailed);
+      expect(m.busy, isFalse);
+      expect(m.isUnlocked('sports'), isFalse);
+    });
+
+    test('Premium never offers or shows a rewarded ad', () async {
+      final ads = FakeAds();
+      final m = await ready(ads, store: FakeStore(owned: {lifetime}));
+      expect(m.rewardOffered, isFalse);
+      await m.watchAdFor('sports');
+      expect(ads.rewardedShown, 0);
+      expect(ads.rewardedLoads, isEmpty);
+    });
+
+    test('switched off remotely, there is no option', () async {
+      final api = FakeApi();
+      (api.responses['GET /v1/config']! as Map)['monetization']['ads']
+          ['rewardedEnabled'] = false;
+      final m = await ready(FakeAds(), api: api);
+      await flush();
+      expect(m.rewardOffered, isFalse);
+    });
+
+    test('the server hears of it, and an online game spends it', () async {
+      final api = FakeApi();
+      final session = GameSession(api);
+      addTearDown(session.dispose);
+      session.token = 'token-1';
+      final m = await ready(FakeAds(), api: api);
+      m.attach(session);
+      await m.watchAdFor('sports');
+      expect(api.requests.where((r) => r.$2 == '/v1/rewarded-unlocks').last.$3,
+          {'categoryId': 'sports'});
+
+      // A category_locked resync claims it again, e.g. after a server restart.
+      final before =
+          api.requests.where((r) => r.$2 == '/v1/rewarded-unlocks').length;
+      await session.resyncEntitlements!();
+      expect(api.requests.where((r) => r.$2 == '/v1/rewarded-unlocks').length,
+          before + 1);
+
+      session
+        ..gameId = 'g_1'
+        ..notifyListeners();
+      expect(m.isUnlocked('sports'), isFalse);
+    });
+
+    test('a claim the server refuses opens nothing and takes its cooldown',
+        () async {
+      final now = DateTime.utc(2026, 9, 28, 12);
+      final serverNext = now.add(const Duration(hours: 2));
+      final api = FakeApi();
+      api.responses['POST /v1/rewarded-unlocks'] = ApiException(
+          'rewarded_cooldown',
+          429,
+          {'nextAvailableAt': serverNext.toIso8601String()});
+      final session = GameSession(api);
+      addTearDown(session.dispose);
+      session.token = 'token-1';
+      final m = await ready(FakeAds(), api: api, clock: () => now);
+      m.attach(session);
+
+      await m.watchAdFor('sports');
+      expect(m.step, PurchaseStep.rewardRefused);
+      expect(m.isUnlocked('sports'), isFalse);
+      expect(m.rewardCooldownLeft, const Duration(hours: 2),
+          reason: "the server's cooldown, not a fresh four hours");
+    });
+
+    test("a late claim takes the server's later cooldown", () async {
+      final now = DateTime.utc(2026, 9, 28, 12);
+      final api = FakeApi();
+      final m = await ready(FakeAds(), api: api, clock: () => now);
+      await m.watchAdFor('sports'); // offline: no session yet
+      expect(m.step, PurchaseStep.rewarded);
+
+      // Online an hour later: the server starts its cooldown at the claim.
+      api.responses['POST /v1/rewarded-unlocks'] = {
+        'categoryId': 'sports',
+        'nextAvailableAt': now.add(const Duration(hours: 5)).toIso8601String(),
+      };
+      final session = GameSession(api);
+      addTearDown(session.dispose);
+      session.token = 'token-1';
+      m.attach(session);
+      await flush();
+      expect(m.isUnlocked('sports'), isTrue);
+      expect(m.rewardCooldownLeft, const Duration(hours: 5));
+    });
+
+    test('the reward and its cooldown survive a restart', () async {
+      final now = DateTime(2026, 9, 28, 12);
+      final m = await ready(FakeAds(), clock: () => now);
+      await m.watchAdFor('sports');
+      await flush();
+
+      final again = await started(clock: () => now);
+      expect(again.isUnlocked('sports'), isTrue);
+      expect(again.rewardCooldownLeft, Monetization.rewardedCooldown);
+    });
+  });
+
   test('the config survives a round trip and fills gaps with defaults', () {
     const config = MonetizationConfig(
       freeCategoryIds: ['sports'],
