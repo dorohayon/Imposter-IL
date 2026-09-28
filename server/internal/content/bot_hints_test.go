@@ -2,6 +2,7 @@ package content
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/dorohayon/Imposter-IL/server/internal/game"
@@ -11,12 +12,13 @@ import (
 // bot that says nothing on its turn. docs/bot-hints.md states them; this is
 // the same list, checked with the engine's own functions.
 func TestCitizenHintsAreUsable(t *testing.T) {
-	for _, c := range Categories {
+	for _, c := range allCategories() {
 		for _, word := range c.Words {
 			hints := CitizenHints(c.Name, word)
+			script := scriptOf([]rune(word)[0])
 			for i, hint := range hints {
-				if !isHebrewSingleToken(hint) {
-					t.Errorf("%s/%s: %q must be one Hebrew hint word", c.Name, word, hint)
+				if !isSecret(hint, script) || strings.Contains(hint, " ") {
+					t.Errorf("%s/%s: %q must be one hint word in the language's script", c.Name, word, hint)
 				}
 				if !UsableHint(hint, word) {
 					t.Errorf("%s/%s: %q is not a hint the engine would take", c.Name, word, hint)
@@ -37,14 +39,15 @@ func TestCitizenHintsAreUsable(t *testing.T) {
 // that is also a word in its own category lets an impostor bot say the answer
 // out loud. תיק and שולחן both did this before the dataset existed.
 func TestFallbackHintsAreNotTheAnswer(t *testing.T) {
-	for _, c := range Categories {
+	for _, c := range allCategories() {
 		pool := tables.fallback[c.Name]
 		if len(pool) < 10 || len(pool) > 16 {
 			t.Errorf("%s: %d fallback hints, want 10 to 16", c.Name, len(pool))
 		}
+		script := scriptOf([]rune(c.Words[0])[0])
 		for i, hint := range pool {
-			if !isHebrewSingleToken(hint) {
-				t.Errorf("%s: fallback %q must be one Hebrew word", c.Name, hint)
+			if !isSecret(hint, script) || strings.Contains(hint, " ") {
+				t.Errorf("%s: fallback %q must be one word in the language's script", c.Name, hint)
 			}
 			if !UsableHint(hint, "") {
 				t.Errorf("%s: %q is not a hint the engine would take", c.Name, hint)
@@ -71,7 +74,7 @@ func TestImpostorHintsCannotDependOnTheWord(t *testing.T) {
 	if got := CitizenHints("", ""); got != nil {
 		t.Errorf(`CitizenHints("") = %v, want nil: that is what an impostor's view holds`, got)
 	}
-	for _, c := range Categories {
+	for _, c := range allCategories() {
 		board := []string{"טעים", "חם"}
 		want := ImpostorHints(c.Name, board)
 		// Nothing about the round can change it, because nothing about the
@@ -92,7 +95,7 @@ func TestImpostorHintsCannotDependOnTheWord(t *testing.T) {
 // With an empty board the impostor can only be broad, which is the corner a
 // human impostor opening the round is in too.
 func TestImpostorOpensWithTheCategory(t *testing.T) {
-	for _, c := range Categories {
+	for _, c := range allCategories() {
 		got := ImpostorHints(c.Name, nil)
 		if !slices.Equal(got, tables.fallback[c.Name]) {
 			t.Errorf("%s: opening hints are not the category pool", c.Name)
@@ -107,7 +110,7 @@ func TestImpostorOpensWithTheCategory(t *testing.T) {
 // reads like the one before it.
 func TestEveryWordHasCitizenHints(t *testing.T) {
 	missing, wrongSize := 0, 0
-	for _, c := range Categories {
+	for _, c := range allCategories() {
 		for _, word := range c.Words {
 			switch n := len(CitizenHints(c.Name, word)); {
 			case n == 0:
@@ -128,7 +131,7 @@ func TestEveryWordHasCitizenHints(t *testing.T) {
 // five-word semantic clusters, so no curated hint may fingerprint fewer than
 // five candidate secrets inside its category.
 func TestCitizenHintsStayAmbiguous(t *testing.T) {
-	for _, c := range Categories {
+	for _, c := range allCategories() {
 		counts := map[string]int{}
 		for _, word := range c.Words {
 			for _, hint := range CitizenHints(c.Name, word) {
@@ -147,19 +150,20 @@ func TestCitizenHintsStayAmbiguous(t *testing.T) {
 // the dataset did not follow.
 func TestDatasetFollowsTheWordList(t *testing.T) {
 	for category, words := range tables.citizen {
-		at := slices.IndexFunc(Categories, func(c Category) bool { return c.Name == category })
+		all := allCategories()
+		at := slices.IndexFunc(all, func(c Category) bool { return c.Name == category })
 		if at < 0 {
 			t.Errorf("%q has citizen hints but is not a category", category)
 			continue
 		}
 		for word := range words {
-			if !slices.Contains(Categories[at].Words, word) {
+			if !slices.Contains(all[at].Words, word) {
 				t.Errorf("%s/%q has hints but is not a word in that category", category, word)
 			}
 		}
 	}
 	for category := range tables.fallback {
-		if !slices.ContainsFunc(Categories, func(c Category) bool { return c.Name == category }) {
+		if !slices.ContainsFunc(allCategories(), func(c Category) bool { return c.Name == category }) {
 			t.Errorf("%q has a fallback pool but is not a category", category)
 		}
 	}

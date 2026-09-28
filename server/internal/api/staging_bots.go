@@ -10,20 +10,14 @@ import (
 	"github.com/dorohayon/Imposter-IL/server/internal/matchmaking"
 )
 
-// Staging bots are named "בוט" and an ordinary Hebrew first name. The prefix
+// Staging bots are named "בוט" and an ordinary first name, in the room's
+// language (the "bots" section of content/languages/<code>.json). The prefix
 // is not decoration: a player has to be able to tell at a glance who at the
 // table is not a person. The name behind it is what makes the table readable —
 // "בוט חשוד" and "בוט רמז" read as roles rather than as players, and a round
 // of them was hard to follow.
 //
 // Kept in two lists so that a bot's avatar matches the name it is given.
-var stagingBotNames = map[string][]string{
-	"f": {"נועה", "שירה", "יעל", "מאיה", "תמר", "אביגיל", "הילה", "רוני",
-		"ליאור", "דנה", "אור", "טליה", "עדי", "מיכל", "שני", "אלה"},
-	"m": {"איתי", "נועם", "יונתן", "דניאל", "אורי", "עידו", "אלון", "גיא",
-		"עומר", "יואב", "אריאל", "תומר", "רועי", "אסף", "ניר", "עמית"},
-}
-
 var stagingBotAvatars = map[string][]string{
 	"f": {"avatar-f01-notebook", "avatar-f02-camera", "avatar-f03-headphones",
 		"avatar-f04-map", "avatar-f05-fingerprint-kit", "avatar-f06-laptop"},
@@ -34,7 +28,7 @@ var stagingBotAvatars = map[string][]string{
 // botProfile picks a name and a matching avatar that nobody at this table is
 // already using. Two bots called בוט נועה would be worse than the roles they
 // replaced.
-func (s *Server) botProfile(taken []*session) (nickname, avatar string) {
+func (s *Server) botProfile(taken []*session, lang *content.Language) (nickname, avatar string) {
 	used := func(field func(*session) string, value string) bool {
 		return slices.ContainsFunc(taken, func(other *session) bool { return field(other) == value })
 	}
@@ -43,8 +37,8 @@ func (s *Server) botProfile(taken []*session) (nickname, avatar string) {
 		if s.rng.IntN(2) == 0 {
 			gender = "m"
 		}
-		names, avatars := stagingBotNames[gender], stagingBotAvatars[gender]
-		nickname = "בוט " + names[s.rng.IntN(len(names))]
+		names, avatars := lang.Bots.Names[gender], stagingBotAvatars[gender]
+		nickname = lang.Bots.Prefix + " " + names[s.rng.IntN(len(names))]
 		avatar = avatars[s.rng.IntN(len(avatars))]
 		free := !used(func(b *session) string { return b.nickname }, nickname) &&
 			!used(func(b *session) string { return b.avatarID }, avatar)
@@ -116,13 +110,11 @@ func (s *Server) botVote(view game.View, candidates []string) string {
 // Uniform over the category on purpose — reasoning towards the real word from
 // the hints would make a bot better at this than the player it is playing
 // against.
-func (s *Server) botGuess(category string) string {
-	for _, c := range content.Categories {
-		if c.Name == category && len(c.Words) > 0 {
-			return c.Words[s.rng.IntN(len(c.Words))]
-		}
+func (s *Server) botGuess(category string, lang *content.Language) string {
+	if c, ok := content.CategoryNamed(category); ok && len(c.Words) > 0 {
+		return c.Words[s.rng.IntN(len(c.Words))]
 	}
-	return "לאיודע"
+	return lang.Bots.UnknownGuess
 }
 
 // botStillThinking reports whether the bot has not finished its pause yet,
@@ -138,12 +130,6 @@ func (s *Server) botStillThinking(bot *session, now time.Time, d time.Duration) 
 	return false
 }
 
-// The last resort, for a category the dataset does not cover.
-var stagingBotHints = []string{
-	"מיוחד", "מוכר", "צבעוני", "נפוץ", "מעניין", "גדול", "קטן",
-	"מהיר", "ישן", "חדש", "עגול", "חזק", "נדיר", "שימושי",
-}
-
 // botHintPool is what this bot has to work with, in the order it should try.
 //
 // The two roles read different things, and that is the point. A citizen bot is
@@ -152,7 +138,7 @@ var stagingBotHints = []string{
 // human impostor does: look at the category and at what has already been said.
 // Nothing here has to be trusted to keep them apart — with no word, the
 // citizen pool cannot be reached.
-func botHintPool(view game.View) []string {
+func botHintPool(view game.View, lang *content.Language) []string {
 	said := make([]string, 0, len(view.Hints))
 	for _, h := range view.Hints {
 		if !h.Missing {
@@ -166,7 +152,8 @@ func botHintPool(view game.View) []string {
 	if len(pool) > 0 {
 		return pool
 	}
-	return stagingBotHints
+	// The last resort, for a category the dataset does not cover.
+	return lang.Bots.FallbackHints
 }
 
 // stagingBotsDesired is how many bots should sit in a forming match. One human
@@ -233,7 +220,7 @@ func (s *Server) rebalanceStagingBots(entry *roomEntry, categories []string, now
 		if len(bots) >= desired {
 			continue
 		}
-		nickname, avatar := s.botProfile(bots)
+		nickname, avatar := s.botProfile(bots, languageOf(entry.language))
 		s.botSequence++
 		id := fmt.Sprintf("p_bot_%d", s.botSequence)
 		bot := &session{
@@ -318,7 +305,8 @@ func (s *Server) botReact(entry *roomEntry, bot *session, view game.View, now ti
 	}
 	bot.botReactAt = time.Time{}
 	bot.botReacted = hints
-	reaction := content.Reactions[s.rng.IntN(len(content.Reactions))]
+	reactions := languageOf(entry.language).Reactions
+	reaction := reactions[s.rng.IntN(len(reactions))]
 	return entry.room.WithGame(now, func(g *game.Game) error {
 		return g.React(bot.playerID, last, reaction.ID, now)
 	}) == nil
@@ -433,7 +421,7 @@ func (s *Server) runStagingBotsInGame(entry *roomEntry, now time.Time) {
 				// round; the other players see "כותב רמז..." meanwhile.
 			} else {
 				acted = true
-				pool := botHintPool(view)
+				pool := botHintPool(view, languageOf(entry.language))
 				// Best first for an impostor, so start there and walk on when
 				// the engine refuses one; a citizen's pool has no order worth
 				// keeping, so start somewhere different each time.
@@ -472,7 +460,7 @@ func (s *Server) runStagingBotsInGame(entry *roomEntry, now time.Time) {
 		case game.PhaseImpostorGuess:
 			if view.Role == game.RoleImpostor {
 				acted = true
-				guess := s.botGuess(view.Category)
+				guess := s.botGuess(view.Category, languageOf(entry.language))
 				actionErr = entry.room.WithGame(now, func(g *game.Game) error {
 					return g.SubmitGuess(id, guess, now)
 				})

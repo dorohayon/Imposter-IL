@@ -2,6 +2,10 @@
 package content
 
 import (
+	"embed"
+	"encoding/json"
+	"fmt"
+	"maps"
 	"math/rand/v2"
 	"slices"
 
@@ -14,51 +18,128 @@ type Category struct {
 	Words []string
 }
 
-// Categories is the curated content catalogue. Words are grouped during
-// authoring so clues remain ambiguous, but only category and word are public
-// at runtime.
-var Categories = []Category{
-	{"food", "אוכל ושתייה", []string{"פלאפל", "שווארמה", "סביח", "טאקו", "בוריטו", "פיצה", "פוקאצ'ה", "לזניה", "פסטה", "ניוקי", "סושי", "ראמן", "פאד תאי", "דים סאם", "קארי", "שקשוקה", "פנקייק", "וופל", "קורנפלקס", "חביתה", "בורקס", "קרואסון", "בייגל", "לחמנייה", "טוסט", "טירמיסו", "בראוניז", "עוגת גבינה", "דונאט", "גלידה", "פופקורן", "נאצ'וס", "בייגלה", "צ'יפס", "קרקרים", "חומוס", "טחינה", "גוואקמולי", "קטשופ", "מיונז", "אספרסו", "קפוצ'ינו", "לאטה", "תה", "שוקו", "לימונדה", "קולה", "סודה", "שייק", "מילקשייק"}},
-	{"home", "בבית", []string{"מקרר", "מקפיא", "תנור", "מיקרוגל", "מדיח", "קומקום", "טוסטר", "בלנדר", "מכונת קפה", "אייר פרייר", "שואב אבק", "מטאטא", "מגב", "דלי", "סמרטוט", "מכונת כביסה", "מייבש", "סל כביסה", "מגהץ", "מתלה כביסה", "ספה", "כורסה", "שולחן", "כיסא", "מזנון", "מיטה", "כרית", "שמיכה", "מזרן", "שידה", "מקלחת", "אמבטיה", "כיור", "מראה", "אסלה", "ארון", "מגירה", "מדף", "דלת", "מפתח", "מזגן", "מאוורר", "רדיאטור", "וילון", "שטיח", "פעמון", "אינטרקום", "תיבת דואר", "תריס", "חלון"}},
-	{"school_students", "בית ספר וסטודנטים", []string{"עיפרון", "עט", "מחק", "מחדד", "מרקר", "מחברת", "קלסר", "דפדפת", "ספר לימוד", "יומן", "לוח", "מקרן", "שולחן", "כיסא", "מפה", "מבחן", "בוחן", "עבודה", "ציון", "תעודה", "צלצול", "הפסקה", "שיעור חופשי", "שיעורי בית", "תורנות", "מורה", "מנהל", "מזכירות", "ספרייה", "קפיטריה", "בגרות", "מתכונת", "הקבצה", "מגמה", "טיול שנתי", "הרצאה", "תרגול", "סמסטר", "קורס", "תואר", "סיכום", "מצגת", "פרויקט", "דדליין", "הגשה", "מועד א'", "ערעור", "פקטור", "העתקה", "חרישה"}},
-	{"work_office", "עבודה ומשרד", []string{"מייל", "סלאק", "טימס", "זום", "שיחת טלפון", "ישיבה", "אג'נדה", "מצגת", "פרוטוקול", "חדר ישיבות", "משימה", "טיקט", "פרויקט", "דדליין", "תעדוף", "ספרינט", "סטנד אפ", "רטרו", "באקלוג", "דמו", "אקסל", "וורד", "קובץ", "טבלה", "דוח", "מדפסת", "סורק", "מהדק", "לוח מחיק", "טוש", "מנהל", "עובד חדש", "משאבי אנוש", "לקוח", "ספק", "ראיון", "קורות חיים", "קידום", "העלאה", "בונוס", "משרד", "עבודה מרחוק", "היברידי", "יום חופש", "מחלה", "מטבחון", "מכונת קפה", "ארוחת צהריים", "רכילות", "האפי האוור"}},
-	{"technology_digital", "טכנולוגיה ודיגיטל", []string{"סמארטפון", "טאבלט", "לפטופ", "שעון חכם", "אוזניות", "וויי פיי", "בלוטוס", "נתב", "נקודה חמה", "איירדרופ", "מטען", "כבל", "סוללה", "מתאם", "פאוור בנק", "מצלמה", "זיהוי פנים", "פנס", "התראה", "צילום מסך", "וואטסאפ", "טלגרם", "אינסטגרם", "טיקטוק", "דיסקורד", "דפדפן", "גוגל", "חיפוש", "טאבים", "קוקיז", "סיסמה", "קוד אימות", "הצפנה", "פיירוול", "אנטי וירוס", "ענן", "גיבוי", "אחסון", "סנכרון", "הורדה", "מודל", "פרומפט", "צ'אט בוט", "מחולל תמונות", "עוזר קולי", "גיטהאב", "דוקר", "ממשק", "שרת", "מסד נתונים"}},
-	{"travel_vacation", "חופשה ונסיעות", []string{"דרכון", "כרטיס טיסה", "כרטיס עלייה", "ויזה", "ביטוח נסיעות", "צ'ק אין", "גייט", "בידוק", "דיוטי פרי", "מסוע", "המראה", "נחיתה", "קונקשן", "עיכוב", "ג'ט לג", "מזוודה", "טרולי", "תיק גב", "תג מזוודה", "משקל עודף", "מלון", "הוסטל", "דירה", "קמפינג", "ריזורט", "קבלה", "לובי", "חדר", "מפתח", "ארוחת בוקר", "חוף", "בריכה", "שמשייה", "מגבת", "קרם הגנה", "מפה", "מדריך", "מוזיאון", "תצפית", "מזכרת", "בוקינג", "דירת נופש", "הזמנה", "ביקורת", "ביטול", "שייט", "רכבל", "סקי", "טיול רגלי", "רוד טריפ"}},
-	{"places", "מקומות בעולם", []string{"פריז", "לונדון", "רומא", "ברצלונה", "אמסטרדם", "פראג", "וינה", "בודפשט", "ברלין", "קרקוב", "סנטוריני", "מיקונוס", "איביזה", "מלטה", "קפריסין", "טוקיו", "סיאול", "בנגקוק", "סינגפור", "הונג קונג", "ניו יורק", "לוס אנג'לס", "מיאמי", "לאס וגאס", "טורונטו", "המלדיביים", "באלי", "הוואי", "פוקט", "סיישל", "גרנד קניון", "מפלי הניאגרה", "סהרה", "אמזונס", "פיורדים", "הקולוסיאום", "הפירמידות", "מאצ'ו פיצ'ו", "האקרופוליס", "פטרה", "מגדל אייפל", "ביג בן", "טיימס סקוור", "בורג' ח'ליפה", "סגרדה פמיליה", "אוורסט", "הדולומיטים", "איסלנד", "פטגוניה", "לפלנד"}},
-	{"dating_relationships", "דייטים וזוגיות", []string{"מאץ'", "סווייפ", "פרופיל", "ביו", "תמונה", "הודעה", "לייק", "תגובה", "הודעה פרטית", "מספר טלפון", "בית קפה", "בר", "מסעדה", "קולנוע", "הליכה", "קראש", "כימיה", "פרפרים", "משיכה", "התאהבות", "מחמאה", "מבט", "חיוך", "מגע", "נשיקה", "סינון", "גוסטינג", "דאבל טקסט", "ייבוש", "חסימה", "אמון", "קנאה", "ריב", "פיוס", "פשרה", "דייט ראשון", "ידידות", "פרנדזון", "אקס", "קאמבק", "להכיר הורים", "מגורים משותפים", "הצעה", "טבעת", "חתונה", "שקר", "סוד", "חשד", "תירוץ", "דגל אדום"}},
-	{"nightlife", "לילה ובילויים", []string{"בר", "פאב", "מועדון", "קריוקי", "מסיבת בית", "תור", "סלקציה", "מאבטח", "צמיד", "הזמנה", "די ג'יי", "רחבה", "רמקול", "באס", "פלייליסט", "כוס", "בקבוק", "קוקטייל", "בירה", "שוט", "ניאון", "לייזר", "עשן", "קונפטי", "פלאש", "ריקוד", "סלפי", "פלרטוט", "צחוקים", "היכרות", "מונית", "פיצה", "אפטר", "זריחה", "האנגאובר", "יום הולדת", "מסיבת רווקים", "מסיבת רווקות", "פסטיבל", "מסיבת גג", "ביליארד", "באולינג", "ארקייד", "סטנדאפ", "קזינו", "חשבון", "טיפ", "טרמפ", "מטען", "מים"}},
-	{"weddings_events", "חתונות ואירועים", []string{"הצעה", "טבעת", "אירוסין", "תאריך", "הזמנה", "חופה", "כתובה", "רב", "טבעת נישואין", "שבירת כוס", "כלה", "חתן", "שמלה", "חליפה", "הינומה", "פרחים", "נרות", "בלונים", "קונפטי", "מרכז שולחן", "אולם", "גן אירועים", "קבלת פנים", "רחבה", "בר", "קייטרינג", "בופה", "מנה", "קינוח", "עוגה", "צלם", "וידאו", "מגנטים", "עמדת צילום", "אלבום", "די ג'יי", "שיר כניסה", "סלואו", "ריקוד ראשון", "פלייליסט", "מעטפה", "מתנה", "ברכה", "סידור שולחן", "אישור הגעה", "חינה", "יום הולדת", "בר מצווה", "בת מצווה", "מסיבת רווקים"}},
-	{"fashion_grooming", "אופנה וטיפוח", []string{"טי שירט", "חולצה מכופתרת", "סוודר", "קפוצ'ון", "גופייה", "ג'ינס", "מכנסיים", "שורטס", "חצאית", "טייץ", "מעיל", "ג'קט", "בלייזר", "וסט", "מעיל גשם", "סניקרס", "עקבים", "מגפיים", "סנדלים", "כפכפים", "כובע", "משקפי שמש", "חגורה", "צעיף", "תיק", "שעון", "שרשרת", "צמיד", "טבעת", "עגילים", "מייקאפ", "שפתון", "מסקרה", "סומק", "אייליינר", "תספורת", "פן", "מחליק", "זקן", "גילוח", "לק", "מניקור", "קרם", "בושם", "דאודורנט", "מידה", "מותג", "סייל", "קולקציה", "תא מדידה"}},
-	{"gaming", "גיימינג", []string{"פלייסטיישן", "אקסבוקס", "סוויץ'", "מחשב", "מובייל", "יריות", "מירוצים", "ספורט", "אסטרטגיה", "הישרדות", "לובי", "קלאן", "פארטי", "מאץ'", "ראנק", "פריימים", "פינג", "לאג", "שרת", "גרפיקה", "לוט", "ספאון", "ריספאון", "קאמפינג", "גריינד", "שלב", "בוס", "משימה", "ניסיון", "סקיל", "סקין", "דמות", "נשק", "אמוט", "באטל פאס", "תוסף", "הרחבה", "מטבעות", "חנות", "חינמי", "חיים", "נקודת שמירה", "שמירה", "פסילה", "ניקוד", "ניצחון", "הפסד", "טורניר", "לוח מובילים", "משחק חוזר"}},
-	{"music", "מוזיקה", []string{"גיטרה", "בס", "כינור", "צ'לו", "יוקולילי", "פסנתר", "קלידים", "אורגן", "סינתיסייזר", "אקורדיון", "תופים", "טמבורין", "משולש", "בונגוס", "קסילופון", "סקסופון", "חצוצרה", "חליל", "קלרינט", "מפוחית", "במה", "מיקרופון", "קהל", "הדרן", "מאחורי הקלעים", "אולפן", "אוזניות", "מיקסר", "הקלטה", "אוטו טיון", "פזמון", "בית", "פתיח", "גשר", "סולו", "אלבום", "סינגל", "פלייליסט", "רמיקס", "קאבר", "פופ", "רוק", "היפ הופ", "טראנס", "ג'אז", "די ג'יי", "קריוקי", "פסטיבל", "הופעה", "מסיבה"}},
-	{"nostalgia", "נוסטלגיה", []string{"ווקמן", "דיסקמן", "גיים בוי", "נוקיה", "טמגוצ'י", "קסטה", "וידאו", "דיסקט", "דיסק", "פילם", "אייסיקיו", "מסנג'ר", "חיוג", "מייספייס", "אינטרנט אקספלורר", "וינדוס", "וינאמפ", "מוקשים", "סוליטר", "פיינט", "רינגטון", "מסרון", "אינפרא אדום", "מסך ירוק", "אנטנה", "פוגים", "גולות", "יויו", "אלבום מדבקות", "קלפי פוקימון", "פאקמן", "טטריס", "סנייק", "ספייס אינויידרס", "פינבול", "קלאס", "חבל", "גומי", "חמש אבנים", "מחבואים", "טלפון קווי", "טלפון ציבורי", "טלכרט", "ביפר", "משיבון", "פולארויד", "מצלמה חדפעמית", "אלבום תמונות", "גליל פילם", "פיתוח תמונות"}},
-	{"israeli_slang", "סלנג ישראלי", []string{"סבבה", "אחלה", "וואלה", "תכלס", "יאללה", "פגז", "אש", "חבל\"ז", "קטלני", "מטורף", "אחי", "גבר", "נשמה", "כפרה", "מלך", "חופר", "כבד", "נודניק", "קרציה", "סחי", "סטלן", "צ'יל", "זורם", "מבסוט", "סתלבט", "פדיחה", "פשלה", "באסה", "נדפק", "בושות", "חרטה", "בלוף", "קומבינה", "פראייר", "הזוי", "להבריז", "לייבש", "להתפלח", "לפרגן", "להתקמבן", "קריזה", "ג'ננה", "שבוז", "מורעל", "לחוץ", "קרינג'", "פלקס", "גוסטינג", "רואסט", "וייב"}},
-	{"idf_service", "צה\"ל ושירות", []string{"צו ראשון", "גיוס", "בקו\"ם", "שרשרת חיול", "חוגר", "מדים", "דיסקית", "כומתה", "קיטבג", "נעליים צבאיות", "טירונות", "מסדר", "מטווח", "מסע", "תרגיל", "מפקד", "מ\"מ", "מ\"פ", "רס\"ר", "רס\"פ", "שמירה", "תורנות", "מטבח", "ניקיון", "שק\"ם", "אפטר", "חמשוש", "רגילה", "גימלים", "יציאה", "ריתוק", "מחבוש", "משפט", "דיגום", "נפקדות", "פז\"ם", "צעיר", "ותיק", "מורעל", "שבוז", "קרבי", "ג'ובניק", "בסיס פתוח", "בסיס סגור", "מילואים", "ת\"ש", "קב\"ן", "מש\"קית ת\"ש", "קצין מיון", "שחרור"}},
-	{"film_tv", "קולנוע וטלוויזיה", []string{"סרט", "סדרה", "פרק", "עונה", "ספיישל", "קומדיה", "דרמה", "אימה", "אקשן", "מתח", "במאי", "תסריטאי", "מפיק", "שחקן", "ניצב", "מצלמה", "תאורה", "מיקרופון", "תפאורה", "איפור", "גיבור", "נבל", "דמות", "עלילה", "טוויסט", "טריילר", "ספוילר", "כתוביות", "דיבוב", "קרדיטים", "סיקוול", "פריקוול", "רימייק", "ספין אוף", "טרילוגיה", "ריאליטי", "שעשועון", "חדשות", "טוק שואו", "דוקו", "נטפליקס", "דיסני", "יוטיוב", "אמזון פריים", "סטרימינג", "פופקורן", "כרטיס", "אולם", "מסך", "מושב"}},
-	{"sports", "ספורט וכושר", []string{"כדורגל", "כדורסל", "כדורעף", "כדוריד", "הוקי", "טניס", "פאדל", "פינג פונג", "בדמינטון", "סקווש", "אגרוף", "ג'ודו", "קראטה", "טאקוונדו", "היאבקות", "שחייה", "גלישה", "חתירה", "קיאק", "צלילה", "ריצה", "אופניים", "מרתון", "טריאתלון", "הליכה ספורטיבית", "הליכון", "משקולת", "מוט", "קטלבל", "גומייה", "סקוואט", "דדליפט", "לחיצת חזה", "מתח", "פלאנק", "סקי", "סנובורד", "החלקה אמנותית", "מזחלות", "קרלינג", "גולף", "חצים", "באולינג", "ביליארד", "קשתות", "שופט", "שריקה", "לוח תוצאות", "מדליה", "פודיום"}},
+// DefaultLanguage is what a request without a language plays in: every app
+// released before languages existed speaks Hebrew.
+const DefaultLanguage = "he"
+
+// Language is one language's content, read from languages/<code>.json
+// (docs/localization.md). Adding a language is adding that file.
+type Language struct {
+	Code string
+	// Name is the language in itself ("עברית", "English").
+	Name       string
+	Categories []Category
+	Reactions  []Reaction
+	Bots       Bots
 }
 
-// ValidIDs reports whether ids is non-empty and names only known categories.
-func ValidIDs(ids []string) bool {
+// Bots are the staging bots' names and last-resort hints in one language.
+type Bots struct {
+	Prefix        string              `json:"prefix"`
+	Names         map[string][]string `json:"names"` // "f" and "m", matching the avatars
+	FallbackHints []string            `json:"fallbackHints"`
+	UnknownGuess  string              `json:"unknownGuess"`
+}
+
+//go:embed languages/*.json
+var languageFiles embed.FS
+
+var languages = loadLanguages()
+
+func loadLanguages() map[string]*Language {
+	entries, err := languageFiles.ReadDir("languages")
+	if err != nil {
+		panic(err)
+	}
+	out := map[string]*Language{}
+	for _, e := range entries {
+		raw, err := languageFiles.ReadFile("languages/" + e.Name())
+		if err != nil {
+			panic(err)
+		}
+		var file struct {
+			Language   string `json:"language"`
+			Name       string `json:"name"`
+			Categories []struct {
+				ID       string `json:"id"`
+				Name     string `json:"name"`
+				Clusters []struct {
+					Words []string `json:"words"`
+				} `json:"clusters"`
+			} `json:"categories"`
+			Reactions []Reaction `json:"reactions"`
+			Bots      Bots       `json:"bots"`
+		}
+		if err := json.Unmarshal(raw, &file); err != nil {
+			panic(fmt.Sprintf("%s: %v", e.Name(), err))
+		}
+		// The words are the clusters' words, in order: the bot hints are
+		// authored with them, so they cannot drift apart.
+		lang := &Language{Code: file.Language, Name: file.Name, Bots: file.Bots,
+			Reactions: append(slices.Clone(emojiReactions), file.Reactions...)}
+		for _, c := range file.Categories {
+			category := Category{ID: c.ID, Name: c.Name}
+			for _, cluster := range c.Clusters {
+				category.Words = append(category.Words, cluster.Words...)
+			}
+			lang.Categories = append(lang.Categories, category)
+		}
+		out[lang.Code] = lang
+	}
+	return out
+}
+
+// For returns a language's content. An empty code is DefaultLanguage.
+func For(code string) (*Language, bool) {
+	if code == "" {
+		code = DefaultLanguage
+	}
+	l, ok := languages[code]
+	return l, ok
+}
+
+// Languages lists the language codes, sorted.
+func Languages() []string {
+	return slices.Sorted(maps.Keys(languages))
+}
+
+// KnownCategory reports whether id is a category in any language. Purchases
+// are keyed by category id, whatever language the player plays in.
+func KnownCategory(id string) bool {
+	for _, l := range languages {
+		if slices.ContainsFunc(l.Categories, func(c Category) bool { return c.ID == id }) {
+			return true
+		}
+	}
+	return false
+}
+
+// ValidIDs reports whether ids is non-empty and names only categories of
+// this language.
+func (l *Language) ValidIDs(ids []string) bool {
 	if len(ids) == 0 {
 		return false
 	}
 	for _, id := range ids {
-		if !slices.ContainsFunc(Categories, func(c Category) bool { return c.ID == id }) {
+		if !slices.ContainsFunc(l.Categories, func(c Category) bool { return c.ID == id }) {
 			return false
 		}
 	}
 	return true
 }
 
-// Pick chooses a random category-word pair from the selected categories and
-// returns it with its category name. The same secret may intentionally appear
-// in different categories because the public category changes what constitutes
-// a useful clue.
-func Pick(ids []string, rng *rand.Rand) (categoryName, word string, ok bool) {
+// Pick chooses a random category-word pair from the selected categories of
+// language code and returns it with its category name. The same secret may
+// intentionally appear in different categories because the public category
+// changes what constitutes a useful clue.
+func Pick(code string, ids []string, rng *rand.Rand) (categoryName, word string, ok bool) {
+	l, found := For(code)
+	if !found {
+		return "", "", false
+	}
 	var pool []Category
 	total := 0
-	for _, c := range Categories {
+	for _, c := range l.Categories {
 		if slices.Contains(ids, c.ID) {
 			pool = append(pool, c)
 			total += len(c.Words)
@@ -77,24 +158,33 @@ func Pick(ids []string, rng *rand.Rand) (categoryName, word string, ok bool) {
 	return "", "", false
 }
 
-type Reaction struct {
-	ID   string // stable id sent as reactionId
-	Text string // emoji or structured message shown in the app
+// CategoryNamed finds a category by its public name, in any language. A
+// game carries the name, not the id.
+func CategoryNamed(name string) (Category, bool) {
+	for _, l := range languages {
+		for _, c := range l.Categories {
+			if c.Name == name {
+				return c, true
+			}
+		}
+	}
+	return Category{}, false
 }
 
-// Reactions is the approved list (docs/decisions.md): six emoji and four
-// structured messages.
-var Reactions = []Reaction{
+type Reaction struct {
+	ID   string `json:"id"`   // stable id sent as reactionId
+	Text string `json:"text"` // emoji or structured message shown in the app
+}
+
+// The approved reactions (docs/decisions.md): six emoji, shared by every
+// language, then each language's four structured messages.
+var emojiReactions = []Reaction{
 	{"laugh", "😂"},
 	{"thinking", "🤔"},
 	{"eyes", "👀"},
 	{"surprised", "😮"},
 	{"applause", "👏"},
 	{"eye_roll", "🙄"},
-	{"good_hint", "רמז טוב!"},
-	{"suspicious", "זה מחשיד"},
-	{"not_convinced", "לא השתכנעתי"},
-	{"what_connection", "מה הקשר?"},
 }
 
 // Policy is the game policy: the approved reactions and the blocked-word list
@@ -107,7 +197,9 @@ func Policy() game.Policy {
 	}
 }
 
-// ValidReaction reports whether id is an approved reaction id.
+// ValidReaction reports whether id is an approved reaction id. Every language
+// has the same ids (TestLanguagesAgree).
 func ValidReaction(id string) bool {
-	return slices.ContainsFunc(Reactions, func(r Reaction) bool { return r.ID == id })
+	l, _ := For(DefaultLanguage)
+	return slices.ContainsFunc(l.Reactions, func(r Reaction) bool { return r.ID == id })
 }

@@ -1,6 +1,7 @@
 # Bot hint dataset — format and rules
 
-The file is `server/internal/content/bot_hints.json`. It is compiled into the
+Each language's file is `server/internal/content/languages/<code>.json`
+(docs/localization.md); the rules below hold for every language. It is compiled into the
 server with `go:embed` and validated by `go test ./internal/content/`, so a
 dataset that breaks a rule fails CI rather than a game.
 
@@ -33,10 +34,16 @@ and one worked example (`פיצה`), is already in the file. Fill in the rest.
 }
 ```
 
-- `id` and `name` must match `content.Categories` exactly.
+- The categories' words **are** the clusters' words, in order: there is no
+  second list to match. `name` is the public category name and must differ from
+  every other language's.
+- The same file carries `language`, `name` (the language in itself),
+  `reactions` (the four structured messages) and `bots` (name prefix, names,
+  last-resort hints).
 - Each category has 10 internal semantic clusters of 5 words. Clusters are an
   authoring/AI-bot detail only; players and impostors see only the category.
-- A playable secret is one Hebrew word or a natural two-word Hebrew phrase. Do not glue phrases together just to satisfy storage rules. Citizen and impostor fallback hints still have to be exactly one Hebrew word.
+- A playable secret is one word or a natural two-word phrase in the language's own script (no digits, hyphens or other scripts).
+- In Hebrew: a playable secret is one Hebrew word or a natural two-word Hebrew phrase. Do not glue phrases together just to satisfy storage rules. Citizen and impostor fallback hints still have to be exactly one Hebrew word.
 - `guessAliases` is hidden guess-only metadata for secrets with genuinely different common spellings/transliterations. Spacing/punctuation variants do not need aliases because normalisation already ignores them.
 - Each cluster owns 8 one-word citizen hints shared by all 5 words. That
   overlap is deliberate: a clue should narrow the space without becoming a

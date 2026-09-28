@@ -1,0 +1,4091 @@
+{
+  "language": "en",
+  "name": "English",
+  "version": 2,
+  "categories": [
+    {
+      "id": "food",
+      "name": "Food & Drink",
+      "impostorFallbackHints": [
+        "tasty",
+        "dish",
+        "restaurant",
+        "kitchen",
+        "meal",
+        "plate",
+        "hungry",
+        "menu",
+        "flavor",
+        "fresh",
+        "side",
+        "bite"
+      ],
+      "clusters": [
+        {
+          "name": "Street food",
+          "words": [
+            "Falafel",
+            "Shawarma",
+            "Taco",
+            "Burrito",
+            "Hot dog"
+          ],
+          "hints": [
+            "stand",
+            "fast",
+            "hand",
+            "sauce",
+            "street",
+            "wrapped",
+            "spicy",
+            "lunch"
+          ]
+        },
+        {
+          "name": "Italian",
+          "words": [
+            "Pizza",
+            "Focaccia",
+            "Lasagna",
+            "Pasta",
+            "Gnocchi"
+          ],
+          "hints": [
+            "Italy",
+            "dough",
+            "cheese",
+            "sauce",
+            "flour",
+            "carbs",
+            "plate",
+            "oven"
+          ]
+        },
+        {
+          "name": "Asian",
+          "words": [
+            "Sushi",
+            "Ramen",
+            "Pad Thai",
+            "Dim sum",
+            "Curry"
+          ],
+          "hints": [
+            "Asia",
+            "rice",
+            "chopsticks",
+            "noodles",
+            "spicy",
+            "bowl",
+            "soy",
+            "takeout"
+          ]
+        },
+        {
+          "name": "Breakfast",
+          "words": [
+            "Pancake",
+            "Waffle",
+            "Cereal",
+            "Omelette",
+            "Bagel"
+          ],
+          "hints": [
+            "morning",
+            "breakfast",
+            "syrup",
+            "milk",
+            "eggs",
+            "butter",
+            "coffee",
+            "weekend"
+          ]
+        },
+        {
+          "name": "Bakery",
+          "words": [
+            "Croissant",
+            "Muffin",
+            "Toast",
+            "Pretzel",
+            "Donut"
+          ],
+          "hints": [
+            "bakery",
+            "oven",
+            "crispy",
+            "butter",
+            "flour",
+            "golden",
+            "warm",
+            "snack"
+          ]
+        },
+        {
+          "name": "Desserts",
+          "words": [
+            "Tiramisu",
+            "Brownie",
+            "Cheesecake",
+            "Cupcake",
+            "Ice cream"
+          ],
+          "hints": [
+            "sweet",
+            "dessert",
+            "chocolate",
+            "sugar",
+            "cold",
+            "slice",
+            "birthday",
+            "spoon"
+          ]
+        },
+        {
+          "name": "Snacks",
+          "words": [
+            "Popcorn",
+            "Nachos",
+            "Chips",
+            "Crackers",
+            "Peanuts"
+          ],
+          "hints": [
+            "salty",
+            "crunchy",
+            "bag",
+            "movie",
+            "snack",
+            "bowl",
+            "party",
+            "sofa"
+          ]
+        },
+        {
+          "name": "Sauces",
+          "words": [
+            "Hummus",
+            "Ketchup",
+            "Mayo",
+            "Guacamole",
+            "Mustard"
+          ],
+          "hints": [
+            "dip",
+            "sauce",
+            "jar",
+            "spread",
+            "fridge",
+            "bottle",
+            "sandwich",
+            "burger"
+          ]
+        },
+        {
+          "name": "Hot drinks",
+          "words": [
+            "Espresso",
+            "Cappuccino",
+            "Latte",
+            "Tea",
+            "Hot chocolate"
+          ],
+          "hints": [
+            "cup",
+            "steam",
+            "cafe",
+            "milk",
+            "morning",
+            "barista",
+            "foam",
+            "mug"
+          ]
+        },
+        {
+          "name": "Cold drinks",
+          "words": [
+            "Lemonade",
+            "Cola",
+            "Soda",
+            "Smoothie",
+            "Milkshake"
+          ],
+          "hints": [
+            "cold",
+            "ice",
+            "straw",
+            "glass",
+            "summer",
+            "bubbles",
+            "sweet",
+            "fridge"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "home",
+      "name": "At Home",
+      "impostorFallbackHints": [
+        "room",
+        "house",
+        "family",
+        "clean",
+        "comfy",
+        "furniture",
+        "daily",
+        "cozy",
+        "useful",
+        "apartment",
+        "electric",
+        "corner"
+      ],
+      "clusters": [
+        {
+          "name": "Big appliances",
+          "words": [
+            "Fridge",
+            "Freezer",
+            "Oven",
+            "Microwave",
+            "Dishwasher"
+          ],
+          "hints": [
+            "kitchen",
+            "cold",
+            "heat",
+            "door",
+            "plug",
+            "electric",
+            "food",
+            "appliance"
+          ]
+        },
+        {
+          "name": "Small appliances",
+          "words": [
+            "Kettle",
+            "Toaster",
+            "Blender",
+            "Coffee maker",
+            "Air fryer"
+          ],
+          "hints": [
+            "counter",
+            "button",
+            "plug",
+            "morning",
+            "kitchen",
+            "electric",
+            "cord",
+            "noise"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "words": [
+            "Vacuum",
+            "Broom",
+            "Mop",
+            "Bucket",
+            "Rag"
+          ],
+          "hints": [
+            "floor",
+            "dust",
+            "clean",
+            "chores",
+            "dirt",
+            "closet",
+            "wet",
+            "weekend"
+          ]
+        },
+        {
+          "name": "Laundry",
+          "words": [
+            "Washing machine",
+            "Dryer",
+            "Laundry basket",
+            "Iron",
+            "Clothesline"
+          ],
+          "hints": [
+            "clothes",
+            "wash",
+            "socks",
+            "spin",
+            "wrinkles",
+            "detergent",
+            "shirt",
+            "fold"
+          ]
+        },
+        {
+          "name": "Living room",
+          "words": [
+            "Sofa",
+            "Armchair",
+            "Table",
+            "Chair",
+            "Cabinet"
+          ],
+          "hints": [
+            "sit",
+            "relax",
+            "wood",
+            "legs",
+            "guests",
+            "living",
+            "furniture",
+            "room"
+          ]
+        },
+        {
+          "name": "Bedroom",
+          "words": [
+            "Bed",
+            "Pillow",
+            "Blanket",
+            "Mattress",
+            "Dresser"
+          ],
+          "hints": [
+            "sleep",
+            "night",
+            "soft",
+            "dream",
+            "morning",
+            "cozy",
+            "sheets",
+            "nap"
+          ]
+        },
+        {
+          "name": "Bathroom",
+          "words": [
+            "Shower",
+            "Bathtub",
+            "Sink",
+            "Mirror",
+            "Toilet"
+          ],
+          "hints": [
+            "water",
+            "towel",
+            "soap",
+            "morning",
+            "tiles",
+            "clean",
+            "drain",
+            "tap"
+          ]
+        },
+        {
+          "name": "Storage",
+          "words": [
+            "Closet",
+            "Drawer",
+            "Shelf",
+            "Door",
+            "Key"
+          ],
+          "hints": [
+            "open",
+            "close",
+            "lock",
+            "handle",
+            "wood",
+            "hinge",
+            "inside",
+            "keep"
+          ]
+        },
+        {
+          "name": "Climate",
+          "words": [
+            "Air conditioner",
+            "Fan",
+            "Heater",
+            "Curtain",
+            "Rug"
+          ],
+          "hints": [
+            "temperature",
+            "summer",
+            "winter",
+            "window",
+            "remote",
+            "cozy",
+            "floor",
+            "comfort"
+          ]
+        },
+        {
+          "name": "Entrance",
+          "words": [
+            "Doorbell",
+            "Intercom",
+            "Mailbox",
+            "Window",
+            "Blinds"
+          ],
+          "hints": [
+            "outside",
+            "visitor",
+            "entrance",
+            "light",
+            "glass",
+            "street",
+            "knock",
+            "view"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "school_students",
+      "name": "School & College",
+      "impostorFallbackHints": [
+        "learn",
+        "student",
+        "study",
+        "knowledge",
+        "campus",
+        "lesson",
+        "bag",
+        "school",
+        "smart",
+        "notes",
+        "morning",
+        "busy"
+      ],
+      "clusters": [
+        {
+          "name": "Pencil case",
+          "words": [
+            "Pencil",
+            "Pen",
+            "Eraser",
+            "Sharpener",
+            "Highlighter"
+          ],
+          "hints": [
+            "write",
+            "desk",
+            "color",
+            "tip",
+            "bag",
+            "notes",
+            "small",
+            "stationery"
+          ]
+        },
+        {
+          "name": "Paper",
+          "words": [
+            "Notebook",
+            "Binder",
+            "Folder",
+            "Textbook",
+            "Planner"
+          ],
+          "hints": [
+            "pages",
+            "paper",
+            "cover",
+            "notes",
+            "bag",
+            "study",
+            "shelf",
+            "lines"
+          ]
+        },
+        {
+          "name": "Classroom",
+          "words": [
+            "Whiteboard",
+            "Projector",
+            "Desk",
+            "Chair",
+            "Map"
+          ],
+          "hints": [
+            "class",
+            "wall",
+            "front",
+            "screen",
+            "room",
+            "teacher",
+            "lesson",
+            "morning"
+          ]
+        },
+        {
+          "name": "Tests",
+          "words": [
+            "Exam",
+            "Quiz",
+            "Essay",
+            "Grade",
+            "Report card"
+          ],
+          "hints": [
+            "score",
+            "stress",
+            "study",
+            "results",
+            "teacher",
+            "pass",
+            "fail",
+            "question"
+          ]
+        },
+        {
+          "name": "School day",
+          "words": [
+            "Bell",
+            "Recess",
+            "Free period",
+            "Homework",
+            "Detention"
+          ],
+          "hints": [
+            "break",
+            "schedule",
+            "time",
+            "late",
+            "bored",
+            "lunch",
+            "friends",
+            "clock"
+          ]
+        },
+        {
+          "name": "Staff",
+          "words": [
+            "Teacher",
+            "Principal",
+            "Office",
+            "Library",
+            "Cafeteria"
+          ],
+          "hints": [
+            "building",
+            "staff",
+            "rules",
+            "books",
+            "lunch",
+            "hallway",
+            "quiet",
+            "visit"
+          ]
+        },
+        {
+          "name": "High school",
+          "words": [
+            "Finals",
+            "Mock exam",
+            "Class trip",
+            "Prom",
+            "Yearbook"
+          ],
+          "hints": [
+            "senior",
+            "year",
+            "memories",
+            "graduation",
+            "photos",
+            "stress",
+            "friends",
+            "June"
+          ]
+        },
+        {
+          "name": "College",
+          "words": [
+            "Lecture",
+            "Tutorial",
+            "Semester",
+            "Course",
+            "Degree"
+          ],
+          "hints": [
+            "campus",
+            "professor",
+            "credits",
+            "university",
+            "schedule",
+            "notes",
+            "hall",
+            "study"
+          ]
+        },
+        {
+          "name": "Assignments",
+          "words": [
+            "Summary",
+            "Presentation",
+            "Project",
+            "Deadline",
+            "Submission"
+          ],
+          "hints": [
+            "slides",
+            "group",
+            "night",
+            "late",
+            "laptop",
+            "work",
+            "due",
+            "file"
+          ]
+        },
+        {
+          "name": "Second chances",
+          "words": [
+            "Appeal",
+            "Curve",
+            "Cheating",
+            "Cramming",
+            "Retake"
+          ],
+          "hints": [
+            "score",
+            "second",
+            "chance",
+            "night",
+            "panic",
+            "points",
+            "teacher",
+            "rules"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "work_office",
+      "name": "Work & Office",
+      "impostorFallbackHints": [
+        "job",
+        "boss",
+        "company",
+        "colleague",
+        "desk",
+        "salary",
+        "busy",
+        "career",
+        "laptop",
+        "schedule",
+        "business",
+        "team"
+      ],
+      "clusters": [
+        {
+          "name": "Communication",
+          "words": [
+            "Email",
+            "Slack",
+            "Teams",
+            "Zoom",
+            "Phone call"
+          ],
+          "hints": [
+            "message",
+            "reply",
+            "online",
+            "meeting",
+            "notification",
+            "video",
+            "colleague",
+            "inbox"
+          ]
+        },
+        {
+          "name": "Meetings",
+          "words": [
+            "Meeting",
+            "Agenda",
+            "Slides",
+            "Minutes",
+            "Conference room"
+          ],
+          "hints": [
+            "table",
+            "discussion",
+            "boss",
+            "calendar",
+            "notes",
+            "long",
+            "coffee",
+            "boring"
+          ]
+        },
+        {
+          "name": "Tasks",
+          "words": [
+            "Task",
+            "Ticket",
+            "Project",
+            "Deadline",
+            "Priority"
+          ],
+          "hints": [
+            "list",
+            "manager",
+            "done",
+            "urgent",
+            "board",
+            "status",
+            "plan",
+            "progress"
+          ]
+        },
+        {
+          "name": "Agile",
+          "words": [
+            "Sprint",
+            "Standup",
+            "Retro",
+            "Backlog",
+            "Demo"
+          ],
+          "hints": [
+            "team",
+            "weeks",
+            "board",
+            "agile",
+            "planning",
+            "feedback",
+            "startup",
+            "cycle"
+          ]
+        },
+        {
+          "name": "Files",
+          "words": [
+            "Excel",
+            "Word doc",
+            "File",
+            "Spreadsheet",
+            "Report"
+          ],
+          "hints": [
+            "computer",
+            "data",
+            "save",
+            "share",
+            "format",
+            "numbers",
+            "folder",
+            "printout"
+          ]
+        },
+        {
+          "name": "Office supplies",
+          "words": [
+            "Printer",
+            "Scanner",
+            "Stapler",
+            "Whiteboard",
+            "Marker"
+          ],
+          "hints": [
+            "paper",
+            "desk",
+            "supplies",
+            "office",
+            "ink",
+            "jam",
+            "corner",
+            "tray"
+          ]
+        },
+        {
+          "name": "People",
+          "words": [
+            "Manager",
+            "New hire",
+            "Recruiter",
+            "Client",
+            "Supplier"
+          ],
+          "hints": [
+            "people",
+            "company",
+            "contract",
+            "team",
+            "onboarding",
+            "trust",
+            "role",
+            "phone"
+          ]
+        },
+        {
+          "name": "Career",
+          "words": [
+            "Interview",
+            "Resume",
+            "Promotion",
+            "Raise",
+            "Bonus"
+          ],
+          "hints": [
+            "salary",
+            "money",
+            "career",
+            "boss",
+            "review",
+            "year",
+            "success",
+            "goal"
+          ]
+        },
+        {
+          "name": "Workplace",
+          "words": [
+            "Office",
+            "Remote work",
+            "Hybrid",
+            "Day off",
+            "Sick day"
+          ],
+          "hints": [
+            "home",
+            "days",
+            "week",
+            "schedule",
+            "commute",
+            "laptop",
+            "calendar",
+            "policy"
+          ]
+        },
+        {
+          "name": "Breaks",
+          "words": [
+            "Kitchenette",
+            "Coffee machine",
+            "Lunch",
+            "Gossip",
+            "Happy hour"
+          ],
+          "hints": [
+            "break",
+            "colleagues",
+            "chat",
+            "food",
+            "afternoon",
+            "drinks",
+            "relax",
+            "Friday"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "technology_digital",
+      "name": "Tech & Digital",
+      "impostorFallbackHints": [
+        "technology",
+        "digital",
+        "online",
+        "device",
+        "internet",
+        "screen",
+        "smart",
+        "modern",
+        "update",
+        "electric",
+        "virtual",
+        "app"
+      ],
+      "clusters": [
+        {
+          "name": "Devices",
+          "words": [
+            "Smartphone",
+            "Tablet",
+            "Laptop",
+            "Smartwatch",
+            "Headphones"
+          ],
+          "hints": [
+            "screen",
+            "device",
+            "battery",
+            "apps",
+            "touch",
+            "pocket",
+            "charge",
+            "wireless"
+          ]
+        },
+        {
+          "name": "Connectivity",
+          "words": [
+            "WiFi",
+            "Bluetooth",
+            "Router",
+            "Hotspot",
+            "AirDrop"
+          ],
+          "hints": [
+            "wireless",
+            "signal",
+            "connect",
+            "password",
+            "network",
+            "share",
+            "pair",
+            "internet"
+          ]
+        },
+        {
+          "name": "Power",
+          "words": [
+            "Charger",
+            "Cable",
+            "Battery",
+            "Adapter",
+            "Power bank"
+          ],
+          "hints": [
+            "plug",
+            "electricity",
+            "percent",
+            "travel",
+            "outlet",
+            "port",
+            "cord",
+            "charge"
+          ]
+        },
+        {
+          "name": "Phone features",
+          "words": [
+            "Camera",
+            "Face ID",
+            "Flashlight",
+            "Notification",
+            "Screenshot"
+          ],
+          "hints": [
+            "phone",
+            "button",
+            "screen",
+            "settings",
+            "feature",
+            "photo",
+            "light",
+            "alert"
+          ]
+        },
+        {
+          "name": "Apps",
+          "words": [
+            "WhatsApp",
+            "Telegram",
+            "Instagram",
+            "TikTok",
+            "Discord"
+          ],
+          "hints": [
+            "app",
+            "chat",
+            "messages",
+            "social",
+            "followers",
+            "group",
+            "feed",
+            "stories"
+          ]
+        },
+        {
+          "name": "Web",
+          "words": [
+            "Browser",
+            "Google",
+            "Search",
+            "Tabs",
+            "Cookies"
+          ],
+          "hints": [
+            "internet",
+            "website",
+            "link",
+            "results",
+            "online",
+            "history",
+            "address",
+            "click"
+          ]
+        },
+        {
+          "name": "Security",
+          "words": [
+            "Password",
+            "Code",
+            "Encryption",
+            "Firewall",
+            "Antivirus"
+          ],
+          "hints": [
+            "security",
+            "hacker",
+            "protect",
+            "safe",
+            "secret",
+            "login",
+            "lock",
+            "privacy"
+          ]
+        },
+        {
+          "name": "Cloud",
+          "words": [
+            "Cloud",
+            "Backup",
+            "Storage",
+            "Sync",
+            "Download"
+          ],
+          "hints": [
+            "files",
+            "save",
+            "server",
+            "online",
+            "data",
+            "space",
+            "upload",
+            "restore"
+          ]
+        },
+        {
+          "name": "AI",
+          "words": [
+            "Algorithm",
+            "Prompt",
+            "Chatbot",
+            "Image generator",
+            "Voice assistant"
+          ],
+          "hints": [
+            "artificial",
+            "smart",
+            "question",
+            "answer",
+            "future",
+            "robot",
+            "learning",
+            "talk"
+          ]
+        },
+        {
+          "name": "Development",
+          "words": [
+            "GitHub",
+            "Docker",
+            "Interface",
+            "Server",
+            "Database"
+          ],
+          "hints": [
+            "developer",
+            "programming",
+            "tech",
+            "system",
+            "data",
+            "backend",
+            "terminal",
+            "bug"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "travel_vacation",
+      "name": "Travel & Vacation",
+      "impostorFallbackHints": [
+        "overseas",
+        "holiday",
+        "flight",
+        "journey",
+        "explore",
+        "summer",
+        "planning",
+        "photos",
+        "memories",
+        "foreign",
+        "destination",
+        "world"
+      ],
+      "clusters": [
+        {
+          "name": "Documents",
+          "words": [
+            "Passport",
+            "Plane ticket",
+            "Boarding pass",
+            "Visa",
+            "Travel insurance"
+          ],
+          "hints": [
+            "abroad",
+            "documents",
+            "airport",
+            "border",
+            "bag",
+            "check",
+            "flight",
+            "trip"
+          ]
+        },
+        {
+          "name": "Airport",
+          "words": [
+            "Check in",
+            "Gate",
+            "Security",
+            "Duty free",
+            "Baggage claim"
+          ],
+          "hints": [
+            "airport",
+            "line",
+            "flight",
+            "waiting",
+            "terminal",
+            "screen",
+            "shopping",
+            "passengers"
+          ]
+        },
+        {
+          "name": "Flight",
+          "words": [
+            "Takeoff",
+            "Landing",
+            "Connection",
+            "Delay",
+            "Jet lag"
+          ],
+          "hints": [
+            "plane",
+            "sky",
+            "hours",
+            "seat",
+            "pilot",
+            "time",
+            "tired",
+            "airport"
+          ]
+        },
+        {
+          "name": "Luggage",
+          "words": [
+            "Suitcase",
+            "Carry on",
+            "Backpack",
+            "Luggage tag",
+            "Overweight"
+          ],
+          "hints": [
+            "packing",
+            "clothes",
+            "wheels",
+            "heavy",
+            "zipper",
+            "trip",
+            "airline",
+            "kilos"
+          ]
+        },
+        {
+          "name": "Stay",
+          "words": [
+            "Hotel",
+            "Hostel",
+            "Apartment",
+            "Camping",
+            "Resort"
+          ],
+          "hints": [
+            "night",
+            "bed",
+            "sleep",
+            "room",
+            "stay",
+            "price",
+            "checkout",
+            "comfort"
+          ]
+        },
+        {
+          "name": "Hotel",
+          "words": [
+            "Reception",
+            "Lobby",
+            "Room key",
+            "Breakfast",
+            "Room service"
+          ],
+          "hints": [
+            "guests",
+            "staff",
+            "morning",
+            "floor",
+            "elevator",
+            "desk",
+            "stay",
+            "card"
+          ]
+        },
+        {
+          "name": "Beach",
+          "words": [
+            "Beach",
+            "Pool",
+            "Umbrella",
+            "Towel",
+            "Sunscreen"
+          ],
+          "hints": [
+            "sun",
+            "summer",
+            "sand",
+            "swim",
+            "water",
+            "relax",
+            "tan",
+            "vacation"
+          ]
+        },
+        {
+          "name": "Sightseeing",
+          "words": [
+            "Map",
+            "Tour guide",
+            "Museum",
+            "Viewpoint",
+            "Souvenir"
+          ],
+          "hints": [
+            "sights",
+            "city",
+            "photos",
+            "walk",
+            "famous",
+            "visit",
+            "history",
+            "ticket"
+          ]
+        },
+        {
+          "name": "Booking",
+          "words": [
+            "Booking",
+            "Vacation rental",
+            "Reservation",
+            "Review",
+            "Cancellation"
+          ],
+          "hints": [
+            "website",
+            "stars",
+            "dates",
+            "price",
+            "app",
+            "confirm",
+            "email",
+            "online"
+          ]
+        },
+        {
+          "name": "Activities",
+          "words": [
+            "Cruise",
+            "Cable car",
+            "Skiing",
+            "Hiking",
+            "Road trip"
+          ],
+          "hints": [
+            "adventure",
+            "view",
+            "outdoors",
+            "weekend",
+            "nature",
+            "fun",
+            "active",
+            "experience"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "places",
+      "name": "Places Around the World",
+      "impostorFallbackHints": [
+        "travel",
+        "world",
+        "country",
+        "map",
+        "famous",
+        "flight",
+        "abroad",
+        "tourist",
+        "visit",
+        "photo",
+        "far",
+        "culture"
+      ],
+      "clusters": [
+        {
+          "name": "European cities",
+          "words": [
+            "Paris",
+            "London",
+            "Rome",
+            "Barcelona",
+            "Amsterdam"
+          ],
+          "hints": [
+            "Europe",
+            "city",
+            "museums",
+            "history",
+            "weekend",
+            "tourists",
+            "streets",
+            "flight"
+          ]
+        },
+        {
+          "name": "Central Europe",
+          "words": [
+            "Prague",
+            "Vienna",
+            "Budapest",
+            "Berlin",
+            "Krakow"
+          ],
+          "hints": [
+            "Europe",
+            "bridge",
+            "river",
+            "castle",
+            "beer",
+            "history",
+            "winter",
+            "cheap"
+          ]
+        },
+        {
+          "name": "Islands",
+          "words": [
+            "Santorini",
+            "Mykonos",
+            "Ibiza",
+            "Malta",
+            "Cyprus"
+          ],
+          "hints": [
+            "island",
+            "sea",
+            "beach",
+            "summer",
+            "sun",
+            "party",
+            "blue",
+            "ferry"
+          ]
+        },
+        {
+          "name": "Asia",
+          "words": [
+            "Tokyo",
+            "Seoul",
+            "Bangkok",
+            "Singapore",
+            "Hong Kong"
+          ],
+          "hints": [
+            "Asia",
+            "metro",
+            "neon",
+            "food",
+            "skyscrapers",
+            "crowded",
+            "shopping",
+            "flight"
+          ]
+        },
+        {
+          "name": "North America",
+          "words": [
+            "New York",
+            "Los Angeles",
+            "Miami",
+            "Las Vegas",
+            "Toronto"
+          ],
+          "hints": [
+            "America",
+            "city",
+            "downtown",
+            "lights",
+            "cars",
+            "famous",
+            "airport",
+            "hotels"
+          ]
+        },
+        {
+          "name": "Exotic",
+          "words": [
+            "Maldives",
+            "Bali",
+            "Hawaii",
+            "Phuket",
+            "Seychelles"
+          ],
+          "hints": [
+            "paradise",
+            "beach",
+            "ocean",
+            "honeymoon",
+            "palm",
+            "tropical",
+            "resort",
+            "snorkel"
+          ]
+        },
+        {
+          "name": "Nature",
+          "words": [
+            "Grand Canyon",
+            "Niagara Falls",
+            "Sahara",
+            "Amazon",
+            "Fjords"
+          ],
+          "hints": [
+            "nature",
+            "wild",
+            "view",
+            "huge",
+            "hiking",
+            "photos",
+            "landscape",
+            "water"
+          ]
+        },
+        {
+          "name": "Ancient",
+          "words": [
+            "Colosseum",
+            "Pyramids",
+            "Machu Picchu",
+            "Acropolis",
+            "Petra"
+          ],
+          "hints": [
+            "ancient",
+            "ruins",
+            "history",
+            "stones",
+            "tourists",
+            "old",
+            "empire",
+            "wonder"
+          ]
+        },
+        {
+          "name": "Landmarks",
+          "words": [
+            "Eiffel Tower",
+            "Big Ben",
+            "Times Square",
+            "Burj Khalifa",
+            "Sagrada Familia"
+          ],
+          "hints": [
+            "famous",
+            "landmark",
+            "photo",
+            "tall",
+            "tourists",
+            "city",
+            "iconic",
+            "visit"
+          ]
+        },
+        {
+          "name": "Cold and high",
+          "words": [
+            "Everest",
+            "Dolomites",
+            "Iceland",
+            "Patagonia",
+            "Lapland"
+          ],
+          "hints": [
+            "mountains",
+            "snow",
+            "cold",
+            "hiking",
+            "wild",
+            "adventure",
+            "frozen",
+            "remote"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dating_relationships",
+      "name": "Dating & Relationships",
+      "impostorFallbackHints": [
+        "couple",
+        "romance",
+        "heart",
+        "relationship",
+        "partner",
+        "single",
+        "feelings",
+        "together",
+        "dinner",
+        "cute",
+        "nervous",
+        "flirt"
+      ],
+      "clusters": [
+        {
+          "name": "Apps",
+          "words": [
+            "Match",
+            "Swipe",
+            "Profile",
+            "Bio",
+            "Photo"
+          ],
+          "hints": [
+            "app",
+            "dating",
+            "phone",
+            "online",
+            "single",
+            "screen",
+            "right",
+            "first"
+          ]
+        },
+        {
+          "name": "Texting",
+          "words": [
+            "Message",
+            "Like",
+            "Reply",
+            "DM",
+            "Phone number"
+          ],
+          "hints": [
+            "text",
+            "chat",
+            "waiting",
+            "emoji",
+            "notification",
+            "typing",
+            "seen",
+            "late"
+          ]
+        },
+        {
+          "name": "Date spots",
+          "words": [
+            "Coffee shop",
+            "Bar",
+            "Restaurant",
+            "Cinema",
+            "Walk"
+          ],
+          "hints": [
+            "date",
+            "evening",
+            "first",
+            "outfit",
+            "table",
+            "drinks",
+            "talk",
+            "nervous"
+          ]
+        },
+        {
+          "name": "Feelings",
+          "words": [
+            "Crush",
+            "Chemistry",
+            "Butterflies",
+            "Attraction",
+            "Love"
+          ],
+          "hints": [
+            "heart",
+            "feeling",
+            "stomach",
+            "excited",
+            "eyes",
+            "spark",
+            "blushing",
+            "romance"
+          ]
+        },
+        {
+          "name": "Romance",
+          "words": [
+            "Compliment",
+            "Look",
+            "Smile",
+            "Touch",
+            "Kiss"
+          ],
+          "hints": [
+            "romantic",
+            "lips",
+            "moment",
+            "eyes",
+            "sweet",
+            "shy",
+            "close",
+            "gesture"
+          ]
+        },
+        {
+          "name": "Bad behavior",
+          "words": [
+            "Ghosting",
+            "Breadcrumbing",
+            "Double text",
+            "Blocking",
+            "Benching"
+          ],
+          "hints": [
+            "ignore",
+            "silence",
+            "rude",
+            "disappear",
+            "messages",
+            "waiting",
+            "cold",
+            "drama"
+          ]
+        },
+        {
+          "name": "Rough patches",
+          "words": [
+            "Trust",
+            "Jealousy",
+            "Argument",
+            "Apology",
+            "Compromise"
+          ],
+          "hints": [
+            "couple",
+            "talk",
+            "feelings",
+            "partner",
+            "relationship",
+            "tension",
+            "sorry",
+            "hard"
+          ]
+        },
+        {
+          "name": "Stages",
+          "words": [
+            "First date",
+            "Friendship",
+            "Friend zone",
+            "Ex",
+            "Comeback"
+          ],
+          "hints": [
+            "past",
+            "feelings",
+            "status",
+            "awkward",
+            "stage",
+            "history",
+            "heart",
+            "together"
+          ]
+        },
+        {
+          "name": "Getting serious",
+          "words": [
+            "Meeting parents",
+            "Moving in",
+            "Proposal",
+            "Ring",
+            "Wedding"
+          ],
+          "hints": [
+            "future",
+            "commitment",
+            "serious",
+            "family",
+            "step",
+            "together",
+            "big",
+            "promise"
+          ]
+        },
+        {
+          "name": "Lies",
+          "words": [
+            "Lie",
+            "Secret",
+            "Suspicion",
+            "Excuse",
+            "Red flag"
+          ],
+          "hints": [
+            "trust",
+            "truth",
+            "doubt",
+            "warning",
+            "hide",
+            "sign",
+            "story",
+            "careful"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nightlife",
+      "name": "Nightlife & Going Out",
+      "impostorFallbackHints": [
+        "night",
+        "friends",
+        "fun",
+        "weekend",
+        "drinks",
+        "music",
+        "late",
+        "crowd",
+        "outfit",
+        "city",
+        "loud",
+        "energy"
+      ],
+      "clusters": [
+        {
+          "name": "Venues",
+          "words": [
+            "Bar",
+            "Pub",
+            "Club",
+            "Karaoke",
+            "House party"
+          ],
+          "hints": [
+            "night",
+            "drinks",
+            "friends",
+            "music",
+            "weekend",
+            "loud",
+            "dance",
+            "crowd"
+          ]
+        },
+        {
+          "name": "Getting in",
+          "words": [
+            "Line",
+            "Bouncer",
+            "Guest list",
+            "Wristband",
+            "Reservation"
+          ],
+          "hints": [
+            "door",
+            "entrance",
+            "waiting",
+            "name",
+            "strict",
+            "ticket",
+            "security",
+            "VIP"
+          ]
+        },
+        {
+          "name": "Music",
+          "words": [
+            "DJ",
+            "Dance floor",
+            "Speaker",
+            "Bass",
+            "Playlist"
+          ],
+          "hints": [
+            "music",
+            "loud",
+            "beat",
+            "songs",
+            "night",
+            "party",
+            "volume",
+            "sound"
+          ]
+        },
+        {
+          "name": "Drinks",
+          "words": [
+            "Glass",
+            "Bottle",
+            "Cocktail",
+            "Beer",
+            "Shot"
+          ],
+          "hints": [
+            "alcohol",
+            "cheers",
+            "order",
+            "ice",
+            "round",
+            "bartender",
+            "cold",
+            "tab"
+          ]
+        },
+        {
+          "name": "Effects",
+          "words": [
+            "Neon",
+            "Laser",
+            "Smoke",
+            "Confetti",
+            "Flash"
+          ],
+          "hints": [
+            "lights",
+            "colors",
+            "show",
+            "dark",
+            "stage",
+            "effect",
+            "party",
+            "bright"
+          ]
+        },
+        {
+          "name": "Fun",
+          "words": [
+            "Dancing",
+            "Selfie",
+            "Flirting",
+            "Laughing",
+            "Meeting people"
+          ],
+          "hints": [
+            "fun",
+            "friends",
+            "night",
+            "phone",
+            "smile",
+            "crowd",
+            "happy",
+            "stories"
+          ]
+        },
+        {
+          "name": "After",
+          "words": [
+            "Taxi",
+            "Pizza",
+            "Afterparty",
+            "Sunrise",
+            "Hangover"
+          ],
+          "hints": [
+            "morning",
+            "late",
+            "tired",
+            "home",
+            "ride",
+            "hungry",
+            "sleep",
+            "regret"
+          ]
+        },
+        {
+          "name": "Celebrations",
+          "words": [
+            "Birthday",
+            "Bachelor party",
+            "Bachelorette party",
+            "Festival",
+            "Rooftop party"
+          ],
+          "hints": [
+            "celebration",
+            "friends",
+            "weekend",
+            "special",
+            "group",
+            "surprise",
+            "outfit",
+            "tickets"
+          ]
+        },
+        {
+          "name": "Games",
+          "words": [
+            "Billiards",
+            "Bowling",
+            "Arcade",
+            "Comedy club",
+            "Casino"
+          ],
+          "hints": [
+            "games",
+            "competition",
+            "night",
+            "win",
+            "points",
+            "fun",
+            "friends",
+            "evening"
+          ]
+        },
+        {
+          "name": "End of the night",
+          "words": [
+            "Bill",
+            "Tip",
+            "Ride home",
+            "Phone charger",
+            "Water"
+          ],
+          "hints": [
+            "end",
+            "pay",
+            "night",
+            "need",
+            "last",
+            "wallet",
+            "late",
+            "forget"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "weddings_events",
+      "name": "Weddings & Parties",
+      "impostorFallbackHints": [
+        "celebration",
+        "guests",
+        "family",
+        "happy",
+        "event",
+        "love",
+        "invite",
+        "special",
+        "music",
+        "hall",
+        "memories",
+        "couple"
+      ],
+      "clusters": [
+        {
+          "name": "Engagement",
+          "words": [
+            "Proposal",
+            "Engagement",
+            "Wedding date",
+            "Invitation",
+            "Fiance"
+          ],
+          "hints": [
+            "question",
+            "answer",
+            "romantic",
+            "announce",
+            "surprise",
+            "future",
+            "excited",
+            "calendar"
+          ]
+        },
+        {
+          "name": "Ceremony",
+          "words": [
+            "Ceremony",
+            "Vows",
+            "Officiant",
+            "Wedding ring",
+            "Aisle"
+          ],
+          "hints": [
+            "promise",
+            "moment",
+            "emotional",
+            "guests",
+            "music",
+            "walk",
+            "tears",
+            "forever"
+          ]
+        },
+        {
+          "name": "The couple",
+          "words": [
+            "Bride",
+            "Groom",
+            "Wedding dress",
+            "Suit",
+            "Veil"
+          ],
+          "hints": [
+            "white",
+            "outfit",
+            "elegant",
+            "photos",
+            "couple",
+            "look",
+            "fitting",
+            "special"
+          ]
+        },
+        {
+          "name": "Decor",
+          "words": [
+            "Flowers",
+            "Candles",
+            "Balloons",
+            "Confetti",
+            "Centerpiece"
+          ],
+          "hints": [
+            "decor",
+            "colors",
+            "tables",
+            "pretty",
+            "light",
+            "arrangement",
+            "theme",
+            "atmosphere"
+          ]
+        },
+        {
+          "name": "Venue",
+          "words": [
+            "Venue",
+            "Garden",
+            "Reception",
+            "Dance floor",
+            "Bar"
+          ],
+          "hints": [
+            "guests",
+            "hall",
+            "evening",
+            "lights",
+            "big",
+            "place",
+            "crowd",
+            "night"
+          ]
+        },
+        {
+          "name": "Food",
+          "words": [
+            "Catering",
+            "Buffet",
+            "Main course",
+            "Dessert",
+            "Wedding cake"
+          ],
+          "hints": [
+            "food",
+            "waiter",
+            "plate",
+            "guests",
+            "menu",
+            "hungry",
+            "tables",
+            "tasty"
+          ]
+        },
+        {
+          "name": "Photos",
+          "words": [
+            "Photographer",
+            "Videographer",
+            "Photo booth",
+            "Album",
+            "Slideshow"
+          ],
+          "hints": [
+            "memories",
+            "camera",
+            "pictures",
+            "smile",
+            "pose",
+            "flash",
+            "moments",
+            "video"
+          ]
+        },
+        {
+          "name": "Music",
+          "words": [
+            "DJ",
+            "First dance",
+            "Slow dance",
+            "Playlist",
+            "Band"
+          ],
+          "hints": [
+            "music",
+            "songs",
+            "couple",
+            "romantic",
+            "speakers",
+            "night",
+            "floor",
+            "party"
+          ]
+        },
+        {
+          "name": "Speeches and gifts",
+          "words": [
+            "Gift",
+            "Card",
+            "Toast",
+            "Speech",
+            "Seating chart"
+          ],
+          "hints": [
+            "guests",
+            "words",
+            "table",
+            "money",
+            "microphone",
+            "thanks",
+            "envelope",
+            "names"
+          ]
+        },
+        {
+          "name": "Other parties",
+          "words": [
+            "Baby shower",
+            "Birthday party",
+            "Anniversary",
+            "Graduation",
+            "Bachelor party"
+          ],
+          "hints": [
+            "celebration",
+            "family",
+            "friends",
+            "cake",
+            "gifts",
+            "invite",
+            "special",
+            "milestone"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fashion_grooming",
+      "name": "Fashion & Grooming",
+      "impostorFallbackHints": [
+        "style",
+        "fashion",
+        "outfit",
+        "look",
+        "clothes",
+        "beauty",
+        "trendy",
+        "wear",
+        "store",
+        "mirror",
+        "color",
+        "elegant"
+      ],
+      "clusters": [
+        {
+          "name": "Tops",
+          "words": [
+            "Tank top",
+            "Sweater",
+            "Hoodie",
+            "Blouse",
+            "Polo shirt"
+          ],
+          "hints": [
+            "sleeves",
+            "cotton",
+            "casual",
+            "wear",
+            "fabric",
+            "collar",
+            "washing",
+            "comfy"
+          ]
+        },
+        {
+          "name": "Bottoms",
+          "words": [
+            "Jeans",
+            "Pants",
+            "Shorts",
+            "Skirt",
+            "Leggings"
+          ],
+          "hints": [
+            "legs",
+            "waist",
+            "denim",
+            "pockets",
+            "size",
+            "fit",
+            "bottom",
+            "outfit"
+          ]
+        },
+        {
+          "name": "Outerwear",
+          "words": [
+            "Coat",
+            "Jacket",
+            "Blazer",
+            "Vest",
+            "Raincoat"
+          ],
+          "hints": [
+            "winter",
+            "cold",
+            "zipper",
+            "layer",
+            "outside",
+            "warm",
+            "buttons",
+            "rain"
+          ]
+        },
+        {
+          "name": "Shoes",
+          "words": [
+            "Sneakers",
+            "Heels",
+            "Boots",
+            "Sandals",
+            "Flip flops"
+          ],
+          "hints": [
+            "feet",
+            "walk",
+            "pair",
+            "size",
+            "sole",
+            "store",
+            "comfortable",
+            "style"
+          ]
+        },
+        {
+          "name": "Accessories",
+          "words": [
+            "Hat",
+            "Sunglasses",
+            "Belt",
+            "Scarf",
+            "Bag"
+          ],
+          "hints": [
+            "accessory",
+            "style",
+            "match",
+            "outfit",
+            "fashion",
+            "gift",
+            "brand",
+            "wear"
+          ]
+        },
+        {
+          "name": "Jewelry",
+          "words": [
+            "Watch",
+            "Necklace",
+            "Bracelet",
+            "Ring",
+            "Earrings"
+          ],
+          "hints": [
+            "gold",
+            "silver",
+            "jewelry",
+            "shiny",
+            "gift",
+            "expensive",
+            "small",
+            "elegant"
+          ]
+        },
+        {
+          "name": "Makeup",
+          "words": [
+            "Foundation",
+            "Lipstick",
+            "Mascara",
+            "Blush",
+            "Eyeliner"
+          ],
+          "hints": [
+            "face",
+            "mirror",
+            "beauty",
+            "color",
+            "brush",
+            "morning",
+            "eyes",
+            "makeup"
+          ]
+        },
+        {
+          "name": "Hair",
+          "words": [
+            "Haircut",
+            "Blow dry",
+            "Straightener",
+            "Beard",
+            "Shaving"
+          ],
+          "hints": [
+            "hair",
+            "barber",
+            "salon",
+            "mirror",
+            "style",
+            "appointment",
+            "look",
+            "face"
+          ]
+        },
+        {
+          "name": "Grooming",
+          "words": [
+            "Nail polish",
+            "Manicure",
+            "Cream",
+            "Perfume",
+            "Deodorant"
+          ],
+          "hints": [
+            "smell",
+            "skin",
+            "bottle",
+            "bathroom",
+            "routine",
+            "care",
+            "fresh",
+            "apply"
+          ]
+        },
+        {
+          "name": "Shopping",
+          "words": [
+            "Size",
+            "Brand",
+            "Sale",
+            "Collection",
+            "Fitting room"
+          ],
+          "hints": [
+            "store",
+            "shopping",
+            "mall",
+            "price",
+            "new",
+            "try",
+            "clothes",
+            "season"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gaming",
+      "name": "Gaming",
+      "impostorFallbackHints": [
+        "play",
+        "player",
+        "fun",
+        "online",
+        "screen",
+        "controller",
+        "joystick",
+        "challenge",
+        "points",
+        "friends",
+        "virtual",
+        "hours"
+      ],
+      "clusters": [
+        {
+          "name": "Platforms",
+          "words": [
+            "PlayStation",
+            "Xbox",
+            "Switch",
+            "PC",
+            "Mobile"
+          ],
+          "hints": [
+            "console",
+            "controller",
+            "screen",
+            "play",
+            "games",
+            "buy",
+            "device",
+            "platform"
+          ]
+        },
+        {
+          "name": "Genres",
+          "words": [
+            "Shooter",
+            "Racing",
+            "Strategy",
+            "Survival",
+            "Puzzle"
+          ],
+          "hints": [
+            "genre",
+            "type",
+            "game",
+            "style",
+            "fun",
+            "fans",
+            "skills",
+            "choice"
+          ]
+        },
+        {
+          "name": "Multiplayer",
+          "words": [
+            "Lobby",
+            "Clan",
+            "Party",
+            "Match",
+            "Rank"
+          ],
+          "hints": [
+            "online",
+            "team",
+            "players",
+            "friends",
+            "compete",
+            "voice",
+            "together",
+            "server"
+          ]
+        },
+        {
+          "name": "Tech",
+          "words": [
+            "Frames",
+            "Ping",
+            "Lag",
+            "Server",
+            "Graphics"
+          ],
+          "hints": [
+            "internet",
+            "speed",
+            "quality",
+            "performance",
+            "connection",
+            "screen",
+            "smooth",
+            "settings"
+          ]
+        },
+        {
+          "name": "Mechanics",
+          "words": [
+            "Loot",
+            "Spawn",
+            "Respawn",
+            "Camping",
+            "Grinding"
+          ],
+          "hints": [
+            "player",
+            "map",
+            "again",
+            "points",
+            "time",
+            "enemy",
+            "cheap",
+            "tactic"
+          ]
+        },
+        {
+          "name": "Progress",
+          "words": [
+            "Level",
+            "Boss",
+            "Quest",
+            "Experience",
+            "Skill"
+          ],
+          "hints": [
+            "hard",
+            "next",
+            "progress",
+            "reward",
+            "win",
+            "story",
+            "mission",
+            "challenge"
+          ]
+        },
+        {
+          "name": "Customization",
+          "words": [
+            "Skin",
+            "Character",
+            "Weapon",
+            "Emote",
+            "Battle pass"
+          ],
+          "hints": [
+            "look",
+            "buy",
+            "unlock",
+            "cosmetic",
+            "collection",
+            "style",
+            "rare",
+            "shop"
+          ]
+        },
+        {
+          "name": "Paid content",
+          "words": [
+            "DLC",
+            "Expansion",
+            "Coins",
+            "Store",
+            "Microtransaction"
+          ],
+          "hints": [
+            "money",
+            "pay",
+            "buy",
+            "extra",
+            "wallet",
+            "price",
+            "content",
+            "update"
+          ]
+        },
+        {
+          "name": "Game terms",
+          "words": [
+            "Lives",
+            "Checkpoint",
+            "Save",
+            "Game over",
+            "Score"
+          ],
+          "hints": [
+            "start",
+            "again",
+            "try",
+            "progress",
+            "restart",
+            "points",
+            "fail",
+            "memory"
+          ]
+        },
+        {
+          "name": "Competition",
+          "words": [
+            "Tournament",
+            "Leaderboard",
+            "Victory",
+            "Defeat",
+            "Rematch"
+          ],
+          "hints": [
+            "win",
+            "lose",
+            "compete",
+            "first",
+            "prize",
+            "players",
+            "top",
+            "pride"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "music",
+      "name": "Music",
+      "impostorFallbackHints": [
+        "music",
+        "sound",
+        "song",
+        "melody",
+        "listen",
+        "artist",
+        "rhythm",
+        "loud",
+        "notes",
+        "band",
+        "radio",
+        "voice"
+      ],
+      "clusters": [
+        {
+          "name": "Strings",
+          "words": [
+            "Guitar",
+            "Bass guitar",
+            "Violin",
+            "Cello",
+            "Ukulele"
+          ],
+          "hints": [
+            "strings",
+            "play",
+            "wood",
+            "fingers",
+            "sound",
+            "notes",
+            "tune",
+            "band"
+          ]
+        },
+        {
+          "name": "Keys",
+          "words": [
+            "Piano",
+            "Keyboard",
+            "Organ",
+            "Synthesizer",
+            "Accordion"
+          ],
+          "hints": [
+            "keys",
+            "fingers",
+            "notes",
+            "sound",
+            "black",
+            "white",
+            "play",
+            "lessons"
+          ]
+        },
+        {
+          "name": "Percussion",
+          "words": [
+            "Drums",
+            "Tambourine",
+            "Triangle",
+            "Bongos",
+            "Xylophone"
+          ],
+          "hints": [
+            "rhythm",
+            "beat",
+            "hit",
+            "sticks",
+            "loud",
+            "band",
+            "tempo",
+            "percussion"
+          ]
+        },
+        {
+          "name": "Wind",
+          "words": [
+            "Saxophone",
+            "Trumpet",
+            "Flute",
+            "Clarinet",
+            "Harmonica"
+          ],
+          "hints": [
+            "blow",
+            "air",
+            "breath",
+            "jazz",
+            "sound",
+            "notes",
+            "mouth",
+            "orchestra"
+          ]
+        },
+        {
+          "name": "Stage",
+          "words": [
+            "Stage",
+            "Microphone",
+            "Audience",
+            "Encore",
+            "Backstage"
+          ],
+          "hints": [
+            "concert",
+            "show",
+            "lights",
+            "performance",
+            "singer",
+            "live",
+            "applause",
+            "night"
+          ]
+        },
+        {
+          "name": "Studio",
+          "words": [
+            "Studio",
+            "Headphones",
+            "Mixer",
+            "Recording",
+            "Autotune"
+          ],
+          "hints": [
+            "sound",
+            "producer",
+            "voice",
+            "song",
+            "record",
+            "edit",
+            "track",
+            "computer"
+          ]
+        },
+        {
+          "name": "Song parts",
+          "words": [
+            "Chorus",
+            "Verse",
+            "Intro",
+            "Bridge",
+            "Solo"
+          ],
+          "hints": [
+            "song",
+            "part",
+            "lyrics",
+            "repeat",
+            "structure",
+            "melody",
+            "singer",
+            "section"
+          ]
+        },
+        {
+          "name": "Releases",
+          "words": [
+            "Album",
+            "Single",
+            "Playlist",
+            "Remix",
+            "Cover"
+          ],
+          "hints": [
+            "release",
+            "songs",
+            "artist",
+            "streaming",
+            "listen",
+            "new",
+            "version",
+            "track"
+          ]
+        },
+        {
+          "name": "Genres",
+          "words": [
+            "Pop",
+            "Rock",
+            "Hip hop",
+            "Techno",
+            "Jazz"
+          ],
+          "hints": [
+            "genre",
+            "style",
+            "fans",
+            "radio",
+            "dance",
+            "beat",
+            "old",
+            "scene"
+          ]
+        },
+        {
+          "name": "Live",
+          "words": [
+            "DJ",
+            "Karaoke",
+            "Festival",
+            "Concert",
+            "Party"
+          ],
+          "hints": [
+            "crowd",
+            "night",
+            "dance",
+            "tickets",
+            "fun",
+            "singing",
+            "friends",
+            "summer"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nostalgia",
+      "name": "Nostalgia",
+      "impostorFallbackHints": [
+        "old",
+        "retro",
+        "childhood",
+        "memories",
+        "past",
+        "classic",
+        "vintage",
+        "eighties",
+        "nineties",
+        "school",
+        "simple",
+        "remember"
+      ],
+      "clusters": [
+        {
+          "name": "Portable",
+          "words": [
+            "Walkman",
+            "Discman",
+            "Game Boy",
+            "Nokia",
+            "Tamagotchi"
+          ],
+          "hints": [
+            "pocket",
+            "batteries",
+            "old",
+            "nineties",
+            "carry",
+            "small",
+            "screen",
+            "childhood"
+          ]
+        },
+        {
+          "name": "Media",
+          "words": [
+            "Cassette",
+            "VHS",
+            "Floppy disk",
+            "CD",
+            "Film roll"
+          ],
+          "hints": [
+            "tape",
+            "record",
+            "old",
+            "player",
+            "rewind",
+            "store",
+            "data",
+            "box"
+          ]
+        },
+        {
+          "name": "Early internet",
+          "words": [
+            "ICQ",
+            "MSN Messenger",
+            "Dial up",
+            "MySpace",
+            "Internet Explorer"
+          ],
+          "hints": [
+            "web",
+            "chat",
+            "computer",
+            "online",
+            "slow",
+            "profile",
+            "modem",
+            "friends"
+          ]
+        },
+        {
+          "name": "Old computers",
+          "words": [
+            "Windows XP",
+            "Winamp",
+            "Minesweeper",
+            "Solitaire",
+            "Paint"
+          ],
+          "hints": [
+            "computer",
+            "desktop",
+            "mouse",
+            "click",
+            "program",
+            "bored",
+            "school",
+            "office"
+          ]
+        },
+        {
+          "name": "Old phones",
+          "words": [
+            "Ringtone",
+            "Text message",
+            "Snake",
+            "Pager",
+            "Answering machine"
+          ],
+          "hints": [
+            "phone",
+            "beep",
+            "buttons",
+            "sound",
+            "calls",
+            "battery",
+            "retro",
+            "wait"
+          ]
+        },
+        {
+          "name": "Toys",
+          "words": [
+            "Pogs",
+            "Marbles",
+            "Yoyo",
+            "Sticker album",
+            "Pokemon cards"
+          ],
+          "hints": [
+            "collect",
+            "trade",
+            "school",
+            "kids",
+            "recess",
+            "play",
+            "pocket",
+            "playground"
+          ]
+        },
+        {
+          "name": "Arcade",
+          "words": [
+            "Pac Man",
+            "Tetris",
+            "Space Invaders",
+            "Pinball",
+            "Donkey Kong"
+          ],
+          "hints": [
+            "arcade",
+            "coins",
+            "score",
+            "high",
+            "retro",
+            "joystick",
+            "eighties",
+            "game"
+          ]
+        },
+        {
+          "name": "Street games",
+          "words": [
+            "Hopscotch",
+            "Jump rope",
+            "Tag",
+            "Jacks",
+            "Marco Polo"
+          ],
+          "hints": [
+            "outside",
+            "kids",
+            "street",
+            "friends",
+            "summer",
+            "run",
+            "recess",
+            "rules"
+          ]
+        },
+        {
+          "name": "Phones",
+          "words": [
+            "Landline",
+            "Payphone",
+            "Phone card",
+            "Phone book",
+            "Rotary phone"
+          ],
+          "hints": [
+            "call",
+            "number",
+            "wire",
+            "home",
+            "coins",
+            "dial",
+            "ring",
+            "cord"
+          ]
+        },
+        {
+          "name": "Photos",
+          "words": [
+            "Polaroid",
+            "Disposable camera",
+            "Photo album",
+            "Slide projector",
+            "Darkroom"
+          ],
+          "hints": [
+            "pictures",
+            "memories",
+            "prints",
+            "flash",
+            "family",
+            "vacation",
+            "shelf",
+            "frame"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "internet_slang",
+      "name": "Internet Slang",
+      "impostorFallbackHints": [
+        "internet",
+        "online",
+        "young",
+        "trend",
+        "chat",
+        "word",
+        "phone",
+        "funny",
+        "cool",
+        "social",
+        "teenager",
+        "text"
+      ],
+      "clusters": [
+        {
+          "name": "Reactions",
+          "words": [
+            "LOL",
+            "OMG",
+            "LMAO",
+            "Facepalm",
+            "Mind blown"
+          ],
+          "hints": [
+            "reaction",
+            "chat",
+            "text",
+            "typing",
+            "online",
+            "moment",
+            "group",
+            "comment"
+          ]
+        },
+        {
+          "name": "Praise",
+          "words": [
+            "Slay",
+            "Goat",
+            "Fire",
+            "Lit",
+            "Iconic"
+          ],
+          "hints": [
+            "amazing",
+            "compliment",
+            "cool",
+            "best",
+            "awesome",
+            "hype",
+            "praise",
+            "perfect"
+          ]
+        },
+        {
+          "name": "Mood",
+          "words": [
+            "Vibe",
+            "Mood",
+            "Chill",
+            "Salty",
+            "Extra"
+          ],
+          "hints": [
+            "attitude",
+            "feeling",
+            "energy",
+            "personality",
+            "today",
+            "behavior",
+            "describe",
+            "emotion"
+          ]
+        },
+        {
+          "name": "Harsh",
+          "words": [
+            "Cringe",
+            "Sus",
+            "Toxic",
+            "Basic",
+            "Mid"
+          ],
+          "hints": [
+            "awkward",
+            "bad",
+            "judge",
+            "opinion",
+            "negative",
+            "insult",
+            "meh",
+            "harsh"
+          ]
+        },
+        {
+          "name": "Showing off",
+          "words": [
+            "Flex",
+            "Drip",
+            "Clout",
+            "Glow up",
+            "Main character"
+          ],
+          "hints": [
+            "show",
+            "style",
+            "attention",
+            "famous",
+            "confidence",
+            "brag",
+            "image",
+            "followers"
+          ]
+        },
+        {
+          "name": "Social media",
+          "words": [
+            "Viral",
+            "Trending",
+            "Hashtag",
+            "Influencer",
+            "Follower"
+          ],
+          "hints": [
+            "internet",
+            "popular",
+            "likes",
+            "share",
+            "fame",
+            "feed",
+            "post",
+            "algorithm"
+          ]
+        },
+        {
+          "name": "Dating",
+          "words": [
+            "Crush",
+            "Bae",
+            "Situationship",
+            "Ghosted",
+            "Simp"
+          ],
+          "hints": [
+            "dating",
+            "love",
+            "feelings",
+            "relationship",
+            "texting",
+            "partner",
+            "romance",
+            "heart"
+          ]
+        },
+        {
+          "name": "Internet culture",
+          "words": [
+            "Meme",
+            "Troll",
+            "Noob",
+            "Spam",
+            "Bot"
+          ],
+          "hints": [
+            "online",
+            "internet",
+            "annoying",
+            "forum",
+            "comments",
+            "account",
+            "fake",
+            "chat"
+          ]
+        },
+        {
+          "name": "Abbreviations",
+          "words": [
+            "BRB",
+            "IDK",
+            "FOMO",
+            "TMI",
+            "DM"
+          ],
+          "hints": [
+            "letters",
+            "short",
+            "message",
+            "typing",
+            "phone",
+            "texting",
+            "quick",
+            "meaning"
+          ]
+        },
+        {
+          "name": "Expressions",
+          "words": [
+            "No cap",
+            "Bet",
+            "Lowkey",
+            "Highkey",
+            "Vibe check"
+          ],
+          "hints": [
+            "talk",
+            "agree",
+            "honest",
+            "say",
+            "phrase",
+            "casual",
+            "young",
+            "words"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "superheroes_fantasy",
+      "name": "Superheroes & Fantasy",
+      "impostorFallbackHints": [
+        "fantasy",
+        "hero",
+        "magic",
+        "power",
+        "legend",
+        "story",
+        "comics",
+        "movie",
+        "epic",
+        "imagination",
+        "battle",
+        "adventure"
+      ],
+      "clusters": [
+        {
+          "name": "Heroes",
+          "words": [
+            "Superman",
+            "Batman",
+            "Spider Man",
+            "Wonder Woman",
+            "Iron Man"
+          ],
+          "hints": [
+            "hero",
+            "comics",
+            "costume",
+            "city",
+            "villain",
+            "save",
+            "movie",
+            "famous"
+          ]
+        },
+        {
+          "name": "Powers",
+          "words": [
+            "Flying",
+            "Invisibility",
+            "Super strength",
+            "Telepathy",
+            "Teleportation"
+          ],
+          "hints": [
+            "power",
+            "ability",
+            "special",
+            "gift",
+            "secret",
+            "amazing",
+            "dream",
+            "magic"
+          ]
+        },
+        {
+          "name": "Villains",
+          "words": [
+            "Joker",
+            "Thanos",
+            "Voldemort",
+            "Darth Vader",
+            "Sauron"
+          ],
+          "hints": [
+            "evil",
+            "villain",
+            "enemy",
+            "dark",
+            "power",
+            "fear",
+            "plan",
+            "defeat"
+          ]
+        },
+        {
+          "name": "Gear",
+          "words": [
+            "Cape",
+            "Mask",
+            "Shield",
+            "Hammer",
+            "Costume"
+          ],
+          "hints": [
+            "hero",
+            "wear",
+            "identity",
+            "battle",
+            "symbol",
+            "suit",
+            "equipment",
+            "famous"
+          ]
+        },
+        {
+          "name": "Magic",
+          "words": [
+            "Wizard",
+            "Witch",
+            "Wand",
+            "Spell",
+            "Potion"
+          ],
+          "hints": [
+            "magic",
+            "cast",
+            "book",
+            "power",
+            "mystery",
+            "hat",
+            "broom",
+            "secret"
+          ]
+        },
+        {
+          "name": "Creatures",
+          "words": [
+            "Dragon",
+            "Unicorn",
+            "Troll",
+            "Elf",
+            "Goblin"
+          ],
+          "hints": [
+            "creature",
+            "legend",
+            "forest",
+            "myth",
+            "tale",
+            "magic",
+            "ancient",
+            "rare"
+          ]
+        },
+        {
+          "name": "Places",
+          "words": [
+            "Castle",
+            "Kingdom",
+            "Dungeon",
+            "Portal",
+            "Tower"
+          ],
+          "hints": [
+            "fantasy",
+            "quest",
+            "stone",
+            "hero",
+            "adventure",
+            "ancient",
+            "map",
+            "dark"
+          ]
+        },
+        {
+          "name": "Royalty",
+          "words": [
+            "Knight",
+            "Princess",
+            "King",
+            "Queen",
+            "Prince"
+          ],
+          "hints": [
+            "royal",
+            "crown",
+            "throne",
+            "story",
+            "fairy",
+            "brave",
+            "noble",
+            "palace"
+          ]
+        },
+        {
+          "name": "Sci fi",
+          "words": [
+            "Robot",
+            "Alien",
+            "Spaceship",
+            "Time machine",
+            "Lightsaber"
+          ],
+          "hints": [
+            "future",
+            "space",
+            "science",
+            "fiction",
+            "technology",
+            "galaxy",
+            "movie",
+            "laser"
+          ]
+        },
+        {
+          "name": "Teams",
+          "words": [
+            "Avengers",
+            "Justice League",
+            "X Men",
+            "Sidekick",
+            "Secret identity"
+          ],
+          "hints": [
+            "team",
+            "heroes",
+            "comics",
+            "together",
+            "save",
+            "mission",
+            "members",
+            "universe"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "film_tv",
+      "name": "Movies & TV",
+      "impostorFallbackHints": [
+        "film",
+        "watch",
+        "story",
+        "famous",
+        "cinema",
+        "television",
+        "stars",
+        "script",
+        "scene",
+        "viewers",
+        "hollywood",
+        "entertainment"
+      ],
+      "clusters": [
+        {
+          "name": "Formats",
+          "words": [
+            "Movie",
+            "Series",
+            "Episode",
+            "Season",
+            "Special"
+          ],
+          "hints": [
+            "watch",
+            "screen",
+            "story",
+            "streaming",
+            "binge",
+            "evening",
+            "sofa",
+            "plot"
+          ]
+        },
+        {
+          "name": "Genres",
+          "words": [
+            "Comedy",
+            "Drama",
+            "Horror",
+            "Action",
+            "Thriller"
+          ],
+          "hints": [
+            "genre",
+            "style",
+            "plot",
+            "audience",
+            "emotion",
+            "popular",
+            "favorite",
+            "mood"
+          ]
+        },
+        {
+          "name": "Crew",
+          "words": [
+            "Director",
+            "Screenwriter",
+            "Producer",
+            "Actor",
+            "Extra"
+          ],
+          "hints": [
+            "set",
+            "credits",
+            "job",
+            "film",
+            "cast",
+            "work",
+            "Hollywood",
+            "famous"
+          ]
+        },
+        {
+          "name": "On set",
+          "words": [
+            "Camera",
+            "Lighting",
+            "Microphone",
+            "Set design",
+            "Makeup"
+          ],
+          "hints": [
+            "studio",
+            "shoot",
+            "crew",
+            "scene",
+            "behind",
+            "technical",
+            "team",
+            "filming"
+          ]
+        },
+        {
+          "name": "Story",
+          "words": [
+            "Hero",
+            "Villain",
+            "Character",
+            "Plot twist",
+            "Ending"
+          ],
+          "hints": [
+            "story",
+            "surprise",
+            "script",
+            "writer",
+            "main",
+            "scene",
+            "fans",
+            "memorable"
+          ]
+        },
+        {
+          "name": "Extras",
+          "words": [
+            "Trailer",
+            "Spoiler",
+            "Subtitles",
+            "Dubbing",
+            "Credits"
+          ],
+          "hints": [
+            "watch",
+            "screen",
+            "text",
+            "fans",
+            "internet",
+            "version",
+            "skip",
+            "viewers"
+          ]
+        },
+        {
+          "name": "Franchise",
+          "words": [
+            "Sequel",
+            "Prequel",
+            "Remake",
+            "Spinoff",
+            "Trilogy"
+          ],
+          "hints": [
+            "franchise",
+            "story",
+            "second",
+            "part",
+            "fans",
+            "universe",
+            "again",
+            "studio"
+          ]
+        },
+        {
+          "name": "TV shows",
+          "words": [
+            "Reality show",
+            "Game show",
+            "News",
+            "Talk show",
+            "Documentary"
+          ],
+          "hints": [
+            "channel",
+            "host",
+            "television",
+            "broadcast",
+            "evening",
+            "guests",
+            "ratings",
+            "remote"
+          ]
+        },
+        {
+          "name": "Streaming",
+          "words": [
+            "Netflix",
+            "Disney",
+            "YouTube",
+            "Amazon Prime",
+            "HBO"
+          ],
+          "hints": [
+            "subscription",
+            "app",
+            "account",
+            "platform",
+            "content",
+            "monthly",
+            "originals",
+            "password"
+          ]
+        },
+        {
+          "name": "Cinema",
+          "words": [
+            "Popcorn",
+            "Ticket",
+            "Theater",
+            "Screen",
+            "Seat"
+          ],
+          "hints": [
+            "cinema",
+            "dark",
+            "big",
+            "row",
+            "friends",
+            "date",
+            "snacks",
+            "premiere"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sports",
+      "name": "Sports & Fitness",
+      "impostorFallbackHints": [
+        "sport",
+        "fitness",
+        "ball",
+        "team",
+        "game",
+        "training",
+        "workout",
+        "coach",
+        "winner",
+        "fans",
+        "sweat",
+        "active"
+      ],
+      "clusters": [
+        {
+          "name": "Ball sports",
+          "words": [
+            "Soccer",
+            "Basketball",
+            "Volleyball",
+            "Handball",
+            "Hockey"
+          ],
+          "hints": [
+            "team",
+            "game",
+            "players",
+            "league",
+            "fans",
+            "match",
+            "score",
+            "coach"
+          ]
+        },
+        {
+          "name": "Racket sports",
+          "words": [
+            "Tennis",
+            "Padel",
+            "Ping pong",
+            "Badminton",
+            "Squash"
+          ],
+          "hints": [
+            "racket",
+            "net",
+            "court",
+            "serve",
+            "point",
+            "partner",
+            "rally",
+            "hit"
+          ]
+        },
+        {
+          "name": "Combat",
+          "words": [
+            "Boxing",
+            "Judo",
+            "Karate",
+            "Taekwondo",
+            "Wrestling"
+          ],
+          "hints": [
+            "fight",
+            "ring",
+            "belt",
+            "opponent",
+            "defense",
+            "training",
+            "strength",
+            "discipline"
+          ]
+        },
+        {
+          "name": "Water",
+          "words": [
+            "Swimming",
+            "Surfing",
+            "Rowing",
+            "Kayaking",
+            "Diving"
+          ],
+          "hints": [
+            "water",
+            "sea",
+            "pool",
+            "wet",
+            "summer",
+            "suit",
+            "breath",
+            "splash"
+          ]
+        },
+        {
+          "name": "Endurance",
+          "words": [
+            "Running",
+            "Cycling",
+            "Marathon",
+            "Triathlon",
+            "Race walking"
+          ],
+          "hints": [
+            "distance",
+            "legs",
+            "sweat",
+            "finish",
+            "kilometers",
+            "shoes",
+            "training",
+            "endurance"
+          ]
+        },
+        {
+          "name": "Gym gear",
+          "words": [
+            "Treadmill",
+            "Dumbbell",
+            "Barbell",
+            "Kettlebell",
+            "Resistance band"
+          ],
+          "hints": [
+            "gym",
+            "muscles",
+            "workout",
+            "equipment",
+            "sweat",
+            "strength",
+            "training",
+            "fitness"
+          ]
+        },
+        {
+          "name": "Exercises",
+          "words": [
+            "Squat",
+            "Deadlift",
+            "Bench press",
+            "Pull up",
+            "Plank"
+          ],
+          "hints": [
+            "exercise",
+            "reps",
+            "sets",
+            "muscles",
+            "form",
+            "core",
+            "strong",
+            "burn"
+          ]
+        },
+        {
+          "name": "Winter",
+          "words": [
+            "Skiing",
+            "Snowboarding",
+            "Figure skating",
+            "Sledding",
+            "Curling"
+          ],
+          "hints": [
+            "snow",
+            "ice",
+            "cold",
+            "winter",
+            "mountain",
+            "olympics",
+            "slide",
+            "slope"
+          ]
+        },
+        {
+          "name": "Precision",
+          "words": [
+            "Golf",
+            "Darts",
+            "Bowling",
+            "Billiards",
+            "Archery"
+          ],
+          "hints": [
+            "aim",
+            "target",
+            "precision",
+            "focus",
+            "points",
+            "calm",
+            "hobby",
+            "accuracy"
+          ]
+        },
+        {
+          "name": "Competition",
+          "words": [
+            "Referee",
+            "Whistle",
+            "Scoreboard",
+            "Medal",
+            "Podium"
+          ],
+          "hints": [
+            "winner",
+            "competition",
+            "game",
+            "rules",
+            "champion",
+            "first",
+            "ceremony",
+            "result"
+          ]
+        }
+      ]
+    }
+  ],
+  "guessAliases": {
+    "Donut": [
+      "Doughnut"
+    ],
+    "Omelette": [
+      "Omelet"
+    ],
+    "Mayo": [
+      "Mayonnaise"
+    ],
+    "Ping pong": [
+      "Table tennis"
+    ],
+    "Soccer": [
+      "Football"
+    ],
+    "Theater": [
+      "Theatre"
+    ],
+    "Fiance": [
+      "Fiancee",
+      "Fiancé",
+      "Fiancée"
+    ],
+    "Pokemon cards": [
+      "Pokémon cards"
+    ],
+    "Air conditioner": [
+      "AC",
+      "Aircon"
+    ],
+    "Smartphone": [
+      "Smart phone"
+    ],
+    "Resume": [
+      "Résumé",
+      "CV"
+    ],
+    "Cafeteria": [
+      "Canteen"
+    ],
+    "Hoodie": [
+      "Hoody"
+    ],
+    "Donkey Kong": [
+      "DK"
+    ]
+  },
+  "reactions": [
+    {
+      "id": "good_hint",
+      "text": "Good hint!"
+    },
+    {
+      "id": "suspicious",
+      "text": "Suspicious…"
+    },
+    {
+      "id": "not_convinced",
+      "text": "Not convinced"
+    },
+    {
+      "id": "what_connection",
+      "text": "What's the link?"
+    }
+  ],
+  "bots": {
+    "prefix": "Bot",
+    "names": {
+      "f": [
+        "Emma",
+        "Olivia",
+        "Ava",
+        "Mia",
+        "Sophie",
+        "Lily",
+        "Grace",
+        "Chloe",
+        "Zoe",
+        "Ella",
+        "Nora",
+        "Ruby",
+        "Maya",
+        "Leah",
+        "Ivy",
+        "Hannah"
+      ],
+      "m": [
+        "Liam",
+        "Noah",
+        "Oliver",
+        "Ethan",
+        "Lucas",
+        "Mason",
+        "Leo",
+        "Jack",
+        "Owen",
+        "Ryan",
+        "Adam",
+        "Max",
+        "Eli",
+        "Sam",
+        "Ben",
+        "Luke"
+      ]
+    },
+    "fallbackHints": [
+      "special",
+      "familiar",
+      "colorful",
+      "common",
+      "interesting",
+      "big",
+      "small",
+      "fast",
+      "old",
+      "new",
+      "round",
+      "strong",
+      "rare",
+      "useful"
+    ],
+    "unknownGuess": "Dunno"
+  }
+}

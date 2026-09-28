@@ -278,7 +278,7 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
   @override
   void initState() {
     super.initState();
-    final allIds = {for (final c in localCategories) c.id};
+    final allIds = {for (final c in localCategoriesFor('he')) c.id};
     final initial = widget.initialCategoryIds?.toSet();
     _categories =
         initial == null || initial.containsAll(allIds) ? null : {...initial};
@@ -293,7 +293,7 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
     // from the previous match by "משחק נוסף".
     final picked = _categories?.where(money.isUnlocked).toSet();
     final chosen = picked?.toList() ??
-        money.unlocked([for (final c in localCategories) c.id]);
+        money.unlocked([for (final c in localCategoriesFor('he')) c.id]);
     return GameScaffold(
       title: 'הגדרות המשחק',
       bannerPlacement: BannerPlacement.localRules,
@@ -327,8 +327,8 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
               if (!money.premium)
                 Expanded(
                   child: Text(
-                    categoryCount(
-                        money, [for (final c in localCategories) c.id]),
+                    categoryCount(money,
+                        [for (final c in localCategoriesFor('he')) c.id]),
                     textAlign: TextAlign.end,
                     style:
                         const TextStyle(color: AppColors.muted, fontSize: 13),
@@ -348,7 +348,8 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
                   _categories = _categories == null ? <String>{} : null;
                 }),
               ),
-              for (final c in money.openFirst(localCategories, (c) => c.id))
+              for (final c
+                  in money.openFirst(localCategoriesFor('he'), (c) => c.id))
                 if (money.isUnlocked(c.id))
                   _Chip(
                     label: c.name,
@@ -404,7 +405,7 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
                   _value(
                     picked == null
                         ? 'הכול'
-                        : localCategories
+                        : localCategoriesFor('he')
                             .where((c) => picked.contains(c.id))
                             .map((c) => c.name)
                             .join(', '),

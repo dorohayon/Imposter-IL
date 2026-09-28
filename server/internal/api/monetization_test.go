@@ -249,7 +249,7 @@ func TestLapsedEntitlementCannotSearchAgain(t *testing.T) {
 	c.advance(2 * time.Hour)
 
 	c.srv.mu.Lock()
-	code := c.srv.joinSearch(c.srv.sessions[token], nil, []string{"sports"}, c.srv.now())
+	code := c.srv.joinSearch(c.srv.sessions[token], nil, []string{"sports"}, "he", c.srv.now())
 	c.srv.mu.Unlock()
 	if code != "category_locked" {
 		t.Fatalf("joinSearch after the period ended = %q, want category_locked", code)

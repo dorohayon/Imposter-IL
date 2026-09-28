@@ -11,9 +11,9 @@ import (
 )
 
 // PickWord chooses the category name and secret word for a game from the
-// room's category ids (content.Pick in production). Without one, or with an
+// room's language and category ids (content.Pick in production). Without one, or with an
 // incomplete game.Policy, room.start fails with content_unavailable.
-type PickWord func(categoryIDs []string, rng *rand.Rand) (categoryName, word string, ok bool)
+type PickWord func(language string, categoryIDs []string, rng *rand.Rand) (categoryName, word string, ok bool)
 
 // leaveGame forgets the game this session was showing.
 func (sess *session) leaveGame() { sess.gameID, sess.game, sess.gameRoom = "", nil, nil }
@@ -28,7 +28,7 @@ func (s *Server) startGame(sess *session, entry *roomEntry, now time.Time) strin
 	case s.pickWord == nil:
 		return "content_unavailable"
 	}
-	category, word, ok := s.pickWord(v.Settings.CategoryIDs, s.rng)
+	category, word, ok := s.pickWord(entry.language, v.Settings.CategoryIDs, s.rng)
 	if !ok {
 		return "content_unavailable"
 	}
@@ -141,7 +141,7 @@ func (s *Server) gameCommand(sess *session, typ string, p commandPayload, now ti
 			}
 			// Players who continue search again in the match's room, so they
 			// stay together while new players fill the empty spots.
-			return s.joinSearch(sess, entry, sess.searchCategories, now)
+			return s.joinSearch(sess, entry, sess.searchCategories, entry.language, now)
 		}
 		sess.leaveGame()
 		s.sendSessionState(sess)

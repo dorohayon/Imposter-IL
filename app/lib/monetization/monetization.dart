@@ -201,7 +201,10 @@ class Monetization extends ChangeNotifier {
             jsonDecode(cached) as Map<String, dynamic>);
         // Saved before the category catalogue changed: it may lock a category
         // that is free now. The built-in default holds until the server answers.
-        final known = {for (final c in localCategories) c.id};
+        final known = {
+          for (final categories in localContent.values)
+            for (final c in categories) c.id,
+        };
         if (!saved.freeCategoryIds.every(known.contains)) {
           throw const FormatException('stale category catalogue');
         }

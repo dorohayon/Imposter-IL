@@ -117,6 +117,10 @@ type roomEntry struct {
 	// reported player -> reporters. Reset when a game begins.
 	reported map[string]map[string]bool
 
+	// language is what the room plays in: its words, reactions and bots. A
+	// private room takes its creator's, an online match its first searcher's.
+	language string
+
 	// categoriesBy is the player whose purchases the private room's categories
 	// were checked against: its creator, or whoever last changed them.
 	categoriesBy string
@@ -279,8 +283,8 @@ func (s *Server) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /v1/config", s.gate(s.getConfig))
 	mux.HandleFunc("POST /v1/entitlements", s.gate(s.syncEntitlements))
 	mux.HandleFunc("POST /v1/rewarded-unlocks", s.gate(s.withSession(s.rewardedUnlock)))
-	mux.HandleFunc("GET /v1/categories", s.gate(s.withSession(listCategories)))
-	mux.HandleFunc("GET /v1/reactions", s.gate(s.withSession(listReactions)))
+	mux.HandleFunc("GET /v1/categories", s.gate(s.withLanguage(listCategories)))
+	mux.HandleFunc("GET /v1/reactions", s.gate(s.withLanguage(listReactions)))
 	mux.HandleFunc("PATCH /v1/sessions/me", s.gate(s.withSession(s.updateSession)))
 	mux.HandleFunc("POST /v1/rooms", s.gate(s.withSession(s.createRoom)))
 	mux.HandleFunc("POST /v1/rooms/join", s.gate(s.withSession(s.joinRoom)))
@@ -301,6 +305,7 @@ var (
 	errInvalidSettings = apiError{http.StatusUnprocessableEntity, "invalid_room_settings", "invalid room settings"}
 	errInvalidRoomCode = apiError{http.StatusUnprocessableEntity, "invalid_room_code", "room code must be six digits"}
 	errRoomNotFound    = apiError{http.StatusNotFound, "room_not_found", "room not found"}
+	errInvalidLanguage = apiError{http.StatusUnprocessableEntity, "invalid_language", "unknown language"}
 	errRoomUnavailable = apiError{http.StatusConflict, "room_unavailable", "room is full or in a game"}
 	errAlreadyInGame   = apiError{http.StatusConflict, "already_in_activity", "leave the current game first"}
 	errInternal        = apiError{http.StatusInternalServerError, "internal_error", "internal error"}
@@ -336,6 +341,23 @@ func decode(w http.ResponseWriter, body []byte, dst any) bool {
 		return false
 	}
 	return true
+}
+
+// withLanguage serves a session's request for one language's content.
+func (s *Server) withLanguage(next func(http.ResponseWriter, *content.Language)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		s.withSession(func(w http.ResponseWriter, _ []byte, _ *session) {
+			if lang, ok := languageFrom(w, r); ok {
+				next(w, lang)
+			}
+		})(w, r)
+	}
+}
+
+// languageOf is a stored room's language, which was checked when it was set.
+func languageOf(code string) *content.Language {
+	lang, _ := content.For(code)
+	return lang
 }
 
 func (s *Server) withSession(next func(http.ResponseWriter, []byte, *session)) http.HandlerFunc {
@@ -468,17 +490,26 @@ func (s *Server) markSocketless(entry *roomEntry, sess *session, now time.Time) 
 	}
 }
 
-func listCategories(w http.ResponseWriter, _ []byte, _ *session) {
+// languageFrom reads ?language= for the content endpoints.
+func languageFrom(w http.ResponseWriter, r *http.Request) (*content.Language, bool) {
+	lang, ok := content.For(r.URL.Query().Get("language"))
+	if !ok {
+		writeError(w, errInvalidLanguage)
+	}
+	return lang, ok
+}
+
+func listCategories(w http.ResponseWriter, lang *content.Language) {
 	categories := []map[string]string{}
-	for _, c := range content.Categories {
+	for _, c := range lang.Categories {
 		categories = append(categories, map[string]string{"id": c.ID, "name": c.Name})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"categories": categories})
 }
 
-func listReactions(w http.ResponseWriter, _ []byte, _ *session) {
+func listReactions(w http.ResponseWriter, lang *content.Language) {
 	reactions := []map[string]string{}
-	for _, r := range content.Reactions {
+	for _, r := range lang.Reactions {
 		reactions = append(reactions, map[string]string{"id": r.ID, "text": r.Text})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"reactions": reactions})
@@ -488,6 +519,9 @@ type settingsRequest struct {
 	MaxPlayers  int      `json:"maxPlayers"`
 	HintSeconds int      `json:"hintSeconds"`
 	CategoryIDs []string `json:"categoryIds"`
+	// Language is the app's; empty is content.DefaultLanguage. Only room
+	// creation and matchmaking.join read it: a room keeps its language.
+	Language string `json:"language"`
 }
 
 func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
@@ -509,9 +543,14 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 	for s.roomsCode[code] != nil {
 		code = s.newCode()
 	}
+	lang, ok := content.For(req.Language)
+	if !ok {
+		writeError(w, errInvalidLanguage)
+		return
+	}
 	settings := room.Settings{MaxPlayers: req.MaxPlayers, HintSeconds: req.HintSeconds, CategoryIDs: req.CategoryIDs}
 	rm, err := room.New(code, sess.playerID, settings, s.policy, s.rng, now)
-	if err != nil || !content.ValidIDs(req.CategoryIDs) {
+	if err != nil || !lang.ValidIDs(req.CategoryIDs) {
 		writeError(w, errInvalidSettings)
 		return
 	}
@@ -520,7 +559,7 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 		return
 	}
 	s.leave(previous, sess, now)
-	entry := &roomEntry{id: "r_" + crand.Text(), code: code, room: rm, categoriesBy: sess.playerID}
+	entry := &roomEntry{id: "r_" + crand.Text(), code: code, room: rm, categoriesBy: sess.playerID, language: lang.Code}
 	s.roomsByID[entry.id], s.roomsCode[code] = entry, entry
 	sess.roomID = entry.id
 	sess.leaveGame()
@@ -532,7 +571,8 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 
 func (s *Server) joinRoom(w http.ResponseWriter, body []byte, sess *session) {
 	var req struct {
-		Code string `json:"code"`
+		Code     string `json:"code"`
+		Language string `json:"language"`
 	}
 	if !decode(w, body, &req) {
 		return
@@ -554,6 +594,19 @@ func (s *Server) joinRoom(w http.ResponseWriter, body []byte, sess *session) {
 	entry := s.roomsCode[req.Code]
 	if entry == nil {
 		writeError(w, errRoomNotFound)
+		return
+	}
+	lang, ok := content.For(req.Language)
+	if !ok {
+		writeError(w, errInvalidLanguage)
+		return
+	}
+	if lang.Code != entry.language {
+		// With the room's language, so the app can say which one to switch to.
+		writeJSON(w, http.StatusConflict, map[string]any{"error": map[string]string{
+			"code": "room_language_mismatch", "message": "the room plays in another language",
+			"language": entry.language,
+		}})
 		return
 	}
 	now := s.now()
@@ -644,6 +697,7 @@ type roomJSON struct {
 	MaxPlayers            int           `json:"maxPlayers"`
 	HintSeconds           int           `json:"hintSeconds"`
 	CategoryIDs           []string      `json:"categoryIds"`
+	Language              string        `json:"language"`
 	SettingsLocked        bool          `json:"settingsLocked"`
 	Players               []playerJSON  `json:"players"`
 	HostTransfer          *transferJSON `json:"hostTransfer"`
@@ -659,6 +713,7 @@ func (s *Server) roomJSON(entry *roomEntry) roomJSON {
 		MaxPlayers:     v.Settings.MaxPlayers,
 		HintSeconds:    v.Settings.HintSeconds,
 		CategoryIDs:    v.Settings.CategoryIDs,
+		Language:       entry.language,
 		SettingsLocked: v.SettingsLocked,
 		Players:        []playerJSON{},
 	}

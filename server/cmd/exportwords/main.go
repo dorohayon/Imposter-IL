@@ -32,6 +32,15 @@ func quote(s string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(s, `\`, `\\`), "'", `\'`)
 }
 
+func allCategories() []content.Category {
+	var out []content.Category
+	for _, code := range content.Languages() {
+		lang, _ := content.For(code)
+		out = append(out, lang.Categories...)
+	}
+	return out
+}
+
 func render() string {
 	var b strings.Builder
 	b.WriteString(`// GENERATED FILE — DO NOT EDIT.
@@ -51,21 +60,32 @@ class LocalCategory {
   final List<String> words;
 }
 
-const localCategories = <LocalCategory>[
+/// Each language's categories, by language code
+/// (server/internal/content/languages/<code>.json).
+const localContent = <String, List<LocalCategory>>{
 `)
-	for _, c := range content.Categories {
-		fmt.Fprintf(&b, "  LocalCategory('%s', '%s', [\n", c.ID, quote(c.Name))
-		for _, w := range c.Words {
-			fmt.Fprintf(&b, "    '%s',\n", quote(w))
+	for _, code := range content.Languages() {
+		lang, _ := content.For(code)
+		fmt.Fprintf(&b, "  '%s': [\n", code)
+		for _, c := range lang.Categories {
+			fmt.Fprintf(&b, "    LocalCategory('%s', '%s', [\n", c.ID, quote(c.Name))
+			for _, w := range c.Words {
+				fmt.Fprintf(&b, "      '%s',\n", quote(w))
+			}
+			b.WriteString("    ]),\n")
 		}
-		b.WriteString("  ]),\n")
+		b.WriteString("  ],\n")
 	}
-	b.WriteString("];\n\n")
+	b.WriteString("};\n\n")
+	fmt.Fprintf(&b, "/// A language's categories; an unknown one gets %q's.\n", content.DefaultLanguage)
+	b.WriteString("List<LocalCategory> localCategoriesFor(String language) =>\n")
+	fmt.Fprintf(&b, "    localContent[language] ?? localContent['%s']!;\n\n", content.DefaultLanguage)
 
-	b.WriteString("// Alternate spellings accepted only for the impostor's final guess.\n")
+	b.WriteString("// Alternate spellings accepted only for the impostor's final guess, in\n")
+	b.WriteString("// every language.\n")
 	b.WriteString("const localGuessAliases = <String, List<String>>{\n")
 	seen := map[string]bool{}
-	for _, c := range content.Categories {
+	for _, c := range allCategories() {
 		for _, w := range c.Words {
 			if seen[w] {
 				continue

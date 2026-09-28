@@ -1,5 +1,5 @@
 {
-  "_comment": "Cases for the Hebrew word rules in docs/decisions.md; server/internal/game/words.go must pass every case. Rows marked as known ceilings document accepted false matches from ignoring prefix letters.",
+  "_comment": "Cases for the word rules (Hebrew, then English) in docs/decisions.md; server/internal/game/words.go must pass every case. Rows marked as known ceilings document accepted false matches from ignoring prefix letters.",
   "normalize": [
     [
       "בננה",
@@ -56,6 +56,18 @@
     [
       "בּית",
       "בית"
+    ],
+    [
+      "Pizza",
+      "pizza"
+    ],
+    [
+      "Wi-Fi",
+      "wifi"
+    ],
+    [
+      "don't",
+      "dont"
     ]
   ],
   "containsSecret": [
@@ -158,6 +170,46 @@
       "מבנה",
       "ביג בן",
       false
+    ],
+    [
+      "pizza",
+      "Pizza",
+      true
+    ],
+    [
+      "PIZZAS",
+      "Pizza",
+      true
+    ],
+    [
+      "cats",
+      "Cat",
+      true
+    ],
+    [
+      "bobcat",
+      "Cat",
+      false
+    ],
+    [
+      "icy",
+      "Ice cream",
+      false
+    ],
+    [
+      "creamy",
+      "Ice cream",
+      true
+    ],
+    [
+      "dog",
+      "Hot dog",
+      true
+    ],
+    [
+      "doghouse",
+      "Hot dog",
+      false
     ]
   ],
   "sameHint": [
@@ -222,6 +274,21 @@
       "ים",
       true,
       "known ceiling: מ is read as a prefix"
+    ],
+    [
+      "Pizza",
+      "pizza",
+      true
+    ],
+    [
+      "Wi-Fi",
+      "WiFi",
+      true
+    ],
+    [
+      "pizza",
+      "pizzas",
+      false
     ]
   ],
   "guessMatches": [
@@ -275,6 +342,26 @@
       "לב",
       true,
       "known ceiling: כ is read as a prefix"
+    ],
+    [
+      "pizza",
+      "Pizza",
+      true
+    ],
+    [
+      " Hot  dog ",
+      "Hot dog",
+      true
+    ],
+    [
+      "hotdog",
+      "Hot dog",
+      true
+    ],
+    [
+      "burger",
+      "Pizza",
+      false
     ]
   ]
 }
