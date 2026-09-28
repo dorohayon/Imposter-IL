@@ -1,6 +1,7 @@
 // A long match at its worst: the most players, the longest names and hints
 // the rules allow, ten rounds deep, on the narrowest phone (320px) at the
-// normal and a large system font. Any overflow fails the test.
+// normal and a large system font, in every language. Any overflow fails the
+// test.
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,13 +14,93 @@ import 'package:imposter_il/widgets/game_ui.dart';
 import 'support/fake_server.dart';
 import 'support/helpers.dart';
 
+/// A language's worst case: its longest names and hints, and the text that
+/// proves each screen is the one under test.
+typedef _Language = ({
+  String code,
+  String name,
+  String hint,
+  String pad,
+  String guess,
+  String onlineCategory,
+  String onlineWord,
+  String localCategory,
+  String localWord,
+  Map<String, String> expected,
+  String passDevice,
+  String Function(String name) history,
+  String firstRound,
+  String leave,
+});
+
+final _languages = <_Language>[
+  (
+    code: 'he',
+    name: 'אלכסנדרה-פטרושקוב',
+    hint: 'אנטידיסאסטבלישמנטרי',
+    pad: 'ה',
+    guess: 'אנטידיסאסטבלישמנטריאניזם',
+    onlineCategory: 'חיות',
+    onlineWord: 'פיל',
+    localCategory: 'אוכל ושתייה',
+    localWord: 'פיצה',
+    expected: {
+      'ready': 'סיבוב נוסף',
+      'hints': 'התור של',
+      'voteTransition': 'אל תגלו למי הצבעתם',
+      'voting': 'מי המתחזה?',
+      'tie': 'יש תיקו',
+      'tieAgain': 'שוב יש תיקו',
+      'runoff': 'יש תיקו',
+      'elimination': 'הודח/ה',
+      'guess': 'נתפסת',
+      'ended': 'האזרחים ניצחו!',
+    },
+    passDevice: 'העבירו את המכשיר',
+    history: (name) => 'הרמזים של $name',
+    firstRound: 'סיבוב 1',
+    leave: 'יציאה',
+  ),
+  (
+    code: 'en',
+    // Wide Latin letters: the most room a name of this length takes.
+    name: 'Maximilian-Wolkow',
+    hint: 'Antidisestablishment',
+    pad: 'm',
+    guess: 'Antidisestablishmentarian',
+    onlineCategory: 'Animals',
+    onlineWord: 'Elephant',
+    localCategory: 'Food & Drink',
+    localWord: 'Pizza',
+    expected: {
+      'ready': 'Another round',
+      'hints': "'s turn",
+      'voteTransition': "Don't reveal who you voted for",
+      'voting': "Who's the Impostor?",
+      'tie': "It's a tie",
+      'tieAgain': 'Another tie',
+      'runoff': "It's a tie",
+      'elimination': 'was eliminated',
+      'guess': "you've been caught",
+      'ended': 'The citizens won!',
+    },
+    passDevice: 'Pass the device to ',
+    history: (name) => "$name's hints",
+    firstRound: 'Round 1',
+    leave: 'Leave',
+  ),
+];
+
+/// The language of the test running now.
+late _Language _l;
+
 /// 18 characters, the longest nickname the server accepts.
-String _name(int i) => 'אלכסנדרה-פטרושקוב$i';
+String _name(int i) => '${_l.name}$i';
 
 /// 25 characters, the longest hint the server accepts, one word.
 String _hint(int round, int player) =>
-    'אנטידיסאסטבלישמנטרי${round.toString().padLeft(2, '0')}$player'
-        .padRight(25, 'ה')
+    '${_l.hint}${round.toString().padLeft(2, '0')}$player'
+        .padRight(25, _l.pad)
         .substring(0, 25);
 
 const _rounds = 10;
@@ -61,7 +142,7 @@ Map<String, dynamic> _result() => {
       'winner': 'citizens',
       'reason': 'impostor_guess_wrong',
       'impostorPlayerId': 'p_4',
-      'secretWord': 'פיל',
+      'secretWord': _l.onlineWord,
       'voteRounds': [
         for (var round = 1; round <= _rounds; round++)
           {for (final id in _ids.take(5)) id: 'p_4'},
@@ -138,8 +219,8 @@ Map<String, dynamic> _local(String phase) => {
       ],
       'categoryIds': ['food'],
       'hintSeconds': 60,
-      'secretWord': 'פיצה',
-      'category': 'אוכל ושתייה',
+      'secretWord': _l.localWord,
+      'category': _l.localCategory,
       'impostor': 3,
       'phase': phase,
       'round': _rounds,
@@ -153,7 +234,7 @@ Map<String, dynamic> _local(String phase) => {
       'tieCandidates': [0, 1, 2],
       'previousVotes': {'0': 1, '1': 1, '2': 1},
       'lastEliminated': 11,
-      'submittedGuess': phase == 'ended' ? 'אנטידיסאסטבלישמנטריאניזם' : null,
+      'submittedGuess': phase == 'ended' ? _l.guess : null,
       'eliminations': [
         for (var i = 4; i < 12; i++) [i, i - 3],
       ],
@@ -163,117 +244,144 @@ Map<String, dynamic> _local(String phase) => {
 
 const _shots = 'long_game';
 
-/// What proves each phase is the screen under test.
-final _expected = {
-  'ready': 'סיבוב נוסף',
-  'hints': 'התור של',
-  'voteTransition': 'אל תגלו למי הצבעתם',
-  'voting': 'מי המתחזה?',
-  'tie': 'יש תיקו',
-  'tieAgain': 'שוב יש תיקו',
-  'runoff': 'יש תיקו',
-  'elimination': '${_name(12)} הודח/ה',
-  'guess': 'נתפסת',
-  'ended': 'האזרחים ניצחו!',
-};
-
 /// Phases that open behind the privacy screen, and its button.
 const _privatePhases = {'voting', 'runoff', 'guess'};
 
 void main() {
   // Every run replaces the last: build/screenshots/long_game/.
   setUpAll(() => clearScreenshots(_shots));
-  for (final scale in [1.0, 1.3, 1.5]) {
-    group('one device, 12 players, round $_rounds, font x$scale', () {
-      for (final phase in [
-        'ready',
-        'hints',
-        'voteTransition',
-        'voting',
-        'tie',
-        'tieAgain',
-        'runoff',
-        'elimination',
-        'guess',
-        'ended',
-      ]) {
-        testWidgets(phase, (tester) async {
-          await loadRealFonts();
-          tester.platformDispatcher.textScaleFactorTestValue = scale;
-          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-          await startAtHome(tester);
-          final game = localGameFromJson(_local(phase))!;
-          tester.state<NavigatorState>(find.byType(Navigator).first).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => LocalGameScreen(resumed: game),
-                ),
-              );
-          await settle(tester);
-          if (_privatePhases.contains(phase)) {
-            // "It's me": the ballot or the guess, not just the hand-over.
-            await tester.tap(find.byType(PrimaryButton).last);
+  // Most phases have an exit; the check must not pass by finding none.
+  tearDownAll(() => expect(_exitsChecked, greaterThan(60)));
+  for (final language in _languages) {
+    for (final scale in [1.0, 1.3, 1.5]) {
+      group(
+          '${language.code}, one device, 12 players, round $_rounds, font x$scale',
+          () {
+        for (final phase in [
+          'ready',
+          'hints',
+          'voteTransition',
+          'voting',
+          'tie',
+          'tieAgain',
+          'runoff',
+          'elimination',
+          'guess',
+          'ended',
+        ]) {
+          testWidgets(phase, (tester) async {
+            await loadRealFonts();
+            tester.platformDispatcher.textScaleFactorTestValue = scale;
+            addTearDown(
+                tester.platformDispatcher.clearTextScaleFactorTestValue);
+            _l = language;
+            final session = await startAtHome(tester);
+            // Switched the way Settings does, so the game opens in it.
+            await session.setLanguage(language.code);
             await settle(tester);
-          }
-          expect(find.textContaining(_expected[phase]!), findsWidgets);
-          expect(find.textContaining('העבירו את המכשיר'), findsNothing);
-          await saveScreenshot(tester, _shots, 'local_x${scale}_${phase}_1top');
-          await tester.drag(
-              find.byType(Scrollable).first, const Offset(0, -3000));
-          await settle(tester);
-          await saveScreenshot(
-              tester, _shots, 'local_x${scale}_${phase}_2bottom');
-        });
-      }
-    });
-    group('online, round $_rounds, font x$scale', () {
-      for (final MapEntry(key: screen, value: build) in _screens.entries) {
-        testWidgets(screen, (tester) async {
-          await loadRealFonts();
-          tester.platformDispatcher.textScaleFactorTestValue = scale;
-          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-          final api = FakeApi();
-          await startAtHome(tester, api);
-          await openCreatedRoom(tester, api);
-          api.channel.event('session.state', {
-            'playerId': 'p_me',
-            'activity': 'game',
-            'roomId': 'r_1',
-            'gameId': 'g_1',
+            final game = localGameFromJson(_local(phase))!;
+            tester.state<NavigatorState>(find.byType(Navigator).first).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => LocalGameScreen(resumed: game),
+                  ),
+                );
+            await settle(tester);
+            if (_privatePhases.contains(phase)) {
+              // "It's me": the ballot or the guess, not just the hand-over.
+              await tester.tap(find.byType(PrimaryButton).last);
+              await settle(tester);
+            }
+            expect(find.textContaining(_l.expected[phase]!), findsWidgets);
+            expect(find.textContaining(_l.passDevice), findsNothing);
+            _expectExitAtStart(tester);
+            final name = '${_l.code}_local_x${scale}_$phase';
+            await saveScreenshot(tester, _shots, '${name}_1top');
+            await tester.drag(
+                find.byType(Scrollable).first, const Offset(0, -3000));
+            await settle(tester);
+            await saveScreenshot(tester, _shots, '${name}_2bottom');
           });
-          api.channel.snapshot('game.state', 'game', build());
-          await settle(tester);
-          _expectNoHintCut(tester);
-          final name = 'online_x${scale}_${screen.replaceAll(' ', '_')}';
-          await saveScreenshot(tester, _shots, '${name}_1top');
-          // Scrolled to the end too: what is below the fold lays out as well.
-          await tester.drag(
-              find.byType(Scrollable).first, const Offset(0, -3000));
-          await settle(tester);
-          await saveScreenshot(tester, _shots, '${name}_2bottom');
+        }
+      });
+      group('${language.code}, online, round $_rounds, font x$scale', () {
+        for (final MapEntry(key: screen, value: build) in _screens.entries) {
+          testWidgets(screen, (tester) async {
+            await loadRealFonts();
+            tester.platformDispatcher.textScaleFactorTestValue = scale;
+            addTearDown(
+                tester.platformDispatcher.clearTextScaleFactorTestValue);
+            _l = language;
+            final api = FakeApi();
+            final session = await startAtHome(tester, api);
+            await openCreatedRoom(tester, api);
+            await session.setLanguage(language.code);
+            await settle(tester);
+            api.channel.event('session.state', {
+              'playerId': 'p_me',
+              'activity': 'game',
+              'roomId': 'r_1',
+              'gameId': 'g_1',
+            });
+            final game = build()..['category'] = _l.onlineCategory;
+            if (game.containsKey('secretWord')) {
+              game['secretWord'] = _l.onlineWord;
+            }
+            api.channel.snapshot('game.state', 'game', game);
+            await settle(tester);
+            _expectNoHintCut(tester);
+            _expectExitAtStart(tester);
+            final name =
+                '${_l.code}_online_x${scale}_${screen.replaceAll(' ', '_')}';
+            await saveScreenshot(tester, _shots, '${name}_1top');
+            // Scrolled to the end too: what is below the fold lays out as well.
+            await tester.drag(
+                find.byType(Scrollable).first, const Offset(0, -3000));
+            await settle(tester);
+            await saveScreenshot(tester, _shots, '${name}_2bottom');
 
-          if (screen == 'hints') {
-            // All ten rounds of one player, from their card.
-            await tester.drag(
-                find.byType(Scrollable).first, const Offset(0, 3000));
-            await settle(tester);
-            await tester.tap(find.text(_name(2)).first);
-            await settle(tester);
-            expect(find.text('הרמזים של ${_name(2)}'), findsOneWidget);
-            // A hint gets the rest of the row, not half of it: squeezed, a
-            // long one stacked into lines of three letters beside a gap.
-            final hint = tester.getRect(find.text(_hint(1, 1)).last);
-            final label = tester.getRect(find.text('סיבוב 1').last);
-            expect(label.left - hint.right, lessThanOrEqualTo(12));
-            await saveScreenshot(tester, _shots, '${name}_3history');
-            await tester.drag(
-                find.byType(Scrollable).last, const Offset(0, -3000));
-            await settle(tester);
-            await saveScreenshot(tester, _shots, '${name}_4history_bottom');
-          }
-        });
-      }
-    });
+            if (screen == 'hints') {
+              // All ten rounds of one player, from their card.
+              await tester.drag(
+                  find.byType(Scrollable).first, const Offset(0, 3000));
+              await settle(tester);
+              await tester.tap(find.text(_name(2)).first);
+              await settle(tester);
+              expect(find.text(_l.history(_name(2))), findsOneWidget);
+              // A hint gets the rest of the row, not half of it: squeezed, a
+              // long one stacked into lines of three letters beside a gap.
+              final hint = tester.getRect(find.text(_hint(1, 1)).last);
+              final label = tester.getRect(find.text(_l.firstRound).last);
+              // Beside each other in reading order, whichever the direction.
+              final gap = _l.code == 'he'
+                  ? label.left - hint.right
+                  : hint.left - label.right;
+              expect(gap, lessThanOrEqualTo(12));
+              await saveScreenshot(tester, _shots, '${name}_3history');
+              await tester.drag(
+                  find.byType(Scrollable).last, const Offset(0, -3000));
+              await settle(tester);
+              await saveScreenshot(tester, _shots, '${name}_4history_bottom');
+            }
+          });
+        }
+      });
+    }
   }
+}
+
+var _exitsChecked = 0;
+
+/// The exit button is at the start of the header, the timer at the end: top
+/// right in Hebrew (the design), top left in English.
+void _expectExitAtStart(WidgetTester tester) {
+  final exit = find.byTooltip(_l.leave);
+  if (exit.evaluate().isEmpty) return; // the result has no exit
+  _exitsChecked++;
+  final x = tester.getCenter(exit.first).dx;
+  final middle =
+      tester.view.physicalSize.width / tester.view.devicePixelRatio / 2;
+  expect(_l.code == 'he' ? x > middle : x < middle, isTrue,
+      reason: 'exit at x=$x in ${_l.code}');
 }
 
 /// A hint is the evidence the table votes on: none may end in "…".

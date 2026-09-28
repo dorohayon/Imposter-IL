@@ -1951,7 +1951,8 @@ class _SendButton extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      // Forward in a Hebrew layout, which points left.
+                      // Mirrors with the language: left in Hebrew, right in
+                      // English.
                       Icon(Icons.arrow_forward_rounded, size: 17, color: ink),
                     ],
                   ),

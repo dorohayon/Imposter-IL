@@ -134,14 +134,8 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
             },
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
-            localeListResolutionCallback: (locales, supported) {
-              for (final locale in locales ?? const <Locale>[]) {
-                for (final s in supported) {
-                  if (s.languageCode == locale.languageCode) return s;
-                }
-              }
-              return const Locale('en');
-            },
+            localeListResolutionCallback: (locales, _) =>
+                resolveLocale(locales),
             // builder wraps the Navigator, so an unsupported build is covered
             // wherever the player happens to be — home is not enough, since
             // client_too_old can arrive while they are deep in a pushed route.

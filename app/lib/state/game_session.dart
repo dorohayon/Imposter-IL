@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/models.dart';
 import '../data/server.dart';
+import '../l10n/l10n.dart';
 
 /// The player's connection to the server: guest identity, live WebSocket,
 /// and the latest room and game snapshots. Screens read it through
@@ -143,6 +144,11 @@ class GameSession extends ChangeNotifier {
     _countedGames = prefs.getStringList(_countedKey) ?? [];
     vibrationOn = prefs.getBool(_vibrationKey) ?? true;
     languageChoice.value = prefs.getString(_languageKey);
+    // Resolved as MaterialApp will, so content loaded before the first frame
+    // is already in the right language.
+    language = languageOverride ??
+        resolveLocale(WidgetsBinding.instance.platformDispatcher.locales)
+            .languageCode;
     showReactions = prefs.getBool(_reactionsKey) ?? true;
     muted = (prefs.getStringList(_mutedKey) ?? const []).toSet();
     if (signedIn) unawaited(_start());
@@ -199,6 +205,7 @@ class GameSession extends ChangeNotifier {
   }
 
   Future<void> loadContent() async {
+    final requested = language;
     contentLoading = true;
     contentError = null;
     _notify();
@@ -207,6 +214,9 @@ class GameSession extends ChangeNotifier {
         api.request('GET', '/v1/categories?language=$language', token: token),
         api.request('GET', '/v1/reactions?language=$language', token: token),
       ]);
+      // The language changed while this was on its way: the answer is for
+      // the old one, so ask again rather than keep it.
+      if (language != requested) return loadContent();
       categories = (results[0]['categories'] as List)
           .cast<Map<String, dynamic>>()
           .map(Category.fromJson)
@@ -689,6 +699,7 @@ class GameSession extends ChangeNotifier {
   void languageResolved(String code) {
     if (code == language) return;
     language = code;
+    // A load in flight notices by itself (loadContent); one done reloads.
     if (!contentLoaded && categories.isEmpty) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(loadContent().catchError((Object _) {}));

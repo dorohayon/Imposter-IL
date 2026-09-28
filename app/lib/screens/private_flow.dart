@@ -411,10 +411,20 @@ class JoinRoomScreen extends StatefulWidget {
 
 class _JoinRoomScreenState extends State<JoinRoomScreen> {
   late final code = TextEditingController(text: widget.code ?? '');
-  String? _error;
 
-  /// The room plays in another language: Settings is where to switch.
-  bool _wrongLanguage = false;
+  /// Why the last join failed. Kept as the failure, not its text, so it is
+  /// shown in the current language: Settings may change it meanwhile.
+  ApiException? _error;
+
+  String _errorText(BuildContext context, ApiException e) => switch (e.code) {
+        'invalid_room_code' => context.l10n.roomCodeSixDigits,
+        'room_not_found' => context.l10n.roomNotFound,
+        'room_unavailable' => context.l10n.roomFull,
+        'already_in_activity' => context.l10n.alreadyInOtherGame,
+        'room_language_mismatch' => context.l10n
+            .roomLanguageMismatch(languageName(e.details['language'])),
+        _ => connectionMessage(e.code),
+      };
   bool _busy = false;
 
   @override
@@ -431,16 +441,7 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
     } on ApiException catch (e) {
       setState(() {
         _busy = false;
-        _error = switch (e.code) {
-          'invalid_room_code' => context.l10n.roomCodeSixDigits,
-          'room_not_found' => context.l10n.roomNotFound,
-          'room_unavailable' => context.l10n.roomFull,
-          'already_in_activity' => context.l10n.alreadyInOtherGame,
-          'room_language_mismatch' => context.l10n
-              .roomLanguageMismatch(languageName(e.details['language'])),
-          _ => connectionMessage(e.code),
-        };
-        _wrongLanguage = e.code == 'room_language_mismatch';
+        _error = e;
       });
     }
   }
@@ -473,8 +474,8 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            StatusBanner(text: _error!, positive: false),
-            if (_wrongLanguage)
+            StatusBanner(text: _errorText(context, _error!), positive: false),
+            if (_error!.code == 'room_language_mismatch')
               TextButton(
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
