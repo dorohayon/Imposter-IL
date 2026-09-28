@@ -22,7 +22,9 @@ Future<void> main() async {
   final session = GameSession(api);
   final monetization =
       Monetization(store: PluginStore(), ads: AdMobAds(), api: api);
-  await session.restore();
+  await session.restore(
+    phoneLocales: WidgetsBinding.instance.platformDispatcher.locales,
+  );
   await monetization.start();
   monetization.attach(session);
   runApp(ImposterApp(session: session, monetization: monetization));

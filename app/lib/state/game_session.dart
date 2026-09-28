@@ -133,7 +133,9 @@ class GameSession extends ChangeNotifier {
 
   /// Loads the saved identity. Content and the connection load in the
   /// background; a session the server no longer knows is recreated.
-  Future<void> restore() async {
+  /// [phoneLocales] are the phone's languages, for the language content is
+  /// loaded in before the first frame (main passes the platform's).
+  Future<void> restore({Iterable<Locale> phoneLocales = const []}) async {
     final prefs = await SharedPreferences.getInstance();
     token = prefs.getString(_tokenKey);
     playerId = prefs.getString(_playerKey);
@@ -146,9 +148,7 @@ class GameSession extends ChangeNotifier {
     languageChoice.value = prefs.getString(_languageKey);
     // Resolved as MaterialApp will, so content loaded before the first frame
     // is already in the right language.
-    language = languageOverride ??
-        resolveLocale(WidgetsBinding.instance.platformDispatcher.locales)
-            .languageCode;
+    language = languageOverride ?? resolveLocale(phoneLocales).languageCode;
     showReactions = prefs.getBool(_reactionsKey) ?? true;
     muted = (prefs.getStringList(_mutedKey) ?? const []).toSet();
     if (signedIn) unawaited(_start());
@@ -216,7 +216,7 @@ class GameSession extends ChangeNotifier {
       ]);
       // The language changed while this was on its way: the answer is for
       // the old one, so ask again rather than keep it.
-      if (language != requested) return loadContent();
+      if (language != requested) return await loadContent();
       categories = (results[0]['categories'] as List)
           .cast<Map<String, dynamic>>()
           .map(Category.fromJson)

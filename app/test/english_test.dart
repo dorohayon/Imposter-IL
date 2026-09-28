@@ -190,7 +190,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final session = GameSession(FakeApi());
     addTearDown(session.dispose);
-    await session.restore();
+    await session.restore(phoneLocales: const [Locale('fr'), Locale('en')]);
     expect(session.language, 'en');
   });
 
