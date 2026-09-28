@@ -229,7 +229,7 @@ func TestWSStartWithoutContentIsRefused(t *testing.T) {
 	wantReplyError(t, players[0].w.command("start", "room.start", map[string]any{"roomId": roomID}), "content_unavailable")
 
 	c.srv.mu.Lock()
-	c.srv.pickWord = func([]string, *rand.Rand) (string, string, bool) { return "", "", false }
+	c.srv.pickWord = func(string, []string, *rand.Rand) (string, string, bool) { return "", "", false }
 	c.srv.mu.Unlock()
 	wantReplyError(t, players[0].w.command("start2", "room.start", map[string]any{"roomId": roomID}), "content_unavailable")
 }

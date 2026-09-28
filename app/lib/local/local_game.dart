@@ -77,7 +77,7 @@ class LocalGame {
   })  : _rng = rng,
         assert(players.length >= minPlayers && players.length <= maxPlayers) {
     final pool = <(String, String)>[
-      for (final c in localCategories)
+      for (final c in localCategoriesFor('he'))
         if (categoryIds.contains(c.id))
           for (final word in c.words) (c.name, word),
     ];

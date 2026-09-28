@@ -39,7 +39,7 @@ func TestBotsReachForThePoolTheirRoleAllows(t *testing.T) {
 	)
 	citizen := game.View{Category: category, SecretWord: word}
 	own := content.CitizenHints(category, word)
-	got := botHintPool(citizen)
+	got := botHintPool(citizen, languageOf("he"))
 	// The word's own hints come first; the broad pool trails them, because a
 	// match runs several rounds and six hints run out.
 	if len(got) <= len(own) || !slices.Equal(got[:len(own)], own) {
@@ -49,7 +49,7 @@ func TestBotsReachForThePoolTheirRoleAllows(t *testing.T) {
 	// An impostor's View carries no secret word, so the same call cannot
 	// return the word's pool even though the process is holding the word.
 	impostor := game.View{Category: category}
-	got = botHintPool(impostor)
+	got = botHintPool(impostor, languageOf("he"))
 	for _, hint := range content.CitizenHints(category, word) {
 		if slices.Contains(got, hint) && !slices.Contains(content.ImpostorHints(category, nil), hint) {
 			t.Errorf("an impostor bot was offered %q, which only the word's pool has", hint)
@@ -64,10 +64,10 @@ func TestBotsReachForThePoolTheirRoleAllows(t *testing.T) {
 		{PlayerID: "p1", Text: "מתוק"},
 		{PlayerID: "p2", Text: "קר", Missing: true},
 	}}
-	if got := botHintPool(board); slices.Contains(got, "מתוק") {
+	if got := botHintPool(board, languageOf("he")); slices.Contains(got, "מתוק") {
 		t.Error("an impostor bot was offered a hint already on the board")
 	}
-	if got := botHintPool(game.View{Category: "לא קיים"}); !slices.Equal(got, stagingBotHints) {
+	if got := botHintPool(game.View{Category: "לא קיים"}, languageOf("he")); !slices.Equal(got, languageOf("he").Bots.FallbackHints) {
 		t.Errorf("an unknown category fell through to %v, want the last resort", got)
 	}
 }
@@ -126,17 +126,20 @@ func TestBotNamesAreNamesAPlayerCouldHave(t *testing.T) {
 			avatars[a] = true
 		}
 	}
-	for gender, names := range stagingBotNames {
-		if len(names) < 8 {
-			t.Errorf("%s has only %d names: a table of four would repeat too often", gender, len(names))
-		}
-		for _, name := range names {
-			nickname := "בוט " + name
-			if _, ok := validNickname(nickname); !ok {
-				t.Errorf("%q is not a nickname the server would accept", nickname)
+	for _, code := range content.Languages() {
+		lang := languageOf(code)
+		for gender, names := range lang.Bots.Names {
+			if len(names) < 8 {
+				t.Errorf("%s/%s has only %d names: a table of four would repeat too often", code, gender, len(names))
 			}
-			if content.Blocked(nickname) {
-				t.Errorf("%q is on the blocked list", nickname)
+			for _, name := range names {
+				nickname := lang.Bots.Prefix + " " + name
+				if _, ok := validNickname(nickname); !ok {
+					t.Errorf("%q is not a nickname the server would accept", nickname)
+				}
+				if content.Blocked(nickname) {
+					t.Errorf("%q is on the blocked list", nickname)
+				}
 			}
 		}
 	}
@@ -147,7 +150,7 @@ func TestBotNamesAreNamesAPlayerCouldHave(t *testing.T) {
 	for round := 0; round < 2000; round++ {
 		var table []*session
 		for seat := 0; seat < 3; seat++ {
-			nickname, avatar := srv.botProfile(table)
+			nickname, avatar := srv.botProfile(table, languageOf("he"))
 			if !avatars[avatar] {
 				t.Fatalf("%q is not one of the avatars", avatar)
 			}
@@ -168,13 +171,13 @@ func TestBotNamesAreNamesAPlayerCouldHave(t *testing.T) {
 func TestABotsAvatarMatchesItsName(t *testing.T) {
 	srv := NewServer(time.Now, content.Policy(), content.Pick)
 	gender := map[string]string{}
-	for g, names := range stagingBotNames {
+	for g, names := range languageOf("he").Bots.Names {
 		for _, n := range names {
-			gender["בוט "+n] = g
+			gender[languageOf("he").Bots.Prefix+" "+n] = g
 		}
 	}
 	for i := 0; i < 3000; i++ {
-		nickname, avatar := srv.botProfile(nil)
+		nickname, avatar := srv.botProfile(nil, languageOf("he"))
 		want := gender[nickname]
 		if !slices.Contains(stagingBotAvatars[want], avatar) {
 			t.Fatalf("%q was given %q, which is not a %s avatar", nickname, avatar, want)

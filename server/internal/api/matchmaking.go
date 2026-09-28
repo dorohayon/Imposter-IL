@@ -24,7 +24,11 @@ func (s *Server) matchmakingCommand(sess *session, typ string, p commandPayload,
 		if sess.gameID != "" || s.currentRoom(sess) != nil {
 			return "already_in_activity"
 		}
-		return s.joinSearch(sess, nil, p.CategoryIDs, now)
+		lang, ok := content.For(p.Language)
+		if !ok {
+			return "invalid_language"
+		}
+		return s.joinSearch(sess, nil, p.CategoryIDs, lang.Code, now)
 	case "matchmaking.cancel":
 		if entry := s.currentRoom(sess); entry != nil && s.searching(entry) {
 			s.leaveSearch(sess, entry, now)
@@ -68,9 +72,10 @@ func (s *Server) sharedCategories(entry *roomEntry) []string {
 }
 
 // accepts reports whether a player with categories can search in entry.
-func (s *Server) accepts(entry *roomEntry, categories []string) bool {
+// Players only ever meet others playing in the same language.
+func (s *Server) accepts(entry *roomEntry, categories []string, language string) bool {
 	members := len(entry.room.View().Members)
-	if !s.searching(entry) || members >= matchmaking.MaxPlayers {
+	if !s.searching(entry) || members >= matchmaking.MaxPlayers || entry.language != language {
 		return false
 	}
 	return members == 0 || len(matchmaking.Shared(s.sharedCategories(entry), categories)) > 0
@@ -80,12 +85,12 @@ func (s *Server) accepts(entry *roomEntry, categories []string) bool {
 // players continuing after a game stay together even if their own category
 // selections differ; otherwise in the fullest public room that shares a
 // category with them; otherwise in a new one.
-func (s *Server) joinSearch(sess *session, previous *roomEntry, categories []string, now time.Time) string {
+func (s *Server) joinSearch(sess *session, previous *roomEntry, categories []string, language string, now time.Time) string {
 	switch {
 	// One choke point for both matchmaking.join and game.playAgain online.
 	case s.draining:
 		return "server_draining"
-	case !content.ValidIDs(categories):
+	case !languageOf(language).ValidIDs(categories):
 		return "invalid_categories"
 	// Here, so "משחק נוסף" is checked too: a subscription that lapsed or a
 	// purchase refunded since the last match no longer opens its categories.
@@ -95,11 +100,11 @@ func (s *Server) joinSearch(sess *session, previous *roomEntry, categories []str
 		return "content_unavailable"
 	}
 	var entry *roomEntry
-	if previous != nil && s.accepts(previous, categories) {
+	if previous != nil && s.accepts(previous, categories, language) {
 		entry = previous
 	} else {
 		for _, candidate := range s.publicRooms {
-			if s.accepts(candidate, categories) &&
+			if s.accepts(candidate, categories, language) &&
 				(entry == nil || len(candidate.room.View().Members) > len(entry.room.View().Members)) {
 				entry = candidate
 			}
@@ -113,7 +118,7 @@ func (s *Server) joinSearch(sess *session, previous *roomEntry, categories []str
 		if err != nil {
 			return "internal_error"
 		}
-		entry = &roomEntry{id: "r_" + crand.Text(), room: rm, public: true}
+		entry = &roomEntry{id: "r_" + crand.Text(), room: rm, public: true, language: language}
 	} else if err := entry.room.Join(sess.playerID, now); err != nil {
 		return "internal_error" // accepts checked capacity and status under the lock
 	}
@@ -204,7 +209,7 @@ func (s *Server) tickSearch(entry *roomEntry, now time.Time) {
 	if removed {
 		return
 	}
-	category, word, ok := s.pickWord(s.sharedCategories(entry), s.rng)
+	category, word, ok := s.pickWord(entry.language, s.sharedCategories(entry), s.rng)
 	if !ok {
 		return
 	}

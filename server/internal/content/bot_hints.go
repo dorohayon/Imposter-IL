@@ -1,7 +1,6 @@
 package content
 
 import (
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -19,10 +18,6 @@ import (
 //     cannot reach this map even by mistake — the separation is the engine's,
 //     not a rule bots are trusted to follow.
 //   - impostorFallback and shared are keyed by category, which is public.
-//
-//go:embed bot_hints.json
-var botHintsJSON []byte
-
 type botHintFile struct {
 	Version      int                 `json:"version"`
 	GuessAliases map[string][]string `json:"guessAliases,omitempty"`
@@ -50,19 +45,40 @@ type hintTables struct {
 	aliases  map[string][]string                  // secret word -> accepted guess spellings
 }
 
-var tables = loadHintTables(botHintsJSON)
+// Every language's hints in one set of tables: they are keyed by the public
+// category name, which differs between languages.
+var tables = loadHintTables(languageRaws()...)
 
-func loadHintTables(raw []byte) hintTables {
-	var file botHintFile
-	if err := json.Unmarshal(raw, &file); err != nil {
-		panic(fmt.Sprintf("bot_hints.json: %v", err))
+func languageRaws() [][]byte {
+	var out [][]byte
+	for _, code := range Languages() {
+		raw, err := languageFiles.ReadFile("languages/" + code + ".json")
+		if err != nil {
+			panic(err)
+		}
+		out = append(out, raw)
 	}
+	return out
+}
+
+func loadHintTables(raws ...[]byte) hintTables {
 	t := hintTables{
 		citizen:  map[string]map[string][]string{},
 		fallback: map[string][]string{},
 		shared:   map[string][]string{},
 		together: map[string]map[string]map[string]int{},
 		aliases:  map[string][]string{},
+	}
+	for _, raw := range raws {
+		t.add(raw)
+	}
+	return t
+}
+
+func (t hintTables) add(raw []byte) {
+	var file botHintFile
+	if err := json.Unmarshal(raw, &file); err != nil {
+		panic(fmt.Sprintf("language file: %v", err))
 	}
 	for word, aliases := range file.GuessAliases {
 		t.aliases[word] = slices.Clone(aliases)
@@ -112,7 +128,6 @@ func loadHintTables(raw []byte) hintTables {
 		}
 		sort.Strings(t.shared[category])
 	}
-	return t
 }
 
 // linked reports whether the category's graph pairs these two hints, however

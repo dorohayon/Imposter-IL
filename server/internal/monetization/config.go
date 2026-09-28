@@ -143,7 +143,7 @@ func Parse(data []byte) (Config, error) {
 
 func (c Config) validate() error {
 	switch {
-	case len(c.FreeCategoryIDs) == 0 || !content.ValidIDs(c.FreeCategoryIDs):
+	case len(c.FreeCategoryIDs) == 0 || slices.ContainsFunc(c.FreeCategoryIDs, func(id string) bool { return !content.KnownCategory(id) }):
 		return errors.New("monetization config: freeCategoryIds must name known categories")
 	case c.Products.CategoryPrefix == "" || c.Products.PremiumMonthly == "" || c.Products.PremiumLifetime == "":
 		return errors.New("monetization config: every product id is required")
@@ -195,7 +195,7 @@ func (c Config) Grant(e Entitlements, g Grant, now time.Time) Entitlements {
 		}
 	default:
 		id, ok := strings.CutPrefix(g.ProductID, c.Products.CategoryPrefix)
-		if ok && content.ValidIDs([]string{id}) && !slices.Contains(e.Categories, id) {
+		if ok && content.KnownCategory(id) && !slices.Contains(e.Categories, id) {
 			e.Categories = append(e.Categories, id)
 		}
 	}

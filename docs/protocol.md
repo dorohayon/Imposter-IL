@@ -139,7 +139,7 @@
 { "categories": [ { "id": "…", "name": "…" } ] }
 ```
 
-מחזיר את קטלוג התוכן המאושר מ־`server/internal/content/content.go` (18 קטגוריות, 50 מילים בכל אחת). `categoryIds` בחדר חייבים להיות מזהים שמוחזרים מה־endpoint.
+מחזיר את קטלוג התוכן המאושר של שפה אחת, מ־`server/internal/content/languages/<code>.json` (18 קטגוריות, 50 מילים בכל אחת). השפה ב־`?language=he|en`; בלעדיה `he`, כמו כל אפליקציה שיצאה לפני השפות, ושפה לא מוכרת — `422 invalid_language`. `categoryIds` בחדר חייבים להיות מזהים שמוחזרים מה־endpoint באותה שפה. מזהה קטגוריה משותף לכל השפות שיש בהן אותה קטגוריה, ולכן גם הרכישות.
 
 ### `GET /v1/reactions`
 
@@ -147,7 +147,7 @@
 { "reactions": [ { "id": "laugh", "text": "😂" } ] }
 ```
 
-הרשימה שאושרה. `reactionId` ב־`game.react` הוא אחד מהמזהים, והאפליקציה מציגה את `text`:
+הרשימה שאושרה, באותו `?language=`: שישה אימוג'ים משותפים וארבע הודעות בשפה. המזהים זהים בכל השפות. `reactionId` ב־`game.react` הוא אחד מהמזהים, והאפליקציה מציגה את `text`:
 
 | `id` | `text` |
 | --- | --- |
@@ -165,18 +165,18 @@
 ### `POST /v1/rooms`
 
 ```json
-{ "maxPlayers": 8, "hintSeconds": 15, "categoryIds": ["…"] }
+{ "maxPlayers": 8, "hintSeconds": 15, "categoryIds": ["…"], "language": "en" }
 ```
 
-`maxPlayers` בין 4 ל־8. `hintSeconds` אחד מ־30, 60, 90. `categoryIds` אינו ריק ומכיל רק מזהים מ־`GET /v1/categories`. תשובה `201` עם `{ "room": Room }`, והשחקן הוא המנהל. שגיאות: `422 invalid_room_settings`, `409 already_in_activity`, `403 category_locked`.
+`language` אופציונלי (ברירת מחדל `he`) וקובע את שפת החדר לתמיד: המילים, התגובות והבוטים. `Room` כולל `language`. `maxPlayers` בין 4 ל־8. `hintSeconds` אחד מ־30, 60, 90. `categoryIds` אינו ריק ומכיל רק מזהים מ־`GET /v1/categories`. תשובה `201` עם `{ "room": Room }`, והשחקן הוא המנהל. שגיאות: `422 invalid_room_settings` (גם קטגוריה שאינה בשפת החדר), `422 invalid_language`, `409 already_in_activity`, `403 category_locked`.
 
 ### `POST /v1/rooms/join`
 
 ```json
-{ "code": "482913" }
+{ "code": "482913", "language": "en" }
 ```
 
-`200` עם `{ "room": Room }`. שגיאות (מסך 28): `422 invalid_room_code` (לא שש ספרות), `404 room_not_found`, `409 room_unavailable` (החדר מלא או שמשחק בעיצומו). ניסיון הצטרפות חוזר לאותו חדר מחזיר `200`.
+`200` עם `{ "room": Room }`. שגיאות (מסך 28): `422 invalid_room_code` (לא שש ספרות), `404 room_not_found`, `409 room_unavailable` (החדר מלא או שמשחק בעיצומו), `409 room_language_mismatch` — החדר בשפה אחרת, ואובייקט ה־`error` כולל את `language` שלו, `422 invalid_language`. ניסיון הצטרפות חוזר לאותו חדר מחזיר `200`.
 
 שחקן נמצא בחדר אחד לכל היותר. יצירת חדר או הצטרפות לחדר אחר מוציאה אותו מהלובי הקודם, רק אחרי שהחדר החדש קיבל אותו. אם בחדר הקודם מתנהל משחק, הבקשה נדחית ב־`409 already_in_activity`, כי יציאה ממשחק נחשבת הפסד.
 
@@ -245,6 +245,7 @@
 
 ### פרטי מימוש של משחק ברשת
 
+- `matchmaking.join` מחפש רק בין שחקנים באותה `language` (ברירת מחדל `he`); `משחק נוסף` נשאר בשפת המשחק.
 - `matchmaking.join` שולח `session.state` עם `activity: "matchmaking"` ו־`roomId` של קבוצת החיפוש, ואחריו `matchmaking.state` לכל המחפשים בקבוצה. כללי ההתחלה ב־`docs/matchmaking.md`.
 - כשהמשחק מתחיל, כל שחקניו מקבלים `session.state` עם `activity: "game"` ו־`game.state`, כמו בחדר פרטי. אין סטטוס `starting`.
 - `matchmaking.cancel`, או ניתוק בזמן החיפוש, מוציאים מהקבוצה ושולחים `session.state` עם `activity: "none"`.
@@ -256,7 +257,7 @@
 
 | `type` | `payload` | שגיאות אפשריות |
 | --- | --- | --- |
-| `matchmaking.join` | `{ categoryIds }` | `already_in_activity`, `invalid_categories`, `content_unavailable`, `category_locked` |
+| `matchmaking.join` | `{ categoryIds, language }` | `already_in_activity`, `invalid_categories`, `invalid_language`, `content_unavailable`, `category_locked` |
 | `matchmaking.cancel` | `{}` | — |
 | `room.updateSettings` | `{ roomId, maxPlayers, hintSeconds, categoryIds }` | `not_room_host`, `room_settings_locked`, `invalid_room_settings`, `room_in_game`, `category_locked` |
 | `room.kick` | `{ roomId, playerId }` | `not_room_host`, `cannot_kick_self`, `room_in_game`, `unknown_player` |

@@ -45,7 +45,7 @@ void main() {
     expect(g.secretWord, isNotEmpty);
     // Only the chosen category's words are in play.
     expect(
-      localCategories.firstWhere((c) => c.id == 'food').words,
+      localCategoriesFor('he').firstWhere((c) => c.id == 'food').words,
       contains(g.secretWord),
     );
   });

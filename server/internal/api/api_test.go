@@ -30,7 +30,7 @@ func newClient(t *testing.T) *client {
 	policy := content.Policy()
 	c := &client{t: t, mux: http.NewServeMux()}
 	c.clock.Store(t0.UnixNano())
-	pick := func([]string, *rand.Rand) (string, string, bool) { return "חיות", "פיל", true }
+	pick := func(string, []string, *rand.Rand) (string, string, bool) { return "חיות", "פיל", true }
 	c.srv = NewServer(func() time.Time { return time.Unix(0, c.clock.Load()).UTC() }, policy, pick)
 	// Every test dials from 127.0.0.1 on a clock that only moves when it says
 	// so, so the per-IP limits would fire on the players, not on abuse.
@@ -393,5 +393,81 @@ func TestAnInstallOlderThanTheProtocolIsTurnedAway(t *testing.T) {
 			!strings.Contains(rec.Body.String(), "client_too_old") {
 			t.Errorf("build %s got %s", build, rec.Body.String())
 		}
+	}
+}
+
+// A request without a language is Hebrew, so apps released before languages
+// keep working; another language serves its own content.
+func TestContentByLanguage(t *testing.T) {
+	c := newClient(t)
+	token, _ := c.session("דור")
+	status, body := c.do("GET", "/v1/categories?language=en", token, nil)
+	categories, _ := body["categories"].([]any)
+	if status != 200 || len(categories) != 18 || categories[0].(map[string]any)["name"] != "Food & Drink" {
+		t.Fatalf("English categories: %d %v", status, body)
+	}
+	status, body = c.do("GET", "/v1/reactions?language=en", token, nil)
+	reactions, _ := body["reactions"].([]any)
+	if status != 200 || reactions[9].(map[string]any)["text"] != "What's the link?" {
+		t.Fatalf("English reactions: %d %v", status, body)
+	}
+	status, body = c.do("GET", "/v1/categories?language=xx", token, nil)
+	c.wantError(422, "invalid_language", status, body)
+}
+
+// One room, one language: its words, reactions and bots. Joining from
+// another language is refused, naming the room's.
+func TestRoomsKeepTheirLanguage(t *testing.T) {
+	c := newClient(t)
+	host, _ := c.session("Host")
+	status, body := c.do("POST", "/v1/rooms", host, map[string]any{
+		"maxPlayers": 4, "hintSeconds": 60, "categoryIds": []string{"internet_slang"}, "language": "en",
+	})
+	if status != http.StatusCreated {
+		t.Fatalf("create English room: %d %v", status, body)
+	}
+	room := body["room"].(map[string]any)
+	if room["language"] != "en" {
+		t.Fatalf("room language = %v", room["language"])
+	}
+	guest, _ := c.session("אורח")
+	status, body = c.join(guest, room["code"].(string))
+	c.wantError(409, "room_language_mismatch", status, body)
+	if body["error"].(map[string]any)["language"] != "en" {
+		t.Fatalf("mismatch without the room's language: %v", body)
+	}
+	status, body = c.do("POST", "/v1/rooms/join", guest, map[string]string{"code": room["code"].(string), "language": "en"})
+	if status != http.StatusOK {
+		t.Fatalf("join in English: %d %v", status, body)
+	}
+
+	// A Hebrew room cannot take an English-only category.
+	other, _ := c.session("אחר")
+	status, body = c.do("POST", "/v1/rooms", other, map[string]any{
+		"maxPlayers": 4, "hintSeconds": 60, "categoryIds": []string{"internet_slang"},
+	})
+	c.wantError(422, "invalid_room_settings", status, body)
+}
+
+// Online players only ever meet players in their own language.
+func TestMatchmakingSplitsByLanguage(t *testing.T) {
+	c := newClient(t)
+	he, _ := c.session("עברית")
+	en1, _ := c.session("English1")
+	en2, _ := c.session("English2")
+	c.srv.mu.Lock()
+	defer c.srv.mu.Unlock()
+	now := c.srv.now()
+	for token, lang := range map[string]string{he: "he", en1: "en", en2: "en"} {
+		if code := c.srv.joinSearch(c.srv.sessions[token], nil, []string{"food"}, lang, now); code != "" {
+			t.Fatalf("join %s: %s", lang, code)
+		}
+	}
+	room := func(token string) string { return c.srv.sessions[token].roomID }
+	if room(he) == room(en1) || room(en1) != room(en2) {
+		t.Fatalf("rooms: he %s, en %s and %s", room(he), room(en1), room(en2))
+	}
+	if code := c.srv.joinSearch(c.srv.sessions[he], nil, []string{"internet_slang"}, "he", now); code != "invalid_categories" {
+		t.Fatalf("an English-only category in Hebrew: %q", code)
 	}
 }

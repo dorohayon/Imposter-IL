@@ -10,7 +10,6 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/dorohayon/Imposter-IL/server/internal/content"
 	"github.com/dorohayon/Imposter-IL/server/internal/room"
 )
 
@@ -423,7 +422,7 @@ func (s *Server) roomCommand(sess *session, typ string, p commandPayload, now ti
 	var err error
 	switch typ {
 	case "room.updateSettings":
-		if !content.ValidIDs(p.CategoryIDs) {
+		if !languageOf(entry.language).ValidIDs(p.CategoryIDs) {
 			return "invalid_room_settings"
 		}
 		if !s.categoriesAllowed(sess, p.CategoryIDs, now) {

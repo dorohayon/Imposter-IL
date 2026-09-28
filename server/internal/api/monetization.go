@@ -80,7 +80,7 @@ func (s *Server) rewardedUnlock(w http.ResponseWriter, body []byte, sess *sessio
 	now := s.now()
 	next := sess.rewardedAt.Add(monetization.RewardedCooldown)
 	switch {
-	case !content.ValidIDs([]string{req.CategoryID}):
+	case !content.KnownCategory(req.CategoryID):
 		writeError(w, errInvalidCategories)
 		return
 	case !s.money.Ads.Enabled || !s.money.Ads.RewardedEnabled:
