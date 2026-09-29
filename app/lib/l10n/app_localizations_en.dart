@@ -1726,4 +1726,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String roomLanguageMismatch(Object language) {
     return 'This room\'s language is $language. To join, switch the language in Settings.';
   }
+
+  @override
+  String get guessTheWord => 'Guess the word';
 }

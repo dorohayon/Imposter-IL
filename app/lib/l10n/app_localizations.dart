@@ -2971,6 +2971,12 @@ abstract class AppLocalizations {
   /// In he, this message translates to:
   /// **'שפת החדר: {language}. כדי להצטרף, מחליפים שפה בהגדרות.'**
   String roomLanguageMismatch(Object language);
+
+  /// No description provided for @guessTheWord.
+  ///
+  /// In he, this message translates to:
+  /// **'ניחוש המילה'**
+  String get guessTheWord;
 }
 
 class _AppLocalizationsDelegate

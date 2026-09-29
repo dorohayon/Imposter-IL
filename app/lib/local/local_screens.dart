@@ -650,8 +650,8 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   Widget _guessScreen() {
     final impostor = _game.players[_game.impostor];
     return GameScaffold(
-      // Read in the body, over "עוד אפשר לנצח", as online: not by the timer.
-      title: '',
+      // The screen's name; who was caught is read large in the body.
+      title: context.l10n.guessTheWord,
       showHeader: true,
       onExit: _leave,
       timer: TimerBadge(
@@ -669,14 +669,14 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // As large as "עוד אפשר לנצח" below it, in the caught pink.
           Text(
             context.l10n.youreCaught(impostor.name),
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFFFF9B9B),
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(context)
+                .textTheme
+                .headlineLarge
+                ?.copyWith(color: const Color(0xFFFF9B9B)),
           ),
           const SizedBox(height: 10),
           const Illustration('assets/illustrations/role-impostor.webp',

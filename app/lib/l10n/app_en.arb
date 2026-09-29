@@ -478,5 +478,6 @@
   "rewardRefused": "You can unlock a category by watching an ad once every four hours, so \"{name}\" wasn't unlocked.",
   "watchAgainInSentence": " You can watch again in {time}.",
   "phoneLanguage": "Phone language",
-  "roomLanguageMismatch": "This room's language is {language}. To join, switch the language in Settings."
+  "roomLanguageMismatch": "This room's language is {language}. To join, switch the language in Settings.",
+  "guessTheWord": "Guess the word"
 }

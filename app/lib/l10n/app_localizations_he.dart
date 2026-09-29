@@ -1694,4 +1694,7 @@ class AppLocalizationsHe extends AppLocalizations {
   String roomLanguageMismatch(Object language) {
     return 'שפת החדר: $language. כדי להצטרף, מחליפים שפה בהגדרות.';
   }
+
+  @override
+  String get guessTheWord => 'ניחוש המילה';
 }
