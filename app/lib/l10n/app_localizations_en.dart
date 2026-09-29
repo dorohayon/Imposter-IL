@@ -989,10 +989,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loadingCategoriesShort => 'Loading categories...';
 
   @override
-  String get settingsLockAfterJoin =>
-      'Once another player joins, the settings can\'t be changed.';
-
-  @override
   String get roomCodeSixDigits => 'The room code must be six digits';
 
   @override

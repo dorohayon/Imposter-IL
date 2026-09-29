@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/main.dart';
@@ -241,4 +242,13 @@ Future<void> saveScreenshot(
       ..createSync(recursive: true)
       ..writeAsBytesSync(png!.buffer.asUint8List());
   });
+}
+
+/// Fails when [text] is drawn cut: its box shorter than its lines, which a
+/// fixed-height parent does without any overflow error.
+void expectWhole(WidgetTester tester, String text) {
+  final p = tester.renderObject<RenderParagraph>(find.text(text));
+  expect(p.size.height + .5,
+      greaterThanOrEqualTo(p.getMaxIntrinsicHeight(p.size.width)),
+      reason: '"$text" is cut');
 }

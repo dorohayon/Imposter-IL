@@ -311,6 +311,14 @@ void main() {
 
     // Reported from the phone: the prices flashed for a moment before the
     // error replaced them.
+    // Reported from the phone: the second line was cut at the bottom.
+    testWidgets('"all unlocked categories" is shown whole', (tester) async {
+      await loadRealFonts();
+      await _freePlayer(tester);
+      await _openPicker(tester);
+      expectWhole(tester, 'כל הקטגוריות הפתוחות');
+    });
+
     testWidgets('a store that fails quickly opens the popup on its error',
         (tester) async {
       final (_, store, _) = await _freePlayer(tester);

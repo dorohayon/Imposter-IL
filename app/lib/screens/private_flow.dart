@@ -310,28 +310,6 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                     ),
               ],
             ),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.yellow.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.yellow.withValues(alpha: .4)),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.lock_clock_rounded,
-                    color: AppColors.yellow, size: 20),
-                SizedBox(width: 9),
-                Expanded(
-                  child: Text(
-                    context.l10n.settingsLockAfterJoin,
-                    style: TextStyle(color: Color(0xFFFFF0C2), fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

@@ -279,7 +279,6 @@
   "nSeconds": "{value} seconds",
   "categories": "Categories",
   "loadingCategoriesShort": "Loading categories...",
-  "settingsLockAfterJoin": "Once another player joins, the settings can't be changed.",
   "roomCodeSixDigits": "The room code must be six digits",
   "roomNotFound": "The room wasn't found or isn't available. Check the code with whoever opened the room.",
   "roomFull": "The room is full or the game has already started.",

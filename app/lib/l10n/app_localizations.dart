@@ -1772,12 +1772,6 @@ abstract class AppLocalizations {
   /// **'טוענים קטגוריות...'**
   String get loadingCategoriesShort;
 
-  /// No description provided for @settingsLockAfterJoin.
-  ///
-  /// In he, this message translates to:
-  /// **'אחרי ששחקן נוסף יצטרף, אי אפשר יהיה לשנות את ההגדרות.'**
-  String get settingsLockAfterJoin;
-
   /// No description provided for @roomCodeSixDigits.
   ///
   /// In he, this message translates to:
