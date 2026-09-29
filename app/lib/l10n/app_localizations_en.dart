@@ -88,7 +88,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String termsIntro(Object legalVersion, Object legalDate) {
-    return 'Version $legalVersion · Effective $legalDate\n\nUse of \"Imposter: Word Bluff\" is subject to the following terms. The game is intended for ages 13 and up. If you are 13 or older but not old enough to agree to these terms where you live, use the game only with the permission and supervision of a parent or guardian.';
+    return 'Version $legalVersion · Effective $legalDate\n\nUse of “Imposter: Word Bluff” is subject to the following terms. The game is intended for ages 13 and up. If you are 13 or older but not old enough to agree to these terms where you live, use the game only with the permission and supervision of a parent or guardian.';
   }
 
   @override
@@ -96,7 +96,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terms1 =>
-      '\"Imposter: Word Bluff\" is an online social game operated by Imposter IL (imposteril36@gmail.com). No account is needed. You choose a nickname and an avatar and receive a temporary guest ID for playing.';
+      '“Imposter: Word Bluff” is an online social game operated by Imposter IL (imposteril36@gmail.com). No account is needed. You choose a nickname and an avatar and receive a temporary guest ID for playing.';
 
   @override
   String get terms2Title => '2. Conduct and content';
@@ -124,7 +124,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terms5 =>
-      'Three categories are free. The other categories can be unlocked by buying a single category forever, with a monthly Premium subscription or with lifetime Premium. Premium unlocks every category, including ones added later, and removes ads; buying a single category does not remove ads. Payment, billing, renewal and refunds go through the App Store or Google Play, under their terms and at the price the store shows in your account\'s currency. The monthly subscription renews automatically every month until cancelled. You can cancel it at any time in the store\'s subscription settings, at least 24 hours before the renewal date, and access remains until the end of the paid period. A purchase refunded or cancelled in the store stops unlocking what it unlocked. Purchases belong to the store account, not the device, and can be restored on any device with the same account using \"Restore purchases\". Players without Premium see third-party ads on screens outside the game and after a finished game. On Apple devices, Apple\'s standard End User License Agreement (EULA) also applies. Nothing here limits your rights under applicable consumer protection law, including cancelling a transaction.';
+      'Three categories are free. The other categories can be unlocked by buying a single category forever, with a monthly Premium subscription or with lifetime Premium. Premium unlocks every category, including ones added later, and removes ads; buying a single category does not remove ads. Payment, billing, renewal and refunds go through the App Store or Google Play, under their terms and at the price the store shows in your account\'s currency. The monthly subscription renews automatically every month until cancelled. You can cancel it at any time in the store\'s subscription settings, at least 24 hours before the renewal date, and access remains until the end of the paid period. A purchase refunded or cancelled in the store stops unlocking what it unlocked. Purchases belong to the store account, not the device, and can be restored on any device with the same account using “Restore purchases”. Players without Premium see third-party ads on screens outside the game and after a finished game. On Apple devices, Apple\'s standard End User License Agreement (EULA) also applies. Nothing here limits your rights under applicable consumer protection law, including cancelling a transaction.';
 
   @override
   String get terms6Title => '6. Availability and changes';
@@ -177,7 +177,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String privacyIntro(Object legalVersion, Object legalDate) {
-    return 'Version $legalVersion · Effective $legalDate\n\nThis policy describes the data \"Imposter: Word Bluff\" uses to run games, save preferences and protect players.';
+    return 'Version $legalVersion · Effective $legalDate\n\nThis policy describes the data “Imposter: Word Bluff” uses to run games, save preferences and protect players.';
   }
 
   @override
@@ -185,7 +185,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacy1 =>
-      'The game \"Imposter: Word Bluff\" is operated by Imposter IL, and this policy applies to the app and to the server that runs it. For privacy inquiries: imposteril36@gmail.com.';
+      'The game “Imposter: Word Bluff” is operated by Imposter IL, and this policy applies to the app and to the server that runs it. For privacy inquiries: imposteril36@gmail.com.';
 
   @override
   String get privacy2Title => '2. Data stored on the device';
@@ -466,7 +466,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String shareInvite(Object code, Object value) {
-    return 'Come play \"Imposter: Word Bluff\" with me\nRoom code: $code\n$value';
+    return 'Come play “Imposter: Word Bluff” with me\nRoom code: $code\n$value';
   }
 
   @override
@@ -1436,7 +1436,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String adFailed(Object widgetName) {
-    return 'We couldn\'t show an ad all the way through, so \"$widgetName\" wasn\'t unlocked. You can try again later or choose another option.';
+    return 'We couldn\'t show an ad all the way through, so “$widgetName” wasn\'t unlocked. You can try again later or choose another option.';
   }
 
   @override
@@ -1457,12 +1457,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String purchasePending(Object widgetName) {
-    return 'The purchase is awaiting approval. \"$widgetName\" will unlock as soon as the payment is approved.';
+    return 'The purchase is awaiting approval. “$widgetName” will unlock as soon as the payment is approved.';
   }
 
   @override
   String restoredOther(Object widgetName) {
-    return 'Purchases were restored, but \"$widgetName\" wasn\'t among them.';
+    return 'Purchases were restored, but “$widgetName” wasn\'t among them.';
   }
 
   @override
@@ -1471,7 +1471,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String categoryLockedTitle(Object widgetName) {
-    return '\"$widgetName\" is locked';
+    return '“$widgetName” is locked';
   }
 
   @override
@@ -1488,7 +1488,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String adUnlocksNextGame(Object widgetName) {
-    return 'Unlocks \"$widgetName\" for the next game only';
+    return 'Unlocks “$widgetName” for the next game only';
   }
 
   @override
@@ -1520,7 +1520,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String onlyCategory(Object widgetName) {
-    return 'Only \"$widgetName\"';
+    return 'Only “$widgetName”';
   }
 
   @override
@@ -1539,12 +1539,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String categoryOpenAgain(Object widgetName) {
-    return '\"$widgetName\" is unlocked again on this device.';
+    return '“$widgetName” is unlocked again on this device.';
   }
 
   @override
   String categoryOpenNextGame(Object widgetName) {
-    return '\"$widgetName\" is unlocked for the next game';
+    return '“$widgetName” is unlocked for the next game';
   }
 
   @override
@@ -1568,7 +1568,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String categoryUnlocked(Object widgetName) {
-    return '\"$widgetName\" is unlocked!';
+    return '“$widgetName” is unlocked!';
   }
 
   @override
@@ -1589,7 +1589,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chooseCategoryN(Object widgetName) {
-    return 'Choose \"$widgetName\"';
+    return 'Choose “$widgetName”';
   }
 
   @override
@@ -1597,7 +1597,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String adDisclosure(Object widgetName) {
-    return '\"$widgetName\" unlocks after watching the whole ad, for the next game only. You can unlock a category this way once every four hours.';
+    return '“$widgetName” unlocks after watching the whole ad, for the next game only. You can unlock a category this way once every four hours.';
   }
 
   @override
@@ -1621,7 +1621,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String categoryPurchaseDisclosure(Object p, Object widgetName) {
-    return 'One payment of $p through the store. \"$widgetName\" stays unlocked forever; ads keep showing.';
+    return 'One payment of $p through the store. “$widgetName” stays unlocked forever; ads keep showing.';
   }
 
   @override
@@ -1711,7 +1711,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String rewardRefused(Object name) {
-    return 'You can unlock a category by watching an ad once every four hours, so \"$name\" wasn\'t unlocked.';
+    return 'You can unlock a category by watching an ad once every four hours, so “$name” wasn\'t unlocked.';
   }
 
   @override

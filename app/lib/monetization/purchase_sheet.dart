@@ -24,9 +24,9 @@ Future<bool> showPurchaseSheet(
   final chosen = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
-    // Dragging would close it mid-payment; the close button is always there
-    // otherwise.
-    enableDrag: false,
+    // Swiped down to close, as its handle says; while the store, a restore
+    // or an ad is working the sheet takes the drag itself (see build).
+    enableDrag: true,
     backgroundColor: Colors.transparent,
     barrierColor: const Color(0xBD080716),
     constraints: BoxConstraints(
@@ -155,48 +155,60 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
 
     return PopScope(
       canPop: !m.busy,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: _sheetColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border(
-            top: BorderSide(color: AppColors.cream.withValues(alpha: .14)),
+      // A drag closes the sheet by popping it directly, past PopScope: while
+      // busy, an empty handler wins the drag so nothing closes mid-payment.
+      child: GestureDetector(
+        onVerticalDragUpdate: m.busy ? (_) {} : null,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: _sheetColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(
+              top: BorderSide(color: AppColors.cream.withValues(alpha: .14)),
+            ),
+            boxShadow: const [
+              BoxShadow(
+                  color: Color(0x73000000),
+                  blurRadius: 50,
+                  offset: Offset(0, -20)),
+            ],
           ),
-          boxShadow: const [
-            BoxShadow(
-                color: Color(0x73000000),
-                blurRadius: 50,
-                offset: Offset(0, -20)),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 10, 0, 4),
-                child: Container(
-                  width: 40,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: AppColors.cream.withValues(alpha: .25),
-                    borderRadius: BorderRadius.circular(3),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 10, 0, 4),
+                  child: Container(
+                    width: 40,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: AppColors.cream.withValues(alpha: .25),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
                   ),
                 ),
-              ),
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(18, 6, 18, 4),
-                  child: succeeded
-                      ? _success(m, step)
-                      : _choose(m, offer, available, adOffered, selected,
-                          loading, pricesFailed),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(18, 6, 18, 4),
+                    child: succeeded
+                        ? _success(m, step)
+                        : _choose(m, offer, available, adOffered, selected,
+                            loading, pricesFailed),
+                  ),
                 ),
-              ),
-              _footer(m, selected, succeeded, loading, pricesFailed,
-                  available.isNotEmpty),
-            ],
+                _footer(
+                    m,
+                    selected,
+                    succeeded,
+                    loading,
+                    pricesFailed,
+                    // Store products only: the ad option is not something the
+                    // store sells, and without a price there is nothing to say.
+                    available.any((id) => id != _adOption)),
+              ],
+            ),
           ),
         ),
       ),
@@ -251,24 +263,14 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
               child: Column(
                 children: [
                   const SizedBox(height: 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.lock_rounded,
-                          color: AppColors.yellow, size: 18),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          context.l10n.categoryLockedTitle(widget.name),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontFamily: 'Secular One',
-                            fontSize: 21,
-                            height: 1.2,
-                          ),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    context.l10n.categoryLockedTitle(widget.name),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Secular One',
+                      fontSize: 21,
+                      height: 1.2,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -279,7 +281,17 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                 ],
               ),
             ),
-            const SizedBox(width: 52),
+            // Across from the close button, where the title's balance was:
+            // the title stays centred and wraps between the two.
+            const SizedBox(
+              width: 52,
+              height: 44,
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child:
+                    Icon(Icons.lock_rounded, color: AppColors.yellow, size: 22),
+              ),
+            ),
           ],
         ),
         if (notice != null) ...[const SizedBox(height: 10), notice],
