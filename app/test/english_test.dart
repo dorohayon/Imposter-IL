@@ -181,7 +181,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(locked);
     await tester.pumpAndSettle();
-    expect(find.text('“Gaming” is locked'), findsOneWidget);
+    expect(find.textContaining('“Gaming” is locked'), findsOneWidget);
+    // The lock rides in the title's line, by its first word, however it wraps.
+    expect(
+        find.descendant(
+            of: find.textContaining('is locked'),
+            matching: find.byIcon(Icons.lock_rounded)),
+        findsOneWidget);
     expect(find.text('Watch an ad'), findsWidgets);
     expect(find.text('Only “Gaming”'), findsOneWidget);
     expect(tester.takeException(), isNull);

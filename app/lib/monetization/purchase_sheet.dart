@@ -263,24 +263,31 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
               child: Column(
                 children: [
                   const SizedBox(height: 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.lock_rounded,
-                          color: AppColors.yellow, size: 18),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          context.l10n.categoryLockedTitle(widget.name),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontFamily: 'Secular One',
-                            fontSize: 21,
-                            height: 1.2,
+                  // The lock is part of the line, as in the design's
+                  // inline-flex: it stays by the first word however the
+                  // title wraps, rather than at the row's edge.
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        const WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: Padding(
+                            padding: EdgeInsetsDirectional.only(end: 8),
+                            child: Icon(Icons.lock_rounded,
+                                color: AppColors.yellow, size: 18),
                           ),
                         ),
-                      ),
-                    ],
+                        TextSpan(
+                          text: context.l10n.categoryLockedTitle(widget.name),
+                        ),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Secular One',
+                      fontSize: 21,
+                      height: 1.2,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(

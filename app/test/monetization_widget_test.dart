@@ -118,7 +118,7 @@ void main() {
       await _openPicker(tester);
       await _tapLocked(tester, 'ספורט וכושר');
 
-      expect(find.text('״ספורט וכושר״ נעולה'), findsOneWidget);
+      expect(find.textContaining('״ספורט וכושר״ נעולה'), findsOneWidget);
       expect(find.text('בחרו איך לפתוח אותה'), findsOneWidget);
       expect(find.text('רק ״ספורט וכושר״'), findsOneWidget);
       expect(find.text('פרימיום חודשי'), findsOneWidget);
@@ -149,7 +149,7 @@ void main() {
           findsOneWidget);
       await tapText(tester, 'בוחרים ב״ספורט וכושר״');
 
-      expect(find.text('״ספורט וכושר״ נעולה'), findsNothing);
+      expect(find.textContaining('״ספורט וכושר״ נעולה'), findsNothing);
       expect(find.byIcon(Icons.lock_rounded), findsNWidgets(14));
       await tapLive(tester, 'חפש משחק');
       expect(_searched(api), ['food', 'sports']);
@@ -254,7 +254,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.close_rounded));
       await tester.pumpAndSettle();
-      expect(find.text('״ספורט וכושר״ נעולה'), findsNothing);
+      expect(find.textContaining('״ספורט וכושר״ נעולה'), findsNothing);
       expect(find.byIcon(Icons.lock_rounded), findsNWidgets(15));
     });
 
@@ -274,7 +274,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
-      expect(find.text('״ספורט וכושר״ נעולה'), findsOneWidget);
+      expect(find.textContaining('״ספורט וכושר״ נעולה'), findsOneWidget);
     });
 
     testWidgets('an error names the cause and offers another try',
@@ -330,7 +330,7 @@ void main() {
       // From the footer: the options above it scroll on a short screen.
       await tester.fling(find.text('שחזור רכישות'), const Offset(0, 500), 2000);
       await tester.pumpAndSettle();
-      expect(find.text('״ספורט וכושר״ נעולה'), findsNothing);
+      expect(find.textContaining('״ספורט וכושר״ נעולה'), findsNothing);
 
       store.outcome = null; // the store never answers
       await _tapLocked(tester, 'ספורט וכושר');
@@ -338,7 +338,7 @@ void main() {
       await tester.fling(
           find.text('מתחברים לחנות…'), const Offset(0, 500), 2000);
       await tester.pumpAndSettle();
-      expect(find.text('״ספורט וכושר״ נעולה'), findsOneWidget);
+      expect(find.textContaining('״ספורט וכושר״ נעולה'), findsOneWidget);
     });
 
     testWidgets('restore in the popup reopens a bought category',
@@ -368,7 +368,7 @@ void main() {
       expect(find.text('3 פתוחות בחינם'), findsOneWidget);
 
       await _tapLocked(tester, 'ספורט וכושר');
-      expect(find.text('״ספורט וכושר״ נעולה'), findsOneWidget);
+      expect(find.textContaining('״ספורט וכושר״ נעולה'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.close_rounded));
       await tester.pumpAndSettle();
 
