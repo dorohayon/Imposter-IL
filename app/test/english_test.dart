@@ -282,7 +282,7 @@ void main() {
 
   test('every language the app has has one-device words', () {
     for (final code in ['he', 'en']) {
-      expect(localCategoriesFor(code), hasLength(18), reason: code);
+      expect(localCategoriesFor(code), hasLength(21), reason: code);
     }
     expect(localCategoriesFor('en').first.name, 'Food & Drink');
   });

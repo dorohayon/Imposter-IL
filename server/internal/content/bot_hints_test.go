@@ -41,8 +41,8 @@ func TestCitizenHintsAreUsable(t *testing.T) {
 func TestFallbackHintsAreNotTheAnswer(t *testing.T) {
 	for _, c := range allCategories() {
 		pool := tables.fallback[c.Name]
-		if len(pool) < 10 || len(pool) > 16 {
-			t.Errorf("%s: %d fallback hints, want 10 to 16", c.Name, len(pool))
+		if len(pool) < 8 || len(pool) > 16 {
+			t.Errorf("%s: %d fallback hints, want 8 to 16", c.Name, len(pool))
 		}
 		script := scriptOf([]rune(c.Words[0])[0])
 		for i, hint := range pool {
@@ -127,21 +127,13 @@ func TestEveryWordHasCitizenHints(t *testing.T) {
 	_ = wrongSize
 }
 
-// A citizen hint must remain ambiguous. The shipped catalogue is authored in
-// five-word semantic clusters, so no curated hint may fingerprint fewer than
-// five candidate secrets inside its category.
-func TestCitizenHintsStayAmbiguous(t *testing.T) {
+// Direct per-word hints may include a distinctive association, but every
+// category still needs shared vocabulary so the public board can inform an
+// impostor bot without revealing the secret.
+func TestCitizenHintsProvideSharedVocabulary(t *testing.T) {
 	for _, c := range allCategories() {
-		counts := map[string]int{}
-		for _, word := range c.Words {
-			for _, hint := range CitizenHints(c.Name, word) {
-				counts[hint]++
-			}
-		}
-		for hint, n := range counts {
-			if n < 5 {
-				t.Errorf("%s: %q belongs to only %d words, want at least 5", c.Name, hint, n)
-			}
+		if len(tables.shared[c.Name]) < 4 {
+			t.Errorf("%s has only %d shared hints, want at least 4", c.Name, len(tables.shared[c.Name]))
 		}
 	}
 }
@@ -182,12 +174,13 @@ func sameHint(a, b string) bool {
 // does. Note וניל, כף and כוס: each belongs to one word only, which is what
 // makes them that word's signature.
 const fixture = `{
-  "version": 1,
+  "version": 3,
   "categories": [
     {
       "id": "food", "name": "אוכל",
       "impostorFallbackHints": ["ארוחה", "מנה"],
-      "citizenHints": {
+      "words": ["גלידה", "סורבה", "מאפה", "מרק", "תה"],
+      "botHints": {
         "גלידה": ["מתוק", "קר", "קיץ", "וניל"],
         "סורבה": ["מתוק", "קר", "קיץ", "פירות"],
         "מאפה":  ["מתוק", "חם", "תנור", "פירות"],

@@ -285,6 +285,7 @@ class PremiumBadge extends StatelessWidget {
 /// An open category's icon on its tile.
 IconData categoryIcon(String id) => switch (id) {
       'food' => Icons.restaurant_rounded,
+      'animals' => Icons.pets_rounded,
       'home' => Icons.chair_rounded,
       'school_students' => Icons.school_rounded,
       'work_office' => Icons.work_rounded,
@@ -293,15 +294,17 @@ IconData categoryIcon(String id) => switch (id) {
       'places' => Icons.public_rounded,
       'dating_relationships' => Icons.favorite_rounded,
       'nightlife' => Icons.nightlife_rounded,
-      'weddings_events' => Icons.celebration_rounded,
       'fashion_grooming' => Icons.checkroom_rounded,
       'gaming' => Icons.sports_esports_rounded,
       'music' => Icons.music_note_rounded,
       'nostalgia' => Icons.history_rounded,
-      'israeli_slang' => Icons.record_voice_over_rounded,
-      'idf_service' => Icons.military_tech_rounded,
+      'internet_culture' => Icons.alternate_email_rounded,
+      'superheroes_fantasy' => Icons.auto_awesome_rounded,
       'film_tv' => Icons.movie_rounded,
       'sports' => Icons.sports_soccer_rounded,
+      'nature_weather' => Icons.landscape_rounded,
+      'transportation' => Icons.directions_car_rounded,
+      'hobbies_free_time' => Icons.palette_rounded,
       _ => Icons.category_rounded,
     };
 

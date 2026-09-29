@@ -104,6 +104,7 @@ class FakeApi extends ApiClient {
     'GET /v1/categories': {
       'categories': [
         {'id': 'food', 'name': 'אוכל ושתייה'},
+        {'id': 'animals', 'name': 'בעלי חיים'},
         {'id': 'home', 'name': 'בבית'},
         {'id': 'school_students', 'name': 'בית ספר וסטודנטים'},
         {'id': 'work_office', 'name': 'עבודה ומשרד'},
@@ -112,15 +113,17 @@ class FakeApi extends ApiClient {
         {'id': 'places', 'name': 'מקומות בעולם'},
         {'id': 'dating_relationships', 'name': 'דייטים וזוגיות'},
         {'id': 'nightlife', 'name': 'לילה ובילויים'},
-        {'id': 'weddings_events', 'name': 'חתונות ואירועים'},
         {'id': 'fashion_grooming', 'name': 'אופנה וטיפוח'},
         {'id': 'gaming', 'name': 'גיימינג'},
         {'id': 'music', 'name': 'מוזיקה'},
         {'id': 'nostalgia', 'name': 'נוסטלגיה'},
-        {'id': 'israeli_slang', 'name': 'סלנג ישראלי'},
-        {'id': 'idf_service', 'name': 'צה"ל ושירות'},
+        {'id': 'internet_culture', 'name': 'תרבות אינטרנט'},
+        {'id': 'superheroes_fantasy', 'name': 'גיבורי על ופנטזיה'},
         {'id': 'film_tv', 'name': 'קולנוע וטלוויזיה'},
         {'id': 'sports', 'name': 'ספורט וכושר'},
+        {'id': 'nature_weather', 'name': 'טבע ומזג אוויר'},
+        {'id': 'transportation', 'name': 'כלי תחבורה'},
+        {'id': 'hobbies_free_time', 'name': 'תחביבים ופנאי'},
       ],
     },
     'GET /v1/config': {

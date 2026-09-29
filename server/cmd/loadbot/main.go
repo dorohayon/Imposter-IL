@@ -43,7 +43,7 @@ var (
 	reactRate = flag.Float64("react", 0.3, "chance a bot reacts to each new hint")
 	// Matchmaking only groups players whose categories intersect, so bots
 	// joining a human's search have to share at least one with them.
-	categories = flag.String("categories", "food,home,school_students,work_office,technology_digital,travel_vacation,places,dating_relationships,nightlife,weddings_events,fashion_grooming,gaming,music,nostalgia,israeli_slang,idf_service,film_tv,sports",
+	categories = flag.String("categories", "food,animals,home,school_students,work_office,technology_digital,travel_vacation,places,dating_relationships,nightlife,fashion_grooming,gaming,music,nostalgia,internet_culture,superheroes_fantasy,film_tv,sports,nature_weather,transportation,hobbies_free_time",
 		"comma-separated category ids to search with; the default matches anyone")
 	// Bots that answer in microseconds make a game with a human in it feel
 	// broken: hints appear before the turn is readable. Thinking time makes a

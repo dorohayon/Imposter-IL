@@ -24,13 +24,9 @@ type botHintFile struct {
 	Categories   []struct {
 		ID                    string              `json:"id"`
 		Name                  string              `json:"name"`
+		Words                 []string            `json:"words"`
 		ImpostorFallbackHints []string            `json:"impostorFallbackHints"`
-		CitizenHints          map[string][]string `json:"citizenHints,omitempty"` // v1 compatibility
-		Clusters              []struct {
-			Name  string   `json:"name"`
-			Words []string `json:"words"`
-			Hints []string `json:"hints"`
-		} `json:"clusters,omitempty"`
+		BotHints              map[string][]string `json:"botHints"`
 	} `json:"categories"`
 }
 
@@ -107,13 +103,8 @@ func (t hintTables) add(raw []byte) {
 				}
 			}
 		}
-		for word, hints := range c.CitizenHints {
+		for word, hints := range c.BotHints {
 			addWord(word, hints)
-		}
-		for _, cluster := range c.Clusters {
-			for _, word := range cluster.Words {
-				addWord(word, cluster.Hints)
-			}
 		}
 	}
 	for category, counts := range appearances {
@@ -142,9 +133,9 @@ func (t hintTables) known(category, hint string) bool {
 }
 
 // CitizenHints are the hints for a secret word in its public category, in file
-// order. Category is part of the key because a useful word may intentionally
-// appear in more than one category with different clue context. Empty for an
-// impostor's view, which carries no secret word.
+// order. Category stays part of the key so the data follows the same public
+// context the bot sees. Empty for an impostor's view, which carries no secret
+// word.
 func CitizenHints(category, word string) []string {
 	if category == "" || word == "" {
 		return nil
@@ -237,7 +228,7 @@ func UsableHint(hint, secret string) bool {
 	return !containsWord(hint, secret)
 }
 
-// containsWord mirrors the engine's secret-word rule, including two-word
+// containsWord mirrors the engine's secret-word rule, including multiword
 // secrets and the original handling of short single-word secrets.
 func containsWord(hint, secret string) bool {
 	h := game.NormalizeWord(hint)

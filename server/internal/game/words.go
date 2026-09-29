@@ -91,7 +91,7 @@ func isPrefixed(long, short string) bool {
 
 // hintContainsSecret applies only to citizens; the impostor does not know the
 // word. The full secret keeps the original matching rule, including short
-// stems such as פיל -> פילים. For a two-word secret, each visible component is
+// stems such as פיל -> פילים. For a multiword secret, each visible component is
 // blocked too; short components use exact/prefixed matching only, avoiding
 // false positives such as בן inside מבנה.
 func hintContainsSecret(hint, secret string) bool {
