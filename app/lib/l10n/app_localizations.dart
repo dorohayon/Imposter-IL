@@ -2977,6 +2977,12 @@ abstract class AppLocalizations {
   /// In he, this message translates to:
   /// **'ניחוש המילה'**
   String get guessTheWord;
+
+  /// No description provided for @whoIsImpostor.
+  ///
+  /// In he, this message translates to:
+  /// **'מי המתחזה?'**
+  String get whoIsImpostor;
 }
 
 class _AppLocalizationsDelegate

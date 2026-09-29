@@ -1084,5 +1084,6 @@
       }
     }
   },
-  "guessTheWord": "ניחוש המילה"
+  "guessTheWord": "ניחוש המילה",
+  "whoIsImpostor": "מי המתחזה?"
 }

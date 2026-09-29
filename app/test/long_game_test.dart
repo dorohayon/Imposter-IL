@@ -76,7 +76,7 @@ final _languages = <_Language>[
       'ready': 'Another round',
       'hints': "'s turn",
       'voteTransition': "Don't reveal who you voted for",
-      'voting': "Who's the Impostor?",
+      'voting': "Who's the imposter?",
       'tie': "It's a tie",
       'tieAgain': 'Another tie',
       'runoff': "It's a tie",

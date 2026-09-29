@@ -979,7 +979,7 @@ class _BallotState extends State<_Ballot> {
         widget.runoff ? game.runoffCandidates : game.activePlayers;
     final me = game.players[widget.voter];
     return GameScaffold(
-      title: widget.runoff ? context.l10n.tie : context.l10n.gameName,
+      title: widget.runoff ? context.l10n.tie : context.l10n.whoIsImpostor,
       showBack: false,
       accent: const Color(0xFF42203C),
       bottom: PrimaryButton(

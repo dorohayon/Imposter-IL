@@ -1697,4 +1697,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get guessTheWord => 'ניחוש המילה';
+
+  @override
+  String get whoIsImpostor => 'מי המתחזה?';
 }

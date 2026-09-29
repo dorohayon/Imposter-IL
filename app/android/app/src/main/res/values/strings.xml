@@ -2,5 +2,5 @@
 <resources>
     <!-- The name under the icon; values-iw holds the Hebrew one (Android
          keeps the old "iw" code for Hebrew resources). -->
-    <string name="app_name">Who\'s the Impostor?</string>
+    <string name="app_name">Imposter</string>
 </resources>
