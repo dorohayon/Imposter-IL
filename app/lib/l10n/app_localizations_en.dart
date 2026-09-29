@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Imposter - Can you find him?';
+  String get appTitle => 'Imposter: Word Bluff';
 
   @override
   String get settings => 'Settings';
@@ -18,7 +18,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profile => 'Profile';
 
   @override
-  String get gameName => 'Imposter - Can you find him?';
+  String get gameName => 'Who\'s the imposter?';
 
   @override
   String get homeTagline => 'Everyone knows the word. Except one.';
@@ -88,7 +88,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String termsIntro(Object legalVersion, Object legalDate) {
-    return 'Version $legalVersion · Effective $legalDate\n\nUse of \"Imposter - Can you find him?\" is subject to the following terms. The game is intended for ages 13 and up. If you are 13 or older but not old enough to agree to these terms where you live, use the game only with the permission and supervision of a parent or guardian.';
+    return 'Version $legalVersion · Effective $legalDate\n\nUse of \"Imposter: Word Bluff\" is subject to the following terms. The game is intended for ages 13 and up. If you are 13 or older but not old enough to agree to these terms where you live, use the game only with the permission and supervision of a parent or guardian.';
   }
 
   @override
@@ -96,7 +96,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terms1 =>
-      '\"Imposter - Can you find him?\" is an online social game operated by Imposter IL (imposteril36@gmail.com). No account is needed. You choose a nickname and an avatar and receive a temporary guest ID for playing.';
+      '\"Imposter: Word Bluff\" is an online social game operated by Imposter IL (imposteril36@gmail.com). No account is needed. You choose a nickname and an avatar and receive a temporary guest ID for playing.';
 
   @override
   String get terms2Title => '2. Conduct and content';
@@ -177,7 +177,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String privacyIntro(Object legalVersion, Object legalDate) {
-    return 'Version $legalVersion · Effective $legalDate\n\nThis policy describes the data \"Imposter - Can you find him?\" uses to run games, save preferences and protect players.';
+    return 'Version $legalVersion · Effective $legalDate\n\nThis policy describes the data \"Imposter: Word Bluff\" uses to run games, save preferences and protect players.';
   }
 
   @override
@@ -185,7 +185,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacy1 =>
-      'The game \"Imposter - Can you find him?\" is operated by Imposter IL, and this policy applies to the app and to the server that runs it. For privacy inquiries: imposteril36@gmail.com.';
+      'The game \"Imposter: Word Bluff\" is operated by Imposter IL, and this policy applies to the app and to the server that runs it. For privacy inquiries: imposteril36@gmail.com.';
 
   @override
   String get privacy2Title => '2. Data stored on the device';
@@ -466,7 +466,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String shareInvite(Object code, Object value) {
-    return 'Come play Imposter with me\nRoom code: $code\n$value';
+    return 'Come play \"Imposter: Word Bluff\" with me\nRoom code: $code\n$value';
   }
 
   @override
@@ -1059,7 +1059,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adPrivacy => 'Ad privacy preferences';
 
   @override
-  String get appVersion => 'Imposter - Can you find him? · Version 1.0';
+  String get appVersion => 'Imposter: Word Bluff · Version 1.0';
 
   @override
   String get contact => 'Contact';
