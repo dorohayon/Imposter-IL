@@ -182,12 +182,17 @@ void main() {
     await tester.tap(locked);
     await tester.pumpAndSettle();
     expect(find.textContaining('“Gaming” is locked'), findsOneWidget);
-    // The lock rides in the title's line, by its first word, however it wraps.
-    expect(
-        find.descendant(
-            of: find.textContaining('is locked'),
-            matching: find.byIcon(Icons.lock_rounded)),
-        findsOneWidget);
+    // The lock sits across the header from the close button: X on the left
+    // in English, the lock on the right, the title between them.
+    final header = find.ancestor(
+        of: find.textContaining('is locked'), matching: find.byType(Row));
+    final lock = tester.getCenter(find
+        .descendant(of: header.first, matching: find.byIcon(Icons.lock_rounded))
+        .first);
+    final close = tester.getCenter(find.byIcon(Icons.close_rounded).last);
+    final title = tester.getCenter(find.textContaining('is locked'));
+    expect(close.dx < title.dx && title.dx < lock.dx, isTrue,
+        reason: 'close ${close.dx}, title ${title.dx}, lock ${lock.dx}');
     expect(find.text('Watch an ad'), findsWidgets);
     expect(find.text('Only “Gaming”'), findsOneWidget);
     expect(tester.takeException(), isNull);
