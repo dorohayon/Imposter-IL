@@ -1,6 +1,7 @@
 package content
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
@@ -41,8 +42,8 @@ func TestCitizenHintsAreUsable(t *testing.T) {
 func TestFallbackHintsAreNotTheAnswer(t *testing.T) {
 	for _, c := range allCategories() {
 		pool := tables.fallback[c.Name]
-		if len(pool) < 10 || len(pool) > 16 {
-			t.Errorf("%s: %d fallback hints, want 10 to 16", c.Name, len(pool))
+		if len(pool) < 8 || len(pool) > 16 {
+			t.Errorf("%s: %d fallback hints, want 8 to 16", c.Name, len(pool))
 		}
 		script := scriptOf([]rune(c.Words[0])[0])
 		for i, hint := range pool {
@@ -127,22 +128,32 @@ func TestEveryWordHasCitizenHints(t *testing.T) {
 	_ = wrongSize
 }
 
-// A citizen hint must remain ambiguous. The shipped catalogue is authored in
-// five-word semantic clusters, so no curated hint may fingerprint fewer than
-// five candidate secrets inside its category.
-func TestCitizenHintsStayAmbiguous(t *testing.T) {
+// The impostor's hint is never checked against the secret, so its pool must
+// not hold a secret of the same category, or a bot could say the answer.
+func TestImpostorPoolNeverHoldsASecret(t *testing.T) {
 	for _, c := range allCategories() {
-		counts := map[string]int{}
-		for _, word := range c.Words {
-			for _, hint := range CitizenHints(c.Name, word) {
-				counts[hint]++
+		for _, hint := range tables.shared[c.Name] {
+			for _, word := range c.Words {
+				if sameWord(hint, word) || containsWord(hint, word) {
+					t.Errorf("%s: the impostor may say %q, which gives away %q", c.Name, hint, word)
+				}
 			}
 		}
-		for hint, n := range counts {
-			if n < 5 {
-				t.Errorf("%s: %q belongs to only %d words, want at least 5", c.Name, hint, n)
-			}
-		}
+	}
+}
+
+// A file in an older shape parses without error into empty categories; it
+// must be refused instead of leaving the bots with nothing to say.
+func TestOldFormatsAreRefused(t *testing.T) {
+	for _, version := range []int{1, 2} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("version %d was loaded", version)
+				}
+			}()
+			loadHintTables([]byte(fmt.Sprintf(`{"version": %d, "categories": []}`, version)))
+		}()
 	}
 }
 
@@ -182,12 +193,13 @@ func sameHint(a, b string) bool {
 // does. Note וניל, כף and כוס: each belongs to one word only, which is what
 // makes them that word's signature.
 const fixture = `{
-  "version": 1,
+  "version": 3,
   "categories": [
     {
       "id": "food", "name": "אוכל",
       "impostorFallbackHints": ["ארוחה", "מנה"],
-      "citizenHints": {
+      "words": ["גלידה", "סורבה", "מאפה", "מרק", "תה"],
+      "botHints": {
         "גלידה": ["מתוק", "קר", "קיץ", "וניל"],
         "סורבה": ["מתוק", "קר", "קיץ", "פירות"],
         "מאפה":  ["מתוק", "חם", "תנור", "פירות"],

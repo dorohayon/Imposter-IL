@@ -286,8 +286,11 @@
 - [ ] תנאי השימוש ומדיניות הפרטיות (שתי השפות) אינם מזכירים את הפתיחה בצפייה
       במודעה ואת שמירת השפה שנבחרה במכשיר — לעדכן ולהעלות את `legalVersion`.
 - [ ] בדיקה על מכשיר באנגלית: משחק ברשת עם בוטים, חדר פרטי, מכשיר אחד.
-- [ ] מוצרים בחנויות לקטגוריות האנגליות החדשות: `category_internet_slang`,
-      `category_superheroes_fantasy`.
+- [ ] להגדיר בחנויות את מוצרי הקטגוריות החדשות: `category_animals`,
+      `category_internet_culture`, `category_superheroes_fantasy`,
+      `category_nature_weather`, `category_transportation`,
+      `category_hobbies_free_time`, ולטפל במוצרים של המזהים שהוסרו.
+      `category_israeli_slang` ו־`category_idf_service` חזרו (בעברית בלבד).
 - [ ] דפי חנות, אתר (`site/`), תנאי שימוש ומדיניות פרטיות באנגלית — לבדיקת
       בעל המוצר. שם האפליקציה בחנויות באנגלית: **Imposter: Word Bluff**
       (`docs/decisions.md`, "שפות").

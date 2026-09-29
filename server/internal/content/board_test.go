@@ -187,11 +187,11 @@ func TestSpellingDoesNotDecideWhetherAHintCanBeJudged(t *testing.T) {
 // The same hint links to different hints in different categories; a link from
 // one category must not count in another, or bots read the board wrongly.
 func TestHintLinksStayInTheirCategory(t *testing.T) {
-	f := loadHintTables([]byte(`{"version": 2, "categories": [
-		{"id": "a", "name": "א", "impostorFallbackHints": [], "clusters": [
-			{"name": "x", "words": ["ירח", "כוכב"], "hints": ["לילה", "שמיים"]}]},
-		{"id": "b", "name": "ב", "impostorFallbackHints": [], "clusters": [
-			{"name": "y", "words": ["מועדון", "פאב"], "hints": ["לילה", "מסיבה"]}]}]}`))
+	f := loadHintTables([]byte(`{"version": 3, "categories": [
+		{"id": "a", "name": "א", "words": ["ירח", "כוכב"], "impostorFallbackHints": [], "botHints": {
+			"ירח": ["לילה", "שמיים"], "כוכב": ["לילה", "שמיים"]}},
+		{"id": "b", "name": "ב", "words": ["מועדון", "פאב"], "impostorFallbackHints": [], "botHints": {
+			"מועדון": ["לילה", "מסיבה"], "פאב": ["לילה", "מסיבה"]}}]}`))
 	if !f.linked("א", "לילה", "שמיים") || !f.linked("ב", "לילה", "מסיבה") {
 		t.Fatal("a link inside its own category is missing")
 	}

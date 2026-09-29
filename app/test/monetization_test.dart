@@ -150,16 +150,17 @@ void main() {
 
     test('a config cached before the catalogue changed is not trusted',
         () async {
-      // Saved by an older build: 'animals' no longer exists, film_tv is free.
+      // Saved by an older build: 'weddings_events' no longer exists, while
+      // film_tv is free in the current catalogue.
       SharedPreferences.setMockInitialValues({
         'monetization.config': jsonEncode(const MonetizationConfig(
-          freeCategoryIds: ['food', 'animals', 'places'],
+          freeCategoryIds: ['food', 'weddings_events', 'places'],
         ).toJson()),
       });
       final offline = FakeApi()..responses.remove('GET /v1/config');
       final m = await started(api: offline);
       expect(m.isUnlocked('film_tv'), isTrue);
-      expect(m.config.freeCategoryIds, isNot(contains('animals')));
+      expect(m.config.freeCategoryIds, isNot(contains('weddings_events')));
     });
 
     test('offline, the last answer is kept and survives a restart', () async {

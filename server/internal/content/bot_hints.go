@@ -24,13 +24,9 @@ type botHintFile struct {
 	Categories   []struct {
 		ID                    string              `json:"id"`
 		Name                  string              `json:"name"`
+		Words                 []string            `json:"words"`
 		ImpostorFallbackHints []string            `json:"impostorFallbackHints"`
-		CitizenHints          map[string][]string `json:"citizenHints,omitempty"` // v1 compatibility
-		Clusters              []struct {
-			Name  string   `json:"name"`
-			Words []string `json:"words"`
-			Hints []string `json:"hints"`
-		} `json:"clusters,omitempty"`
+		BotHints              map[string][]string `json:"botHints"`
 	} `json:"categories"`
 }
 
@@ -80,11 +76,18 @@ func (t hintTables) add(raw []byte) {
 	if err := json.Unmarshal(raw, &file); err != nil {
 		panic(fmt.Sprintf("language file: %v", err))
 	}
+	// Older shapes (clusters, citizenHints) parse without error into empty
+	// categories, so a stray one would silently leave the bots mute.
+	if file.Version != FormatVersion {
+		panic(fmt.Sprintf("language file: version %d, want %d", file.Version, FormatVersion))
+	}
 	for word, aliases := range file.GuessAliases {
 		t.aliases[word] = slices.Clone(aliases)
 	}
 	appearances := map[string]map[string]int{} // category -> hint -> words using it
+	words := map[string][]string{}             // category -> its secret words
 	for _, c := range file.Categories {
+		words[c.Name] = c.Words
 		t.fallback[c.Name] = c.ImpostorFallbackHints
 		appearances[c.Name] = map[string]int{}
 		t.citizen[c.Name] = map[string][]string{}
@@ -107,13 +110,8 @@ func (t hintTables) add(raw []byte) {
 				}
 			}
 		}
-		for word, hints := range c.CitizenHints {
+		for word, hints := range c.BotHints {
 			addWord(word, hints)
-		}
-		for _, cluster := range c.Clusters {
-			for _, word := range cluster.Words {
-				addWord(word, cluster.Hints)
-			}
 		}
 	}
 	for category, counts := range appearances {
@@ -122,7 +120,14 @@ func (t hintTables) add(raw []byte) {
 			// Letting the impostor reach for it would make it better than any
 			// human in the same seat, so the impostor's vocabulary is only what
 			// the category shares.
-			if n >= 2 {
+			//
+			// Nor a hint that is itself a secret of the category: the impostor's
+			// hint is never checked against the word, so it could say the
+			// answer out loud (משרד, when the secret is משרד).
+			givesAway := slices.ContainsFunc(words[category], func(w string) bool {
+				return sameWord(hint, w) || containsWord(hint, w)
+			})
+			if n >= 2 && !givesAway {
 				t.shared[category] = append(t.shared[category], hint)
 			}
 		}
@@ -142,9 +147,9 @@ func (t hintTables) known(category, hint string) bool {
 }
 
 // CitizenHints are the hints for a secret word in its public category, in file
-// order. Category is part of the key because a useful word may intentionally
-// appear in more than one category with different clue context. Empty for an
-// impostor's view, which carries no secret word.
+// order. Category stays part of the key so the data follows the same public
+// context the bot sees. Empty for an impostor's view, which carries no secret
+// word.
 func CitizenHints(category, word string) []string {
 	if category == "" || word == "" {
 		return nil
@@ -237,56 +242,7 @@ func UsableHint(hint, secret string) bool {
 	return !containsWord(hint, secret)
 }
 
-// containsWord mirrors the engine's secret-word rule, including two-word
-// secrets and the original handling of short single-word secrets.
-func containsWord(hint, secret string) bool {
-	h := game.NormalizeWord(hint)
-	matchesWhole := func(candidate string) bool {
-		s := game.NormalizeWord(candidate)
-		switch {
-		case s == "":
-			return false
-		case len([]rune(s)) >= 4:
-			return strings.Contains(h, s)
-		}
-		if h == s || game.IsPrefixedForm(h, s) {
-			return true
-		}
-		// Preserve the engine's historical "short stem at the start after
-		// prefixes" behavior, e.g. פיל -> פילים and דג -> הדגים.
-		hr := []rune(h)
-		const prefixes = "והבכלמש"
-		for i := 0; i <= 3 && i < len(hr); i++ {
-			if i > 0 && !strings.ContainsRune(prefixes, hr[i-1]) {
-				break
-			}
-			if strings.HasPrefix(string(hr[i:]), s) {
-				return true
-			}
-		}
-		return false
-	}
-	if matchesWhole(secret) {
-		return true
-	}
-	parts := strings.Fields(secret)
-	if len(parts) <= 1 {
-		return false
-	}
-	for _, part := range parts {
-		p := game.NormalizeWord(part)
-		if p == "" {
-			continue
-		}
-		if len([]rune(p)) >= 4 {
-			if strings.Contains(h, p) {
-				return true
-			}
-		} else if h == p || game.IsPrefixedForm(h, p) {
-			return true
-		}
-	}
-	return false
-}
+// containsWord is the engine's secret-word rule, the one a real turn applies.
+func containsWord(hint, secret string) bool { return game.HintContainsSecret(hint, secret) }
 
 func sameWord(a, b string) bool { return game.NormalizeWord(a) == game.NormalizeWord(b) }

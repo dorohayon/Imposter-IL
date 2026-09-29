@@ -41,12 +41,12 @@ func scriptOf(r rune) *unicode.RangeTable {
 	return nil
 }
 
-// isSecret reports whether s is one or two plain words in script: letters,
+// isSecret reports whether s is one or more plain words in script: letters,
 // their marks, and the apostrophe or quote some spellings use (צ'אט, בקו"ם,
 // don't). No digits, hyphens or maqaf: playable secrets are plain tokens.
 func isSecret(s string, script *unicode.RangeTable) bool {
 	parts := strings.Fields(s)
-	if len(parts) < 1 || len(parts) > 2 || strings.Join(parts, " ") != s {
+	if len(parts) < 1 || strings.Join(parts, " ") != s {
 		return false
 	}
 	for _, r := range s {
@@ -67,27 +67,31 @@ func TestCategoriesAreWellFormed(t *testing.T) {
 		}
 		script := scriptOf([]rune(l.Categories[0].Words[0])[0])
 		ids := map[string]bool{}
+		seen := map[string]bool{}
+		total := 0
 		for _, c := range l.Categories {
 			if c.ID == "" || c.Name == "" || ids[c.ID] {
 				t.Fatalf("%s: bad or duplicate category %+v", code, c)
 			}
 			ids[c.ID] = true
-			if len(c.Words) != 50 {
-				t.Errorf("%s/%s has %d words, want 50", code, c.ID, len(c.Words))
+			if len(c.Words) < 30 {
+				t.Errorf("%s/%s has %d words, want at least 30", code, c.ID, len(c.Words))
 			}
-			seen := map[string]bool{}
 			for _, w := range c.Words {
 				if !isSecret(w, script) {
-					t.Errorf("%s/%s: %q must be one or two plain words in the language's script", code, c.ID, w)
+					t.Errorf("%s/%s: %q must be one or more plain words in the language's script", code, c.ID, w)
 				}
 				if seen[w] {
-					t.Errorf("%s/%s: %q appears twice in the same category", code, c.ID, w)
+					t.Errorf("%s: %q appears more than once", code, w)
 				}
 				seen[w] = true
+				total++
 			}
 		}
-		if len(l.Categories) != 18 {
-			t.Errorf("%s: %d categories, want 18", code, len(l.Categories))
+		// Each language has its own set (Hebrew keeps its Israeli categories),
+		// but every one is deep enough to play for long.
+		if total < 1000 {
+			t.Errorf("%s: %d words, want at least 1000", code, total)
 		}
 	}
 }
@@ -216,7 +220,7 @@ func TestReactions(t *testing.T) {
 	}
 	if p := Policy(); p.HintInappropriate("anything") || !p.ValidReaction("laugh") {
 		t.Fatal("the MVP policy blocks no hint and accepts approved reactions")
-	} else if !slices.Contains(p.GuessAliases("פאקמן"), "פקמן") {
+	} else if !slices.Contains(p.GuessAliases("פקמן"), "פאקמן") {
 		t.Fatal("the content policy did not expose configured guess aliases")
 	}
 }

@@ -262,7 +262,7 @@ void main() {
 
     // "הכול" is selected on its own — the six categories are not lit up too.
     expect(isSelectedTile(tester, 'הכול'), isTrue);
-    for (final name in ['אוכל ושתייה', 'בבית', 'בית ספר וסטודנטים']) {
+    for (final name in ['אוכל ושתייה', 'בבית', 'בית ספר ולימודים']) {
       expect(isSelectedTile(tester, name), isFalse);
     }
     expect(isEnabled(tester, 'חפש משחק'), isTrue);
@@ -285,7 +285,7 @@ void main() {
 
   test('a tile name breaks before its last word', () {
     expect(categoryTileName('בבית'), 'בבית');
-    expect(categoryTileName('עבודה ומשרד'), 'עבודה\nומשרד');
-    expect(categoryTileName('בית ספר וסטודנטים'), 'בית ספר\nוסטודנטים');
+    expect(categoryTileName('מקצועות ועבודה'), 'מקצועות\nועבודה');
+    expect(categoryTileName('בית ספר ולימודים'), 'בית ספר\nולימודים');
   });
 }

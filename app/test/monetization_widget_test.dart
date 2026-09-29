@@ -103,10 +103,10 @@ void main() {
           findsOneWidget);
       expect(find.text('כל הקטגוריות הפתוחות'), findsOneWidget);
       // Every category stays visible: the locked ones are there, marked.
-      for (final name in ['ספורט וכושר', 'עבודה ומשרד', 'גיימינג']) {
+      for (final name in ['ספורט וכושר', 'מקצועות ועבודה', 'גיימינג']) {
         expect(find.text(categoryTileName(name)), findsOneWidget);
       }
-      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(15));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(18));
 
       await tapLive(tester, 'חפש משחק');
       expect(_searched(api), ['food', 'places', 'film_tv']);
@@ -150,7 +150,7 @@ void main() {
       await tapText(tester, 'בוחרים ב״ספורט וכושר״');
 
       expect(find.textContaining('״ספורט וכושר״ נעולה'), findsNothing);
-      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(14));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(17));
       await tapLive(tester, 'חפש משחק');
       expect(_searched(api), ['food', 'sports']);
     });
@@ -255,7 +255,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.close_rounded));
       await tester.pumpAndSettle();
       expect(find.textContaining('״ספורט וכושר״ נעולה'), findsNothing);
-      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(15));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(18));
     });
 
     testWidgets('while the store works, the popup stays open', (tester) async {
@@ -309,6 +309,45 @@ void main() {
       expect(find.text('9.90 ₪'), findsOneWidget);
     });
 
+    // Reported from the phone: the prices flashed for a moment before the
+    // error replaced them.
+    testWidgets('a store that fails quickly opens the popup on its error',
+        (tester) async {
+      final (_, store, _) = await _freePlayer(tester);
+      store
+        ..productsFail = true
+        ..productsDelay = const Duration(milliseconds: 100);
+      await _openPicker(tester);
+      await tester.ensureVisible(_locked('ספורט וכושר'));
+      await tester.pumpAndSettle();
+      await tester.tap(_locked('ספורט וכושר'));
+      final error = find.textContaining('לא הצלחנו לטעון את המחירים מהחנות');
+      for (var i = 0; i < 60; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        if (find.byType(BottomSheet).evaluate().isNotEmpty) {
+          expect(error, findsOneWidget, reason: 'frame $i');
+        }
+      }
+      expect(find.byType(BottomSheet), findsOneWidget);
+    });
+
+    testWidgets('a slow store opens the popup with its prices loading',
+        (tester) async {
+      final (_, store, _) = await _freePlayer(tester);
+      store.productsDelay = const Duration(seconds: 2);
+      await _openPicker(tester);
+      await tester.ensureVisible(_locked('ספורט וכושר'));
+      await tester.pumpAndSettle();
+      await tester.tap(_locked('ספורט וכושר'));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(find.text('9.90 ₪'), findsNothing);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(find.text('9.90 ₪'), findsOneWidget);
+    });
+
     testWidgets('a store that sells none of them says so, not "offline"',
         (tester) async {
       final (_, store, _) = await _freePlayer(tester);
@@ -355,7 +394,7 @@ void main() {
       expect(find.text('הרכישות שוחזרו'), findsOneWidget);
       expect(find.text('״ספורט וכושר״ פתוחה שוב במכשיר הזה.'), findsOneWidget);
       await tapText(tester, 'סגירה');
-      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(14));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(17));
       expect(find.text('✓ נרכשה'), findsOneWidget);
     });
 
@@ -383,7 +422,7 @@ void main() {
       await tapText(tester, 'משחק במכשיר אחד');
       await tapText(tester, 'המשך להגדרות');
       expect(find.text('4 פתוחות'), findsOneWidget);
-      for (final name in ['ספורט וכושר', 'עבודה ומשרד']) {
+      for (final name in ['ספורט וכושר', 'מקצועות ועבודה']) {
         expect(_locked(name), findsOneWidget);
       }
       await tapText(tester, 'מתחילים');

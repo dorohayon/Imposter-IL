@@ -202,7 +202,7 @@ func TestListCategories(t *testing.T) {
 	token, _ := c.session("דור")
 	status, body = c.do("GET", "/v1/categories", token, nil)
 	categories, _ := body["categories"].([]any)
-	if status != 200 || len(categories) != 18 {
+	if status != 200 || len(categories) != 23 {
 		t.Fatalf("got %d %v", status, body)
 	}
 	if first := categories[0].(map[string]any); first["id"] != "food" || first["name"] != "אוכל ושתייה" {
@@ -403,7 +403,7 @@ func TestContentByLanguage(t *testing.T) {
 	token, _ := c.session("דור")
 	status, body := c.do("GET", "/v1/categories?language=en", token, nil)
 	categories, _ := body["categories"].([]any)
-	if status != 200 || len(categories) != 18 || categories[0].(map[string]any)["name"] != "Food & Drink" {
+	if status != 200 || len(categories) != 21 || categories[0].(map[string]any)["name"] != "Food & Drink" {
 		t.Fatalf("English categories: %d %v", status, body)
 	}
 	status, body = c.do("GET", "/v1/reactions?language=en", token, nil)
@@ -421,7 +421,7 @@ func TestRoomsKeepTheirLanguage(t *testing.T) {
 	c := newClient(t)
 	host, _ := c.session("Host")
 	status, body := c.do("POST", "/v1/rooms", host, map[string]any{
-		"maxPlayers": 4, "hintSeconds": 60, "categoryIds": []string{"internet_slang"}, "language": "en",
+		"maxPlayers": 4, "hintSeconds": 60, "categoryIds": []string{"internet_culture"}, "language": "en",
 	})
 	if status != http.StatusCreated {
 		t.Fatalf("create English room: %d %v", status, body)
@@ -441,10 +441,10 @@ func TestRoomsKeepTheirLanguage(t *testing.T) {
 		t.Fatalf("join in English: %d %v", status, body)
 	}
 
-	// A Hebrew room cannot take an English-only category.
+	// Unknown categories remain invalid in every language.
 	other, _ := c.session("אחר")
 	status, body = c.do("POST", "/v1/rooms", other, map[string]any{
-		"maxPlayers": 4, "hintSeconds": 60, "categoryIds": []string{"internet_slang"},
+		"maxPlayers": 4, "hintSeconds": 60, "categoryIds": []string{"cars"},
 	})
 	c.wantError(422, "invalid_room_settings", status, body)
 }
@@ -467,7 +467,7 @@ func TestMatchmakingSplitsByLanguage(t *testing.T) {
 	if room(he) == room(en1) || room(en1) != room(en2) {
 		t.Fatalf("rooms: he %s, en %s and %s", room(he), room(en1), room(en2))
 	}
-	if code := c.srv.joinSearch(c.srv.sessions[he], nil, []string{"internet_slang"}, "he", now); code != "invalid_categories" {
-		t.Fatalf("an English-only category in Hebrew: %q", code)
+	if code := c.srv.joinSearch(c.srv.sessions[he], nil, []string{"cars"}, "he", now); code != "invalid_categories" {
+		t.Fatalf("an unknown category was accepted in Hebrew: %q", code)
 	}
 }

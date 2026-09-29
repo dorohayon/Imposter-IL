@@ -5,66 +5,60 @@ Each language's file is `server/internal/content/languages/<code>.json`
 server with `go:embed` and validated by `go test ./internal/content/`, so a
 dataset that breaks a rule fails CI rather than a game.
 
-A skeleton listing every current word, with the category fallback pools seeded
-and one worked example (`פיצה`), is already in the file. Fill in the rest.
-
 ## Shape
 
 ```json
 {
-  "version": 2,
+  "version": 3,
   "guessAliases": {
-    "פאקמן": ["פקמן", "Pac-Man"],
+    "פקמן": ["פאקמן", "Pac-Man"],
     "וויי פיי": ["וייפיי", "ווייפיי", "וויפי", "Wi-Fi"]
   },
   "categories": [
     {
       "id": "food",
       "name": "אוכל ושתייה",
+      "words": ["פיצה", "המבורגר", "טאקו"],
       "impostorFallbackHints": ["טעים", "מנה", "מסעדה"],
-      "clusters": [
-        {
-          "name": "אוכל רחוב",
-          "words": ["פלאפל", "שווארמה", "סביח", "טאקו", "בוריטו"],
-          "hints": ["דוכן", "מהיר", "ביד", "רוטב", "רחוב", "עטוף", "חריף", "צהריים"]
-        }
-      ]
+      "botHints": {
+        "פיצה": ["איטליה", "גבינה", "תנור", "משולש", "בצק", "רוטב", "חם", "משלוח"]
+      }
     }
   ]
 }
 ```
 
-- The categories' words **are** the clusters' words, in order: there is no
-  second list to match. `name` is the public category name and must differ from
-  every other language's.
+- `words` is the flat playable catalog. `botHints` is keyed by those exact
+  words; there is no cluster structure. `name` is the public category name and
+  must differ from every other language's.
 - The same file carries `language`, `name` (the language in itself),
   `reactions` (the four structured messages) and `bots` (name prefix, names,
   last-resort hints).
-- Each category has 10 internal semantic clusters of 5 words. Clusters are an
-  authoring/AI-bot detail only; players and impostors see only the category.
-- A playable secret is one word or a natural two-word phrase in the language's own script (no digits, hyphens or other scripts).
-- In Hebrew: a playable secret is one Hebrew word or a natural two-word Hebrew phrase. Do not glue phrases together just to satisfy storage rules. Citizen and impostor fallback hints still have to be exactly one Hebrew word.
+- A playable secret is one or more natural words in the language's own script
+  (no digits, hyphens or other scripts).
+- In Hebrew, do not glue phrases together just to satisfy storage rules.
+  Citizen and impostor fallback hints still have to be exactly one Hebrew word.
 - `guessAliases` is hidden guess-only metadata for secrets with genuinely different common spellings/transliterations. Spacing/punctuation variants do not need aliases because normalisation already ignores them.
-- Each cluster owns 8 one-word citizen hints shared by all 5 words. That
-  overlap is deliberate: a clue should narrow the space without becoming a
+- Each secret owns 8 one-word bot hints. Hints should overlap naturally with
+  other secrets in the category so a clue narrows the space without becoming a
   fingerprint for one secret.
-- A secret may appear in more than one category. Citizen hints are therefore
-  keyed at runtime by **category + secret word**, never by the word alone.
+- Every language has 1,000 unique secrets; a secret appears in exactly one
+  category. Bot hints are still keyed at runtime by **category + secret word**
+  so their lookup follows the category context exposed to the bot.
 - `impostorFallbackHints` is public category-level vocabulary only. There is
   deliberately no secret-word-specific impostor pool.
-- Version 1 `citizenHints` remains readable for fixtures/backward-compatible
-  tooling, but the shipped dataset is version 2.
+- The shipped dataset is version 3 (`content.FormatVersion`). A file with any other version stops the server at start-up.
 - UTF-8, no BOM, LF line endings, two-space indent.
 
 ## How many
 
 | | count |
 |---|---|
-| words per category | 50 |
-| semantic clusters per category | 10 |
-| words per cluster | 5 |
-| citizen hints per cluster/word | 8 |
-| `impostorFallbackHints` per category | 10–16 |
+| words per language | 1,000 |
+| categories per language | 21 |
+| words per category | varies |
+| bot hints per word | 8 |
+| `impostorFallbackHints` per category | 8–16 |
 
 ## Rules a hint must satisfy
 
@@ -80,7 +74,7 @@ that stays silent on its turn.
    hyphenated word counts as one is still open in `docs/open-decisions.md`.
 2. **At most 25 characters.**
 3. **Not on the blocklist** (`server/internal/content/blocked_words.txt`).
-4. **Must not reveal the secret.** The check is on the normalised form. For a two-word secret, the full phrase and each visible component are blocked; e.g. `בסיס` cannot be a citizen hint for `בסיס פתוח`.
+4. **Must not reveal the secret.** The check is on the normalised form. For a multiword secret, the full phrase and each visible component are blocked; e.g. `בסיס` cannot be a citizen hint for `בסיס פתוח`. A component of 4+ letters is blocked at the start of a hint (after prefix letters), a 3-letter one only alone or with prefix letters, a shorter one alone or after ה or ב — so `הים` and `בים` are blocked for `בגד ים`, while `מעל` passes for `רכיבה על אופניים` and `לפי` for `ג'י פי אס`. The rule is `game.HintContainsSecret`, shared with the server.
 5. **No two hints in the same pool may be duplicates.** Two hints are the same
    if they are equal after normalisation, or one is the other with 1–3 Hebrew
    prefix letters (`ו ה ב כ ל מ ש`) in front leaving at least two letters. So
@@ -91,7 +85,7 @@ that stays silent on its turn.
    the answer out loud. `תיק` and `שולחן` did exactly this before this file
    existed.
 
-## What makes a good citizen hint
+## What makes a good bot hint
 
 The engine cannot check these. They are the difference between a bot that
 passes validation and one that reads like a person.
@@ -105,7 +99,7 @@ passes validation and one that reads like a person.
 - **Vary the angle.** Six hints about how a thing tastes is one hint written
   six times. Spread them across appearance, use, place, time, who does it, what
   it is made of, the feeling it carries, the cultural association.
-- **Prefer a hint that naturally belongs to several nearby words in the category; the shipped catalogue targets five.** A
+- **Prefer a hint that naturally belongs to several nearby words in the category.** A
   hint that fits exactly one word hands the impostor the answer once the
   derivation step starts reading the board.
 
@@ -185,7 +179,11 @@ share**. A hint used by exactly one word is that word's signature, and letting
 the impostor reach for it would make a bot better at the game than a person in
 the same seat.
 
-So a pool of six hints that are each unique to their word validates perfectly
+So a pool of hints that are each unique to their word validates perfectly
 and contributes nothing to the impostor — the bot falls back to the broad pool
 and the round reads like the one before it. Hints that overlap across two or
 three words in the category are what give an impostor something to read.
+
+A shared hint that is itself a word of the category, or reveals one, never
+enters the pool: with `Mars` and `Venus` both secrets in a category, an
+impostor bot saying `Mars` would name another secret.

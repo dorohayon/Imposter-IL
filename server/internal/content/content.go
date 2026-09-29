@@ -18,6 +18,10 @@ type Category struct {
 	Words []string
 }
 
+// FormatVersion is the shape of languages/<code>.json: flat word lists with
+// eight bot hints per word (docs/bot-hints.md). Other versions are refused.
+const FormatVersion = 3
+
 // DefaultLanguage is what a request without a language plays in: every app
 // released before languages existed speaks Hebrew.
 const DefaultLanguage = "he"
@@ -58,14 +62,13 @@ func loadLanguages() map[string]*Language {
 			panic(err)
 		}
 		var file struct {
+			Version    int    `json:"version"`
 			Language   string `json:"language"`
 			Name       string `json:"name"`
 			Categories []struct {
-				ID       string `json:"id"`
-				Name     string `json:"name"`
-				Clusters []struct {
-					Words []string `json:"words"`
-				} `json:"clusters"`
+				ID    string   `json:"id"`
+				Name  string   `json:"name"`
+				Words []string `json:"words"`
 			} `json:"categories"`
 			Reactions []Reaction `json:"reactions"`
 			Bots      Bots       `json:"bots"`
@@ -73,15 +76,13 @@ func loadLanguages() map[string]*Language {
 		if err := json.Unmarshal(raw, &file); err != nil {
 			panic(fmt.Sprintf("%s: %v", e.Name(), err))
 		}
-		// The words are the clusters' words, in order: the bot hints are
-		// authored with them, so they cannot drift apart.
+		if file.Version != FormatVersion {
+			panic(fmt.Sprintf("%s: version %d, want %d (docs/bot-hints.md)", e.Name(), file.Version, FormatVersion))
+		}
 		lang := &Language{Code: file.Language, Name: file.Name, Bots: file.Bots,
 			Reactions: append(slices.Clone(emojiReactions), file.Reactions...)}
 		for _, c := range file.Categories {
-			category := Category{ID: c.ID, Name: c.Name}
-			for _, cluster := range c.Clusters {
-				category.Words = append(category.Words, cluster.Words...)
-			}
+			category := Category{ID: c.ID, Name: c.Name, Words: slices.Clone(c.Words)}
 			lang.Categories = append(lang.Categories, category)
 		}
 		out[lang.Code] = lang
