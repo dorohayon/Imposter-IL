@@ -302,6 +302,7 @@
   "adPrivacy": "Ad privacy preferences",
   "appVersion": "Imposter: Word Bluff · Version 1.0",
   "contact": "Contact",
+  "emailCopied": "Email address copied",
   "reportedPlayers": "Players you reported",
   "hiddenPlayersCount": "Hidden players: {mutedLength}",
   "clear": "Clear",

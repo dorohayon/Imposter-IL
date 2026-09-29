@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/l10n.dart';
@@ -191,12 +192,24 @@ class SettingsScreen extends StatelessWidget {
             context.l10n.appVersion,
             style: TextStyle(color: AppColors.muted, fontSize: 12),
           ),
-          if (supportEmail.isNotEmpty)
+          if (supportEmail.isNotEmpty) ...[
+            const SizedBox(height: 10),
             ListTile(
-              leading: Icon(Icons.mail_outline_rounded),
+              onTap: () => _emailSupport(context),
+              // The same end as the rows above (see _LinkRow).
+              contentPadding:
+                  const EdgeInsetsDirectional.only(start: 16, end: 12),
+              tileColor: AppColors.cream.withValues(alpha: .06),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              leading: const Icon(Icons.mail_outline_rounded,
+                  color: AppColors.yellow),
               title: Text(context.l10n.contact),
               subtitle: Text(supportEmail),
+              trailing: const Icon(Icons.chevron_right_rounded,
+                  color: AppColors.muted),
             ),
+          ],
           if (session.muted.isNotEmpty)
             ListTile(
               leading: const Icon(Icons.flag_outlined),
@@ -227,6 +240,22 @@ Future<void> openSubscriptions(String productId) => openExternal(
               'package': 'com.imposteril.app',
             }),
     );
+
+/// Opens the mail app on a message to support. A phone without one gets the
+/// address copied instead, so the tap is never a dead end.
+Future<void> _emailSupport(BuildContext context) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final copied = context.l10n.emailCopied;
+  var opened = false;
+  try {
+    opened = await openExternal(Uri(scheme: 'mailto', path: supportEmail));
+  } on Object {
+    opened = false;
+  }
+  if (opened) return;
+  await Clipboard.setData(const ClipboardData(text: supportEmail));
+  messenger.showSnackBar(SnackBar(content: Text(copied)));
+}
 
 /// Restore outside the purchase popup: a player on a new phone whose
 /// Premium hides every lock has no locked category to tap.
@@ -385,7 +414,9 @@ class _LinkRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          // 12 at the end, not 16: a chevron's stroke sits further inside its
+          // box than a switch's track, and this lines the two up.
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 12, 16),
           child: Row(
             children: [
               Expanded(
@@ -397,15 +428,21 @@ class _LinkRow extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.muted),
+              // The value by the chevron, at the row's end. A Flexible here
+              // took half the row, which put the value mid-row and wrapped
+              // "Restore purchases" into two lines.
+              if (value.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 170),
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: AppColors.muted),
+                  ),
                 ),
-              ),
+              ],
               const SizedBox(width: 6),
               const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
             ],

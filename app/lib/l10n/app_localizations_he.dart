@@ -1041,6 +1041,9 @@ class AppLocalizationsHe extends AppLocalizations {
   String get contact => 'יצירת קשר';
 
   @override
+  String get emailCopied => 'כתובת המייל הועתקה';
+
+  @override
   String get reportedPlayers => 'שחקנים שדיווחתם עליהם';
 
   @override

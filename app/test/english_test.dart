@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/local/words.g.dart';
@@ -48,6 +49,70 @@ void main() {
     expect(tester.getCenter(find.byTooltip('Profile')).dx,
         lessThan(tester.getCenter(find.byTooltip('Settings')).dx));
     expect(tester.takeException(), isNull, reason: 'fits 320 px');
+  });
+
+  // Reported from the phone: values and chevrons stood mid-row, and
+  // "Restore purchases" wrapped, because the value took half of every row.
+  testWidgets('Settings rows keep the value and chevron at the end',
+      (tester) async {
+    await loadRealFonts();
+    await startApp(tester, FakeApi(), saved: _signedIn, store: FakeStore());
+    await tapTooltip(tester, 'Settings');
+    final chevrons = find.byIcon(Icons.chevron_right_rounded);
+    await tester.ensureVisible(chevrons.last);
+    await tester.pumpAndSettle();
+    double end(Element e) {
+      final box = e.renderObject! as RenderBox;
+      return box.localToGlobal(box.size.topRight(Offset.zero)).dx;
+    }
+
+    final ends = {for (final e in chevrons.evaluate()) end(e).round()};
+    expect(ends, hasLength(1), reason: 'every chevron ends at the same edge');
+    // In line with the switches: a chevron's stroke sits ~4 px further
+    // inside its box than a switch's track, so its box ends 4 px further out.
+    final switches = {
+      for (final e in find.byType(Switch).evaluate()) end(e).round(),
+    };
+    expect(switches, {ends.single - 4});
+    for (final value in ['English', 'Version']) {
+      expect(tester.getTopRight(find.textContaining(value).first).dx,
+          greaterThan(ends.single - 60),
+          reason: '$value sits by its chevron');
+    }
+    final restore = tester.getSize(find.text('Restore purchases'));
+    expect(restore.height, lessThan(30), reason: 'one line');
+  });
+
+  testWidgets('Contact opens an email, or copies the address', (tester) async {
+    final opened = <Uri>[];
+    var mailApp = true;
+    final original = openExternal;
+    openExternal = (uri) async {
+      opened.add(uri);
+      return mailApp;
+    };
+    addTearDown(() => openExternal = original);
+    String? clipboard;
+    tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        clipboard = (call.arguments as Map)['text'] as String;
+      }
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null));
+
+    await startApp(tester, FakeApi(), saved: _signedIn);
+    await tapTooltip(tester, 'Settings');
+    await tapText(tester, 'Contact');
+    expect(opened.single, Uri(scheme: 'mailto', path: supportEmail));
+    expect(find.text('Email address copied'), findsNothing);
+
+    mailApp = false;
+    await tapText(tester, 'Contact');
+    expect(clipboard, supportEmail);
+    expect(find.text('Email address copied'), findsOneWidget);
   });
 
   testWidgets('a phone language the app lacks falls back to English',

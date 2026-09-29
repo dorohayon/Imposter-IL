@@ -591,6 +591,7 @@
   "adPrivacy": "העדפות פרטיות לפרסומות",
   "appVersion": "מי המתחזה? · גרסה 1.0",
   "contact": "יצירת קשר",
+  "emailCopied": "כתובת המייל הועתקה",
   "reportedPlayers": "שחקנים שדיווחתם עליהם",
   "hiddenPlayersCount": "{mutedLength} שחקנים מוסתרים",
   "@hiddenPlayersCount": {
