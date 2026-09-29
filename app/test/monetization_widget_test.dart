@@ -309,6 +309,45 @@ void main() {
       expect(find.text('9.90 ₪'), findsOneWidget);
     });
 
+    // Reported from the phone: the prices flashed for a moment before the
+    // error replaced them.
+    testWidgets('a store that fails quickly opens the popup on its error',
+        (tester) async {
+      final (_, store, _) = await _freePlayer(tester);
+      store
+        ..productsFail = true
+        ..productsDelay = const Duration(milliseconds: 100);
+      await _openPicker(tester);
+      await tester.ensureVisible(_locked('ספורט וכושר'));
+      await tester.pumpAndSettle();
+      await tester.tap(_locked('ספורט וכושר'));
+      final error = find.textContaining('לא הצלחנו לטעון את המחירים מהחנות');
+      for (var i = 0; i < 60; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        if (find.byType(BottomSheet).evaluate().isNotEmpty) {
+          expect(error, findsOneWidget, reason: 'frame $i');
+        }
+      }
+      expect(find.byType(BottomSheet), findsOneWidget);
+    });
+
+    testWidgets('a slow store opens the popup with its prices loading',
+        (tester) async {
+      final (_, store, _) = await _freePlayer(tester);
+      store.productsDelay = const Duration(seconds: 2);
+      await _openPicker(tester);
+      await tester.ensureVisible(_locked('ספורט וכושר'));
+      await tester.pumpAndSettle();
+      await tester.tap(_locked('ספורט וכושר'));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(find.text('9.90 ₪'), findsNothing);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(find.text('9.90 ₪'), findsOneWidget);
+    });
+
     testWidgets('a store that sells none of them says so, not "offline"',
         (tester) async {
       final (_, store, _) = await _freePlayer(tester);

@@ -11,6 +11,15 @@ import 'monetization.dart';
 // The purchase popup: one bottom sheet over the category picker, no store
 // screen (design/claude/Imposter IL Monetization.dc.html, P01–P12).
 
+/// How long a tap waits for the store before the popup opens with its
+/// prices still loading. A store that answers sooner, with prices or an
+/// error, opens the popup as it stays: a failure used to flash the loading
+/// prices first.
+const _storeGrace = Duration(milliseconds: 350);
+
+/// A popup is opening: a second tap during [_storeGrace] opens nothing.
+bool _opening = false;
+
 /// Opens the popup for a locked category. Completes with true when the
 /// player unlocked that category on its own and chose to play it.
 Future<bool> showPurchaseSheet(
@@ -18,9 +27,21 @@ Future<bool> showPurchaseSheet(
   required String categoryId,
   required String categoryName,
 }) async {
+  if (_opening) return false;
   final monetization = MonetizationScope.read(context);
   monetization.openPopup();
-  unawaited(monetization.loadProducts(categoryId));
+  _opening = true;
+  final ready = Completer<void>();
+  void open() {
+    if (!ready.isCompleted) ready.complete();
+  }
+
+  final grace = Timer(_storeGrace, open);
+  unawaited(monetization.loadProducts(categoryId).whenComplete(open));
+  await ready.future;
+  grace.cancel();
+  _opening = false;
+  if (!context.mounted) return false;
   final chosen = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,

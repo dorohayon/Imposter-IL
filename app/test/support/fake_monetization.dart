@@ -23,6 +23,9 @@ class FakeStore implements StoreGateway {
   bool restoreFails = false;
   bool productsFail = false;
 
+  /// How long the store takes to answer for its products.
+  Duration productsDelay = Duration.zero;
+
   /// What the next buy reports; null leaves the purchase hanging.
   StoreStatus? outcome = StoreStatus.purchased;
   bool refuseBuy = false;
@@ -57,6 +60,7 @@ class FakeStore implements StoreGateway {
 
   @override
   Future<Map<String, StoreProduct>> products(Set<String> ids) async {
+    await Future<void>.delayed(productsDelay);
     if (productsFail) throw StateError('offline');
     return {
       for (final id in ids)
