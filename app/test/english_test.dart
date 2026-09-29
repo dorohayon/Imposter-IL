@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/local/words.g.dart';
@@ -180,9 +181,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(locked);
     await tester.pumpAndSettle();
-    expect(find.text('"Gaming" is locked'), findsOneWidget);
+    expect(find.text('“Gaming” is locked'), findsOneWidget);
     expect(find.text('Watch an ad'), findsWidgets);
-    expect(find.text('Only "Gaming"'), findsOneWidget);
+    expect(find.text('Only “Gaming”'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -208,6 +209,65 @@ void main() {
         ['/v1/categories?language=he', '/v1/categories?language=en']);
     expect(session.categories.first.name, 'Food & Drink');
   });
+
+  // Reported from the phone: long English names ran under the lock and the
+  // category icon, the check covered a letter, and some names were cut.
+  for (final width in [320.0, 390.0]) {
+    testWidgets('category tiles keep every English name whole at $width px',
+        (tester) async {
+      // The real fonts: the test font draws every letter as a wide square.
+      await loadRealFonts();
+      final api = FakeApi()
+        ..responses['GET /v1/categories'] = {
+          'categories': [
+            for (final c in localCategoriesFor('en'))
+              {'id': c.id, 'name': c.name},
+          ],
+        };
+      await startApp(tester, api, saved: _signedIn, store: FakeStore());
+      tester.view.physicalSize = Size(width, 844);
+      await tester.pumpAndSettle();
+      await tapText(tester, 'Online game');
+      await tapText(tester, 'Quick game');
+      // A selected tile, with its check. The name may carry a line break.
+      final movies = find.textContaining('Movies');
+      await tester.ensureVisible(movies);
+      await tester.pumpAndSettle();
+      await tester.tap(movies);
+      await tester.pumpAndSettle();
+
+      final grid = find.byType(GridView);
+      for (var i = 0; i < 12; i++) {
+        final names = tester
+            .renderObjectList<RenderParagraph>(
+                find.descendant(of: grid, matching: find.byType(RichText)))
+            .where((p) => p.text.style?.fontFamily == 'Secular One');
+        final marks = [
+          for (final m in find
+              .descendant(
+                  of: grid,
+                  matching: find.byWidgetPredicate((w) =>
+                      w is Icon ||
+                      w.runtimeType.toString() == '_SelectedCategoryCheck'))
+              .evaluate())
+            (m.renderObject! as RenderBox).localToGlobal(Offset.zero) &
+                (m.renderObject! as RenderBox).size,
+        ];
+        for (final p in names) {
+          final text = p.text.toPlainText();
+          expect(p.didExceedMaxLines, isFalse, reason: 'cut: $text');
+          final rect = p.localToGlobal(Offset.zero) & p.size;
+          for (final mark in marks) {
+            expect(rect.overlaps(mark.deflate(1)), isFalse,
+                reason: '"$text" runs under a mark at $width px');
+          }
+        }
+        await tester.drag(grid, const Offset(0, -120));
+        await tester.pumpAndSettle();
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   test('every language the app has has one-device words', () {
     for (final code in ['he', 'en']) {

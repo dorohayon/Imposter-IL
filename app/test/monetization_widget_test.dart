@@ -318,6 +318,27 @@ void main() {
       expect(find.text('הרכישות אינן זמינות כרגע. אנא נסו שוב מאוחר יותר.'),
           findsOneWidget);
       expect(find.textContaining('בדקו את החיבור'), findsNothing);
+      // No purchase line without a price: the ad option is not a product.
+      expect(find.textContaining('תשלום אחד של'), findsNothing);
+    });
+
+    testWidgets('the popup closes with a swipe down, but not mid-payment',
+        (tester) async {
+      final (_, store, _) = await _freePlayer(tester);
+      await _openPicker(tester);
+      await _tapLocked(tester, 'ספורט וכושר');
+      // From the footer: the options above it scroll on a short screen.
+      await tester.fling(find.text('שחזור רכישות'), const Offset(0, 500), 2000);
+      await tester.pumpAndSettle();
+      expect(find.text('״ספורט וכושר״ נעולה'), findsNothing);
+
+      store.outcome = null; // the store never answers
+      await _tapLocked(tester, 'ספורט וכושר');
+      await _buy(tester);
+      await tester.fling(
+          find.text('מתחברים לחנות…'), const Offset(0, 500), 2000);
+      await tester.pumpAndSettle();
+      expect(find.text('״ספורט וכושר״ נעולה'), findsOneWidget);
     });
 
     testWidgets('restore in the popup reopens a bought category',

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/main.dart';
-import 'package:imposter_il/screens/online_flow.dart';
 import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/screens/legal_screens.dart';
 import 'package:imposter_il/screens/live_room.dart';
@@ -158,10 +157,10 @@ Future<void> tapTooltip(WidgetTester tester, String tooltip) async {
 ///
 /// The grid is lazy, so only ask about tiles that are on screen.
 bool isSelectedTile(WidgetTester tester, String label) {
-  final tile = find
-      .ancestor(
-          of: find.text(categoryTileName(label)), matching: find.byType(Stack))
-      .first;
+  // The name wraps where it fits, so it is matched with its breaks as spaces.
+  final name = find.byWidgetPredicate(
+      (w) => w is Text && w.data?.replaceAll(RegExp(r'\s+'), ' ') == label);
+  final tile = find.ancestor(of: name, matching: find.byType(InkWell)).first;
   return find
       .descendant(of: tile, matching: find.byIcon(Icons.check_rounded))
       .evaluate()

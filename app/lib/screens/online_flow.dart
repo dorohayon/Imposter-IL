@@ -159,7 +159,8 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                   itemCount: tiles.length,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    mainAxisExtent: 92,
+                    // A row for the corner marks, then two lines of name.
+                    mainAxisExtent: 108,
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
                   ),
@@ -205,73 +206,38 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                               width: 2,
                             ),
                           ),
-                          child: Stack(
-                            children: [
-                              if (purchased)
-                                const Align(
-                                  alignment: AlignmentDirectional.topStart,
-                                  child: _PurchasedTag(),
-                                ),
-                              if (tile.id == _allId)
-                                Align(
-                                  // Top corner, across from the check: nearly
-                                  // the tile's full width, so the caption fits
-                                  // in two lines even at 320 px, and "הכול"
-                                  // keeps the bottom line every name uses.
-                                  alignment: AlignmentDirectional.topEnd,
-                                  child: Padding(
-                                    padding: const EdgeInsetsDirectional.only(
-                                        start: 30),
-                                    child: Text(
-                                      money.premium
-                                          ? context.l10n.allCategories
-                                          : context.l10n.allOpenCategories,
-                                      textAlign: TextAlign.end,
-                                      maxLines: 2,
-                                      style: TextStyle(
-                                        color: isSelected
-                                            ? AppColors.night
-                                                .withValues(alpha: .7)
-                                            : AppColors.muted,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                          child: _TileBody(
+                            name: tile.name,
+                            color:
+                                isSelected ? AppColors.night : AppColors.cream,
+                            start: isSelected
+                                ? const _SelectedCategoryCheck()
+                                : purchased
+                                    ? const _PurchasedTag()
+                                    : null,
+                            end: tile.id == _allId
+                                ? Text(
+                                    money.premium
+                                        ? context.l10n.allCategories
+                                        : context.l10n.allOpenCategories,
+                                    textAlign: TextAlign.end,
+                                    maxLines: 2,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? AppColors.night
+                                              .withValues(alpha: .7)
+                                          : AppColors.muted,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                  ),
-                                ),
-                              if (isSelected)
-                                const Align(
-                                  alignment: AlignmentDirectional.topStart,
-                                  child: _SelectedCategoryCheck(),
-                                ),
-                              // Where a locked tile has its lock.
-                              if (tile.id != _allId)
-                                Align(
-                                  alignment: AlignmentDirectional.topEnd,
-                                  child: Icon(
+                                  )
+                                : Icon(
                                     categoryIcon(tile.id),
                                     size: 24,
                                     color: isSelected
                                         ? AppColors.night
                                         : AppColors.turquoise,
                                   ),
-                                ),
-                              Align(
-                                alignment: AlignmentDirectional.bottomStart,
-                                child: Text(
-                                  categoryTileName(tile.name),
-                                  maxLines: 2,
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? AppColors.night
-                                        : AppColors.cream,
-                                    fontFamily: 'Secular One',
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ),
@@ -347,6 +313,104 @@ String categoryTileName(String name) {
   return i < 0 ? name : '${name.substring(0, i)}\n${name.substring(i + 1)}';
 }
 
+/// A category tile's inside: a row for the corner marks, the name under it.
+/// Nothing is drawn over the name, in any language.
+class _TileBody extends StatelessWidget {
+  const _TileBody({
+    required this.name,
+    required this.color,
+    this.start,
+    this.end,
+  });
+
+  /// Shown with a break before its last word, as the design does
+  /// (categoryTileName), or wrapped where it falls when that does not fit.
+  final String name;
+  final Color color;
+  final Widget? start;
+  final Widget? end;
+
+  static const _markRow = 28.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: _markRow,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (start case final mark?) mark,
+              Expanded(
+                child: Align(
+                  alignment: AlignmentDirectional.topEnd,
+                  child: end,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final (text, size) = _fit(context, box);
+              return Align(
+                alignment: AlignmentDirectional.bottomStart,
+                child: Text(
+                  text,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: color,
+                    fontFamily: 'Secular One',
+                    fontSize: size,
+                    height: 1.1,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The largest size, 20 down to 13, at which the name keeps to two lines,
+  /// fits the height and breaks no word in the middle: the design's break
+  /// first, then the natural one.
+  (String, double) _fit(BuildContext context, BoxConstraints box) {
+    final direction = Directionality.of(context);
+    final scaler = MediaQuery.textScalerOf(context);
+    for (var size = 20.0; size > 13; size -= 1) {
+      // Measured as drawn: the theme's text style under the name's own.
+      TextPainter paint(String text, {int? lines}) => TextPainter(
+            text: TextSpan(
+              text: text,
+              style: DefaultTextStyle.of(context).style.merge(TextStyle(
+                  fontFamily: 'Secular One', fontSize: size, height: 1.1)),
+            ),
+            textDirection: direction,
+            textScaler: scaler,
+            maxLines: lines,
+          );
+      final wordsFit = name
+          .split(RegExp(r'\s+'))
+          .every((w) => (paint(w)..layout()).width <= box.maxWidth);
+      if (!wordsFit) continue;
+      for (final text in {categoryTileName(name), name}) {
+        final whole = paint(text, lines: 2)..layout(maxWidth: box.maxWidth);
+        if (!whole.didExceedMaxLines && whole.height <= box.maxHeight) {
+          return (text, size);
+        }
+      }
+    }
+    return (name, 13);
+  }
+}
+
 /// A category that is visible but locked: a lock and a dimmed name. Tapping
 /// it opens the purchase popup (design 04).
 class LockedCategoryTile extends StatelessWidget {
@@ -378,37 +442,22 @@ class LockedCategoryTile extends StatelessWidget {
               width: 2,
             ),
           ),
-          child: Stack(
-            children: [
-              Align(
-                alignment: AlignmentDirectional.topEnd,
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: AppColors.yellow.withValues(alpha: .14),
-                    borderRadius: BorderRadius.circular(9),
-                    border: Border.all(
-                      color: AppColors.yellow.withValues(alpha: .45),
-                    ),
-                  ),
-                  child: const Icon(Icons.lock_rounded,
-                      color: AppColors.yellow, size: 15),
+          child: _TileBody(
+            name: name,
+            color: AppColors.cream.withValues(alpha: .62),
+            end: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: AppColors.yellow.withValues(alpha: .14),
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(
+                  color: AppColors.yellow.withValues(alpha: .45),
                 ),
               ),
-              Align(
-                alignment: AlignmentDirectional.bottomStart,
-                child: Text(
-                  categoryTileName(name),
-                  maxLines: 2,
-                  style: TextStyle(
-                    color: AppColors.cream.withValues(alpha: .62),
-                    fontFamily: 'Secular One',
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-            ],
+              child: const Icon(Icons.lock_rounded,
+                  color: AppColors.yellow, size: 15),
+            ),
           ),
         ),
       ),
