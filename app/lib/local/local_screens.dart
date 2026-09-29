@@ -669,9 +669,6 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Illustration('assets/illustrations/role-impostor.webp',
-              height: 140),
-          const SizedBox(height: 12),
           Text(
             context.l10n.youreCaught(impostor.name),
             textAlign: TextAlign.center,
@@ -681,7 +678,10 @@ class _LocalGameScreenState extends State<LocalGameScreen>
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 10),
+          const Illustration('assets/illustrations/role-impostor.webp',
+              height: 140),
+          const SizedBox(height: 12),
           Text(
             context.l10n.stillCanWin,
             textAlign: TextAlign.center,
