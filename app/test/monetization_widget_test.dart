@@ -103,7 +103,7 @@ void main() {
           findsOneWidget);
       expect(find.text('כל הקטגוריות הפתוחות'), findsOneWidget);
       // Every category stays visible: the locked ones are there, marked.
-      for (final name in ['ספורט וכושר', 'עבודה ומשרד', 'גיימינג']) {
+      for (final name in ['ספורט וכושר', 'מקצועות ועבודה', 'גיימינג']) {
         expect(find.text(categoryTileName(name)), findsOneWidget);
       }
       expect(find.byIcon(Icons.lock_rounded), findsNWidgets(18));
@@ -383,7 +383,7 @@ void main() {
       await tapText(tester, 'משחק במכשיר אחד');
       await tapText(tester, 'המשך להגדרות');
       expect(find.text('4 פתוחות'), findsOneWidget);
-      for (final name in ['ספורט וכושר', 'עבודה ומשרד']) {
+      for (final name in ['ספורט וכושר', 'מקצועות ועבודה']) {
         expect(_locked(name), findsOneWidget);
       }
       await tapText(tester, 'מתחילים');

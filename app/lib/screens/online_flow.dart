@@ -310,7 +310,7 @@ IconData categoryIcon(String id) => switch (id) {
 
 /// A category's name on its tile: a name of several words breaks before its
 /// last word, so every tile holds its name on the same lines and the bottom
-/// line sits in the same place ("עבודה" / "ומשרד").
+/// line sits in the same place ("מקצועות" / "ועבודה").
 String categoryTileName(String name) {
   final i = name.lastIndexOf(' ');
   return i < 0 ? name : '${name.substring(0, i)}\n${name.substring(i + 1)}';
