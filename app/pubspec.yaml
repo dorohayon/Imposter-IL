@@ -56,8 +56,9 @@ flutter:
       fonts:
         - asset: assets/fonts/SecularOne-Regular.ttf
 
-# Temporary app icon and splash from the existing detective art, until the
-# final logo exists (TASKS.md, Design V1). Regenerate with:
+# App icon and splash from the home screen illustration (home-hero): the icon
+# frames the detective girl's glass and the impostor behind her, the splash
+# shows the whole group. branding/ holds the sources. Regenerate with:
 #   dart run flutter_launcher_icons && dart run flutter_native_splash:create
 flutter_launcher_icons:
   android: true
@@ -65,6 +66,9 @@ flutter_launcher_icons:
   image_path: branding/icon.png
   adaptive_icon_background: "#14132B"
   adaptive_icon_foreground: branding/icon-foreground.png
+  # The foreground is framed for the full 108dp layer (the visible 72dp is its
+  # middle two thirds), so no extra inset.
+  adaptive_icon_foreground_inset: 0
   remove_alpha_ios: true
   background_color_ios: "#14132B"
 

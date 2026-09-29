@@ -2489,7 +2489,7 @@ class _VotingState extends State<_Voting> {
     final watching = game.isEliminated(me);
 
     return GameScaffold(
-      title: runoff ? context.l10n.revote : context.l10n.gameName,
+      title: runoff ? context.l10n.revote : context.l10n.whoIsImpostor,
       timer: _timer(game),
       onExit: widget.onLeave,
       accent: const Color(0xFF42203C),
