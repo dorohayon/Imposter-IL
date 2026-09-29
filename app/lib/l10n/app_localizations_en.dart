@@ -213,7 +213,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacy5 =>
-      'Players in the same game can see your nickname and avatar, the hints you sent, your connection status and the game information needed for voting and results. The secret word is not sent to the impostor before the results stage.';
+      'Players in the same game can see your nickname and avatar, the hints you sent, your connection status and the game information needed for voting and results. The secret word is not sent to the imposter before the results stage.';
 
   @override
   String get privacy6Title => '6. Retention and deletion';
@@ -532,14 +532,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gotIt => 'Got it';
 
   @override
-  String get youAreImpostor => 'You\'re the impostor';
+  String get youAreImpostor => 'You\'re the imposter';
 
   @override
   String get youAreCitizen => 'You\'re a citizen';
 
   @override
   String get impostorDoesntKnow =>
-      'The impostor doesn\'t know the secret word. Keep it secret.';
+      'The imposter doesn\'t know the secret word. Keep it secret.';
 
   @override
   String get impostorTip1 =>
@@ -555,7 +555,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get citizenTip2 =>
-      'A hint that\'s too obvious helps the impostor. A hint that\'s too vague raises suspicion.';
+      'A hint that\'s too obvious helps the imposter. A hint that\'s too vague raises suspicion.';
 
   @override
   String get nextRoundContinues => 'On to the next round';
@@ -592,7 +592,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get decideImpostor => 'Time to decide who the impostor is';
+  String get decideImpostor => 'Time to decide who the imposter is';
 
   @override
   String get youEliminatedSpectator => 'You\'re out · spectating';
@@ -749,7 +749,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get impostorGuessing =>
-      'The impostor was caught and is now trying to guess the word.';
+      'The imposter was caught and is now trying to guess the word.';
 
   @override
   String get guessWinsExplain =>
@@ -770,26 +770,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reasonCitizenVoted =>
-      'The vote picked a citizen, and the impostor stays in the game.';
+      'The vote picked a citizen, and the imposter stays in the game.';
 
   @override
   String get reasonParity =>
-      'One citizen and the impostor are left, and at this point the impostor wins right away.';
+      'One citizen and the imposter are left, and at this point the imposter wins right away.';
 
   @override
   String get reasonGuessed =>
-      'The impostor was caught but managed to guess the word.';
+      'The imposter was caught but managed to guess the word.';
 
   @override
   String get reasonWrongGuess =>
-      'The impostor was caught and failed to guess the word.';
+      'The imposter was caught and failed to guess the word.';
 
   @override
   String get reasonGuessTimeout =>
-      'The impostor was caught, but ran out of time to guess.';
+      'The imposter was caught, but ran out of time to guess.';
 
   @override
-  String get reasonImpostorLeft => 'The impostor left the game.';
+  String get reasonImpostorLeft => 'The imposter left the game.';
 
   @override
   String get reasonNotEnoughPlayers =>
@@ -806,13 +806,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get citizensWon => 'The citizens won!';
 
   @override
-  String get impostorWon => 'The impostor won!';
+  String get impostorWon => 'The imposter won!';
 
   @override
   String get gameStopped => 'The game was stopped';
 
   @override
-  String get impostorWas => 'The impostor was';
+  String get impostorWas => 'The imposter was';
 
   @override
   String get winRecorded => 'You got a win';
@@ -1094,7 +1094,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get howStep1 =>
-      'Everyone gets the same secret word — except the impostor, who only sees the category.';
+      'Everyone gets the same secret word — except the imposter, who only sees the category.';
 
   @override
   String get howStep2 =>
@@ -1106,11 +1106,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get howStep5 =>
-      'At the end of the round, everyone votes on who the impostor is. You have 20 seconds to vote.';
+      'At the end of the round, everyone votes on who the imposter is. You have 20 seconds to vote.';
 
   @override
   String get howStep6 =>
-      'If the impostor is caught, they have 60 seconds to guess the word and win anyway.';
+      'If the imposter is caught, they have 60 seconds to guess the word and win anyway.';
 
   @override
   String get updateNeeded => 'Update needed';
@@ -1200,7 +1200,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get impostorStillAmong =>
-      'The impostor is still among you. The turn order was reshuffled.';
+      'The imposter is still among you. The turn order was reshuffled.';
 
   @override
   String get turnOrderThisRound => 'Turn order this round';
@@ -1278,8 +1278,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get thenPassNext => 'Then pass the device to the next player';
 
   @override
-  String youreCaught(Object impostorName) {
-    return '$impostorName, you\'ve been caught';
+  String youreCaught(Object impostorName, Object imposterName) {
+    return '$imposterName, you\'ve been caught';
   }
 
   @override
@@ -1287,20 +1287,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Guessing the secret word correctly wins you the game. There\'s one try.';
 
   @override
-  String onlyPlayerLookingNoDot(Object impostorName) {
-    return 'Only $impostorName is looking at the screen';
+  String onlyPlayerLookingNoDot(Object impostorName, Object imposterName) {
+    return 'Only $imposterName is looking at the screen';
   }
 
   @override
   String get localReasonGuessed =>
-      'The impostor was caught and guessed the word correctly.';
+      'The imposter was caught and guessed the word correctly.';
 
   @override
   String get localReasonMissed =>
-      'The impostor was caught and didn\'t guess the word.';
+      'The imposter was caught and didn\'t guess the word.';
 
   @override
-  String get theImpostor => 'The impostor';
+  String get theImpostor => 'The imposter';
 
   @override
   String get howItEnded => 'How it ended';
@@ -1400,10 +1400,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get players => 'Players';
 
   @override
-  String get impostors => 'Impostors';
+  String get impostors => 'Imposters';
 
   @override
-  String get oneImpostor => 'One impostor';
+  String get oneImpostor => 'One imposter';
 
   @override
   String get voting => 'Voting';
@@ -1731,5 +1731,5 @@ class AppLocalizationsEn extends AppLocalizations {
   String get guessTheWord => 'Guess the word';
 
   @override
-  String get whoIsImpostor => 'Who\'s the impostor?';
+  String get whoIsImpostor => 'Who\'s the imposter?';
 }
