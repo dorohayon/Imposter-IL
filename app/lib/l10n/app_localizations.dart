@@ -2262,7 +2262,7 @@ abstract class AppLocalizations {
   ///
   /// In he, this message translates to:
   /// **'{impostorName}, נתפסת'**
-  String youreCaught(Object impostorName, Object imposterName);
+  String youreCaught(Object impostorName);
 
   /// No description provided for @guessWinsLocal.
   ///
@@ -2274,7 +2274,7 @@ abstract class AppLocalizations {
   ///
   /// In he, this message translates to:
   /// **'רק {impostorName} מסתכל/ת על המסך'**
-  String onlyPlayerLookingNoDot(Object impostorName, Object imposterName);
+  String onlyPlayerLookingNoDot(Object impostorName);
 
   /// No description provided for @localReasonGuessed.
   ///

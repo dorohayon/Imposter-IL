@@ -1253,7 +1253,7 @@ class AppLocalizationsHe extends AppLocalizations {
   String get thenPassNext => 'אחר כך מעבירים את המכשיר לשחקן הבא';
 
   @override
-  String youreCaught(Object impostorName, Object imposterName) {
+  String youreCaught(Object impostorName) {
     return '$impostorName, נתפסת';
   }
 
@@ -1262,7 +1262,7 @@ class AppLocalizationsHe extends AppLocalizations {
       'ניחוש נכון של המילה הסודית מעניק לך את הניצחון. יש ניסיון אחד.';
 
   @override
-  String onlyPlayerLookingNoDot(Object impostorName, Object imposterName) {
+  String onlyPlayerLookingNoDot(Object impostorName) {
     return 'רק $impostorName מסתכל/ת על המסך';
   }
 

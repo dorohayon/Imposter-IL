@@ -1278,8 +1278,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get thenPassNext => 'Then pass the device to the next player';
 
   @override
-  String youreCaught(Object impostorName, Object imposterName) {
-    return '$imposterName, you\'ve been caught';
+  String youreCaught(Object impostorName) {
+    return '$impostorName, you\'ve been caught';
   }
 
   @override
@@ -1287,8 +1287,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Guessing the secret word correctly wins you the game. There\'s one try.';
 
   @override
-  String onlyPlayerLookingNoDot(Object impostorName, Object imposterName) {
-    return 'Only $imposterName is looking at the screen';
+  String onlyPlayerLookingNoDot(Object impostorName) {
+    return 'Only $impostorName is looking at the screen';
   }
 
   @override
