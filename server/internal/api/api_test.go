@@ -408,7 +408,7 @@ func TestContentByLanguage(t *testing.T) {
 	}
 	status, body = c.do("GET", "/v1/reactions?language=en", token, nil)
 	reactions, _ := body["reactions"].([]any)
-	if status != 200 || reactions[9].(map[string]any)["text"] != "What's the link?" {
+	if status != 200 || reactions[9].(map[string]any)["text"] != "Huh? How?" {
 		t.Fatalf("English reactions: %d %v", status, body)
 	}
 	status, body = c.do("GET", "/v1/categories?language=xx", token, nil)

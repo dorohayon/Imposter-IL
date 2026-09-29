@@ -969,10 +969,6 @@ class AppLocalizationsHe extends AppLocalizations {
   String get loadingCategoriesShort => 'טוענים קטגוריות...';
 
   @override
-  String get settingsLockAfterJoin =>
-      'אחרי ששחקן נוסף יצטרף, אי אפשר יהיה לשנות את ההגדרות.';
-
-  @override
   String get roomCodeSixDigits => 'קוד החדר צריך להיות בן שש ספרות';
 
   @override

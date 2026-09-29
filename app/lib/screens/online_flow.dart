@@ -342,8 +342,11 @@ class _TileBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          height: _markRow,
+        // At least the row's height, and more for "All unlocked categories"
+        // on two lines, which a fixed height cut at the bottom. The name sits
+        // at the tile's bottom, so it stays in line with the other tiles.
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: _markRow),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -351,6 +354,7 @@ class _TileBody extends StatelessWidget {
               Expanded(
                 child: Align(
                   alignment: AlignmentDirectional.topEnd,
+                  heightFactor: 1,
                   child: end,
                 ),
               ),

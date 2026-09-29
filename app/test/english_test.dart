@@ -248,6 +248,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final grid = find.byType(GridView);
+      expectWhole(tester, 'All unlocked categories');
       for (var i = 0; i < 12; i++) {
         final names = tester
             .renderObjectList<RenderParagraph>(
