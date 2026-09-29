@@ -290,6 +290,7 @@
       `category_internet_culture`, `category_superheroes_fantasy`,
       `category_nature_weather`, `category_transportation`,
       `category_hobbies_free_time`, ולטפל במוצרים של המזהים שהוסרו.
+      `category_israeli_slang` ו־`category_idf_service` חזרו (בעברית בלבד).
 - [ ] דפי חנות, אתר (`site/`), תנאי שימוש ומדיניות פרטיות באנגלית — לבדיקת
       בעל המוצר. שם האפליקציה בחנויות באנגלית: **Imposter: Word Bluff**
       (`docs/decisions.md`, "שפות").

@@ -1,6 +1,7 @@
 package content
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
@@ -127,14 +128,32 @@ func TestEveryWordHasCitizenHints(t *testing.T) {
 	_ = wrongSize
 }
 
-// Direct per-word hints may include a distinctive association, but every
-// category still needs shared vocabulary so the public board can inform an
-// impostor bot without revealing the secret.
-func TestCitizenHintsProvideSharedVocabulary(t *testing.T) {
+// The impostor's hint is never checked against the secret, so its pool must
+// not hold a secret of the same category, or a bot could say the answer.
+func TestImpostorPoolNeverHoldsASecret(t *testing.T) {
 	for _, c := range allCategories() {
-		if len(tables.shared[c.Name]) < 4 {
-			t.Errorf("%s has only %d shared hints, want at least 4", c.Name, len(tables.shared[c.Name]))
+		for _, hint := range tables.shared[c.Name] {
+			for _, word := range c.Words {
+				if sameWord(hint, word) || containsWord(hint, word) {
+					t.Errorf("%s: the impostor may say %q, which gives away %q", c.Name, hint, word)
+				}
+			}
 		}
+	}
+}
+
+// A file in an older shape parses without error into empty categories; it
+// must be refused instead of leaving the bots with nothing to say.
+func TestOldFormatsAreRefused(t *testing.T) {
+	for _, version := range []int{1, 2} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("version %d was loaded", version)
+				}
+			}()
+			loadHintTables([]byte(fmt.Sprintf(`{"version": %d, "categories": []}`, version)))
+		}()
 	}
 }
 

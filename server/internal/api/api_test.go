@@ -202,7 +202,7 @@ func TestListCategories(t *testing.T) {
 	token, _ := c.session("דור")
 	status, body = c.do("GET", "/v1/categories", token, nil)
 	categories, _ := body["categories"].([]any)
-	if status != 200 || len(categories) != 21 {
+	if status != 200 || len(categories) != 23 {
 		t.Fatalf("got %d %v", status, body)
 	}
 	if first := categories[0].(map[string]any); first["id"] != "food" || first["name"] != "אוכל ושתייה" {

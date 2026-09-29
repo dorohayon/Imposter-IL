@@ -74,8 +74,8 @@ func TestCategoriesAreWellFormed(t *testing.T) {
 				t.Fatalf("%s: bad or duplicate category %+v", code, c)
 			}
 			ids[c.ID] = true
-			if len(c.Words) == 0 {
-				t.Errorf("%s/%s has no words", code, c.ID)
+			if len(c.Words) < 30 {
+				t.Errorf("%s/%s has %d words, want at least 30", code, c.ID, len(c.Words))
 			}
 			for _, w := range c.Words {
 				if !isSecret(w, script) {
@@ -88,11 +88,10 @@ func TestCategoriesAreWellFormed(t *testing.T) {
 				total++
 			}
 		}
-		if len(l.Categories) != 21 {
-			t.Errorf("%s: %d categories, want 21", code, len(l.Categories))
-		}
-		if total != 1000 {
-			t.Errorf("%s: %d words, want 1000", code, total)
+		// Each language has its own set (Hebrew keeps its Israeli categories),
+		// but every one is deep enough to play for long.
+		if total < 1000 {
+			t.Errorf("%s: %d words, want at least 1000", code, total)
 		}
 	}
 }

@@ -1637,13 +1637,18 @@ class SecretWordCard extends StatelessWidget {
                 ),
               ],
             )
-          : Text(
-              word ?? '',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.night,
-                fontFamily: 'Secular One',
-                fontSize: 38,
+          // One line, shrunk to fit: "Pirates of the Caribbean" wrapped into
+          // three and a long single word broke in the middle.
+          : FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                word ?? '',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.night,
+                  fontFamily: 'Secular One',
+                  fontSize: 38,
+                ),
               ),
             ),
     );
@@ -2024,13 +2029,16 @@ class GameResultContent extends StatelessWidget {
               const SizedBox(height: 12),
               line(
                 context.l10n.wordWas,
-                Text(
-                  secretWord,
-                  style: const TextStyle(
-                    fontFamily: 'Secular One',
-                    fontSize: 26,
-                    height: 1,
-                    color: AppColors.night,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    secretWord,
+                    style: const TextStyle(
+                      fontFamily: 'Secular One',
+                      fontSize: 26,
+                      height: 1,
+                      color: AppColors.night,
+                    ),
                   ),
                 ),
               ),

@@ -210,6 +210,91 @@
       "doghouse",
       "Hot dog",
       false
+    ],
+    [
+      "מעל",
+      "רכיבה על אופניים",
+      false
+    ],
+    [
+      "בעל",
+      "רכיבה על אופניים",
+      false
+    ],
+    [
+      "על",
+      "רכיבה על אופניים",
+      true
+    ],
+    [
+      "האופניים",
+      "רכיבה על אופניים",
+      true
+    ],
+    [
+      "רכיבה",
+      "רכיבה על אופניים",
+      true
+    ],
+    [
+      "לפי",
+      "ג'י פי אס",
+      false
+    ],
+    [
+      "כפי",
+      "ג'י פי אס",
+      false
+    ],
+    [
+      "באס",
+      "ג'י פי אס",
+      false
+    ],
+    [
+      "פי",
+      "ג'י פי אס",
+      true
+    ],
+    [
+      "feedback",
+      "Back to the Future",
+      false
+    ],
+    [
+      "back",
+      "Back to the Future",
+      true
+    ],
+    [
+      "futures",
+      "Back to the Future",
+      true
+    ],
+    [
+      "firewall",
+      "Great Wall of China",
+      false
+    ],
+    [
+      "wall",
+      "Great Wall of China",
+      true
+    ],
+    [
+      "belong",
+      "Long distance relationship",
+      false
+    ],
+    [
+      "trains",
+      "High speed train",
+      true
+    ],
+    [
+      "highspeedtrain",
+      "High speed train",
+      true
     ]
   ],
   "sameHint": [

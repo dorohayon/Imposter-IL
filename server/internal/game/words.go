@@ -17,6 +17,9 @@ const (
 	// Shorter ones (ים, דג, פיל) sit inside too many unrelated words, so they
 	// are matched only at the start, after any prefix letters.
 	minInnerSecret = 4
+	// minPrefixedPart is the shortest word of a multiword secret that prefix
+	// letters may precede: with two, ל + פי refused the ordinary "לפי".
+	minPrefixedPart = 3
 )
 
 // presentationForms folds the Hebrew presentation forms (U+FB1D–FB4F) to
@@ -90,20 +93,20 @@ func isPrefixed(long, short string) bool {
 }
 
 // hintContainsSecret applies only to citizens; the impostor does not know the
-// word. The full secret keeps the original matching rule, including short
-// stems such as פיל -> פילים. For a multiword secret, each visible component is
-// blocked too; short components use exact/prefixed matching only, avoiding
-// false positives such as בן inside מבנה.
+// word. The whole secret keeps the original rule: a secret of four letters or
+// more anywhere in the hint, a shorter one at its start after prefix letters
+// (פיל -> פילים).
+//
+// Each word of a multiword secret is a word in its own right, and is matched
+// as one, never from inside another word: four letters or more at the hint's
+// start after prefix letters (train -> trains, אופניים -> האופניים), three
+// with prefix letters (הבית for "בית ספר"), and one or two letters only as
+// the whole hint. So "feedback" is a fine hint for "Back to the Future",
+// "מעל" for "רכיבה על אופניים" and "לפי" for "ג'י פי אס".
 func hintContainsSecret(hint, secret string) bool {
 	h := normalizeWord(hint)
-	matchesWhole := func(candidate string) bool {
-		s := normalizeWord(candidate)
-		switch {
-		case s == "":
-			return false
-		case len([]rune(s)) >= minInnerSecret:
-			return strings.Contains(h, s)
-		}
+	// Whether h starts with s, allowing up to maxPrefixLetters prefix letters.
+	startsWith := func(s string) bool {
 		hr := []rune(h)
 		for i := 0; i <= maxPrefixLetters && i < len(hr); i++ {
 			if i > 0 && !strings.ContainsRune(prefixLetters, hr[i-1]) {
@@ -115,29 +118,39 @@ func hintContainsSecret(hint, secret string) bool {
 		}
 		return false
 	}
-	if matchesWhole(secret) {
-		return true
+	if s := normalizeWord(secret); s != "" {
+		if len([]rune(s)) >= minInnerSecret && strings.Contains(h, s) || startsWith(s) {
+			return true
+		}
 	}
-
 	parts := strings.Fields(secret)
 	if len(parts) <= 1 {
 		return false
 	}
 	for _, part := range parts {
 		p := normalizeWord(part)
-		if p == "" {
-			continue
-		}
-		if len([]rune(p)) >= minInnerSecret {
-			if strings.Contains(h, p) {
+		switch n := len([]rune(p)); {
+		case n == 0:
+		case n >= minInnerSecret:
+			if startsWith(p) {
 				return true
 			}
-		} else if h == p || isPrefixed(h, p) {
-			return true
+		case n == minPrefixedPart:
+			if h == p || isPrefixed(h, p) {
+				return true
+			}
+		default:
+			if h == p {
+				return true
+			}
 		}
 	}
 	return false
 }
+
+// HintContainsSecret exposes the rule above, so the bot-hint dataset is held
+// to exactly what a real turn allows.
+func HintContainsSecret(hint, secret string) bool { return hintContainsSecret(hint, secret) }
 
 // sameHint treats hints as duplicates when they are equal or one is the other
 // with prefix letters, so "הבית" repeats "בית" but "לבית" does not repeat "הבית".

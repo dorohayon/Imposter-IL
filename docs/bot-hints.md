@@ -47,7 +47,7 @@ dataset that breaks a rule fails CI rather than a game.
   so their lookup follows the category context exposed to the bot.
 - `impostorFallbackHints` is public category-level vocabulary only. There is
   deliberately no secret-word-specific impostor pool.
-- The shipped dataset is version 3. Versions 1 and 2 are no longer read.
+- The shipped dataset is version 3 (`content.FormatVersion`). A file with any other version stops the server at start-up.
 - UTF-8, no BOM, LF line endings, two-space indent.
 
 ## How many
@@ -74,7 +74,7 @@ that stays silent on its turn.
    hyphenated word counts as one is still open in `docs/open-decisions.md`.
 2. **At most 25 characters.**
 3. **Not on the blocklist** (`server/internal/content/blocked_words.txt`).
-4. **Must not reveal the secret.** The check is on the normalised form. For a multiword secret, the full phrase and each visible component are blocked; e.g. `בסיס` cannot be a citizen hint for `בסיס פתוח`.
+4. **Must not reveal the secret.** The check is on the normalised form. For a multiword secret, the full phrase and each visible component are blocked; e.g. `בסיס` cannot be a citizen hint for `בסיס פתוח`. A component of 4+ letters is blocked at the start of a hint (after prefix letters), a 3-letter one only alone or with prefix letters, a shorter one only alone — so `על` is blocked for `רכיבה על אופניים` but `מעל` is not. The rule is `game.HintContainsSecret`, shared with the server.
 5. **No two hints in the same pool may be duplicates.** Two hints are the same
    if they are equal after normalisation, or one is the other with 1–3 Hebrew
    prefix letters (`ו ה ב כ ל מ ש`) in front leaving at least two letters. So
@@ -183,3 +183,7 @@ So a pool of hints that are each unique to their word validates perfectly
 and contributes nothing to the impostor — the bot falls back to the broad pool
 and the round reads like the one before it. Hints that overlap across two or
 three words in the category are what give an impostor something to read.
+
+A shared hint that is itself a word of the category, or reveals one, never
+enters the pool: with `Mars` and `Venus` both secrets in a category, an
+impostor bot saying `Mars` would name another secret.

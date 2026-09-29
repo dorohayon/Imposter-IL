@@ -1866,11 +1866,11 @@
         "Glue stick",
         "Scissors",
         "School uniform",
-        "Report card",
-        "Semester",
+        "School trip",
+        "Chalk",
         "Campus",
         "Dormitory",
-        "Scholarship",
+        "Globe",
         "School bell"
       ],
       "impostorFallbackHints": [
@@ -2276,26 +2276,6 @@
           "neat",
           "supplies"
         ],
-        "Report card": [
-          "study",
-          "pressure",
-          "schedule",
-          "results",
-          "learning",
-          "effort",
-          "academic",
-          "important"
-        ],
-        "Semester": [
-          "study",
-          "pressure",
-          "schedule",
-          "results",
-          "learning",
-          "effort",
-          "academic",
-          "important"
-        ],
         "Campus": [
           "building",
           "students",
@@ -2316,16 +2296,6 @@
           "daily",
           "public"
         ],
-        "Scholarship": [
-          "study",
-          "pressure",
-          "schedule",
-          "results",
-          "learning",
-          "effort",
-          "academic",
-          "important"
-        ],
         "School bell": [
           "study",
           "pressure",
@@ -2335,6 +2305,36 @@
           "effort",
           "academic",
           "important"
+        ],
+        "Chalk": [
+          "blackboard",
+          "white",
+          "dust",
+          "teacher",
+          "write",
+          "stick",
+          "classroom",
+          "sidewalk"
+        ],
+        "Globe": [
+          "world",
+          "map",
+          "spin",
+          "round",
+          "countries",
+          "geography",
+          "desk",
+          "oceans"
+        ],
+        "School trip": [
+          "bus",
+          "museum",
+          "friends",
+          "permission",
+          "snacks",
+          "teacher",
+          "outing",
+          "group"
         ]
       }
     },
@@ -2370,18 +2370,18 @@
         "Receptionist",
         "Journalist",
         "Manager",
-        "Recruiter",
-        "Client",
-        "Interview",
-        "Resume",
-        "Salary",
-        "Promotion",
-        "Bonus",
-        "Meeting",
-        "Deadline",
-        "Coffee break",
+        "Lifeguard",
+        "Clown",
+        "Tailor",
+        "Detective",
+        "Librarian",
+        "Surgeon",
+        "Painter",
+        "Gardener",
+        "Secretary",
+        "Barista",
         "Office",
-        "Remote work",
+        "Kindergarten teacher",
         "Pharmacist",
         "Scientist",
         "Astronaut",
@@ -2686,106 +2686,6 @@
           "busy",
           "professional"
         ],
-        "Recruiter": [
-          "office",
-          "team",
-          "schedule",
-          "computer",
-          "project",
-          "meeting",
-          "busy",
-          "professional"
-        ],
-        "Client": [
-          "office",
-          "team",
-          "schedule",
-          "computer",
-          "project",
-          "meeting",
-          "busy",
-          "professional"
-        ],
-        "Interview": [
-          "career",
-          "money",
-          "progress",
-          "decision",
-          "business",
-          "effort",
-          "future",
-          "workplace"
-        ],
-        "Resume": [
-          "career",
-          "money",
-          "progress",
-          "decision",
-          "business",
-          "effort",
-          "future",
-          "workplace"
-        ],
-        "Salary": [
-          "career",
-          "money",
-          "progress",
-          "decision",
-          "business",
-          "effort",
-          "future",
-          "workplace"
-        ],
-        "Promotion": [
-          "career",
-          "money",
-          "progress",
-          "decision",
-          "business",
-          "effort",
-          "future",
-          "workplace"
-        ],
-        "Bonus": [
-          "career",
-          "money",
-          "progress",
-          "decision",
-          "business",
-          "effort",
-          "future",
-          "workplace"
-        ],
-        "Meeting": [
-          "office",
-          "team",
-          "schedule",
-          "computer",
-          "project",
-          "busy",
-          "professional",
-          "career"
-        ],
-        "Deadline": [
-          "office",
-          "team",
-          "schedule",
-          "computer",
-          "project",
-          "meeting",
-          "busy",
-          "professional"
-        ],
-        "Coffee break": [
-          "office",
-          "team",
-          "schedule",
-          "computer",
-          "project",
-          "meeting",
-          "busy",
-          "professional"
-        ],
         "Office": [
           "team",
           "schedule",
@@ -2795,16 +2695,6 @@
           "busy",
           "professional",
           "career"
-        ],
-        "Remote work": [
-          "office",
-          "team",
-          "schedule",
-          "computer",
-          "project",
-          "meeting",
-          "busy",
-          "professional"
         ],
         "Pharmacist": [
           "career",
@@ -2905,6 +2795,116 @@
           "professional",
           "shift",
           "workplace"
+        ],
+        "Lifeguard": [
+          "beach",
+          "pool",
+          "whistle",
+          "rescue",
+          "swimming",
+          "tower",
+          "red",
+          "summer"
+        ],
+        "Clown": [
+          "circus",
+          "nose",
+          "funny",
+          "makeup",
+          "balloons",
+          "shoes",
+          "party",
+          "juggling"
+        ],
+        "Tailor": [
+          "needle",
+          "thread",
+          "suit",
+          "measure",
+          "fabric",
+          "sewing",
+          "fitting",
+          "hem"
+        ],
+        "Detective": [
+          "clues",
+          "mystery",
+          "magnifier",
+          "crime",
+          "investigate",
+          "coat",
+          "suspect",
+          "case"
+        ],
+        "Librarian": [
+          "books",
+          "quiet",
+          "shelves",
+          "borrow",
+          "glasses",
+          "catalog",
+          "reading",
+          "return"
+        ],
+        "Surgeon": [
+          "hospital",
+          "scalpel",
+          "operation",
+          "mask",
+          "gloves",
+          "stitches",
+          "anesthesia",
+          "scrubs"
+        ],
+        "Painter": [
+          "walls",
+          "brush",
+          "roller",
+          "ladder",
+          "bucket",
+          "color",
+          "renovation",
+          "overalls"
+        ],
+        "Gardener": [
+          "plants",
+          "lawn",
+          "shovel",
+          "flowers",
+          "hose",
+          "seeds",
+          "soil",
+          "trimming"
+        ],
+        "Secretary": [
+          "phone",
+          "calendar",
+          "appointments",
+          "typing",
+          "files",
+          "front",
+          "boss",
+          "organized"
+        ],
+        "Barista": [
+          "espresso",
+          "latte",
+          "milk",
+          "apron",
+          "cafe",
+          "foam",
+          "beans",
+          "counter"
+        ],
+        "Kindergarten teacher": [
+          "children",
+          "songs",
+          "colors",
+          "nap",
+          "playground",
+          "crafts",
+          "toddlers",
+          "circle"
         ]
       }
     },
@@ -2954,15 +2954,15 @@
         "Video game console",
         "Camera",
         "Bluetooth speaker",
-        "Podcast microphone",
+        "Earbuds",
         "Smart TV",
         "Ebook reader",
-        "External hard drive",
+        "Hacker",
         "Memory card",
         "Cable",
         "Adapter",
         "Touchscreen",
-        "Fingerprint scanner",
+        "Barcode",
         "Voice assistant",
         "GPS",
         "Satellite",
@@ -3401,16 +3401,6 @@
           "useful",
           "connected"
         ],
-        "Podcast microphone": [
-          "device",
-          "electronic",
-          "portable",
-          "power",
-          "screen",
-          "modern",
-          "useful",
-          "connected"
-        ],
         "Smart TV": [
           "device",
           "electronic",
@@ -3422,16 +3412,6 @@
           "connected"
         ],
         "Ebook reader": [
-          "device",
-          "electronic",
-          "portable",
-          "power",
-          "screen",
-          "modern",
-          "useful",
-          "connected"
-        ],
-        "External hard drive": [
           "device",
           "electronic",
           "portable",
@@ -3481,16 +3461,6 @@
           "useful",
           "connected"
         ],
-        "Fingerprint scanner": [
-          "device",
-          "electronic",
-          "portable",
-          "power",
-          "screen",
-          "modern",
-          "useful",
-          "connected"
-        ],
         "Voice assistant": [
           "device",
           "electronic",
@@ -3530,6 +3500,36 @@
           "modern",
           "useful",
           "connected"
+        ],
+        "Earbuds": [
+          "wireless",
+          "music",
+          "ears",
+          "case",
+          "charging",
+          "noise",
+          "pair",
+          "tiny"
+        ],
+        "Hacker": [
+          "code",
+          "hoodie",
+          "password",
+          "breach",
+          "screen",
+          "illegal",
+          "virus",
+          "dark"
+        ],
+        "Barcode": [
+          "lines",
+          "scan",
+          "price",
+          "checkout",
+          "product",
+          "stripes",
+          "numbers",
+          "label"
         ]
       }
     },
@@ -3569,17 +3569,17 @@
         "Boarding gate",
         "Takeoff",
         "Landing",
-        "Flight delay",
+        "Duty free",
         "Jet lag",
-        "Travel insurance",
-        "Vacation rental",
+        "Postcard",
+        "Sleeping bag",
         "Room service",
         "Reception desk",
         "Luggage tag",
-        "Carry on bag",
+        "Beach towel",
         "Travel pillow",
-        "Tourist attraction",
-        "City tour",
+        "Binoculars",
+        "Compass",
         "Theme park",
         "Water park"
       ],
@@ -3916,16 +3916,6 @@
           "departure",
           "journey"
         ],
-        "Flight delay": [
-          "airport",
-          "documents",
-          "waiting",
-          "security",
-          "abroad",
-          "departure",
-          "journey",
-          "packing"
-        ],
         "Jet lag": [
           "airport",
           "flight",
@@ -3935,26 +3925,6 @@
           "abroad",
           "departure",
           "journey"
-        ],
-        "Travel insurance": [
-          "airport",
-          "flight",
-          "documents",
-          "waiting",
-          "security",
-          "abroad",
-          "departure",
-          "journey"
-        ],
-        "Vacation rental": [
-          "packing",
-          "stay",
-          "comfort",
-          "booking",
-          "room",
-          "luggage",
-          "relaxing",
-          "temporary"
         ],
         "Room service": [
           "packing",
@@ -3986,16 +3956,6 @@
           "temporary",
           "airport"
         ],
-        "Carry on bag": [
-          "packing",
-          "stay",
-          "comfort",
-          "booking",
-          "room",
-          "luggage",
-          "relaxing",
-          "temporary"
-        ],
         "Travel pillow": [
           "packing",
           "stay",
@@ -4005,26 +3965,6 @@
           "luggage",
           "relaxing",
           "temporary"
-        ],
-        "Tourist attraction": [
-          "outdoors",
-          "fun",
-          "exploring",
-          "memories",
-          "relaxing",
-          "activity",
-          "destination",
-          "airport"
-        ],
-        "City tour": [
-          "outdoors",
-          "fun",
-          "exploring",
-          "memories",
-          "relaxing",
-          "activity",
-          "destination",
-          "airport"
         ],
         "Theme park": [
           "tourist",
@@ -4045,6 +3985,66 @@
           "relaxing",
           "activity",
           "destination"
+        ],
+        "Postcard": [
+          "stamp",
+          "greetings",
+          "picture",
+          "mail",
+          "send",
+          "souvenir",
+          "address",
+          "view"
+        ],
+        "Sleeping bag": [
+          "camping",
+          "zipper",
+          "tent",
+          "warm",
+          "night",
+          "outdoors",
+          "roll",
+          "cozy"
+        ],
+        "Duty free": [
+          "perfume",
+          "airport",
+          "shopping",
+          "chocolate",
+          "cheap",
+          "tax",
+          "bags",
+          "terminal"
+        ],
+        "Binoculars": [
+          "birds",
+          "distance",
+          "lenses",
+          "zoom",
+          "lookout",
+          "safari",
+          "strap",
+          "view"
+        ],
+        "Compass": [
+          "north",
+          "needle",
+          "direction",
+          "hiking",
+          "magnetic",
+          "navigation",
+          "lost",
+          "map"
+        ],
+        "Beach towel": [
+          "sand",
+          "colorful",
+          "sunbathing",
+          "dry",
+          "striped",
+          "pool",
+          "large",
+          "lying"
         ]
       }
     },
@@ -4741,29 +4741,29 @@
         "First date",
         "Coffee date",
         "Crush",
-        "Chemistry",
-        "Butterflies",
-        "Attraction",
+        "Bouquet",
+        "Teddy bear",
+        "Valentine's Day",
         "Flirting",
         "Compliment",
         "Smile",
         "Kiss",
         "Love",
-        "Romance",
+        "Hug",
         "Partner",
         "Couple",
-        "Trust",
+        "Love song",
         "Jealousy",
         "Argument",
         "Apology",
-        "Compromise",
+        "Double date",
         "Anniversary",
         "Proposal",
         "Engagement ring",
         "Wedding",
         "Breakup",
         "Blind date",
-        "Long distance relationship",
+        "Ex",
         "Love letter",
         "Date night",
         "Honeymoon"
@@ -4871,36 +4871,6 @@
           "romantic",
           "close"
         ],
-        "Chemistry": [
-          "feelings",
-          "spark",
-          "attraction",
-          "heart",
-          "exciting",
-          "personal",
-          "romantic",
-          "close"
-        ],
-        "Butterflies": [
-          "feelings",
-          "spark",
-          "attraction",
-          "heart",
-          "exciting",
-          "personal",
-          "romantic",
-          "close"
-        ],
-        "Attraction": [
-          "feelings",
-          "spark",
-          "heart",
-          "exciting",
-          "personal",
-          "romantic",
-          "close",
-          "nervous"
-        ],
         "Flirting": [
           "feelings",
           "spark",
@@ -4951,16 +4921,6 @@
           "romantic",
           "close"
         ],
-        "Romance": [
-          "feelings",
-          "spark",
-          "attraction",
-          "heart",
-          "exciting",
-          "personal",
-          "romantic",
-          "close"
-        ],
         "Partner": [
           "trust",
           "communication",
@@ -4980,16 +4940,6 @@
           "personal",
           "together",
           "emotional"
-        ],
-        "Trust": [
-          "communication",
-          "support",
-          "tension",
-          "commitment",
-          "personal",
-          "together",
-          "emotional",
-          "nervous"
         ],
         "Jealousy": [
           "trust",
@@ -5012,16 +4962,6 @@
           "emotional"
         ],
         "Apology": [
-          "trust",
-          "communication",
-          "support",
-          "tension",
-          "commitment",
-          "personal",
-          "together",
-          "emotional"
-        ],
-        "Compromise": [
           "trust",
           "communication",
           "support",
@@ -5091,16 +5031,6 @@
           "social",
           "phone"
         ],
-        "Long distance relationship": [
-          "trust",
-          "communication",
-          "support",
-          "tension",
-          "commitment",
-          "personal",
-          "together",
-          "emotional"
-        ],
         "Love letter": [
           "celebration",
           "romantic",
@@ -5130,6 +5060,76 @@
           "couple",
           "elegant",
           "exciting"
+        ],
+        "Bouquet": [
+          "flowers",
+          "roses",
+          "gift",
+          "florist",
+          "wrapped",
+          "romantic",
+          "smell",
+          "vase"
+        ],
+        "Teddy bear": [
+          "soft",
+          "plush",
+          "gift",
+          "cuddle",
+          "brown",
+          "heart",
+          "cute",
+          "bed"
+        ],
+        "Valentine's Day": [
+          "February",
+          "hearts",
+          "red",
+          "flowers",
+          "chocolate",
+          "couples",
+          "cards",
+          "cupid"
+        ],
+        "Love song": [
+          "ballad",
+          "radio",
+          "romantic",
+          "lyrics",
+          "slow",
+          "heart",
+          "dedication",
+          "singer"
+        ],
+        "Double date": [
+          "couples",
+          "four",
+          "friends",
+          "dinner",
+          "restaurant",
+          "setup",
+          "evening",
+          "fun"
+        ],
+        "Ex": [
+          "past",
+          "breakup",
+          "awkward",
+          "former",
+          "memories",
+          "drama",
+          "blocked",
+          "history"
+        ],
+        "Hug": [
+          "arms",
+          "warm",
+          "squeeze",
+          "comfort",
+          "friends",
+          "goodbye",
+          "cozy",
+          "tight"
         ]
       }
     },
@@ -5168,12 +5168,12 @@
         "Billiards",
         "Arcade",
         "Casino",
-        "Taxi home",
+        "Glow sticks",
         "Party invitation",
         "Birthday cake",
         "Gift",
-        "Open bar",
-        "Happy hour",
+        "Balloons",
+        "Costume party",
         "Photo booth",
         "Party hat",
         "Fireworks"
@@ -5501,16 +5501,6 @@
           "evening",
           "entertainment"
         ],
-        "Taxi home": [
-          "outing",
-          "friends",
-          "tickets",
-          "laughter",
-          "social",
-          "event",
-          "evening",
-          "entertainment"
-        ],
         "Party invitation": [
           "outing",
           "friends",
@@ -5541,26 +5531,6 @@
           "evening",
           "entertainment"
         ],
-        "Open bar": [
-          "party",
-          "drinks",
-          "late",
-          "energy",
-          "friends",
-          "celebration",
-          "morning",
-          "fun"
-        ],
-        "Happy hour": [
-          "party",
-          "drinks",
-          "late",
-          "energy",
-          "friends",
-          "celebration",
-          "morning",
-          "fun"
-        ],
         "Photo booth": [
           "outing",
           "friends",
@@ -5590,6 +5560,36 @@
           "event",
           "evening",
           "entertainment"
+        ],
+        "Glow sticks": [
+          "neon",
+          "bracelet",
+          "dark",
+          "rave",
+          "bright",
+          "snap",
+          "colors",
+          "festival"
+        ],
+        "Balloons": [
+          "helium",
+          "colorful",
+          "pop",
+          "string",
+          "decoration",
+          "birthday",
+          "float",
+          "arch"
+        ],
+        "Costume party": [
+          "dress",
+          "mask",
+          "Halloween",
+          "theme",
+          "wig",
+          "disguise",
+          "funny",
+          "contest"
         ]
       }
     },
@@ -6115,7 +6115,7 @@
         "PlayStation",
         "Xbox",
         "Nintendo Switch",
-        "Computer game",
+        "Joystick",
         "Mobile game",
         "Minecraft",
         "Fortnite",
@@ -6156,7 +6156,7 @@
         "Valorant",
         "Rocket League",
         "Gaming headset",
-        "Online game",
+        "Cheat code",
         "Split screen",
         "Speedrun",
         "Achievement",
@@ -6197,16 +6197,6 @@
           "play"
         ],
         "Nintendo Switch": [
-          "popular",
-          "screen",
-          "adventure",
-          "characters",
-          "world",
-          "action",
-          "fans",
-          "play"
-        ],
-        "Computer game": [
           "popular",
           "screen",
           "adventure",
@@ -6616,16 +6606,6 @@
           "comfort",
           "players"
         ],
-        "Online game": [
-          "equipment",
-          "sound",
-          "team",
-          "communication",
-          "screen",
-          "comfort",
-          "players",
-          "popular"
-        ],
         "Split screen": [
           "challenge",
           "progress",
@@ -6675,6 +6655,26 @@
           "skill",
           "online",
           "players"
+        ],
+        "Joystick": [
+          "stick",
+          "arcade",
+          "buttons",
+          "pilot",
+          "retro",
+          "tilt",
+          "grip",
+          "control"
+        ],
+        "Cheat code": [
+          "secret",
+          "unlock",
+          "buttons",
+          "combination",
+          "unlimited",
+          "shortcut",
+          "magazine",
+          "retro"
         ]
       }
     },
@@ -6731,7 +6731,7 @@
         "Music video",
         "Radio",
         "Opera",
-        "Music award"
+        "Grammy"
       ],
       "impostorFallbackHints": [
         "sound",
@@ -7236,15 +7236,15 @@
           "public",
           "music"
         ],
-        "Music award": [
-          "creative",
-          "professional",
-          "production",
-          "performance",
-          "artist",
-          "sound",
-          "public",
-          "instrument"
+        "Grammy": [
+          "award",
+          "trophy",
+          "gramophone",
+          "ceremony",
+          "winner",
+          "red",
+          "nominee",
+          "stage"
         ]
       }
     },
@@ -7742,7 +7742,7 @@
         "FOMO",
         "LOL",
         "Trending",
-        "Internet celebrity",
+        "TikTok",
         "Fan page",
         "Online forum",
         "Video thumbnail",
@@ -8061,16 +8061,6 @@
           "online",
           "community"
         ],
-        "Internet celebrity": [
-          "creator",
-          "audience",
-          "video",
-          "followers",
-          "platform",
-          "content",
-          "popular",
-          "online"
-        ],
         "Fan page": [
           "creator",
           "audience",
@@ -8110,6 +8100,16 @@
           "content",
           "popular",
           "online"
+        ],
+        "TikTok": [
+          "videos",
+          "dance",
+          "scroll",
+          "short",
+          "trends",
+          "feed",
+          "app",
+          "viral"
         ]
       }
     },
@@ -11001,11 +11001,11 @@
         "Crosswords",
         "Sudoku",
         "Acting",
-        "Blogging",
+        "Lego",
         "Vlogging",
         "Volunteering",
         "Language learning",
-        "Karaoke night",
+        "Kite flying",
         "Picnicking"
       ],
       "impostorFallbackHints": [
@@ -11361,16 +11361,6 @@
           "creative",
           "leisure"
         ],
-        "Blogging": [
-          "online",
-          "creative",
-          "audience",
-          "content",
-          "personal",
-          "sharing",
-          "camera",
-          "leisure"
-        ],
         "Vlogging": [
           "online",
           "creative",
@@ -11401,16 +11391,6 @@
           "leisure",
           "creative"
         ],
-        "Karaoke night": [
-          "performance",
-          "practice",
-          "audience",
-          "fun",
-          "confidence",
-          "social",
-          "creative",
-          "leisure"
-        ],
         "Picnicking": [
           "outdoors",
           "nature",
@@ -11420,6 +11400,26 @@
           "observation",
           "fresh",
           "leisure"
+        ],
+        "Kite flying": [
+          "wind",
+          "string",
+          "sky",
+          "beach",
+          "tail",
+          "park",
+          "colorful",
+          "high"
+        ],
+        "Lego": [
+          "bricks",
+          "build",
+          "colorful",
+          "plastic",
+          "kids",
+          "sets",
+          "minifigure",
+          "instructions"
         ]
       }
     }
@@ -11450,10 +11450,6 @@
       "Smart phone",
       "Mobile phone",
       "Cell phone"
-    ],
-    "Resume": [
-      "Résumé",
-      "CV"
     ],
     "WiFi": [
       "Wi-Fi"
@@ -11505,6 +11501,10 @@
     ],
     "Backpack": [
       "Rucksack"
+    ],
+    "Detective": [
+      "Résumé",
+      "CV"
     ]
   },
   "reactions": [

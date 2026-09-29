@@ -2079,13 +2079,16 @@ class _WordCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    word,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.night,
-                      fontFamily: 'Secular One',
-                      fontSize: 30,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      word,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.night,
+                        fontFamily: 'Secular One',
+                        fontSize: 30,
+                      ),
                     ),
                   ),
                 ],
