@@ -65,11 +65,8 @@ class _LegalGateState extends State<LegalGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (_accepted == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    // Straight after the native splash: the same picture, and three dots.
+    if (_accepted == null) return const Scaffold(body: SplashLoading());
     if (_accepted!) return widget.child;
     return LegalConsentScreen(onAccepted: _accept);
   }

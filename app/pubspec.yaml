@@ -56,25 +56,29 @@ flutter:
       fonts:
         - asset: assets/fonts/SecularOne-Regular.ttf
 
-# App icon and splash from the home screen illustration (home-hero): the icon
-# frames the detective girl's glass and the impostor behind her, the splash
-# shows the whole group. branding/ holds the sources. Regenerate with:
+# App icon and splash: the Claude Design "Imposter IL Brand" page — the whole
+# home illustration (home-hero) on the night-blue radial gradient, no text.
+# branding/ holds the rendered sources. Regenerate with:
 #   dart run flutter_launcher_icons && dart run flutter_native_splash:create
+# Both tools also rewrite AndroidManifest.xml (dropping the portrait lock) and
+# an Xcode build setting: restore those two files after running them.
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: branding/icon.png
-  adaptive_icon_background: "#14132B"
+  # The gradient and the group are separate layers, framed for the full 108dp
+  # (the launcher shows the middle 72dp), so no extra inset.
+  adaptive_icon_background: branding/icon-background.png
   adaptive_icon_foreground: branding/icon-foreground.png
-  # The foreground is framed for the full 108dp layer (the visible 72dp is its
-  # middle two thirds), so no extra inset.
   adaptive_icon_foreground_inset: 0
   remove_alpha_ios: true
   background_color_ios: "#14132B"
 
 flutter_native_splash:
-  color: "#14132B"
+  # The illustration alone, 290pt wide, on the home screen's gradient.
+  background_image: branding/splash-background.png
   image: branding/splash.png
   android_12:
+    # Android 12+ draws the icon in a circle itself.
     color: "#14132B"
-    image: branding/icon-foreground.png
+    image: branding/splash-android12.png
