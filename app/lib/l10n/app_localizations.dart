@@ -1910,6 +1910,12 @@ abstract class AppLocalizations {
   /// **'יצירת קשר'**
   String get contact;
 
+  /// No description provided for @emailCopied.
+  ///
+  /// In he, this message translates to:
+  /// **'כתובת המייל הועתקה'**
+  String get emailCopied;
+
   /// No description provided for @reportedPlayers.
   ///
   /// In he, this message translates to:

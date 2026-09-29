@@ -1061,6 +1061,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contact => 'Contact';
 
   @override
+  String get emailCopied => 'Email address copied';
+
+  @override
   String get reportedPlayers => 'Players you reported';
 
   @override
