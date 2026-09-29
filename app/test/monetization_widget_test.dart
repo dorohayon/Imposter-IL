@@ -106,7 +106,7 @@ void main() {
       for (final name in ['ספורט וכושר', 'עבודה ומשרד', 'גיימינג']) {
         expect(find.text(categoryTileName(name)), findsOneWidget);
       }
-      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(15));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(18));
 
       await tapLive(tester, 'חפש משחק');
       expect(_searched(api), ['food', 'places', 'film_tv']);
@@ -150,7 +150,7 @@ void main() {
       await tapText(tester, 'בוחרים ב״ספורט וכושר״');
 
       expect(find.textContaining('״ספורט וכושר״ נעולה'), findsNothing);
-      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(14));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(17));
       await tapLive(tester, 'חפש משחק');
       expect(_searched(api), ['food', 'sports']);
     });
@@ -255,7 +255,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.close_rounded));
       await tester.pumpAndSettle();
       expect(find.textContaining('״ספורט וכושר״ נעולה'), findsNothing);
-      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(15));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(18));
     });
 
     testWidgets('while the store works, the popup stays open', (tester) async {
@@ -355,7 +355,7 @@ void main() {
       expect(find.text('הרכישות שוחזרו'), findsOneWidget);
       expect(find.text('״ספורט וכושר״ פתוחה שוב במכשיר הזה.'), findsOneWidget);
       await tapText(tester, 'סגירה');
-      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(14));
+      expect(find.byIcon(Icons.lock_rounded), findsNWidgets(17));
       expect(find.text('✓ נרכשה'), findsOneWidget);
     });
 

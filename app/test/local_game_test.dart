@@ -409,8 +409,8 @@ void main() {
   });
 
   test('local guess accepts configured alternate spellings', () {
-    expect(isCorrectLocalGuess('פקמן', 'פאקמן'), isTrue);
+    expect(isCorrectLocalGuess('פאקמן', 'פקמן'), isTrue);
     expect(isCorrectLocalGuess('וויפי', 'וויי פיי'), isTrue);
-    expect(isCorrectLocalGuess('טטריס', 'פאקמן'), isFalse);
+    expect(isCorrectLocalGuess('טטריס', 'פקמן'), isFalse);
   });
 }
