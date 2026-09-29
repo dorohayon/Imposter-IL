@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -731,6 +732,92 @@ class Illustration extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(asset, height: height, fit: BoxFit.contain);
+  }
+}
+
+/// The brand's loading screen (Claude Design, "Imposter IL Brand"): the home
+/// illustration on the splash gradient with three dots, so the native splash
+/// hands over without a jump.
+class SplashLoading extends StatefulWidget {
+  const SplashLoading({super.key});
+
+  @override
+  State<SplashLoading> createState() => _SplashLoadingState();
+}
+
+class _SplashLoadingState extends State<SplashLoading> {
+  static const _colors = [AppColors.yellow, AppColors.yellow, AppColors.purple];
+  int _active = 0;
+  late final Timer _timer = Timer.periodic(
+    const Duration(milliseconds: 420),
+    (_) => setState(() => _active = (_active + 1) % _colors.length),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _timer;
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    return DecoratedBox(
+      // radial-gradient(circle at 50% 46%, #262157 0%, #14132B 62%), as the
+      // native splash's background image.
+      decoration: const BoxDecoration(
+        gradient: RadialGradient(
+          center: Alignment(0, -0.08),
+          radius: 1.27,
+          colors: [Color(0xFF262157), AppColors.night],
+          stops: [0, 0.62],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Center(
+            child: Image.asset(
+              'assets/illustrations/home-hero.webp',
+              // 290 of 390, the native splash's share of the width.
+              width: width * 290 / 390,
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 84,
+            child: Semantics(
+              label: l10n.loading,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (final (i, color) in _colors.indexed) ...[
+                    if (i > 0) const SizedBox(width: 10),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      width: 12,
+                      height: 12,
+                      transform: Matrix4.translationValues(
+                          0, i == _active ? -4 : 0, 0),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: color.withValues(alpha: i == _active ? 1 : .35),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
