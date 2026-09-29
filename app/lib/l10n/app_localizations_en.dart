@@ -1261,8 +1261,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tie => 'It\'s a tie';
 
   @override
-  String tieCandidates(Object tieCandidatesLength, Object tiedVotes) {
-    return '$tieCandidatesLength candidates got $tiedVotes votes';
+  String tieCandidates(Object tieCandidatesLength, int tiedVotes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      tiedVotes,
+      locale: localeName,
+      other: '$tiedVotes votes',
+      one: '1 vote',
+    );
+    return '$tieCandidatesLength players tied at $_temp0 each';
   }
 
   @override
@@ -1720,4 +1726,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String roomLanguageMismatch(Object language) {
     return 'This room\'s language is $language. To join, switch the language in Settings.';
   }
+
+  @override
+  String get guessTheWord => 'Guess the word';
 }

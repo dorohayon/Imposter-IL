@@ -319,11 +319,6 @@ void main() {
           toVote(g);
           g.reveal();
         },
-        (LocalGame g) {
-          toVote(g);
-          allVoteFor(g, g.impostor);
-          g.reveal();
-        },
       ]) {
         final g = game();
         reach(g);
@@ -331,6 +326,16 @@ void main() {
         g.hidePrivateContent();
         expect(g.revealed, isFalse);
       }
+    });
+
+    test("the impostor's guess stays up when the app comes back", () {
+      final g = game();
+      toVote(g);
+      allVoteFor(g, g.impostor);
+      g.reveal();
+      expect(g.phase, LocalPhase.guess);
+      g.hidePrivateContent(); // the notification shade, a network toggle
+      expect(g.revealed, isTrue, reason: 'no "hand the device to" again');
     });
 
     test('a restored match carries the whole position', () {

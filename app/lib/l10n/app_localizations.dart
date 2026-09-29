@@ -2243,8 +2243,8 @@ abstract class AppLocalizations {
   /// No description provided for @tieCandidates.
   ///
   /// In he, this message translates to:
-  /// **'{tieCandidatesLength} מועמדים קיבלו {tiedVotes} קולות'**
-  String tieCandidates(Object tieCandidatesLength, Object tiedVotes);
+  /// **'{tieCandidatesLength} מועמדים קיבלו {tiedVotes, plural, =1{קול אחד} other{{tiedVotes} קולות}}'**
+  String tieCandidates(Object tieCandidatesLength, int tiedVotes);
 
   /// No description provided for @startRevote.
   ///
@@ -2971,6 +2971,12 @@ abstract class AppLocalizations {
   /// In he, this message translates to:
   /// **'שפת החדר: {language}. כדי להצטרף, מחליפים שפה בהגדרות.'**
   String roomLanguageMismatch(Object language);
+
+  /// No description provided for @guessTheWord.
+  ///
+  /// In he, this message translates to:
+  /// **'ניחוש המילה'**
+  String get guessTheWord;
 }
 
 class _AppLocalizationsDelegate
