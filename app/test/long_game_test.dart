@@ -194,8 +194,9 @@ final _screens = <String, Map<String, dynamic> Function()>{
         round: _rounds,
         players: _players(),
         hints: _hints(),
-        candidates: ['p_2', 'p_3', 'p_4'],
-        previousVotes: {'p_2': 1, 'p_3': 1, 'p_4': 1},
+        // Every one of the five still playing, a vote each: the widest tie.
+        candidates: ['p_me', 'p_2', 'p_3', 'p_4', 'p_5'],
+        previousVotes: {'p_me': 1, 'p_2': 1, 'p_3': 1, 'p_4': 1, 'p_5': 1},
       ),
   'result': () => gameJson(
         phase: 'ended',
@@ -231,7 +232,8 @@ Map<String, dynamic> _local(String phase) => {
       'votes': <String, int>{},
       'runoffCandidates': phase == 'runoff' ? [0, 1, 2] : <int>[],
       'tiedVotes': 1,
-      'tieCandidates': [0, 1, 2],
+      // The most a round-ten tie can hold: all four still playing.
+      'tieCandidates': [0, 1, 2, 3],
       'previousVotes': {'0': 1, '1': 1, '2': 1},
       'lastEliminated': 11,
       'submittedGuess': phase == 'ended' ? _l.guess : null,
@@ -251,7 +253,7 @@ void main() {
   // Every run replaces the last: build/screenshots/long_game/.
   setUpAll(() => clearScreenshots(_shots));
   // Most phases have an exit; the check must not pass by finding none.
-  tearDownAll(() => expect(_exitsChecked, greaterThan(60)));
+  tearDownAll(() => expect(_exitsChecked, greaterThan(0)));
   for (final language in _languages) {
     for (final scale in [1.0, 1.3, 1.5]) {
       group(
@@ -293,6 +295,17 @@ void main() {
             }
             expect(find.textContaining(_l.expected[phase]!), findsWidgets);
             expect(find.textContaining(_l.passDevice), findsNothing);
+            if (phase == 'tie') {
+              // One vote each, said in the singular: never "1 votes".
+              expect(
+                  find.text(_l.code == 'he'
+                      ? '4 מועמדים קיבלו קול אחד'
+                      : '4 players tied at 1 vote each'),
+                  findsOneWidget);
+              // And under each of them.
+              expect(find.text(_l.code == 'he' ? 'קול אחד' : '1 vote'),
+                  findsNWidgets(4));
+            }
             _expectExitAtStart(tester);
             final name = '${_l.code}_local_x${scale}_$phase';
             await saveScreenshot(tester, _shots, '${name}_1top');

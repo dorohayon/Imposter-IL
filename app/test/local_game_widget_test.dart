@@ -193,11 +193,37 @@ void main() {
     ballot.reveal();
     await expectCovered(ballot, find.text('אישור הצבעה'));
 
+    // The guess has no secret and the impostor already has the device:
+    // staying keeps them on it rather than sending the phone round again.
     final guess = _game();
     _toVote(guess);
     _voteFor(guess, guess.impostor);
     guess.reveal();
-    await expectCovered(guess, find.byType(TextField));
+    await _pumpGame(tester, guess);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tapText(tester, 'המשך משחק');
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.textContaining('העבירו את המכשיר ל'), findsNothing);
+  });
+
+  // The reported bug: pulling down the notification shade (to toggle the
+  // network, say) made the app inactive, and the guess came back as "hand the
+  // device to" the impostor who was already holding it.
+  testWidgets("the impostor's guess survives the app going inactive",
+      (tester) async {
+    final guess = _game();
+    _toVote(guess);
+    _voteFor(guess, guess.impostor);
+    guess.reveal();
+    await _pumpGame(tester, guess);
+    await tester.enterText(find.byType(TextField), 'פיל');
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('העבירו את המכשיר ל'), findsNothing);
+    expect(find.text('פיל'), findsOneWidget, reason: 'the typed guess stays');
   });
 
   // Online, a tie reaches every player on their own screen at once. With one

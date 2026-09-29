@@ -357,7 +357,7 @@
   "hintsSpokenAloud": "Hints are said out loud — no typing and no hint board.",
   "passDeviceVote": "Pass the device between players. Don't reveal who you voted for.",
   "tie": "It's a tie",
-  "tieCandidates": "{tieCandidatesLength} candidates got {tiedVotes} votes",
+  "tieCandidates": "{tieCandidatesLength} players tied at {tiedVotes, plural, =1{1 vote} other{{tiedVotes} votes}} each",
   "startRevote": "Start the revote",
   "thenPassNext": "Then pass the device to the next player",
   "youreCaught": "{impostorName}, you've been caught",

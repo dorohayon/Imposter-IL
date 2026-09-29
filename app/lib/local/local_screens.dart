@@ -127,9 +127,10 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   }
 
   Future<void> _leave() async {
-    // A translucent dialog must never leave a role, ballot or typed guess
-    // readable underneath it. Cancelling intentionally returns to the neutral
-    // handoff screen, so only the intended player can reveal it again.
+    // A translucent dialog must never leave a role or a ballot readable
+    // underneath it. Cancelling intentionally returns to the neutral handoff
+    // screen, so only the intended player can reveal it again. The guess has
+    // no secret and stays (LocalGame.hidePrivateContent).
     if (_game.revealed) {
       setState(_game.hidePrivateContent);
       _syncTimer();
@@ -649,7 +650,8 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   Widget _guessScreen() {
     final impostor = _game.players[_game.impostor];
     return GameScaffold(
-      title: context.l10n.youreCaught(impostor.name),
+      // Read in the body, over "עוד אפשר לנצח", as online: not by the timer.
+      title: '',
       showHeader: true,
       onExit: _leave,
       timer: TimerBadge(
@@ -670,6 +672,16 @@ class _LocalGameScreenState extends State<LocalGameScreen>
           const Illustration('assets/illustrations/role-impostor.webp',
               height: 140),
           const SizedBox(height: 12),
+          Text(
+            context.l10n.youreCaught(impostor.name),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFFF9B9B),
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
           Text(
             context.l10n.stillCanWin,
             textAlign: TextAlign.center,
@@ -693,12 +705,8 @@ class _LocalGameScreenState extends State<LocalGameScreen>
             decoration: InputDecoration(hintText: context.l10n.whatsTheWord),
             onChanged: (_) => setState(() {}),
           ),
-          const SizedBox(height: 10),
-          Text(
-            context.l10n.guessHidden,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, fontSize: 13),
-          ),
+          // Not "the guess is not shown while typing": that is the online
+          // screen, where everyone has a phone. Here only the impostor looks.
           const SizedBox(height: 10),
           Text(
             context.l10n.onlyPlayerLookingNoDot(impostor.name),
@@ -1068,7 +1076,10 @@ class _TieAnnouncement extends StatelessWidget {
             (
               game.players[i].name,
               game.players[i].avatar,
-              context.l10n.nVotes(game.tiedVotes),
+              // "1 vote", as online: never "1 votes".
+              game.tiedVotes == 1
+                  ? context.l10n.oneVote
+                  : context.l10n.nVotes(game.tiedVotes),
             ),
         ],
       ),

@@ -221,12 +221,16 @@ class LocalGame {
     }
   }
 
-  /// Covers any private screen before the app leaves the foreground.
+  /// Covers a role or a ballot before the app leaves the foreground, even for
+  /// a moment (the notification shade makes it inactive too).
+  ///
+  /// Not the impostor's guess: it holds no secret — the table knows the word
+  /// — and the impostor already has the device, so covering it only sent it
+  /// back to "hand the device to" after a glance at the shade.
   void hidePrivateContent() {
     if (phase == LocalPhase.roleReveal ||
         phase == LocalPhase.voting ||
-        phase == LocalPhase.runoff ||
-        phase == LocalPhase.guess) {
+        phase == LocalPhase.runoff) {
       revealed = false;
     }
   }

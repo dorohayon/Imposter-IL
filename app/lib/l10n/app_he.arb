@@ -715,14 +715,14 @@
   "hintsSpokenAloud": "הרמזים נאמרים בקול — אין הקלדה ואין לוח רמזים.",
   "passDeviceVote": "מעבירים את המכשיר בין השחקנים. אל תגלו למי הצבעתם.",
   "tie": "יש תיקו",
-  "tieCandidates": "{tieCandidatesLength} מועמדים קיבלו {tiedVotes} קולות",
+  "tieCandidates": "{tieCandidatesLength} מועמדים קיבלו {tiedVotes, plural, =1{קול אחד} other{{tiedVotes} קולות}}",
   "@tieCandidates": {
     "placeholders": {
       "tieCandidatesLength": {
         "type": "Object"
       },
       "tiedVotes": {
-        "type": "Object"
+        "type": "int"
       }
     }
   },

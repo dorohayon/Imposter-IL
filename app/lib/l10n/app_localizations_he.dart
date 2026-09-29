@@ -1236,8 +1236,14 @@ class AppLocalizationsHe extends AppLocalizations {
   String get tie => 'יש תיקו';
 
   @override
-  String tieCandidates(Object tieCandidatesLength, Object tiedVotes) {
-    return '$tieCandidatesLength מועמדים קיבלו $tiedVotes קולות';
+  String tieCandidates(Object tieCandidatesLength, int tiedVotes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      tiedVotes,
+      locale: localeName,
+      other: '$tiedVotes קולות',
+      one: 'קול אחד',
+    );
+    return '$tieCandidatesLength מועמדים קיבלו $_temp0';
   }
 
   @override

@@ -2243,8 +2243,8 @@ abstract class AppLocalizations {
   /// No description provided for @tieCandidates.
   ///
   /// In he, this message translates to:
-  /// **'{tieCandidatesLength} מועמדים קיבלו {tiedVotes} קולות'**
-  String tieCandidates(Object tieCandidatesLength, Object tiedVotes);
+  /// **'{tieCandidatesLength} מועמדים קיבלו {tiedVotes, plural, =1{קול אחד} other{{tiedVotes} קולות}}'**
+  String tieCandidates(Object tieCandidatesLength, int tiedVotes);
 
   /// No description provided for @startRevote.
   ///
