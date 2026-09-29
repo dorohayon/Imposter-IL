@@ -74,7 +74,7 @@ that stays silent on its turn.
    hyphenated word counts as one is still open in `docs/open-decisions.md`.
 2. **At most 25 characters.**
 3. **Not on the blocklist** (`server/internal/content/blocked_words.txt`).
-4. **Must not reveal the secret.** The check is on the normalised form. For a multiword secret, the full phrase and each visible component are blocked; e.g. `בסיס` cannot be a citizen hint for `בסיס פתוח`. A component of 4+ letters is blocked at the start of a hint (after prefix letters), a 3-letter one only alone or with prefix letters, a shorter one only alone — so `על` is blocked for `רכיבה על אופניים` but `מעל` is not. The rule is `game.HintContainsSecret`, shared with the server.
+4. **Must not reveal the secret.** The check is on the normalised form. For a multiword secret, the full phrase and each visible component are blocked; e.g. `בסיס` cannot be a citizen hint for `בסיס פתוח`. A component of 4+ letters is blocked at the start of a hint (after prefix letters), a 3-letter one only alone or with prefix letters, a shorter one alone or after ה or ב — so `הים` and `בים` are blocked for `בגד ים`, while `מעל` passes for `רכיבה על אופניים` and `לפי` for `ג'י פי אס`. The rule is `game.HintContainsSecret`, shared with the server.
 5. **No two hints in the same pool may be duplicates.** Two hints are the same
    if they are equal after normalisation, or one is the other with 1–3 Hebrew
    prefix letters (`ו ה ב כ ל מ ש`) in front leaving at least two letters. So

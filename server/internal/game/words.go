@@ -100,9 +100,11 @@ func isPrefixed(long, short string) bool {
 // Each word of a multiword secret is a word in its own right, and is matched
 // as one, never from inside another word: four letters or more at the hint's
 // start after prefix letters (train -> trains, אופניים -> האופניים), three
-// with prefix letters (הבית for "בית ספר"), and one or two letters only as
-// the whole hint. So "feedback" is a fine hint for "Back to the Future",
-// "מעל" for "רכיבה על אופניים" and "לפי" for "ג'י פי אס".
+// with prefix letters (הבית for "בית ספר"), and one or two letters alone or
+// after ה or ב, the forms a citizen would say (הים, בים for "בגד ים"). Other
+// prefix letters make ordinary words of them (לפי, כפי), so "feedback" is a
+// fine hint for "Back to the Future", "מעל" for "רכיבה על אופניים" and "לפי"
+// for "ג'י פי אס".
 func hintContainsSecret(hint, secret string) bool {
 	h := normalizeWord(hint)
 	// Whether h starts with s, allowing up to maxPrefixLetters prefix letters.
@@ -140,7 +142,7 @@ func hintContainsSecret(hint, secret string) bool {
 				return true
 			}
 		default:
-			if h == p {
+			if h == p || strings.TrimPrefix(h, "ה") == p || strings.TrimPrefix(h, "ב") == p {
 				return true
 			}
 		}

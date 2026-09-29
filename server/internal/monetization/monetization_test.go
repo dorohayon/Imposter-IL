@@ -57,14 +57,15 @@ func TestParse(t *testing.T) {
 		t.Fatalf("parsed %+v", c)
 	}
 	for name, bad := range map[string]string{
-		"misspelt key":      `{"freeCategories":["food"]}`,
-		"unknown category":  `{"freeCategoryIds":["cars"]}`,
-		"no free category":  `{"freeCategoryIds":[]}`,
-		"same premium ids":  `{"products":{"categoryPrefix":"c_","premiumMonthly":"p","premiumLifetime":"p"}}`,
-		"bad rating":        `{"ads":{"maxAdContentRating":"R"}}`,
-		"negative interval": `{"ads":{"interstitialMinIntervalSeconds":-1}}`,
-		"not json":          `{`,
-		"too large":         `{"x":"` + strings.Repeat("a", maxConfigBytes) + `"}`,
+		"misspelt key":        `{"freeCategories":["food"]}`,
+		"unknown category":    `{"freeCategoryIds":["cars"]}`,
+		"no free category":    `{"freeCategoryIds":[]}`,
+		"free only in Hebrew": `{"freeCategoryIds":["israeli_slang"]}`,
+		"same premium ids":    `{"products":{"categoryPrefix":"c_","premiumMonthly":"p","premiumLifetime":"p"}}`,
+		"bad rating":          `{"ads":{"maxAdContentRating":"R"}}`,
+		"negative interval":   `{"ads":{"interstitialMinIntervalSeconds":-1}}`,
+		"not json":            `{`,
+		"too large":           `{"x":"` + strings.Repeat("a", maxConfigBytes) + `"}`,
 	} {
 		if _, err := Parse([]byte(bad)); err == nil {
 			t.Errorf("%s: accepted", name)

@@ -33,6 +33,8 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+
+	"github.com/dorohayon/Imposter-IL/server/internal/content"
 )
 
 var (
@@ -43,8 +45,8 @@ var (
 	reactRate = flag.Float64("react", 0.3, "chance a bot reacts to each new hint")
 	// Matchmaking only groups players whose categories intersect, so bots
 	// joining a human's search have to share at least one with them.
-	categories = flag.String("categories", "food,animals,home,school_students,work_office,technology_digital,travel_vacation,places,dating_relationships,nightlife,fashion_grooming,gaming,music,nostalgia,internet_culture,superheroes_fantasy,film_tv,sports,nature_weather,transportation,hobbies_free_time",
-		"comma-separated category ids to search with; the default matches anyone")
+	categories = flag.String("categories", "",
+		"comma-separated category ids to search with; empty searches every Hebrew category, which matches anyone")
 	// Bots that answer in microseconds make a game with a human in it feel
 	// broken: hints appear before the turn is readable. Thinking time makes a
 	// bot-filled match look like a real one. Set 0 for capacity tests, where
@@ -284,6 +286,15 @@ func (b *bot) search(ctx context.Context) {
 }
 
 func categoryIDs() []string {
+	if *categories == "" {
+		// The bots join without a language, so they play in Hebrew.
+		lang, _ := content.For(content.DefaultLanguage)
+		var out []string
+		for _, c := range lang.Categories {
+			out = append(out, c.ID)
+		}
+		return out
+	}
 	var out []string
 	for _, id := range strings.Split(*categories, ",") {
 		if id = strings.TrimSpace(id); id != "" {
