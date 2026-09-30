@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:imposter_il/screens/live_room.dart';
 import 'package:imposter_il/screens/secondary_screens.dart';
+import 'package:imposter_il/state/game_session.dart';
 import 'package:imposter_il/state/sounds.dart';
 
 import 'support/fake_server.dart';
@@ -112,6 +114,61 @@ void main() {
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
     expect(haptics, ['HapticFeedbackType.heavyImpact']);
+  });
+
+  testWidgets('a cast vote ends the voter\'s countdown', (tester) async {
+    final channel = await _inGame(tester, FakeApi());
+    channel.snapshot('game.state', 'game',
+        _deadlineIn(gameJson(phase: 'voting', candidates: ['p_2']), 7));
+    await settle(tester);
+    channel.snapshot(
+        'game.state',
+        'game',
+        _deadlineIn(
+            gameJson(phase: 'voting', candidates: ['p_2'], myVote: 'p_2'), 7));
+    await settle(tester);
+    await tester.pump(const Duration(seconds: 3));
+    expect(sounds.played, isNot(contains('countdown')));
+  });
+
+  testWidgets('a removed player hears nothing of the game', (tester) async {
+    final channel = await _inGame(tester, FakeApi());
+    channel.snapshot(
+        'game.state',
+        'game',
+        _deadlineIn(
+            gameJson(phase: 'voting', candidates: [
+              'p_2'
+            ], players: [
+              player('p_me', 'דור', status: 'removed'),
+              player('p_2', 'נועה'),
+              player('p_3', 'יובל'),
+              player('p_4', 'מאיה'),
+            ]),
+            7));
+    await settle(tester);
+    await tester.pump(const Duration(seconds: 3));
+    expect(sounds.played, isEmpty);
+  });
+
+  testWidgets('a hidden player\'s reaction makes no sound', (tester) async {
+    final channel = await _inGame(tester, FakeApi());
+    channel.snapshot(
+        'game.state', 'game', gameJson(phase: 'hints', turn: 'p_3'));
+    await settle(tester);
+    SessionScope.read(tester.element(find.byType(LiveRoomScreen))).muted = {
+      'p_2'
+    };
+    for (final from in ['p_2', 'p_4']) {
+      channel.event('game.reaction', {
+        'gameId': 'g_1',
+        'hintIndex': 0,
+        'reactionId': 'laugh',
+        'playerId': from,
+      });
+      await tester.pump();
+    }
+    expect(sounds.played, ['reaction'], reason: 'p_4 only');
   });
 
   testWidgets('the impostor hears their own reveal', (tester) async {

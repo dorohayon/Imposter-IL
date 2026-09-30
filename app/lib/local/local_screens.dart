@@ -63,6 +63,8 @@ class _LocalGameScreenState extends State<LocalGameScreen>
         );
     unawaited(LocalStore.save(_game));
     _syncTimer();
+    // A game resumed in the vote has its music; no stage has just begun.
+    _soundChanges(_game.phase);
   }
 
   @override

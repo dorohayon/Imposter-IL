@@ -148,6 +148,17 @@ void main() {
     expect(sounds.played, ['countdown', 'vote_start', 'bed:vote_bed']);
   });
 
+  testWidgets('one device: a game resumed in the vote has its music',
+      (tester) async {
+    sounds
+      ..loop(null)
+      ..played.clear();
+    final game = _game(players: 3);
+    _toVote(game);
+    await _pumpGame(tester, game);
+    expect(sounds.played, ['bed:vote_bed']);
+  });
+
   testWidgets('a complete private local flow reaches results at 320px',
       (tester) async {
     final game = _game(players: 3, hintSeconds: null);

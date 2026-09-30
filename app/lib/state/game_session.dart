@@ -441,7 +441,6 @@ class GameSession extends ChangeNotifier {
           payload['playerId'] as String? ?? '',
           payload['reactionId'] as String? ?? '',
         );
-        if (showReactions) sounds.play(Sound.reaction);
         return;
       default:
         return; // unknown types need no state change

@@ -266,6 +266,8 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
   String? _countdownFor;
 
   void _soundChanges(GameSession session, GameView? previous, GameView? game) {
+    // A player taken out of the game watches a "removed" screen, not the game.
+    if (_removed(session, game)) game = null;
     final phase = game?.phase;
     sounds.loop(
         phase == 'voting' || phase == 'runoff_voting' ? Bed.voting : null);
@@ -284,19 +286,22 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
   /// a hint or the move to voting.
   void _scheduleCountdown(
       GameSession session, GameView? game, MatchmakingView? search) {
+    if (_removed(session, game)) game = null;
     final me = session.playerId;
     final (String? key, DateTime? deadline) = switch ((game, search)) {
       (final game?, _)
           when game.deadline != null &&
               switch (game.phase) {
                 'hints' => game.currentTurnPlayerId == me,
-                'voting' || 'runoff_voting' => !game.isEliminated(me),
+                'voting' ||
+                'runoff_voting' =>
+                  !game.isEliminated(me) && game.myVote == null,
                 'impostor_guess' => game.isImpostor,
                 _ => false,
               } =>
         (
           '${game.id}/${game.phase}/${game.round}/'
-              '${game.currentTurnPlayerId}/${game.deadline}',
+              '${game.currentTurnPlayerId}/${game.deadline}/${game.myVote}',
           game.deadline
         ),
       (null, final search?)
@@ -313,14 +318,26 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     if (deadline == null) return;
     final left = deadline.difference(session.serverNow);
     if (left > _countdownLength) {
-      _countdown =
-          Timer(left - _countdownLength, () => sounds.play(Sound.countdown));
-    } else if (left > const Duration(seconds: 1)) {
-      // Already inside the last seconds, as the search's five-second count
-      // always is by the time it arrives: join the beats where they are.
-      sounds.play(Sound.countdown, from: _countdownLength - left);
+      _countdown = Timer(left - _countdownLength,
+          () => _joinCountdown(deadline.difference(session.serverNow)));
+    } else {
+      _joinCountdown(left);
     }
   }
+
+  /// Plays the beats that are [left], so the last lands on zero. Inside the
+  /// last seconds, as the search's five-second count always is by the time
+  /// it arrives, they join where they are. A timer that fired after the app
+  /// was suspended can find the deadline gone, and then plays nothing.
+  void _joinCountdown(Duration left) {
+    if (left <= const Duration(seconds: 1)) return;
+    sounds.play(Sound.countdown,
+        from:
+            left >= _countdownLength ? Duration.zero : _countdownLength - left);
+  }
+
+  bool _removed(GameSession session, GameView? game) =>
+      game?.player(session.playerId)?.status == 'removed';
 
   /// The countdown sound's five beats, its final hit on zero.
   static const _countdownLength = Duration(seconds: 5);
@@ -1356,6 +1373,7 @@ class _HintsState extends State<_Hints> {
   void _pop(String playerId, String text) {
     if (_cardKeys[playerId] case final key?) {
       floatReaction(context, text, anchor: key, seed: _seed++);
+      sounds.play(Sound.reaction);
     }
   }
 
