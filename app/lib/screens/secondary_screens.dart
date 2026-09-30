@@ -8,6 +8,7 @@ import '../l10n/l10n.dart';
 import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
 import '../state/game_session.dart';
+import '../state/sounds.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'legal_screens.dart';
@@ -194,7 +195,7 @@ class SettingsScreen extends StatelessWidget {
           if (supportEmail.isNotEmpty) ...[
             const SizedBox(height: 10),
             ListTile(
-              onTap: () => _emailSupport(context),
+              onTap: withClick(() => _emailSupport(context)),
               // The same end as the rows above (see _LinkRow).
               contentPadding:
                   const EdgeInsetsDirectional.only(start: 16, end: 12),
@@ -347,7 +348,7 @@ class _SettingsRow extends StatelessWidget {
       color: AppColors.cream.withValues(alpha: .07),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        onTap: onChanged == null ? null : () => onChanged!(!value),
+        onTap: withClick(onChanged == null ? null : () => onChanged!(!value)),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -391,7 +392,7 @@ class _LinkRow extends StatelessWidget {
       color: AppColors.cream.withValues(alpha: .06),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        onTap: onTap,
+        onTap: withClick(onTap),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           // 12 at the end, not 16: a chevron's stroke sits further inside its

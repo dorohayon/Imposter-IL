@@ -5,6 +5,7 @@ import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
 import '../monetization/purchase_sheet.dart';
 import '../state/game_session.dart';
+import '../state/sounds.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'live_room.dart';
@@ -189,7 +190,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                       selected: isSelected,
                       button: true,
                       child: InkWell(
-                        onTap: () => toggle(tile.id),
+                        onTap: withClick(() => toggle(tile.id)),
                         borderRadius: BorderRadius.circular(18),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 180),
@@ -439,7 +440,7 @@ class LockedCategoryTile extends StatelessWidget {
       label: context.l10n.lockedTapToOpen(name),
       excludeSemantics: true,
       child: InkWell(
-        onTap: onTap,
+        onTap: withClick(onTap),
         borderRadius: BorderRadius.circular(18),
         child: Container(
           padding: const EdgeInsets.all(13),

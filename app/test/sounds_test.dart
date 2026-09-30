@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/screens/secondary_screens.dart';
 import 'package:imposter_il/state/sounds.dart';
@@ -90,6 +91,27 @@ void main() {
         }));
     await settle(tester);
     expect(sounds.played, ['vote_start', 'bed:vote_bed', 'win', 'bed:off']);
+  });
+
+  // On a test host this is the iPhone path: the strongest haptic tap. Android
+  // takes a real vibration through MainActivity instead (lib/state/buzz.dart).
+  testWidgets('a game start vibrates when vibration is on', (tester) async {
+    final haptics = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'HapticFeedback.vibrate') {
+          haptics.add(call.arguments);
+        }
+        return null;
+      },
+    );
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null));
+    final channel = await _inGame(tester, FakeApi());
+    channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
+    await settle(tester);
+    expect(haptics, ['HapticFeedbackType.heavyImpact']);
   });
 
   testWidgets('the impostor hears their own reveal', (tester) async {

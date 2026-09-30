@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 /// A moment the game marks with a sound (docs/decisions.md, "צלילים").
@@ -89,6 +90,15 @@ class Sounds {
     }
   }
 
+  /// The system click of a tap, on iPhone. Android plays its own on every
+  /// Material tap, following the phone's Touch sounds setting, and iOS plays
+  /// none unless asked.
+  void click() {
+    if (_enabled && _real && Platform.isIOS) {
+      unawaited(_guard(() => SystemSound.play(SystemSoundType.click)));
+    }
+  }
+
   void play(Sound sound) {
     if (!_enabled) return;
     played.add(sound.file);
@@ -149,3 +159,12 @@ class Sounds {
 
 /// The app's sounds.
 Sounds get sounds => Sounds.instance;
+
+/// [onTap] with the system click in front of it; null stays null, so a
+/// disabled button stays disabled.
+VoidCallback? withClick(VoidCallback? onTap) => onTap == null
+    ? null
+    : () {
+        sounds.click();
+        onTap();
+      };

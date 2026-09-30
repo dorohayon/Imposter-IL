@@ -10,6 +10,7 @@ import '../monetization/ad_banner.dart';
 import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
 import '../state/game_session.dart';
+import '../state/sounds.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'live_room.dart';
@@ -127,12 +128,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: AppColors.cream.withValues(alpha: .16),
                               ),
                             ),
-                            onPressed: () => _open(
-                              context,
-                              session.signedIn
-                                  ? const ProfileScreen()
-                                  : const OnboardingScreen(),
-                            ),
+                            onPressed: withClick(() => _open(
+                                  context,
+                                  session.signedIn
+                                      ? const ProfileScreen()
+                                      : const OnboardingScreen(),
+                                )),
                             icon: const Icon(Icons.person_rounded, size: 21),
                           ),
                           const Spacer(),
@@ -143,8 +144,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: AppColors.cream.withValues(alpha: .16),
                               ),
                             ),
-                            onPressed: () =>
-                                _open(context, const SettingsScreen()),
+                            onPressed: withClick(
+                                () => _open(context, const SettingsScreen())),
                             icon: const Icon(Icons.settings_rounded, size: 21),
                           ),
                         ],

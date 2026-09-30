@@ -11,6 +11,7 @@ import '../l10n/l10n.dart';
 import '../models/player.dart';
 import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
+import '../state/buzz.dart';
 import '../state/game_session.dart';
 import '../state/sounds.dart';
 import '../theme/app_theme.dart';
@@ -257,7 +258,7 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
         (game.phase == 'voting' || game.phase == 'runoff_voting') &&
             previous?.phase != game.phase;
     if (previous?.id != game.id || myTurnNow || votingNow) {
-      _afterFrame(HapticFeedback.mediumImpact);
+      _afterFrame(buzz);
     }
   }
 
