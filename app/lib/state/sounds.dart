@@ -99,14 +99,17 @@ class Sounds {
     }
   }
 
-  void play(Sound sound) {
+  /// Plays [sound], [from] into it: a countdown that starts late still ends
+  /// on zero.
+  void play(Sound sound, {Duration from = Duration.zero}) {
     if (!_enabled) return;
     played.add(sound.file);
     if (!_real) return;
     final player = _effects[sound] ??= AudioPlayer();
     unawaited(_guard(() async {
       await player.stop();
-      await player.play(AssetSource('sounds/${sound.file}.m4a'));
+      await player.play(AssetSource('sounds/${sound.file}.m4a'),
+          position: from);
     }));
   }
 

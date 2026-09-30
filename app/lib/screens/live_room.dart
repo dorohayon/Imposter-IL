@@ -276,37 +276,50 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
       }
       if (phase == 'pre_voting') sounds.play(Sound.voteStart);
     }
-    _scheduleCountdown(session, game);
   }
 
   /// The last five seconds, only on a timer that is this player's to beat:
-  /// their own hint turn, a vote they cast, and the impostor's guess. Not the
-  /// role card, the pause after a hint or the move to voting.
-  void _scheduleCountdown(GameSession session, GameView? game) {
+  /// their own hint turn, a vote they cast, the impostor's guess, and the
+  /// search's count to the game starting. Not the role card, the pause after
+  /// a hint or the move to voting.
+  void _scheduleCountdown(
+      GameSession session, GameView? game, MatchmakingView? search) {
     final me = session.playerId;
-    final deadline = game?.deadline;
-    final mine = game != null &&
-        deadline != null &&
-        switch (game.phase) {
-          'hints' => game.currentTurnPlayerId == me,
-          'voting' || 'runoff_voting' => !game.isEliminated(me),
-          'impostor_guess' => game.isImpostor,
-          _ => false,
-        };
-    final key = mine
-        ? '${game.id}/${game.phase}/${game.round}/'
-            '${game.currentTurnPlayerId}/$deadline'
-        : null;
+    final (String? key, DateTime? deadline) = switch ((game, search)) {
+      (final game?, _)
+          when game.deadline != null &&
+              switch (game.phase) {
+                'hints' => game.currentTurnPlayerId == me,
+                'voting' || 'runoff_voting' => !game.isEliminated(me),
+                'impostor_guess' => game.isImpostor,
+                _ => false,
+              } =>
+        (
+          '${game.id}/${game.phase}/${game.round}/'
+              '${game.currentTurnPlayerId}/${game.deadline}',
+          game.deadline
+        ),
+      (null, final search?)
+          when search.status == 'countdown' && search.deadline != null =>
+        ('search/${search.deadline}', search.deadline),
+      _ => (null, null),
+    };
     if (key == _countdownFor) return;
     _countdownFor = key;
     _countdown?.cancel();
     _countdown = null;
     // A timer that ended early, by a hint or a vote, takes its beats along.
     sounds.stop(Sound.countdown);
-    if (!mine) return;
-    final wait = deadline.difference(session.serverNow) - _countdownLength;
-    if (wait.isNegative) return; // already in its last seconds, e.g. rejoined
-    _countdown = Timer(wait, () => sounds.play(Sound.countdown));
+    if (deadline == null) return;
+    final left = deadline.difference(session.serverNow);
+    if (left > _countdownLength) {
+      _countdown =
+          Timer(left - _countdownLength, () => sounds.play(Sound.countdown));
+    } else if (left > const Duration(seconds: 1)) {
+      // Already inside the last seconds, as the search's five-second count
+      // always is by the time it arrives: join the beats where they are.
+      sounds.play(Sound.countdown, from: _countdownLength - left);
+    }
   }
 
   /// The countdown sound's five beats, its final hit on zero.
@@ -379,6 +392,8 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     final inGame = session.activity == 'game' && game != null;
     _vibrateOnChanges(session, inGame ? game : null);
     final searching = session.activity == 'matchmaking';
+    _scheduleCountdown(
+        session, inGame ? game : null, searching ? search : null);
     final Widget body = inGame
         ? _LiveGame(game: game, onLeave: _leaveGame)
         : searching && search != null
