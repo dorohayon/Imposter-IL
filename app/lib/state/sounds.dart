@@ -8,9 +8,12 @@ import 'package:flutter/widgets.dart';
 /// A moment the game marks with a sound (docs/decisions.md, "צלילים").
 /// The files are in assets/sounds/, with their source and license.
 enum Sound {
-  revealCitizen('reveal_citizen'),
-  revealImposter('reveal_imposter'),
-  voteStart('vote_start'),
+  /// The role card opening. The same for both roles, so nobody near the
+  /// phone can tell who the impostor is by ear.
+  reveal('reveal'),
+
+  /// A written clue landing on the board.
+  hint('hint'),
   win('win'),
   lose('lose'),
   unlock('unlock'),
@@ -23,9 +26,11 @@ enum Sound {
   final String file;
 }
 
-/// Music that loops quietly under a whole stage of the game.
+/// A sound that repeats through a whole stage of the game.
 enum Bed {
-  voting('vote_bed');
+  /// "Time to vote": shorter than its screen, so it goes round until the vote
+  /// opens.
+  toVoting('vote_start');
 
   const Bed(this.file);
   final String file;
@@ -67,8 +72,6 @@ class Sounds {
 
   /// Widget tests have no audio plugin; they read [played] instead.
   static final _real = !Platform.environment.containsKey('FLUTTER_TEST');
-
-  static const _bedVolume = .35;
 
   // ignore: unused_field
   AppLifecycleListener? _lifecycle;
@@ -168,8 +171,7 @@ class Sounds {
       await player.stop();
       await player.setReleaseMode(ReleaseMode.loop);
       if (!current()) return;
-      await player.play(AssetSource('sounds/${bed.file}.m4a'),
-          volume: _bedVolume);
+      await player.play(AssetSource('sounds/${bed.file}.m4a'));
       if (!current()) await player.stop();
     }));
   }

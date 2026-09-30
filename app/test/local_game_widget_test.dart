@@ -122,7 +122,7 @@ void main() {
   });
 
   // docs/decisions.md, "צלילים".
-  testWidgets('one device: a silent reveal, then the countdown and the vote',
+  testWidgets('one device: the reveal, the countdown and the move to vote',
       (tester) async {
     sounds
       ..loop(null)
@@ -134,8 +134,10 @@ void main() {
       await tapText(tester, 'אני ${player.name} — הציגו לי');
       await tapText(tester, 'הבנתי — הסתירו');
     }
-    expect(sounds.played, isEmpty,
-        reason: 'the whole table would hear who the impostor is');
+    // One sound per reveal, the same for the impostor: the table hears
+    // nothing it could tell apart.
+    expect(sounds.played, ['reveal', 'reveal', 'reveal']);
+    sounds.played.clear();
 
     await tapText(tester, 'מתחילים סיבוב 1');
     await seconds(tester, 25);
@@ -145,18 +147,26 @@ void main() {
     }
     await seconds(tester, LocalGame.voteTransitionSeconds);
     expect(game.phase, LocalPhase.voting);
-    expect(sounds.played, ['countdown', 'vote_start', 'bed:vote_bed']);
+    expect(sounds.played, ['countdown', 'bed:vote_start', 'bed:off']);
   });
 
-  testWidgets('one device: a game resumed in the vote has its music',
+  testWidgets('one device: a game resumed before the vote repeats its sound',
       (tester) async {
     sounds
       ..loop(null)
       ..played.clear();
     final game = _game(players: 3);
-    _toVote(game);
+    while (game.phase == LocalPhase.roleReveal) {
+      game.reveal();
+      game.roleSeen(game.currentPlayer);
+    }
+    game.startRound();
+    while (game.phase == LocalPhase.hints) {
+      game.hintSpoken(game.currentPlayer);
+    }
+    expect(game.phase, LocalPhase.voteTransition);
     await _pumpGame(tester, game);
-    expect(sounds.played, ['bed:vote_bed']);
+    expect(sounds.played, ['bed:vote_start']);
   });
 
   testWidgets('one device: back inside the last seconds, the beats rejoin',
