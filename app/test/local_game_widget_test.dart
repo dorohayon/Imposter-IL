@@ -159,6 +159,24 @@ void main() {
     expect(sounds.played, ['bed:vote_bed']);
   });
 
+  testWidgets('one device: back inside the last seconds, the beats rejoin',
+      (tester) async {
+    final game = _game(players: 3);
+    while (game.phase == LocalPhase.roleReveal) {
+      game.reveal();
+      game.roleSeen(game.currentPlayer);
+    }
+    game.startRound();
+    game.secondsRemaining = 4;
+    await _pumpGame(tester, game);
+    sounds.played.clear();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(sounds.played, ['countdown']);
+  });
+
   testWidgets('a complete private local flow reaches results at 320px',
       (tester) async {
     final game = _game(players: 3, hintSeconds: null);

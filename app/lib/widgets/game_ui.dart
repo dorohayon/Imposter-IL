@@ -109,7 +109,7 @@ class _PrimaryButtonState extends State<PrimaryButton> {
       button: true,
       enabled: enabled,
       label: widget.label,
-      onTap: enabled ? widget.onPressed : null,
+      onTap: enabled ? withClick(widget.onPressed) : null,
       child: ExcludeSemantics(
         // InkWell supplies focus traversal plus Enter/Space activation for
         // keyboards and switch-access devices. The parent Semantics node is

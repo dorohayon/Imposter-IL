@@ -336,6 +336,18 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
             left >= _countdownLength ? Duration.zero : _countdownLength - left);
   }
 
+  /// A screen with no game or search on it, such as a server error, plays
+  /// none of their sounds.
+  void _silence() {
+    _lastGame = null;
+    _countdown?.cancel();
+    _countdown = null;
+    _countdownFor = null;
+    sounds
+      ..stop(Sound.countdown)
+      ..loop(null);
+  }
+
   bool _removed(GameSession session, GameView? game) =>
       game?.player(session.playerId)?.status == 'removed';
 
@@ -350,6 +362,7 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     final session = SessionScope.of(context);
 
     if (session.sessionLost) {
+      _silence();
       return ServerErrorScreen(
         gameStopped: true,
         onRetry: () async {
@@ -375,6 +388,7 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     }
     final noMatch = session.noMatchCategories;
     if (noMatch != null) {
+      _silence();
       return _NoMatch(
         onCategories: () {
           session.dismissNoMatch();

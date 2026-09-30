@@ -44,12 +44,22 @@ class Sounds {
               respectSilence: true,
             ).build(),
           )));
-      // A bed must not play on behind another app.
+      // Nothing plays on behind another app: the bed pauses, effects stop,
+      // and a timer that fires meanwhile finds [play] closed.
       _lifecycle = AppLifecycleListener(
-        onHide: () => _guard(() async => _bedPlayer?.pause()),
-        onShow: () => _guard(() async {
-          if (_bed != null && enabled) await _bedPlayer?.resume();
-        }),
+        onHide: () {
+          _hidden = true;
+          for (final s in _effects.keys.toList()) {
+            stop(s);
+          }
+          unawaited(_guard(() async => _bedPlayer?.pause()));
+        },
+        onShow: () {
+          _hidden = false;
+          unawaited(_guard(() async {
+            if (_bed != null && enabled) await _bedPlayer?.resume();
+          }));
+        },
       );
     }
   }
@@ -68,6 +78,7 @@ class Sounds {
   Bed? _bed;
   bool _bedPlaying = false;
   bool _enabled = true;
+  bool _hidden = false;
 
   /// What played, newest last: effects by file name, a bed as `bed:` and
   /// its file name, and a bed's end as `bed:off`.
@@ -102,7 +113,7 @@ class Sounds {
   /// Plays [sound], [from] into it: a countdown that starts late still ends
   /// on zero.
   void play(Sound sound, {Duration from = Duration.zero}) {
-    if (!_enabled) return;
+    if (!_enabled || _hidden) return;
     played.add(sound.file);
     if (!_real) return;
     final player = _effects[sound] ??= AudioPlayer();

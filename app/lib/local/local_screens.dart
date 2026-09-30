@@ -142,6 +142,17 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _syncTimer();
+      // The clock stood still while away; the beats stopped with it. Back
+      // inside the last seconds, they rejoin where the clock is.
+      final left = _game.secondsRemaining;
+      if (_timerShouldRun &&
+          left != null &&
+          left > 1 &&
+          left <= 5 &&
+          (_game.phase == LocalPhase.hints ||
+              _game.phase == LocalPhase.guess)) {
+        sounds.play(Sound.countdown, from: Duration(seconds: 5 - left));
+      }
       return;
     }
     if (state == AppLifecycleState.inactive ||

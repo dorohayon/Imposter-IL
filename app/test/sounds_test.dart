@@ -171,6 +171,15 @@ void main() {
     expect(sounds.played, ['reaction'], reason: 'p_4 only');
   });
 
+  testWidgets('a server error silences the vote', (tester) async {
+    final channel = await _inGame(tester, FakeApi());
+    channel.snapshot('game.state', 'game', gameJson(phase: 'voting'));
+    await settle(tester);
+    channel.event('game.aborted', {'gameId': 'g_1'});
+    await settle(tester);
+    expect(sounds.played, ['bed:vote_bed', 'bed:off']);
+  });
+
   testWidgets('the impostor hears their own reveal', (tester) async {
     final channel = await _inGame(tester, FakeApi());
     channel.snapshot(
