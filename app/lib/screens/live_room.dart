@@ -283,20 +283,18 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
 
   void _soundChanges(GameSession session, GameView? previous, GameView? game) {
     final phase = game?.phase;
-    sounds.loop(
-        phase == 'voting' || phase == 'runoff_voting' ? Bed.voting : null);
-    if (game != null && phase != previous?.phase) {
-      if (phase == 'role_reveal' && previous?.id != game.id) {
-        sounds
-            .play(game.isImpostor ? Sound.revealImposter : Sound.revealCitizen);
-      }
-      if (phase == 'pre_voting') sounds.play(Sound.voteStart);
+    sounds.loop(phase == 'pre_voting' ? Bed.toVoting : null);
+    if (game != null &&
+        phase != previous?.phase &&
+        phase == 'role_reveal' &&
+        previous?.id != game.id) {
+      sounds.play(Sound.reveal);
     }
   }
 
-  /// The last five seconds, only on a timer that is this player's to beat:
-  /// their own hint turn, a vote they cast, the impostor's guess, and the
-  /// search's count to the game starting. Not the role card, the pause after
+  /// The last five seconds, only on a timer that matters to this player:
+  /// their own hint turn, the vote, the impostor's guess, and the search's
+  /// count to the game starting. Not the role card, the pause after
   /// a hint or the move to voting.
   void _scheduleCountdown(
       GameSession session, GameView? game, MatchmakingView? search) {
@@ -307,15 +305,14 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
           when game.deadline != null &&
               switch (game.phase) {
                 'hints' => game.currentTurnPlayerId == me,
-                'voting' ||
-                'runoff_voting' =>
-                  !game.isEliminated(me) && game.myVote == null,
+                // Everyone watching the vote hears its end, voted or not.
+                'voting' || 'runoff_voting' => true,
                 'impostor_guess' => game.isImpostor,
                 _ => false,
               } =>
         (
           '${game.id}/${game.phase}/${game.round}/'
-              '${game.currentTurnPlayerId}/${game.deadline}/${game.myVote}',
+              '${game.currentTurnPlayerId}/${game.deadline}',
           game.deadline
         ),
       (null, final search?)

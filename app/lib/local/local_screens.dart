@@ -126,17 +126,13 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     });
   }
 
-  /// The sounds of a change of stage (docs/decisions.md, "צלילים"). No role
-  /// sound here: the whole table would hear who the impostor is. The result
-  /// is celebrated whoever won, as everyone is watching the same screen.
+  /// The sounds of a change of stage (docs/decisions.md, "צלילים"). The
+  /// result is celebrated whoever won, as everyone is watching the same
+  /// screen.
   void _soundChanges(LocalPhase before) {
     final phase = _game.phase;
-    sounds.loop(phase == LocalPhase.voting || phase == LocalPhase.runoff
-        ? Bed.voting
-        : null);
-    if (phase == before) return;
-    if (phase == LocalPhase.voteTransition) sounds.play(Sound.voteStart);
-    if (phase == LocalPhase.ended) sounds.play(Sound.win);
+    sounds.loop(phase == LocalPhase.voteTransition ? Bed.toVoting : null);
+    if (phase != before && phase == LocalPhase.ended) sounds.play(Sound.win);
   }
 
   /// A turn that comes back inside its last seconds, from the background or a
@@ -249,7 +245,11 @@ class _LocalGameScreenState extends State<LocalGameScreen>
         label: forVoting
             ? context.l10n.iAmVote(_current.name)
             : context.l10n.iAmShow(_current.name),
-        onPressed: () => _apply(_game.reveal),
+        onPressed: () {
+          _apply(_game.reveal);
+          // One sound for both roles, so the table learns nothing from it.
+          if (!forVoting) sounds.play(Sound.reveal);
+        },
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

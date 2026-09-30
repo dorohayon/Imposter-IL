@@ -39,7 +39,7 @@ void main() {
 
     channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
     await settle(tester);
-    expect(sounds.played, ['reveal_citizen']);
+    expect(sounds.played, ['reveal']);
 
     // My turn, with 7 seconds on the clock: the beats start at 5.
     channel.snapshot('game.state', 'game',
@@ -75,7 +75,9 @@ void main() {
     channel.snapshot('game.state', 'game',
         gameJson(phase: 'runoff_voting', candidates: ['p_2', 'p_3']));
     await settle(tester);
-    expect(sounds.played, ['vote_start', 'bed:vote_bed']);
+    // "Time to vote" repeats through its screen and stops as the vote opens;
+    // the vote itself has no music.
+    expect(sounds.played, ['bed:vote_start', 'bed:off']);
 
     channel.snapshot(
         'game.state',
@@ -92,7 +94,7 @@ void main() {
           'outcomes': {'p_me': 'win', 'p_3': 'loss'},
         }));
     await settle(tester);
-    expect(sounds.played, ['vote_start', 'bed:vote_bed', 'win', 'bed:off']);
+    expect(sounds.played, ['bed:vote_start', 'bed:off', 'win']);
   });
 
   // On a test host this is the iPhone path: the strongest haptic tap. Android
@@ -139,19 +141,17 @@ void main() {
     expect(sounds.played, ['countdown']);
   });
 
-  testWidgets('a cast vote ends the voter\'s countdown', (tester) async {
+  testWidgets('the vote counts down for a voter who already voted',
+      (tester) async {
     final channel = await _inGame(tester, FakeApi());
-    channel.snapshot('game.state', 'game',
-        _deadlineIn(gameJson(phase: 'voting', candidates: ['p_2']), 7));
-    await settle(tester);
     channel.snapshot(
         'game.state',
         'game',
         _deadlineIn(
             gameJson(phase: 'voting', candidates: ['p_2'], myVote: 'p_2'), 7));
     await settle(tester);
-    await tester.pump(const Duration(seconds: 3));
-    expect(sounds.played, isNot(contains('countdown')));
+    await tester.pump(const Duration(seconds: 2));
+    expect(sounds.played, ['countdown']);
   });
 
   testWidgets('a removed player hears nothing of the game', (tester) async {
@@ -223,21 +223,21 @@ void main() {
     expect(sounds.played, ['reaction'], reason: 'p_4 only');
   });
 
-  testWidgets('a server error silences the vote', (tester) async {
+  testWidgets('a server error silences the move to voting', (tester) async {
     final channel = await _inGame(tester, FakeApi());
-    channel.snapshot('game.state', 'game', gameJson(phase: 'voting'));
+    channel.snapshot('game.state', 'game', gameJson(phase: 'pre_voting'));
     await settle(tester);
     channel.event('game.aborted', {'gameId': 'g_1'});
     await settle(tester);
-    expect(sounds.played, ['bed:vote_bed', 'bed:off']);
+    expect(sounds.played, ['bed:vote_start', 'bed:off']);
   });
 
-  testWidgets('the impostor hears their own reveal', (tester) async {
+  testWidgets('the impostor hears the citizens\' reveal', (tester) async {
     final channel = await _inGame(tester, FakeApi());
     channel.snapshot(
         'game.state', 'game', gameJson(phase: 'role_reveal', role: 'impostor'));
     await settle(tester);
-    expect(sounds.played, ['reveal_imposter']);
+    expect(sounds.played, ['reveal']);
   });
 
   testWidgets('Sounds off in Settings keeps the game silent', (tester) async {
