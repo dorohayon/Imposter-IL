@@ -150,8 +150,22 @@ class LiveRoomScreen extends StatefulWidget {
 class _LiveRoomScreenState extends State<LiveRoomScreen> {
   bool _leaving = false;
 
+  /// Back from another app, the countdown is scheduled afresh: its beats
+  /// stopped while away, and a timer inside its last seconds rejoins them.
+  late final _lifecycle = AppLifecycleListener(onShow: () {
+    _countdownFor = null;
+    if (mounted) setState(() {});
+  });
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle;
+  }
+
   @override
   void dispose() {
+    _lifecycle.dispose();
     _countdown?.cancel();
     sounds
       ..stop(Sound.countdown)

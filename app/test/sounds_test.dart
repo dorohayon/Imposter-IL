@@ -116,6 +116,29 @@ void main() {
     expect(haptics, ['HapticFeedbackType.heavyImpact']);
   });
 
+  testWidgets('back in the last seconds of my turn, the beats rejoin',
+      (tester) async {
+    final channel = await _inGame(tester, FakeApi());
+    channel.snapshot('game.state', 'game',
+        _deadlineIn(gameJson(phase: 'hints', turn: 'p_me'), 4));
+    await settle(tester);
+    expect(sounds.played, ['countdown']);
+    sounds.played.clear();
+    // Away and back, one state at a time as a phone reports them.
+    for (final state in [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ]) {
+      tester.binding.handleAppLifecycleStateChanged(state);
+      await tester.pump();
+    }
+    expect(sounds.played, ['countdown']);
+  });
+
   testWidgets('a cast vote ends the voter\'s countdown', (tester) async {
     final channel = await _inGame(tester, FakeApi());
     channel.snapshot('game.state', 'game',
