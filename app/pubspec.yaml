@@ -12,6 +12,7 @@ environment:
   flutter: ">=3.44.0"
 
 dependencies:
+  audioplayers: ^6.8.1
   firebase_core: ^4.15.0
   firebase_crashlytics: ^5.4.0
   flutter:
@@ -39,6 +40,8 @@ flutter:
   assets:
     - assets/avatars/
     - assets/illustrations/
+    # Mixkit Sound Effects Free License (assets/sounds/LICENSE.md).
+    - assets/sounds/
   # Google Fonts under the SIL Open Font License (assets/fonts/OFL-*.txt).
   fonts:
     - family: Rubik

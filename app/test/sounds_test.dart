@@ -1,0 +1,126 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:imposter_il/screens/secondary_screens.dart';
+import 'package:imposter_il/state/sounds.dart';
+
+import 'support/fake_server.dart';
+import 'support/helpers.dart';
+
+// docs/decisions.md, "צלילים": which moment plays what.
+
+Map<String, dynamic> _deadlineIn(Map<String, dynamic> game, int seconds) => game
+  ..['deadline'] =
+      DateTime.now().add(Duration(seconds: seconds)).toUtc().toIso8601String();
+
+Future<FakeChannel> _inGame(WidgetTester tester, FakeApi api) async {
+  await startAtHome(tester, api);
+  await openCreatedRoom(tester, api);
+  api.channel.event('session.state', {
+    'playerId': 'p_me',
+    'activity': 'game',
+    'roomId': 'r_1',
+    'gameId': 'g_1',
+  });
+  return api.channel;
+}
+
+void main() {
+  setUp(() {
+    sounds
+      ..loop(null)
+      ..played.clear();
+  });
+
+  testWidgets('an online game plays each moment once', (tester) async {
+    final channel = await _inGame(tester, FakeApi());
+
+    channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
+    await settle(tester);
+    expect(sounds.played, ['reveal_citizen']);
+
+    // My turn, with 7 seconds on the clock: the beats start at 5.
+    channel.snapshot('game.state', 'game',
+        _deadlineIn(gameJson(phase: 'hints', turn: 'p_me'), 7));
+    await settle(tester);
+    expect(sounds.played, isNot(contains('countdown')));
+    await tester.pump(const Duration(seconds: 2));
+    expect(sounds.played.last, 'countdown');
+
+    // Someone else's turn has no countdown for me.
+    sounds.played.clear();
+    channel.snapshot('game.state', 'game',
+        _deadlineIn(gameJson(phase: 'hints', turn: 'p_2'), 7));
+    await settle(tester);
+    await tester.pump(const Duration(seconds: 3));
+    expect(sounds.played, isEmpty);
+
+    channel.event('game.reaction', {
+      'gameId': 'g_1',
+      'hintIndex': 0,
+      'reactionId': 'laugh',
+      'playerId': 'p_2',
+    });
+    await tester.pump();
+    expect(sounds.played, ['reaction']);
+
+    sounds.played.clear();
+    channel.snapshot('game.state', 'game', gameJson(phase: 'pre_voting'));
+    await settle(tester);
+    channel.snapshot('game.state', 'game', gameJson(phase: 'voting'));
+    await settle(tester);
+    // The runoff keeps the music going rather than starting it again.
+    channel.snapshot('game.state', 'game',
+        gameJson(phase: 'runoff_voting', candidates: ['p_2', 'p_3']));
+    await settle(tester);
+    expect(sounds.played, ['vote_start', 'bed:vote_bed']);
+
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(phase: 'ended', result: {
+          'winner': 'citizens',
+          'reason': 'impostor_guess_wrong',
+          'impostorPlayerId': 'p_3',
+          'secretWord': 'פיל',
+          'voteRounds': [
+            {'p_me': 'p_3', 'p_2': 'p_3', 'p_4': 'p_3'},
+          ],
+          'abstentions': [1],
+          'outcomes': {'p_me': 'win', 'p_3': 'loss'},
+        }));
+    await settle(tester);
+    expect(sounds.played, ['vote_start', 'bed:vote_bed', 'win', 'bed:off']);
+  });
+
+  testWidgets('the impostor hears their own reveal', (tester) async {
+    final channel = await _inGame(tester, FakeApi());
+    channel.snapshot(
+        'game.state', 'game', gameJson(phase: 'role_reveal', role: 'impostor'));
+    await settle(tester);
+    expect(sounds.played, ['reveal_imposter']);
+  });
+
+  testWidgets('Sounds off in Settings keeps the game silent', (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await tapTooltip(tester, 'הגדרות');
+    await tapText(tester, 'צלילים');
+    expect(sounds.enabled, isFalse);
+    Navigator.of(tester.element(find.byType(SettingsScreen))).pop();
+    await tester.pumpAndSettle();
+
+    await openCreatedRoom(tester, api);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    api.channel.snapshot('game.state', 'game', gameJson(phase: 'role_reveal'));
+    await settle(tester);
+    api.channel.snapshot('game.state', 'game', gameJson(phase: 'voting'));
+    await settle(tester);
+    expect(sounds.played, isEmpty);
+    sounds.enabled = true;
+  });
+}

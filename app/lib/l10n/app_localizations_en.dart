@@ -1026,9 +1026,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sounds => 'Sounds';
 
   @override
-  String get comingSoon => 'Coming soon';
-
-  @override
   String get vibration => 'Vibration';
 
   @override

@@ -12,6 +12,7 @@ import '../models/player.dart';
 import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
 import '../state/game_session.dart';
+import '../state/sounds.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'secondary_screens.dart';
@@ -148,6 +149,15 @@ class LiveRoomScreen extends StatefulWidget {
 class _LiveRoomScreenState extends State<LiveRoomScreen> {
   bool _leaving = false;
 
+  @override
+  void dispose() {
+    _countdown?.cancel();
+    sounds
+      ..stop(Sound.countdown)
+      ..loop(null);
+    super.dispose();
+  }
+
   void _goHome() {
     if (_leaving || !mounted) return;
     _leaving = true;
@@ -233,10 +243,12 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
   GameView? _lastGame;
 
   /// Vibrates when a game starts, when it becomes my turn and when voting
-  /// starts, if the player enabled vibration.
+  /// starts, if the player enabled vibration; and plays the sounds of those
+  /// changes (docs/decisions.md, "צלילים").
   void _vibrateOnChanges(GameSession session, GameView? game) {
     final previous = _lastGame;
     _lastGame = game;
+    _soundChanges(session, previous, game);
     if (game == null || !session.vibrationOn) return;
     final myTurnNow = game.phase == 'hints' &&
         game.currentTurnPlayerId == session.playerId &&
@@ -248,6 +260,56 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
       _afterFrame(HapticFeedback.mediumImpact);
     }
   }
+
+  Timer? _countdown;
+  String? _countdownFor;
+
+  void _soundChanges(GameSession session, GameView? previous, GameView? game) {
+    final phase = game?.phase;
+    sounds.loop(
+        phase == 'voting' || phase == 'runoff_voting' ? Bed.voting : null);
+    if (game != null && phase != previous?.phase) {
+      if (phase == 'role_reveal' && previous?.id != game.id) {
+        sounds
+            .play(game.isImpostor ? Sound.revealImposter : Sound.revealCitizen);
+      }
+      if (phase == 'pre_voting') sounds.play(Sound.voteStart);
+    }
+    _scheduleCountdown(session, game);
+  }
+
+  /// The last five seconds, only on a timer that is this player's to beat:
+  /// their own hint turn, a vote they cast, and the impostor's guess. Not the
+  /// role card, the pause after a hint or the move to voting.
+  void _scheduleCountdown(GameSession session, GameView? game) {
+    final me = session.playerId;
+    final deadline = game?.deadline;
+    final mine = game != null &&
+        deadline != null &&
+        switch (game.phase) {
+          'hints' => game.currentTurnPlayerId == me,
+          'voting' || 'runoff_voting' => !game.isEliminated(me),
+          'impostor_guess' => game.isImpostor,
+          _ => false,
+        };
+    final key = mine
+        ? '${game.id}/${game.phase}/${game.round}/'
+            '${game.currentTurnPlayerId}/$deadline'
+        : null;
+    if (key == _countdownFor) return;
+    _countdownFor = key;
+    _countdown?.cancel();
+    _countdown = null;
+    // A timer that ended early, by a hint or a vote, takes its beats along.
+    sounds.stop(Sound.countdown);
+    if (!mine) return;
+    final wait = deadline.difference(session.serverNow) - _countdownLength;
+    if (wait.isNegative) return; // already in its last seconds, e.g. rejoined
+    _countdown = Timer(wait, () => sounds.play(Sound.countdown));
+  }
+
+  /// The countdown sound's five beats, its final hit on zero.
+  static const _countdownLength = Duration(seconds: 5);
 
   void _afterFrame(VoidCallback action) =>
       WidgetsBinding.instance.addPostFrameCallback((_) => action());

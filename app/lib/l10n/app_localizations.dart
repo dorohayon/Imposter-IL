@@ -1844,12 +1844,6 @@ abstract class AppLocalizations {
   /// **'צלילים'**
   String get sounds;
 
-  /// No description provided for @comingSoon.
-  ///
-  /// In he, this message translates to:
-  /// **'בקרוב'**
-  String get comingSoon;
-
   /// No description provided for @vibration.
   ///
   /// In he, this message translates to:
