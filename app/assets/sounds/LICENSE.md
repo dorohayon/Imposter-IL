@@ -8,6 +8,7 @@ different license that does not allow video games, so none is used here.
 | File | Mixkit sound | ID |
 |---|---|---|
 | reveal.m4a | Positive notification | 951 |
+| hint.m4a | Dry pop up notification alert | 2356 |
 | vote_start.m4a | Melodic game over | 956 |
 | win.m4a | Correct answer reward | 952 |
 | lose.m4a | Musical game over | 959 |

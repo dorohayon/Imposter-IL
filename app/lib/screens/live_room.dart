@@ -290,6 +290,14 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
         previous?.id != game.id) {
       sounds.play(Sound.reveal);
     }
+    // A clue landing on the board, mine too. Not a missed turn, and not the
+    // clue of a player whose clues are hidden here.
+    if (game != null &&
+        previous?.id == game.id &&
+        game.hints.skip(previous!.hints.length).any(
+            (h) => !h.missing && !h.hidden && !session.hides(h.playerId))) {
+      sounds.play(Sound.hint);
+    }
   }
 
   /// The last five seconds, only on a timer that matters to this player:

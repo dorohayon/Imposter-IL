@@ -99,6 +99,38 @@ void main() {
 
   // On a test host this is the iPhone path: the strongest haptic tap. Android
   // takes a real vibration through MainActivity instead (lib/state/buzz.dart).
+  testWidgets('a written clue pops; a missed turn and a hidden one do not',
+      (tester) async {
+    final channel = await _inGame(tester, FakeApi());
+    Map<String, dynamic> hint(String from, {bool missing = false}) => {
+          'playerId': from,
+          'text': missing ? '' : 'חדק',
+          'missing': missing,
+          'reactions': {},
+        };
+    channel.snapshot(
+        'game.state', 'game', gameJson(phase: 'hints', turn: 'p_2'));
+    await settle(tester);
+    SessionScope.read(tester.element(find.byType(LiveRoomScreen))).muted = {
+      'p_4'
+    };
+    sounds.played.clear();
+    final board = <Map<String, dynamic>>[];
+    for (final (h, sound) in [
+      (hint('p_2'), ['hint']),
+      (hint('p_3', missing: true), <String>[]),
+      (hint('p_4'), <String>[]),
+      (hint('p_me'), ['hint']),
+    ]) {
+      board.add(h);
+      channel.snapshot('game.state', 'game',
+          gameJson(phase: 'hints', turn: 'p_2', hints: [...board]));
+      await settle(tester);
+      expect(sounds.played, sound, reason: '${h['playerId']}');
+      sounds.played.clear();
+    }
+  });
+
   testWidgets('a game start vibrates when vibration is on', (tester) async {
     final haptics = <Object?>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(

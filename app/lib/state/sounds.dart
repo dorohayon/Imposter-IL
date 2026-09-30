@@ -11,6 +11,9 @@ enum Sound {
   /// The role card opening. The same for both roles, so nobody near the
   /// phone can tell who the impostor is by ear.
   reveal('reveal'),
+
+  /// A written clue landing on the board.
+  hint('hint'),
   win('win'),
   lose('lose'),
   unlock('unlock'),
