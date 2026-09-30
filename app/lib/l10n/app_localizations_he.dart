@@ -1006,9 +1006,6 @@ class AppLocalizationsHe extends AppLocalizations {
   String get sounds => 'צלילים';
 
   @override
-  String get comingSoon => 'בקרוב';
-
-  @override
   String get vibration => 'רטט';
 
   @override

@@ -8,6 +8,7 @@ import '../l10n/l10n.dart';
 import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
 import '../state/game_session.dart';
+import '../state/sounds.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'legal_screens.dart';
@@ -126,9 +127,8 @@ class SettingsScreen extends StatelessWidget {
         children: [
           _SettingsRow(
             title: context.l10n.sounds,
-            value: false,
-            enabled: false,
-            note: context.l10n.comingSoon,
+            value: session.soundsOn,
+            onChanged: session.setSounds,
           ),
           const SizedBox(height: 10),
           _SettingsRow(
@@ -195,7 +195,7 @@ class SettingsScreen extends StatelessWidget {
           if (supportEmail.isNotEmpty) ...[
             const SizedBox(height: 10),
             ListTile(
-              onTap: () => _emailSupport(context),
+              onTap: withClick(() => _emailSupport(context)),
               // The same end as the rows above (see _LinkRow).
               contentPadding:
                   const EdgeInsetsDirectional.only(start: 16, end: 12),
@@ -336,15 +336,11 @@ class _SettingsRow extends StatelessWidget {
     required this.title,
     required this.value,
     this.onChanged,
-    this.enabled = true,
-    this.note,
   });
 
   final String title;
   final bool value;
   final ValueChanged<bool>? onChanged;
-  final bool enabled;
-  final String? note;
 
   @override
   Widget build(BuildContext context) {
@@ -352,42 +348,27 @@ class _SettingsRow extends StatelessWidget {
       color: AppColors.cream.withValues(alpha: .07),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        onTap: enabled && onChanged != null ? () => onChanged!(!value) : null,
+        onTap: withClick(onChanged == null ? null : () => onChanged!(!value)),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
+              // Expanded: a longer language must wrap at 320 px.
               Expanded(
-                child: Row(
-                  children: [
-                    // Flexible: a longer language must wrap at 320 px.
-                    Flexible(
-                      child: Text(
-                        title,
-                        style: TextStyle(
-                          color: enabled ? AppColors.cream : AppColors.muted,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    if (note != null) ...[
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          note!,
-                          style: const TextStyle(color: AppColors.muted),
-                        ),
-                      ),
-                    ],
-                  ],
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.cream,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               IgnorePointer(
                 child: Switch(
                   value: value,
-                  onChanged: enabled ? onChanged : null,
+                  onChanged: onChanged,
                 ),
               ),
             ],
@@ -411,7 +392,7 @@ class _LinkRow extends StatelessWidget {
       color: AppColors.cream.withValues(alpha: .06),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        onTap: onTap,
+        onTap: withClick(onTap),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           // 12 at the end, not 16: a chevron's stroke sits further inside its

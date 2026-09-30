@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/models.dart';
 import '../data/server.dart';
 import '../l10n/l10n.dart';
+import 'sounds.dart';
 
 /// The player's connection to the server: guest identity, live WebSocket,
 /// and the latest room and game snapshots. Screens read it through
@@ -31,6 +32,7 @@ class GameSession extends ChangeNotifier {
   static const _lossesKey = 'stats.losses';
   static const _countedKey = 'stats.countedGames';
   static const _vibrationKey = 'settings.vibration';
+  static const _soundsKey = 'settings.sounds';
   static const _reactionsKey = 'settings.showReactions';
   static const _languageKey = 'settings.language';
   static const _mutedKey = 'moderation.muted';
@@ -67,6 +69,7 @@ class GameSession extends ChangeNotifier {
   int losses = 0;
   List<String> _countedGames = [];
   bool vibrationOn = true;
+  bool soundsOn = true;
 
   /// The language chosen in Settings, or null to follow the phone. Its own
   /// notifier, so MaterialApp rebuilds for it and not for every game update.
@@ -145,6 +148,8 @@ class GameSession extends ChangeNotifier {
     losses = prefs.getInt(_lossesKey) ?? 0;
     _countedGames = prefs.getStringList(_countedKey) ?? [];
     vibrationOn = prefs.getBool(_vibrationKey) ?? true;
+    soundsOn = prefs.getBool(_soundsKey) ?? true;
+    sounds.enabled = soundsOn;
     languageChoice.value = prefs.getString(_languageKey);
     // Resolved as MaterialApp will, so content loaded before the first frame
     // is already in the right language.
@@ -405,7 +410,16 @@ class GameSession extends ChangeNotifier {
         final me = game!.player(playerId);
         final outcome =
             me?.status == 'removed' ? 'loss' : game!.result?.outcomes[playerId];
-        if (outcome != null) _record(game!.id, outcome);
+        if (outcome != null) {
+          // The result screen's sound, once: not on a reconnect that finds
+          // the game already counted, nor for a player taken out of it.
+          final fresh = !_countedGames.contains(game!.id);
+          _record(game!.id, outcome);
+          if (fresh && game!.phase == 'ended' && me?.status != 'removed') {
+            if (outcome == 'win') sounds.play(Sound.win);
+            if (outcome == 'loss') sounds.play(Sound.lose);
+          }
+        }
       case 'matchmaking.state':
         if (!_isNewer(payload)) return;
         search = MatchmakingView.fromJson(payload);
@@ -676,6 +690,13 @@ class GameSession extends ChangeNotifier {
       body: {'nickname': nickname, 'avatarId': avatarId},
     );
     await _saveIdentity(token!, playerId!, nickname.trim(), avatarId);
+  }
+
+  Future<void> setSounds(bool on) async {
+    soundsOn = on;
+    sounds.enabled = on;
+    _notify();
+    await (await SharedPreferences.getInstance()).setBool(_soundsKey, on);
   }
 
   Future<void> setVibration(bool on) async {

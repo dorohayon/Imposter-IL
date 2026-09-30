@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
+import 'package:imposter_il/state/sounds.dart';
 import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/screens/live_room.dart';
 import 'package:imposter_il/screens/online_flow.dart';
@@ -52,6 +53,29 @@ void pushSearch(FakeChannel channel, String status, int players) =>
     });
 
 void main() {
+  // docs/decisions.md, "צלילים": the search's five seconds arrive with less
+  // than five left, so the beats join where they are rather than being lost.
+  testWidgets('the count to the game starting plays the countdown',
+      (tester) async {
+    sounds
+      ..loop(null)
+      ..played.clear();
+    final channel = await startSearching(tester, FakeApi());
+    pushSearch(channel, 'waiting_for_more', 4);
+    await tester.pump();
+    expect(sounds.played, isEmpty);
+    channel.event('matchmaking.state', {
+      ...searchJson('countdown', 6),
+      'deadline': DateTime.now()
+          .add(const Duration(milliseconds: 4800))
+          .toUtc()
+          .toIso8601String(),
+      'stateVersion': ++_searchVersion,
+    });
+    await tester.pump();
+    expect(sounds.played, ['countdown']);
+  });
+
   testWidgets('first online tap continues after choosing a nickname',
       (tester) async {
     final api = FakeApi();

@@ -11,6 +11,7 @@ import 'package:imposter_il/local/local_setup_screens.dart';
 import 'package:imposter_il/local/local_store.dart';
 import 'package:imposter_il/models/player.dart';
 import 'package:imposter_il/monetization/monetization.dart';
+import 'package:imposter_il/state/sounds.dart';
 import 'package:imposter_il/screens/home_screen.dart';
 import 'package:imposter_il/theme/app_theme.dart';
 import 'package:imposter_il/widgets/game_ui.dart';
@@ -118,6 +119,64 @@ void main() {
       matching: find.byType(PlayerCard),
     );
     expect(tester.widget<PlayerCard>(selfCard).enabled, isFalse);
+  });
+
+  // docs/decisions.md, "צלילים".
+  testWidgets('one device: a silent reveal, then the countdown and the vote',
+      (tester) async {
+    sounds
+      ..loop(null)
+      ..played.clear();
+    final game = _game(players: 3, hintSeconds: 30);
+    await _pumpGame(tester, game);
+    while (game.phase == LocalPhase.roleReveal) {
+      final player = game.players[game.currentPlayer];
+      await tapText(tester, 'אני ${player.name} — הציגו לי');
+      await tapText(tester, 'הבנתי — הסתירו');
+    }
+    expect(sounds.played, isEmpty,
+        reason: 'the whole table would hear who the impostor is');
+
+    await tapText(tester, 'מתחילים סיבוב 1');
+    await seconds(tester, 25);
+    expect(sounds.played, ['countdown']);
+    while (game.phase == LocalPhase.hints) {
+      await tapText(tester, 'הרמז נאמר');
+    }
+    await seconds(tester, LocalGame.voteTransitionSeconds);
+    expect(game.phase, LocalPhase.voting);
+    expect(sounds.played, ['countdown', 'vote_start', 'bed:vote_bed']);
+  });
+
+  testWidgets('one device: a game resumed in the vote has its music',
+      (tester) async {
+    sounds
+      ..loop(null)
+      ..played.clear();
+    final game = _game(players: 3);
+    _toVote(game);
+    await _pumpGame(tester, game);
+    expect(sounds.played, ['bed:vote_bed']);
+  });
+
+  testWidgets('one device: back inside the last seconds, the beats rejoin',
+      (tester) async {
+    final game = _game(players: 3);
+    while (game.phase == LocalPhase.roleReveal) {
+      game.reveal();
+      game.roleSeen(game.currentPlayer);
+    }
+    game.startRound();
+    game.secondsRemaining = 4;
+    sounds.played.clear();
+    await _pumpGame(tester, game);
+    expect(sounds.played, ['countdown'], reason: 'a saved game reopened');
+    sounds.played.clear();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(sounds.played, ['countdown']);
   });
 
   testWidgets('a complete private local flow reaches results at 320px',

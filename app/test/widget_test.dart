@@ -135,13 +135,11 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
-  testWidgets('features without content yet are shown as unavailable',
-      (tester) async {
+  testWidgets('Settings links the legal documents', (tester) async {
     await startAtHome(tester);
 
     await tester.tap(find.byTooltip('הגדרות'));
     await tester.pumpAndSettle();
-    expect(tester.widget<Switch>(find.byType(Switch).first).onChanged, isNull);
     for (final title in ['תנאי שימוש', 'מדיניות פרטיות']) {
       expect(find.text(title), findsOneWidget);
     }

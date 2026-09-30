@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
 import '../screens/legal_screens.dart';
+import '../state/sounds.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'monetization.dart';
@@ -133,6 +134,9 @@ const _soft = Color(0xB8FFF8E7); // cream at ~72%
 class _PurchaseSheetState extends State<_PurchaseSheet> {
   String? _selected;
 
+  /// The unlock sound played for this success already.
+  bool _celebrated = false;
+
   /// Keeps the rewarded cooldown's minutes current while the popup is open.
   late final Timer _tick =
       Timer.periodic(const Duration(seconds: 30), (_) => setState(() {}));
@@ -173,6 +177,11 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     final succeeded = step == PurchaseStep.purchased ||
         step == PurchaseStep.restored ||
         step == PurchaseStep.rewarded;
+    if (succeeded && !_celebrated) {
+      _celebrated = true;
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => sounds.play(Sound.unlock));
+    }
 
     return PopScope(
       canPop: !m.busy,

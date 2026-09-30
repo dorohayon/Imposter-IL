@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/player.dart';
 import '../monetization/monetization.dart';
+import '../state/sounds.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'local_game.dart';
@@ -62,12 +63,18 @@ class _LocalGameScreenState extends State<LocalGameScreen>
         );
     unawaited(LocalStore.save(_game));
     _syncTimer();
+    // A game resumed in the vote has its music; no stage has just begun.
+    _soundChanges(_game.phase);
+    _rejoinCountdown();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _ticker?.cancel();
+    sounds
+      ..stop(Sound.countdown)
+      ..loop(null);
     _guess.dispose();
     super.dispose();
   }
@@ -75,7 +82,11 @@ class _LocalGameScreenState extends State<LocalGameScreen>
   /// Every move is written down before the screen changes: the phone is the
   /// only copy of this match.
   void _apply(void Function() move) {
+    final before = _game.phase;
     setState(move);
+    // Whatever the move was, a turn that was counting down is over.
+    sounds.stop(Sound.countdown);
+    _soundChanges(before);
     _syncTimer();
     if (_game.phase == LocalPhase.ended) {
       unawaited(LocalStore.clear());
@@ -100,6 +111,12 @@ class _LocalGameScreenState extends State<LocalGameScreen>
       if (!mounted) return;
       final phase = _game.phase;
       setState(_game.tick);
+      _soundChanges(phase);
+      if (_game.secondsRemaining == 5 &&
+          (_game.phase == LocalPhase.hints ||
+              _game.phase == LocalPhase.guess)) {
+        sounds.play(Sound.countdown);
+      }
       if (_game.phase == LocalPhase.ended) {
         unawaited(LocalStore.clear());
       } else {
@@ -109,10 +126,38 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     });
   }
 
+  /// The sounds of a change of stage (docs/decisions.md, "צלילים"). No role
+  /// sound here: the whole table would hear who the impostor is. The result
+  /// is celebrated whoever won, as everyone is watching the same screen.
+  void _soundChanges(LocalPhase before) {
+    final phase = _game.phase;
+    sounds.loop(phase == LocalPhase.voting || phase == LocalPhase.runoff
+        ? Bed.voting
+        : null);
+    if (phase == before) return;
+    if (phase == LocalPhase.voteTransition) sounds.play(Sound.voteStart);
+    if (phase == LocalPhase.ended) sounds.play(Sound.win);
+  }
+
+  /// A turn that comes back inside its last seconds, from the background or a
+  /// saved game, joins the countdown's beats where the clock is: the ticker
+  /// only starts them on the tick that reaches five.
+  void _rejoinCountdown() {
+    final left = _game.secondsRemaining;
+    if (_timerShouldRun &&
+        left != null &&
+        left > 1 &&
+        left <= 5 &&
+        (_game.phase == LocalPhase.hints || _game.phase == LocalPhase.guess)) {
+      sounds.play(Sound.countdown, from: Duration(seconds: 5 - left));
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _syncTimer();
+      _rejoinCountdown();
       return;
     }
     if (state == AppLifecycleState.inactive ||

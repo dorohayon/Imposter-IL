@@ -7,6 +7,7 @@ import '../l10n/l10n.dart';
 import '../models/player.dart';
 import '../monetization/ad_banner.dart';
 import '../theme/app_theme.dart';
+import '../state/sounds.dart';
 
 /// The button styles of the design system (design/claude/design-system.md).
 enum ButtonVariant { primary, secondary, confirm, danger, quiet }
@@ -108,7 +109,7 @@ class _PrimaryButtonState extends State<PrimaryButton> {
       button: true,
       enabled: enabled,
       label: widget.label,
-      onTap: enabled ? widget.onPressed : null,
+      onTap: enabled ? withClick(widget.onPressed) : null,
       child: ExcludeSemantics(
         // InkWell supplies focus traversal plus Enter/Space activation for
         // keyboards and switch-access devices. The parent Semantics node is
@@ -117,7 +118,7 @@ class _PrimaryButtonState extends State<PrimaryButton> {
           focusNode: _focusNode,
           canRequestFocus: enabled,
           onHighlightChanged: enabled ? _setPressed : null,
-          onTap: widget.onPressed,
+          onTap: withClick(widget.onPressed),
           overlayColor: const WidgetStatePropertyAll(Colors.transparent),
           splashFactory: NoSplash.splashFactory,
           borderRadius: BorderRadius.circular(18),
@@ -447,7 +448,7 @@ class GameScaffold extends StatelessWidget {
                       child: onExit != null
                           ? IconButton.filledTonal(
                               tooltip: context.l10n.leave,
-                              onPressed: onExit,
+                              onPressed: withClick(onExit),
                               icon: const Icon(Icons.close_rounded, size: 22),
                             )
                           : showBack && canPop
@@ -650,7 +651,7 @@ class PlayerCard extends StatelessWidget {
     return Card(
       color: selected ? AppColors.yellow.withValues(alpha: .12) : null,
       child: InkWell(
-        onTap: enabled ? onTap : null,
+        onTap: enabled ? withClick(onTap) : null,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),

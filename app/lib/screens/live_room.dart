@@ -11,7 +11,9 @@ import '../l10n/l10n.dart';
 import '../models/player.dart';
 import '../monetization/monetization.dart';
 import '../monetization/monetization_config.dart';
+import '../state/buzz.dart';
 import '../state/game_session.dart';
+import '../state/sounds.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 import 'secondary_screens.dart';
@@ -148,6 +150,29 @@ class LiveRoomScreen extends StatefulWidget {
 class _LiveRoomScreenState extends State<LiveRoomScreen> {
   bool _leaving = false;
 
+  /// Back from another app, the countdown is scheduled afresh: its beats
+  /// stopped while away, and a timer inside its last seconds rejoins them.
+  late final _lifecycle = AppLifecycleListener(onShow: () {
+    _countdownFor = null;
+    if (mounted) setState(() {});
+  });
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle;
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    _countdown?.cancel();
+    sounds
+      ..stop(Sound.countdown)
+      ..loop(null);
+    super.dispose();
+  }
+
   void _goHome() {
     if (_leaving || !mounted) return;
     _leaving = true;
@@ -233,10 +258,14 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
   GameView? _lastGame;
 
   /// Vibrates when a game starts, when it becomes my turn and when voting
-  /// starts, if the player enabled vibration.
+  /// starts, if the player enabled vibration; and plays the sounds of those
+  /// changes (docs/decisions.md, "צלילים").
   void _vibrateOnChanges(GameSession session, GameView? game) {
+    // A player taken out of the game is buzzed and played to by none of it.
+    if (_removed(session, game)) game = null;
     final previous = _lastGame;
     _lastGame = game;
+    _soundChanges(session, previous, game);
     if (game == null || !session.vibrationOn) return;
     final myTurnNow = game.phase == 'hints' &&
         game.currentTurnPlayerId == session.playerId &&
@@ -245,9 +274,99 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
         (game.phase == 'voting' || game.phase == 'runoff_voting') &&
             previous?.phase != game.phase;
     if (previous?.id != game.id || myTurnNow || votingNow) {
-      _afterFrame(HapticFeedback.mediumImpact);
+      _afterFrame(buzz);
     }
   }
+
+  Timer? _countdown;
+  String? _countdownFor;
+
+  void _soundChanges(GameSession session, GameView? previous, GameView? game) {
+    final phase = game?.phase;
+    sounds.loop(
+        phase == 'voting' || phase == 'runoff_voting' ? Bed.voting : null);
+    if (game != null && phase != previous?.phase) {
+      if (phase == 'role_reveal' && previous?.id != game.id) {
+        sounds
+            .play(game.isImpostor ? Sound.revealImposter : Sound.revealCitizen);
+      }
+      if (phase == 'pre_voting') sounds.play(Sound.voteStart);
+    }
+  }
+
+  /// The last five seconds, only on a timer that is this player's to beat:
+  /// their own hint turn, a vote they cast, the impostor's guess, and the
+  /// search's count to the game starting. Not the role card, the pause after
+  /// a hint or the move to voting.
+  void _scheduleCountdown(
+      GameSession session, GameView? game, MatchmakingView? search) {
+    if (_removed(session, game)) game = null;
+    final me = session.playerId;
+    final (String? key, DateTime? deadline) = switch ((game, search)) {
+      (final game?, _)
+          when game.deadline != null &&
+              switch (game.phase) {
+                'hints' => game.currentTurnPlayerId == me,
+                'voting' ||
+                'runoff_voting' =>
+                  !game.isEliminated(me) && game.myVote == null,
+                'impostor_guess' => game.isImpostor,
+                _ => false,
+              } =>
+        (
+          '${game.id}/${game.phase}/${game.round}/'
+              '${game.currentTurnPlayerId}/${game.deadline}/${game.myVote}',
+          game.deadline
+        ),
+      (null, final search?)
+          when search.status == 'countdown' && search.deadline != null =>
+        ('search/${search.deadline}', search.deadline),
+      _ => (null, null),
+    };
+    if (key == _countdownFor) return;
+    _countdownFor = key;
+    _countdown?.cancel();
+    _countdown = null;
+    // A timer that ended early, by a hint or a vote, takes its beats along.
+    sounds.stop(Sound.countdown);
+    if (deadline == null) return;
+    final left = deadline.difference(session.serverNow);
+    if (left > _countdownLength) {
+      _countdown = Timer(left - _countdownLength,
+          () => _joinCountdown(deadline.difference(session.serverNow)));
+    } else {
+      _joinCountdown(left);
+    }
+  }
+
+  /// Plays the beats that are [left], so the last lands on zero. Inside the
+  /// last seconds, as the search's five-second count always is by the time
+  /// it arrives, they join where they are. A timer that fired after the app
+  /// was suspended can find the deadline gone, and then plays nothing.
+  void _joinCountdown(Duration left) {
+    if (left <= const Duration(seconds: 1)) return;
+    sounds.play(Sound.countdown,
+        from:
+            left >= _countdownLength ? Duration.zero : _countdownLength - left);
+  }
+
+  /// A screen with no game or search on it, such as a server error, plays
+  /// none of their sounds.
+  void _silence() {
+    _lastGame = null;
+    _countdown?.cancel();
+    _countdown = null;
+    _countdownFor = null;
+    sounds
+      ..stop(Sound.countdown)
+      ..loop(null);
+  }
+
+  bool _removed(GameSession session, GameView? game) =>
+      game?.player(session.playerId)?.status == 'removed';
+
+  /// The countdown sound's five beats, its final hit on zero.
+  static const _countdownLength = Duration(seconds: 5);
 
   void _afterFrame(VoidCallback action) =>
       WidgetsBinding.instance.addPostFrameCallback((_) => action());
@@ -257,6 +376,7 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     final session = SessionScope.of(context);
 
     if (session.sessionLost) {
+      _silence();
       return ServerErrorScreen(
         gameStopped: true,
         onRetry: () async {
@@ -282,6 +402,7 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     }
     final noMatch = session.noMatchCategories;
     if (noMatch != null) {
+      _silence();
       return _NoMatch(
         onCategories: () {
           session.dismissNoMatch();
@@ -316,6 +437,8 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
     final inGame = session.activity == 'game' && game != null;
     _vibrateOnChanges(session, inGame ? game : null);
     final searching = session.activity == 'matchmaking';
+    _scheduleCountdown(
+        session, inGame ? game : null, searching ? search : null);
     final Widget body = inGame
         ? _LiveGame(game: game, onLeave: _leaveGame)
         : searching && search != null
@@ -1278,6 +1401,7 @@ class _HintsState extends State<_Hints> {
   void _pop(String playerId, String text) {
     if (_cardKeys[playerId] case final key?) {
       floatReaction(context, text, anchor: key, seed: _seed++);
+      sounds.play(Sound.reaction);
     }
   }
 
