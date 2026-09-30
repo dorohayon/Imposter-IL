@@ -52,13 +52,12 @@ class Sounds {
           for (final s in _effects.keys.toList()) {
             stop(s);
           }
-          unawaited(_guard(() async => _bedPlayer?.pause()));
+          _bedTicket++;
+          if (_bedPlayer case final player?) unawaited(_guard(player.stop));
         },
         onShow: () {
           _hidden = false;
-          unawaited(_guard(() async {
-            if (_bed != null && enabled) await _bedPlayer?.resume();
-          }));
+          if (_bed case final bed? when _enabled) _playBed(bed);
         },
       );
     }
@@ -79,6 +78,12 @@ class Sounds {
   bool _bedPlaying = false;
   bool _enabled = true;
   bool _hidden = false;
+
+  /// Tickets for what should be playing. Starting a sound takes a few awaits;
+  /// a stop, the switch or the app hiding in between takes a new ticket, and
+  /// the start that finds its own gone does not play.
+  final _tickets = <Sound, int>{};
+  int _bedTicket = 0;
 
   /// What played, newest last: effects by file name, a bed as `bed:` and
   /// its file name, and a bed's end as `bed:off`.
@@ -117,15 +122,20 @@ class Sounds {
     played.add(sound.file);
     if (!_real) return;
     final player = _effects[sound] ??= AudioPlayer();
+    final ticket = _tickets[sound] = (_tickets[sound] ?? 0) + 1;
+    bool current() => _tickets[sound] == ticket && _enabled && !_hidden;
     unawaited(_guard(() async {
       await player.stop();
+      if (!current()) return;
       await player.play(AssetSource('sounds/${sound.file}.m4a'),
           position: from);
+      if (!current()) await player.stop();
     }));
   }
 
   /// Cuts a sound short, such as a countdown whose timer ended early.
   void stop(Sound sound) {
+    _tickets[sound] = (_tickets[sound] ?? 0) + 1;
     final player = _effects[sound];
     if (player != null) unawaited(_guard(player.stop));
   }
@@ -145,17 +155,27 @@ class Sounds {
   void _startBed(Bed bed) {
     _bedPlaying = true;
     played.add('bed:${bed.file}');
-    if (!_real) return;
+    // Behind another app it waits, and starts when the app is back.
+    if (_real && !_hidden) _playBed(bed);
+  }
+
+  void _playBed(Bed bed) {
     final player = _bedPlayer ??= AudioPlayer();
+    final ticket = ++_bedTicket;
+    bool current() =>
+        _bedTicket == ticket && _bed == bed && _enabled && !_hidden;
     unawaited(_guard(() async {
       await player.stop();
       await player.setReleaseMode(ReleaseMode.loop);
+      if (!current()) return;
       await player.play(AssetSource('sounds/${bed.file}.m4a'),
           volume: _bedVolume);
+      if (!current()) await player.stop();
     }));
   }
 
   void _stopBed() {
+    _bedTicket++;
     if (!_bedPlaying) return;
     _bedPlaying = false;
     played.add('bed:off');

@@ -65,6 +65,7 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     _syncTimer();
     // A game resumed in the vote has its music; no stage has just begun.
     _soundChanges(_game.phase);
+    _rejoinCountdown();
   }
 
   @override
@@ -138,21 +139,25 @@ class _LocalGameScreenState extends State<LocalGameScreen>
     if (phase == LocalPhase.ended) sounds.play(Sound.win);
   }
 
+  /// A turn that comes back inside its last seconds, from the background or a
+  /// saved game, joins the countdown's beats where the clock is: the ticker
+  /// only starts them on the tick that reaches five.
+  void _rejoinCountdown() {
+    final left = _game.secondsRemaining;
+    if (_timerShouldRun &&
+        left != null &&
+        left > 1 &&
+        left <= 5 &&
+        (_game.phase == LocalPhase.hints || _game.phase == LocalPhase.guess)) {
+      sounds.play(Sound.countdown, from: Duration(seconds: 5 - left));
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _syncTimer();
-      // The clock stood still while away; the beats stopped with it. Back
-      // inside the last seconds, they rejoin where the clock is.
-      final left = _game.secondsRemaining;
-      if (_timerShouldRun &&
-          left != null &&
-          left > 1 &&
-          left <= 5 &&
-          (_game.phase == LocalPhase.hints ||
-              _game.phase == LocalPhase.guess)) {
-        sounds.play(Sound.countdown, from: Duration(seconds: 5 - left));
-      }
+      _rejoinCountdown();
       return;
     }
     if (state == AppLifecycleState.inactive ||

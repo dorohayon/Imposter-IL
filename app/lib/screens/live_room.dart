@@ -247,6 +247,8 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
   /// starts, if the player enabled vibration; and plays the sounds of those
   /// changes (docs/decisions.md, "צלילים").
   void _vibrateOnChanges(GameSession session, GameView? game) {
+    // A player taken out of the game is buzzed and played to by none of it.
+    if (_removed(session, game)) game = null;
     final previous = _lastGame;
     _lastGame = game;
     _soundChanges(session, previous, game);
@@ -266,8 +268,6 @@ class _LiveRoomScreenState extends State<LiveRoomScreen> {
   String? _countdownFor;
 
   void _soundChanges(GameSession session, GameView? previous, GameView? game) {
-    // A player taken out of the game watches a "removed" screen, not the game.
-    if (_removed(session, game)) game = null;
     final phase = game?.phase;
     sounds.loop(
         phase == 'voting' || phase == 'runoff_voting' ? Bed.voting : null);

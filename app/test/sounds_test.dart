@@ -151,6 +151,35 @@ void main() {
     expect(sounds.played, isEmpty);
   });
 
+  testWidgets('a removed player is not buzzed on reconnecting', (tester) async {
+    final haptics = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'HapticFeedback.vibrate') {
+          haptics.add(call.arguments);
+        }
+        return null;
+      },
+    );
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null));
+    final channel = await _inGame(tester, FakeApi());
+    channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(phase: 'voting', candidates: [
+          'p_2'
+        ], players: [
+          player('p_me', 'דור', status: 'removed'),
+          player('p_2', 'נועה'),
+          player('p_3', 'יובל'),
+          player('p_4', 'מאיה'),
+        ]));
+    await settle(tester);
+    expect(haptics, isEmpty);
+  });
+
   testWidgets('a hidden player\'s reaction makes no sound', (tester) async {
     final channel = await _inGame(tester, FakeApi());
     channel.snapshot(

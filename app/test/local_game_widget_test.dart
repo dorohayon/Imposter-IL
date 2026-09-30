@@ -168,7 +168,9 @@ void main() {
     }
     game.startRound();
     game.secondsRemaining = 4;
+    sounds.played.clear();
     await _pumpGame(tester, game);
+    expect(sounds.played, ['countdown'], reason: 'a saved game reopened');
     sounds.played.clear();
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     await tester.pump();
