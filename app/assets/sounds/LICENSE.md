@@ -9,7 +9,7 @@ different license that does not allow video games, so none is used here.
 |---|---|---|
 | reveal.m4a | Positive notification | 951 |
 | hint.m4a | Dry pop up notification alert | 2356 |
-| vote_start.m4a | Melodic game over | 956 |
+| vote_start.m4a | Melodic game over: its one-second melody repeated into one continuous 5-second phrase, each fade carried into the next beat, so it loops without a gap | 956 |
 | win.m4a | Correct answer reward | 952 |
 | lose.m4a | Musical game over | 959 |
 | unlock.m4a | Game magic hint | 962 |
