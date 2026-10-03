@@ -1303,7 +1303,10 @@ void floatReaction(
   final box = anchor.currentContext?.findRenderObject() as RenderBox?;
   final overlay = Overlay.maybeOf(context);
   if (overlay == null || box == null || !box.hasSize) return;
-  final origin = box.localToGlobal(Offset(box.size.width / 2, 0));
+  // In the overlay's own space, which is the screen's only when nothing
+  // scales the app (the store preview draws it smaller).
+  final origin = box.localToGlobal(Offset(box.size.width / 2, 0),
+      ancestor: overlay.context.findRenderObject());
   late final OverlayEntry entry;
   entry = OverlayEntry(
     builder: (_) => _ReactionBubble(
@@ -1425,13 +1428,18 @@ class _ReactionBubbleState extends State<_ReactionBubble>
                   ),
                 ],
               ),
-              child: Text(
-                widget.text,
-                softWrap: false,
-                style: TextStyle(
-                  color: AppColors.night,
-                  fontSize: emoji ? 24 : 14,
-                  fontWeight: emoji ? FontWeight.w400 : FontWeight.w500,
+              // An overlay entry sits above the routes, outside the theme's
+              // text style: without Material it drew in the platform's font.
+              child: Material(
+                type: MaterialType.transparency,
+                child: Text(
+                  widget.text,
+                  softWrap: false,
+                  style: TextStyle(
+                    color: AppColors.night,
+                    fontSize: emoji ? 24 : 14,
+                    fontWeight: emoji ? FontWeight.w400 : FontWeight.w500,
+                  ),
                 ),
               ),
             ),
