@@ -32,6 +32,10 @@ abstract final class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.night,
       fontFamily: 'Rubik',
+      // The emoji font iOS uses anyway, named so emoji draw in colour where the
+      // system's own fallback is not consulted: test renders and the store
+      // screenshots (test/store). Android ignores a family it does not have.
+      fontFamilyFallback: const ['Apple Color Emoji'],
       textTheme: const TextTheme(
         displayLarge: TextStyle(
           fontFamily: 'Secular One',
