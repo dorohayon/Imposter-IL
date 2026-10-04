@@ -31,6 +31,7 @@ const _view = Size(443, 960);
 
 const _captions = {
   'he': (
+    home: 'משחק הרמזים\nשבו [כולם חשודים]',
     word: 'כולם מקבלים\n[מילה סודית]',
     impostor: '[חוץ מהמתחזה]',
     clues: 'רמז במילה אחת.\n[מי מבלף?]',
@@ -38,6 +39,7 @@ const _captions = {
     result: 'תפסו אותו\n[לפני שינחש]',
   ),
   'en': (
+    home: 'The clue game where\n[everyone’s a suspect]',
     word: 'Everyone gets\nthe [secret word]',
     impostor: '[Except the imposter]',
     clues: 'One-word clues.\n[Who\'s bluffing?]',
@@ -215,6 +217,9 @@ void main() {
         }
       }
 
+      // 0. Home, long enough to read, then the game slides in.
+      caption.value = say.home;
+      await hold(2.2);
       final channel = await enterStoreGame(tester, api);
       var hints = 0;
       void board(String turn,
@@ -314,7 +319,7 @@ void main() {
           storeGame(lang, 'ended', hints: 6, result: citizensWon(lang)));
       caption.value = say.result;
       sound('win');
-      await hold(4.0);
+      await hold(3.5);
 
       File('${out.path}/sounds.json').writeAsStringSync(jsonEncode({
         'fps': _fps,
