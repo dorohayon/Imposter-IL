@@ -21,12 +21,12 @@
 
 שש התמונות, בכל שפה ובשתי החנויות:
 
-1. מסך הבית — "תפסו את המתחזה" / "Catch the imposter".
+1. מסך הבית — "תפסו את המתחזה" / "Catch the imposter", ומתחת: "משחק הרמזים שבו כולם חשודים" / "The clue game where everyone’s a suspect" (גם ב־feature graphic).
 2. כרטיס התפקיד של אזרח ושל המתחזה, זה לצד זה — "מילה סודית אחת. מתחזה אחד."
 3. לוח הרמזים עם תגובות — "מילה אחת. רמז אחד."
 4. ההצבעה — "הצביעו מי המתחזה".
 5. התוצאה — "חשפו את המבלף".
-6. בחירת הקטגוריות — "מעל 1,000 מילים ב־23 קטגוריות" / "1,000 words in 21 categories".
+6. בחירת הקטגוריות — "אינספור מילים מכל תחום" / "Endless words from every topic". בלי מספרים, כדי שהכיתוב לא יתיישן כשמוסיפים מילים.
 
 הטלפון במסגרת כללית בלי סימני יצרן (מותר בשתי החנויות), ושורת הסטטוס הפוכה בעברית. הסרטון: כרטיס האזרח ואחריו המתחזה, רמזים מגיעים אחד אחד (כולל הקלדה) עם תגובות, "עוברים להצבעה", הצבעה עם ספירה לאחור, וניצחון האזרחים — עם הצלילים של המשחק ברגעים שלהם. Apple מתירה כיתוב מעל צילום המסך של האפליקציה.
 
@@ -36,6 +36,11 @@
 
 ```sh
 STORE_ASSETS=1 flutter test test/store
+# Screenshots to JPEG, which has no alpha channel (the App Store refuses one);
+# Play's icon stays a PNG.
+for f in build/store/{appstore,googleplay}/*/*.png; do
+  sips -s format jpeg -s formatOptions 92 "$f" --out "${f%.png}.jpg" >/dev/null && rm "$f"
+done
 for l in he en; do
   swift test/store/encode_video.swift build/store/video/$l build/store/appstore/$l/preview.mp4
 done

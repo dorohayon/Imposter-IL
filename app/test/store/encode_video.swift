@@ -20,7 +20,7 @@ let output = URL(fileURLWithPath: args[2])
 try? FileManager.default.removeItem(at: output)
 
 let frames = try FileManager.default.contentsOfDirectory(atPath: folder.path)
-  .filter { $0.hasPrefix("frame_") && $0.hasSuffix(".png") }
+  .filter { $0.hasPrefix("frame_") && ($0.hasSuffix(".png") || $0.hasSuffix(".jpg")) }
   .sorted()
 let fps: Int32 = 30
 let width = 886

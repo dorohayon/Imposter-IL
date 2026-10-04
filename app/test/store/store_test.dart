@@ -18,19 +18,23 @@ final _run = Platform.environment['STORE_ASSETS'] == '1';
 /// What each screenshot says, in order. A word in brackets is in yellow.
 const _captions = {
   'he': [
-    ('1_home', 'תפסו את [המתחזה]', 'משחק הרמזים והבלופים לחברים'),
+    ('1_home', 'תפסו את [המתחזה]', 'משחק הרמזים שבו כולם חשודים'),
     ('2_role', 'מילה סודית אחת.\n[מתחזה אחד.]', 'המתחזה יודע רק את הקטגוריה'),
     ('3_clues', 'מילה אחת.\n[רמז אחד.]', 'לא ברור מדי, לא מעורפל מדי'),
     ('4_vote', '[הצביעו]\nמי המתחזה', 'חשדו, הגיבו והחליטו יחד'),
     ('5_result', 'חשפו את\n[המבלף]', 'נתפס? למתחזה נשאר ניחוש אחד'),
     (
       '6_categories',
-      'מעל [1,000 מילים]\nב־23 קטגוריות',
+      '[אינספור מילים]\nמכל תחום',
       'ברשת, בחדר פרטי או בטלפון אחד'
     ),
   ],
   'en': [
-    ('1_home', 'Catch the\n[imposter]', 'The party game of clues and bluffs'),
+    (
+      '1_home',
+      'Catch the\n[imposter]',
+      'The clue game where everyone’s a suspect'
+    ),
     (
       '2_role',
       'One secret word.\n[One imposter.]',
@@ -49,7 +53,7 @@ const _captions = {
     ),
     (
       '6_categories',
-      '[1,000 words]\nin 21 categories',
+      '[Endless words]\nfrom every topic',
       'Online, in a private room or on one phone'
     ),
   ],
@@ -62,11 +66,9 @@ const _targets = {
   'googleplay': Size(1080, 1920),
 };
 
-/// Renders [panel] at [size] pixels to [path] as a JPEG: no transparency,
-/// which the App Store refuses.
+/// Renders [panel] at [size] pixels to [path].png.
 Future<void> _render(WidgetTester tester, Widget panel, Size size,
-    List<Uint8List> images, String path,
-    {bool png = false}) async {
+    List<Uint8List> images, String path) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
   tester.view.padding = FakeViewPadding.zero;
@@ -84,17 +86,12 @@ Future<void> _render(WidgetTester tester, Widget panel, Size size,
     final image = await boundary.toImage();
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
     image.dispose();
-    final file = File('$path.png')
+    // A PNG. The screenshots then go to JPEG, which has no alpha channel, as
+    // the App Store requires (docs/store-assets.md): converting from in here
+    // hung the test now and then. Play's icon stays a PNG, alpha and all.
+    File('$path.png')
       ..createSync(recursive: true)
       ..writeAsBytesSync(bytes!.buffer.asUint8List());
-    // A PNG keeps its alpha channel, which Play's icon asks for; screenshots
-    // go to JPEG, which has none, as the App Store requires.
-    if (png) return;
-    Process.runSync('sips', [
-      '-s', 'format', 'jpeg', '-s', 'formatOptions', '92', //
-      file.path, '--out', '$path.jpg',
-    ]);
-    file.deleteSync();
   });
 }
 
@@ -191,8 +188,8 @@ void main() {
         FeatureGraphic(
           name: lang.code == 'he' ? 'מי המתחזה?' : 'Imposter:\nWord Bluff',
           tagline: lang.code == 'he'
-              ? 'משחק הרמזים והבלופים לחברים'
-              : 'The party game of\nclues and bluffs',
+              ? 'משחק הרמזים שבו כולם חשודים'
+              : 'The clue game where\neveryone’s a suspect',
           rtl: lang.code == 'he',
           icon: icon,
           hero: hero,
@@ -209,7 +206,6 @@ void main() {
           const Size(512, 512),
           [icon],
           'build/store/googleplay/icon_512',
-          png: true,
         );
       }
     });
