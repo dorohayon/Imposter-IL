@@ -68,7 +68,11 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
   /// expired something meanwhile.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) widget.monetization.resumed();
+    if (state == AppLifecycleState.paused) widget.session.setBackground(true);
+    if (state == AppLifecycleState.resumed) {
+      widget.session.setBackground(false);
+      widget.monetization.resumed();
+    }
   }
 
   @override

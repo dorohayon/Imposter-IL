@@ -44,6 +44,25 @@ Future<FakeChannel> startSearching(WidgetTester tester, FakeApi api) async {
   return channel;
 }
 
+/// Sends the app to the background, or brings it back, through the states a
+/// phone passes on the way.
+Future<void> background(WidgetTester tester, bool away) async {
+  for (final state in away
+      ? const [
+          AppLifecycleState.inactive,
+          AppLifecycleState.hidden,
+          AppLifecycleState.paused
+        ]
+      : const [
+          AppLifecycleState.hidden,
+          AppLifecycleState.inactive,
+          AppLifecycleState.resumed
+        ]) {
+    tester.binding.handleAppLifecycleStateChanged(state);
+  }
+  await settle(tester);
+}
+
 var _searchVersion = 0;
 
 void pushSearch(FakeChannel channel, String status, int players) =>
@@ -311,5 +330,49 @@ void main() {
     expect(categoryTileName('בבית'), 'בבית');
     expect(categoryTileName('מקצועות ועבודה'), 'מקצועות\nועבודה');
     expect(categoryTileName('בית ספר ולימודים'), 'בית ספר\nולימודים');
+  });
+
+  // An open WebSocket keeps the Cloud Run instance billed, so an idle phone in
+  // the background holds none. Anything the server is holding the player in
+  // keeps it, so the disconnect rules never apply to a backgrounded app here.
+  testWidgets('idle in the background, the app holds no connection',
+      (tester) async {
+    final api = FakeApi();
+    final session = await startAtHome(tester, api);
+    await settle(tester);
+    final first = api.channel;
+    expect(session.connected, isTrue);
+
+    await background(tester, true);
+    await settle(tester);
+    expect(session.connected, isFalse);
+    expect(api.channels, [first]); // no reconnecting while away
+
+    await background(tester, false);
+    expect(api.channels, hasLength(2));
+    expect(session.connected, isTrue);
+  });
+
+  testWidgets('a search keeps its connection in the background until it ends',
+      (tester) async {
+    final api = FakeApi();
+    final channel = await startSearching(tester, api);
+    await settle(tester);
+    final session =
+        SessionScope.read(tester.element(find.byType(Scaffold).first));
+
+    await background(tester, true);
+    await settle(tester);
+    expect(session.connected, isTrue);
+
+    // The search ends while away: nothing holds the player any more.
+    channel.event('session.state', {'playerId': 'p_me', 'activity': 'none'});
+    await settle(tester);
+    expect(session.connected, isFalse);
+    expect(api.channels, [channel]);
+
+    await background(tester, false);
+    expect(api.channels, hasLength(2));
+    expect(session.connected, isTrue);
   });
 }
