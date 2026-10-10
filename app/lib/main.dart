@@ -51,6 +51,11 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Launched straight into the background: no change will arrive to say so,
+    // and the connection opened while the session was restored.
+    if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.paused) {
+      widget.session.setBackground(true);
+    }
     // The link that launched the app, if it was launched by one.
     _openInvite(WidgetsBinding.instance.platformDispatcher.defaultRouteName);
   }
@@ -68,7 +73,11 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
   /// expired something meanwhile.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) widget.monetization.resumed();
+    if (state == AppLifecycleState.paused) widget.session.setBackground(true);
+    if (state == AppLifecycleState.resumed) {
+      widget.session.setBackground(false);
+      widget.monetization.resumed();
+    }
   }
 
   @override

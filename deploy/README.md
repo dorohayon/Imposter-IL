@@ -249,6 +249,13 @@ it deploys nothing until the VM path is adopted.
 `./deploy/setup-moderation-alerts.sh` emails `imposteril36@gmail.com` whenever a
 player is reported (docs/moderation.md). It is safe to re-run.
 
+## Uptime alert
+
+`./deploy/setup-uptime-alert.sh` asks `/readyz` every five minutes and emails the
+same address when it fails for ten. In October 2026 the Cloud Run spend cap
+switched the server off and it stayed off for six days unnoticed; if this
+email arrives, check the cap (Billing → Budgets) first. It is safe to re-run.
+
 ## Checklist before the first real deploy
 
 - [ ] `DOMAIN` resolves to the VM, so Caddy can issue a certificate

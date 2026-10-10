@@ -129,8 +129,41 @@ class GameSession extends ChangeNotifier {
   final _random = Random();
   bool _disposed = false;
   bool _loopRunning = false;
+  bool _background = false;
+  bool _closedForPark = false;
 
   bool get signedIn => token != null;
+
+  /// In the background with nothing on the server waiting for this player:
+  /// no search, room or game, and no cancel, leave or command still to be
+  /// confirmed. Such a player holds no connection.
+  bool get _parked =>
+      _background &&
+      activity == 'none' &&
+      !_pendingSearchCancel &&
+      _pendingGameLeave == null &&
+      _pending.isEmpty;
+
+  /// The app went to the background or came back. An open WebSocket keeps
+  /// the Cloud Run instance running and billed, so a phone left in the
+  /// background on the home screen kept the server up around the clock and
+  /// spent October's cap in four days. A search, room or game keeps its
+  /// connection, so the disconnect rules are untouched.
+  void setBackground(bool background) {
+    _background = background;
+    if (_parked) {
+      _park();
+    } else if (!background && signedIn && !_loopRunning) {
+      unawaited(_connectLoop());
+    }
+  }
+
+  void _park() {
+    final channel = _channel;
+    if (channel == null) return;
+    _closedForPark = true;
+    unawaited(channel.close());
+  }
 
   DateTime get serverNow => DateTime.now().add(serverOffset);
 
@@ -274,7 +307,7 @@ class GameSession extends ChangeNotifier {
     if (_loopRunning) return;
     _loopRunning = true;
     var failures = 0;
-    while (!_disposed && signedIn) {
+    while (!_disposed && signedIn && !_parked) {
       try {
         final channel = await api.connect(token!);
         _channel = channel;
@@ -284,6 +317,8 @@ class GameSession extends ChangeNotifier {
         _notify();
         await for (final message in channel.messages) {
           _onMessage(message);
+          // A game that ends, or a leave confirmed, while in the background.
+          if (_parked) _park();
         }
         if (channel.closeReason == replacedByNewConnection) {
           // The same token connected from another phone (a backup restored
@@ -322,7 +357,12 @@ class GameSession extends ChangeNotifier {
       connected = false;
       _failPending();
       _notify();
-      if (_disposed) break;
+      final parkedClose = _closedForPark;
+      _closedForPark = false;
+      if (_disposed || _parked) break;
+      // Back before the parked connection finished closing: nothing went
+      // wrong, so no backoff.
+      if (parkedClose) continue;
       // Back off (x1, x2, x4) with jitter, so a restarted server is not hit by
       // every client in the same instant — except while a game holds the
       // player's seat: those 30 seconds are theirs to get back in.
