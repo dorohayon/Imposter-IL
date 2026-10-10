@@ -375,4 +375,25 @@ void main() {
     expect(api.channels, hasLength(2));
     expect(session.connected, isTrue);
   });
+
+  testWidgets('coming back while the connection closes reconnects at once',
+      (tester) async {
+    final api = FakeApi();
+    final session = await startAtHome(tester, api);
+    await settle(tester);
+    for (final state in const [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ]) {
+      tester.binding.handleAppLifecycleStateChanged(state);
+    }
+    // Well inside the reconnect backoff (50 ms here, 2 s in the app).
+    await tester.pump(const Duration(milliseconds: 10));
+    expect(api.channels, hasLength(2));
+    expect(session.connected, isTrue);
+  });
 }
