@@ -247,6 +247,27 @@ void main() {
       expect(m.step, PurchaseStep.failed);
     });
 
+    // On Android the plugin reports these with productID '': back from Play's
+    // payment sheet used to leave the popup on "connecting" for good.
+    test('a cancel or error Play reports without a product ends the purchase',
+        () async {
+      final store = FakeStore()..outcome = null; // Play's sheet stays open
+      final m = await started(store: store);
+      for (final (outcome, step) in [
+        (StoreStatus.canceled, PurchaseStep.cancelled),
+        (StoreStatus.error, PurchaseStep.failed),
+      ]) {
+        m.openPopup();
+        await m.buy('category_sports');
+        expect(m.step, PurchaseStep.processing);
+        store.emit([store.purchase('', outcome)]);
+        await flush();
+        expect(m.step, step);
+        expect(m.busy, isFalse);
+        expect(m.isUnlocked('sports'), isFalse);
+      }
+    });
+
     test('a pending payment opens nothing and is not finished', () async {
       final store = FakeStore()..outcome = StoreStatus.pending;
       final m = await started(store: store);
