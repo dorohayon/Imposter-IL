@@ -257,7 +257,7 @@ abstract class AppLocalizations {
   /// No description provided for @terms1.
   ///
   /// In he, this message translates to:
-  /// **'״מי המתחזה?״ הוא משחק חברתי מקוון המופעל על ידי Imposter IL (imposteril36@gmail.com). אין צורך בחשבון. אתם בוחרים כינוי ואווטאר ומקבלים מזהה אורח זמני לצורך המשחק.'**
+  /// **'״מי המתחזה?״ הוא משחק חברתי מקוון המופעל על ידי ImposterStudio (imposteril36@gmail.com). אין צורך בחשבון. אתם בוחרים כינוי ואווטאר ומקבלים מזהה אורח זמני לצורך המשחק.'**
   String get terms1;
 
   /// No description provided for @terms2Title.
@@ -389,7 +389,7 @@ abstract class AppLocalizations {
   /// No description provided for @terms12.
   ///
   /// In he, this message translates to:
-  /// **'Imposter IL · imposteril36@gmail.com\nלתמיכה, לדיווח על תוכן פוגעני ולכל שאלה על התנאים האלה.'**
+  /// **'ImposterStudio · imposteril36@gmail.com\nלתמיכה, לדיווח על תוכן פוגעני ולכל שאלה על התנאים האלה.'**
   String get terms12;
 
   /// No description provided for @privacyIntro.
@@ -407,7 +407,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacy1.
   ///
   /// In he, this message translates to:
-  /// **'המשחק ״מי המתחזה?״ מופעל על ידי Imposter IL, והמדיניות הזאת חלה על האפליקציה ועל השרת שמפעיל אותה. לפניות בנושא פרטיות: imposteril36@gmail.com.'**
+  /// **'המשחק ״מי המתחזה?״ מופעל על ידי ImposterStudio, והמדיניות הזאת חלה על האפליקציה ועל השרת שמפעיל אותה. לפניות בנושא פרטיות: imposteril36@gmail.com.'**
   String get privacy1;
 
   /// No description provided for @privacy2Title.
@@ -551,7 +551,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacy13.
   ///
   /// In he, this message translates to:
-  /// **'Imposter IL · imposteril36@gmail.com\nלפניות בנושא פרטיות, בקשות למימוש זכויות ודיווח על תוכן פוגעני. נשתדל להשיב בתוך 30 יום.'**
+  /// **'ImposterStudio · imposteril36@gmail.com\nלפניות בנושא פרטיות, בקשות למימוש זכויות ודיווח על תוכן פוגעני. נשתדל להשיב בתוך 30 יום.'**
   String get privacy13;
 
   /// No description provided for @legalPublicCopy.

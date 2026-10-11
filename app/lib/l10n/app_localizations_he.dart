@@ -96,7 +96,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get terms1 =>
-      '״מי המתחזה?״ הוא משחק חברתי מקוון המופעל על ידי Imposter IL (imposteril36@gmail.com). אין צורך בחשבון. אתם בוחרים כינוי ואווטאר ומקבלים מזהה אורח זמני לצורך המשחק.';
+      '״מי המתחזה?״ הוא משחק חברתי מקוון המופעל על ידי ImposterStudio (imposteril36@gmail.com). אין צורך בחשבון. אתם בוחרים כינוי ואווטאר ומקבלים מזהה אורח זמני לצורך המשחק.';
 
   @override
   String get terms2Title => '2. כללי התנהגות ותוכן';
@@ -173,7 +173,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get terms12 =>
-      'Imposter IL · imposteril36@gmail.com\nלתמיכה, לדיווח על תוכן פוגעני ולכל שאלה על התנאים האלה.';
+      'ImposterStudio · imposteril36@gmail.com\nלתמיכה, לדיווח על תוכן פוגעני ולכל שאלה על התנאים האלה.';
 
   @override
   String privacyIntro(Object legalVersion, Object legalDate) {
@@ -185,7 +185,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get privacy1 =>
-      'המשחק ״מי המתחזה?״ מופעל על ידי Imposter IL, והמדיניות הזאת חלה על האפליקציה ועל השרת שמפעיל אותה. לפניות בנושא פרטיות: imposteril36@gmail.com.';
+      'המשחק ״מי המתחזה?״ מופעל על ידי ImposterStudio, והמדיניות הזאת חלה על האפליקציה ועל השרת שמפעיל אותה. לפניות בנושא פרטיות: imposteril36@gmail.com.';
 
   @override
   String get privacy2Title => '2. מידע שנשמר במכשיר';
@@ -269,7 +269,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get privacy13 =>
-      'Imposter IL · imposteril36@gmail.com\nלפניות בנושא פרטיות, בקשות למימוש זכויות ודיווח על תוכן פוגעני. נשתדל להשיב בתוך 30 יום.';
+      'ImposterStudio · imposteril36@gmail.com\nלפניות בנושא פרטיות, בקשות למימוש זכויות ודיווח על תוכן פוגעני. נשתדל להשיב בתוך 30 יום.';
 
   @override
   String legalPublicCopy(Object value) {

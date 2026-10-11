@@ -54,9 +54,9 @@ If any of those facts changes, review both documents and the App Store Privacy /
 
 ## Operator identity
 
-`Imposter IL` · `imposteril36@gmail.com`.
+`ImposterStudio` · `imposteril36@gmail.com`.
 
-The documents name the service, not a person. Play's User Data policy asks the policy to name the entity it pertains to, and this matches the Play developer display name. **It does not keep the owner's legal name private:** on an individual developer account both stores publish the verified legal name as the seller on the store listing, and Play's EU trader disclosure shows name, address and email there. Registering a business is the only thing that changes that, and if one is registered later its legal name replaces `Imposter IL` in both documents.
+The documents name the service, not a person. Play's User Data policy asks the policy to name the entity it pertains to, and this matches the Play developer display name. **It does not keep the owner's legal name private:** on an individual developer account both stores publish the verified legal name as the seller on the store listing, and Play's EU trader disclosure shows name, address and email there. Registering a business is the only thing that changes that, and if one is registered later its legal name replaces `ImposterStudio` in both documents.
 
 The same address is the support, privacy and abuse-report contact. It appears in the public pages (including `/support/`), in the matching in-app sections, and as `supportEmail` in `app/lib/screens/secondary_screens.dart`, which shows the contact row in Settings. Google Play requires the policy to name the entity it pertains to; Apple requires developer contact details reachable from the app.
 

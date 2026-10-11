@@ -112,10 +112,12 @@ func Default() Config {
 				"android": {
 					Banner:       "ca-app-pub-9035143252838544/5555882846",
 					Interstitial: "ca-app-pub-9035143252838544/5751238243",
+					Rewarded:     "ca-app-pub-9035143252838544/8730217816",
 				},
 				"ios": {
 					Banner:       "ca-app-pub-9035143252838544/4438156576",
 					Interstitial: "ca-app-pub-9035143252838544/8466874805",
+					Rewarded:     "ca-app-pub-9035143252838544/3179517394",
 				},
 			},
 		},
