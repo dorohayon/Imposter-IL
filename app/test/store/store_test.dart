@@ -59,10 +59,12 @@ const _captions = {
   ],
 };
 
-/// The sizes each store wants: the App Store's 6.9" iPhone, and Google
-/// Play's 9:16 phone at the size it features.
+/// The sizes each store wants: the App Store's large iPhone (6.9"), its
+/// medium one (6.3", the size App Store Connect requires since 2026), and
+/// Google Play's 9:16 phone at the size it features.
 const _targets = {
   'appstore': Size(1320, 2868),
+  'appstore_medium': Size(1206, 2622),
   'googleplay': Size(1080, 1920),
 };
 
@@ -198,6 +200,24 @@ void main() {
         [icon, hero],
         'build/store/googleplay/${lang.code}/feature_graphic',
       );
+      // The App Store's product page header and search result art.
+      for (final (name, size, heroHeight) in const [
+        ('header', Size(3840, 1646), 700.0),
+        ('search_result', Size(3840, 2560), 1000.0),
+      ]) {
+        await _render(
+          tester,
+          StoreArt(
+            hero: hero,
+            rtl: lang.code == 'he',
+            size: size,
+            heroHeight: heroHeight,
+          ),
+          size,
+          [hero],
+          'build/store/appstore/${lang.code}/$name',
+        );
+      }
       if (lang.code == 'en') {
         await _render(
           tester,
