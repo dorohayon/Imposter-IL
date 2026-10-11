@@ -96,7 +96,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terms1 =>
-      '“Imposter: Word Bluff” is an online social game operated by Imposter IL (imposteril36@gmail.com). No account is needed. You choose a nickname and an avatar and receive a temporary guest ID for playing.';
+      '“Imposter: Word Bluff” is an online social game operated by ImposterStudio (imposteril36@gmail.com). No account is needed. You choose a nickname and an avatar and receive a temporary guest ID for playing.';
 
   @override
   String get terms2Title => '2. Conduct and content';
@@ -173,7 +173,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terms12 =>
-      'Imposter IL · imposteril36@gmail.com\nFor support, reporting offensive content and any question about these terms.';
+      'ImposterStudio · imposteril36@gmail.com\nFor support, reporting offensive content and any question about these terms.';
 
   @override
   String privacyIntro(Object legalVersion, Object legalDate) {
@@ -185,7 +185,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacy1 =>
-      'The game “Imposter: Word Bluff” is operated by Imposter IL, and this policy applies to the app and to the server that runs it. For privacy inquiries: imposteril36@gmail.com.';
+      'The game “Imposter: Word Bluff” is operated by ImposterStudio, and this policy applies to the app and to the server that runs it. For privacy inquiries: imposteril36@gmail.com.';
 
   @override
   String get privacy2Title => '2. Data stored on the device';
@@ -269,7 +269,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacy13 =>
-      'Imposter IL · imposteril36@gmail.com\nFor privacy inquiries, requests to exercise your rights and reporting offensive content. We aim to reply within 30 days.';
+      'ImposterStudio · imposteril36@gmail.com\nFor privacy inquiries, requests to exercise your rights and reporting offensive content. We aim to reply within 30 days.';
 
   @override
   String legalPublicCopy(Object value) {

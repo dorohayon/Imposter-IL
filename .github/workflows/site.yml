@@ -26,6 +26,6 @@ jobs:
           external_repository: imposteril/imposteril.github.io
           publish_branch: main
           publish_dir: ./site
-          user_name: Imposter IL
+          user_name: ImposterStudio
           user_email: imposteril36@gmail.com
           full_commit_message: Publish site from ${{ github.repository }}@${{ github.sha }}
