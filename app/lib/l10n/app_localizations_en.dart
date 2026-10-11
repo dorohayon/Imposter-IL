@@ -1509,7 +1509,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get durationAnd => ' and';
+  String get durationAnd => ' and ';
 
   @override
   String get premiumLifetime => 'Lifetime Premium';

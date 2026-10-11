@@ -155,6 +155,21 @@ void main() {
       expect(_searched(api), ['food', 'sports']);
     });
 
+    // "הכול" is the default: the button that says "choose it" used to close
+    // the sheet and change nothing, so it looked broken.
+    testWidgets('choosing a category bought with "הכול" on picks just it',
+        (tester) async {
+      final (api, _, _) = await _freePlayer(tester);
+      await _openPicker(tester);
+      await _tapLocked(tester, 'ספורט וכושר');
+
+      await _buy(tester);
+      await tapText(tester, 'בוחרים ב״ספורט וכושר״');
+
+      await tapLive(tester, 'חפש משחק');
+      expect(_searched(api), ['sports']);
+    });
+
     testWidgets('an ad opens a category for one game, then the cooldown shows',
         (tester) async {
       final (api, _, ads) = await _freePlayer(tester);

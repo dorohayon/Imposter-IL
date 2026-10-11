@@ -422,7 +422,7 @@
   "oneGame": "one game",
   "durationHours": "{h} h",
   "durationMinutes": "{min} min",
-  "durationAnd": " and",
+  "durationAnd": " and ",
   "premiumLifetime": "Lifetime Premium",
   "onlyCategory": "Only “{widgetName}”",
   "premiumMonthlyDesc": "All categories and Premium features, no ads — while the subscription is active",

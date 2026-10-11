@@ -303,9 +303,8 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                         context,
                         categoryId: c.id,
                         categoryName: c.name,
-                        onSelect: () {
-                          if (!all) toggle(c.id);
-                        },
+                        // Like tapping the chip, also with "הכול" on.
+                        onSelect: () => toggle(c.id),
                       ),
                     ),
               ],

@@ -176,10 +176,10 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                           context,
                           categoryId: tile.id,
                           categoryName: tile.name,
-                          // "הכול" already includes it once it opens.
-                          onSelect: () {
-                            if (!all) toggle(tile.id);
-                          },
+                          // Like tapping the tile: with "הכול" on, this starts
+                          // a choice of just this category, so the button
+                          // that says "choose it" visibly does.
+                          onSelect: () => toggle(tile.id),
                         ),
                       );
                     }

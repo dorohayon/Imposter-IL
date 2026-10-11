@@ -375,9 +375,9 @@ class _LocalRulesScreenState extends State<LocalRulesScreen> {
                       context,
                       categoryId: c.id,
                       categoryName: c.name,
-                      // "הכול" already includes it once it opens.
+                      // Like tapping the chip, also with "הכול" on.
                       onSelect: () {
-                        if (_categories != null) setState(() => _toggle(c.id));
+                        setState(() => _toggle(c.id));
                       },
                     ),
                   ),
