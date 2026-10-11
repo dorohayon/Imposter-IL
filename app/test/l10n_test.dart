@@ -16,6 +16,16 @@ void main() {
       .map((f) => f.path)
       .where((p) => p.endsWith('.arb') && !p.endsWith('app_he.arb'));
 
+  // "4 h and 59 min": the joiner sits between two durations. English lost
+  // its trailing space and read "4 h and59 min"; Hebrew's "ו־" joins on.
+  test('every language joins durations with spaces around the word', () {
+    for (final path in [...languages, 'lib/l10n/app_he.arb']) {
+      final and = arb(path)['durationAnd'] as String;
+      expect(and, startsWith(' '), reason: path);
+      expect(and.endsWith(' ') || and.endsWith('־'), isTrue, reason: path);
+    }
+  });
+
   test('there is a language besides the template', () {
     expect(languages, isNotEmpty);
   });
