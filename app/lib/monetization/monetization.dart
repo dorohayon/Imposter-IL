@@ -309,8 +309,13 @@ class Monetization extends ChangeNotifier {
     for (final p in list) {
       // Play reports a cancel, or an error before any purchase exists, with
       // no product id: it can only be the purchase on screen. Ignoring it
-      // left the popup on "connecting to the store" for good.
-      final inFlow = (p.productId == _flowProduct || p.productId.isEmpty) &&
+      // left the popup on "connecting to the store" for good. Play's empty
+      // "ok" (no purchases) also arrives as `purchased` with no id; that
+      // one grants nothing and is skipped, or it would be stored as a proof.
+      final ended = p.productId.isEmpty &&
+          (p.status == StoreStatus.canceled || p.status == StoreStatus.error);
+      if (p.productId.isEmpty && !ended) continue;
+      final inFlow = (p.productId == _flowProduct || ended) &&
           (step == PurchaseStep.processing || step == PurchaseStep.pending);
       switch (p.status) {
         case StoreStatus.purchased || StoreStatus.restored:

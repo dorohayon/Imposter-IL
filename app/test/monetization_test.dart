@@ -266,6 +266,16 @@ void main() {
         expect(m.busy, isFalse);
         expect(m.isUnlocked('sports'), isFalse);
       }
+
+      // Play's empty "ok" is `purchased` with no product: not a success.
+      m.openPopup();
+      await m.buy('category_sports');
+      final completed = store.completed.length;
+      store.emit([store.purchase('', StoreStatus.purchased)]);
+      await flush();
+      expect(m.step, PurchaseStep.processing);
+      expect(m.isUnlocked('sports'), isFalse);
+      expect(store.completed, hasLength(completed));
     });
 
     test('a pending payment opens nothing and is not finished', () async {
