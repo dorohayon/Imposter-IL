@@ -9,6 +9,9 @@
 | קובץ | חנות | מפרט |
 |---|---|---|
 | `appstore/<he\|en>/01…06_*.jpg` | App Store, iPhone 6.9" | 1320×2868, JPEG בלי שקיפות, 6 מתוך עד 10 |
+| `appstore_medium/<he\|en>/01…06_*.jpg` | App Store, iPhone 6.3" (Dynamic Island, medium) — **חובה** ב־App Store Connect מ־2026 | 1206×2622, JPEG בלי שקיפות |
+| `appstore/<he\|en>/header.jpg` | App Store, כותרת דף המוצר (Header) | 3840×1646 (21:9), JPEG בלי שקיפות. הדמויות במרכז, בתוך אזור הבטיחות 1646×661; בלי שם ואייקון: ה־App Store מניח עליה את שלו |
+| `appstore/<he\|en>/search_result.jpg` | App Store, תוצאות חיפוש | 3840×2560 (3:2), JPEG בלי שקיפות. הדמויות במרכז, בתוך אזור הבטיחות 2168×1030 |
 | `appstore/<he\|en>/preview.mp4` | App Store, App Preview | 886×1920, כ־28 שניות (15–30), 30fps, H.264 High 4.0, AAC סטריאו 44.1kHz |
 | `googleplay/<he\|en>/01…06_*.jpg` | Google Play, טלפון | 1080×1920 (9:16, הגודל שמזכה בקידום), JPEG בלי שקיפות |
 | `googleplay/<he\|en>/feature_graphic.jpg` | Google Play, Feature graphic | 1024×500, JPEG בלי שקיפות |

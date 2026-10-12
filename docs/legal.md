@@ -26,6 +26,9 @@ Terms and Privacy remain readable from Settings after acceptance.
 - `https://imposteril.github.io/terms/`
 - `https://imposteril.github.io/support/` — the **support URL** App Store Connect requires
 - `https://imposteril.github.io/app-ads.txt` — AdMob's seller verification
+- `https://imposteril.github.io/en/` and `/en/privacy/`, `/en/terms/`, `/en/support/` — the English pages, for the English listings (App Store Connect takes a privacy and support URL per language)
+
+`site/en/` is the app's English text (`app_en.arb`), section for section; `app/test/legal_test.dart` fails if its headings drift from the app's. The Hebrew and English pages link to each other.
 
 GitHub Pages serves the `imposteril` organization's site at the root of `imposteril.github.io`, which counts as a site of its own (`github.io` is on the public suffix list). That root is what AdMob requires for `app-ads.txt`, and the Cloud Run hostname could not offer it. The main repository stays private; only `site/` is published.
 
@@ -81,8 +84,8 @@ Revisit only if moderation and verifiable parental consent are actually built.
 **Data safety / App Privacy.** Declare what sections 3 and 7 of the privacy policy list, and nothing else:
 
 - Ours: guest identifiers, nickname, avatar, IP for abuse prevention, the game content players write, and purchase history (the store's proof, for app functionality, not linked to an identity).
-- Google Mobile Ads SDK, per Google's disclosure guides ([iOS](https://developers.google.com/admob/ios/privacy/data-disclosure), [Android](https://developers.google.com/admob/android/privacy/play-data-disclosure)): IP address / approximate location, device and advertising identifiers, product interaction, advertising data, diagnostics and performance. On iOS, device ID, advertising data and product interaction are marked "used for tracking"; that is only true after the player grants tracking permission, but the label is per app, not per player.
-- In App Store Connect, "Tracking: Yes" with Google's tracking domains, as the SDK's own privacy manifest declares. In Play, "Data is shared" for the advertising ID and device identifiers.
+- Google Mobile Ads SDK, per Google's disclosure guides ([iOS](https://developers.google.com/admob/ios/privacy/data-disclosure), [Android](https://developers.google.com/admob/android/privacy/play-data-disclosure)): IP address / approximate location, device and advertising identifiers, product interaction, advertising data, diagnostics and performance. On iOS the device ID is marked "used for tracking"; that is only true after the player grants tracking permission, but the label is per app, not per player.
+- In App Store Connect, follow the privacy manifest of the Google Mobile Ads SDK the app ships (`PrivacyInfo.xcprivacy` in the framework), not this list. In the version built in October 2026 only **Device ID** is "used for tracking"; Coarse Location, Product Interaction and Advertising Data are linked to the user but not tracking; Performance, Crash and Other Diagnostic Data are not linked. In Play, "Data is shared" for the advertising ID and device identifiers.
 
 - Firebase Crashlytics: crash logs and diagnostics, plus the installation id as a device identifier, collected for app functionality (analytics of crashes), not linked to an identity, not used for tracking, not shared. In App Store Connect: Crash Data and Other Diagnostic Data, "Not Linked to You".
 

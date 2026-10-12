@@ -372,3 +372,53 @@ class FeatureGraphic extends StatelessWidget {
     );
   }
 }
+
+/// The App Store's header and search result art: the cast centred over the
+/// store background, no name or icon. The App Store lays its own icon, name
+/// and Get button over it, and crops the sides on iPhone, so the focal art
+/// sits in the middle (safe areas: 1646×661 of the 3840×1646 header,
+/// 2168×1030 of the 3840×2560 search result).
+class StoreArt extends StatelessWidget {
+  const StoreArt({
+    required this.hero,
+    required this.rtl,
+    required this.size,
+    required this.heroHeight,
+    super.key,
+  });
+
+  /// The home screen's cast (assets/illustrations/home-hero.webp).
+  final Uint8List hero;
+  final bool rtl;
+  final Size size;
+
+  /// How tall the cast is drawn.
+  final double heroHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
+      child: SizedBox.fromSize(
+        size: size,
+        child: StoreBackground(
+          mirror: rtl,
+          // Loose, or the background's expanding stack forces the full size.
+          child: OverflowBox(
+            minWidth: 0,
+            minHeight: 0,
+            maxWidth: double.infinity,
+            maxHeight: double.infinity,
+            // Scaled as a box: Image's own height was ignored here.
+            child: SizedBox(
+              height: heroHeight,
+              child: FittedBox(
+                child: Image.memory(hero, filterQuality: FilterQuality.high),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

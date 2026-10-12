@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -117,6 +118,23 @@ void main() {
         expect(find.text(section), findsOneWidget,
             reason: '$section is published but not in the app');
       }
+    });
+  }
+
+  // site/en is the app's English text, section for section (docs/legal.md).
+  final english =
+      jsonDecode(File('lib/l10n/app_en.arb').readAsStringSync()) as Map;
+  for (final document in ['privacy', 'terms']) {
+    test('the English $document page matches the app\'s English text', () {
+      final html = File('../site/en/$document/index.html').readAsStringSync();
+      final published = RegExp(r'<h2[^>]*>(.*?)</h2>', dotAll: true)
+          .allMatches(html)
+          .map((m) => m.group(1)!.trim().replaceAll('&amp;', '&'))
+          .toList();
+      expect(published, [
+        for (var i = 1; english.containsKey('$document${i}Title'); i++)
+          english['$document${i}Title'],
+      ]);
     });
   }
 }
