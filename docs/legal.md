@@ -9,7 +9,7 @@ Plus `legalVersion`, the version shown with the documents and in Settings.
 
 `imposteril/imposteril.github.io` is output only. Never edit it by hand: the next publish overwrites it. The workflow pushes with a write deploy key on that repository, whose private half is the `SITE_DEPLOY_KEY` secret here.
 
-Current document version: **1.3**, effective **26 September 2026**. 1.1 added purchases, subscriptions and ads (Terms §5, Privacy §2–4, §6–9); 1.3 adds Firebase Crashlytics (Privacy §7). Both are material changes, so every install is asked to accept again.
+Current document version: **1.4**, effective **14 October 2026**. 1.1 added purchases, subscriptions and ads (Terms §5, Privacy §2–4, §6–9); 1.3 added Firebase Crashlytics (Privacy §7); 1.4 adds the app's recent steps and the guest player id to crash reports (Privacy §7), sends contact to the support page in the app, moves agreement to the nickname screen and says how changes take effect without a consent screen (Terms §6 and §10, Privacy §2 and §12).
 
 ## Player flow
 
@@ -86,6 +86,7 @@ Revisit only if moderation and verifiable parental consent are actually built.
 - In App Store Connect, follow the privacy manifest of the Google Mobile Ads SDK the app ships (`PrivacyInfo.xcprivacy` in the framework), not this list. In the version built in October 2026 only **Device ID** is "used for tracking"; Coarse Location, Product Interaction and Advertising Data are linked to the user but not tracking; Performance, Crash and Other Diagnostic Data are not linked. In Play, "Data is shared" for the advertising ID and device identifiers.
 
 - Firebase Crashlytics: crash logs and diagnostics, plus the installation id and the random guest player id as identifiers, collected for app functionality (analytics of crashes), not linked to an identity, not used for tracking, not shared. In App Store Connect: Crash Data and Other Diagnostic Data, "Not Linked to You".
+- App Store Connect, from 1.4: add **User ID** (the guest player id Crashlytics receives) for App Functionality, not linked to you, not used for tracking. In Play it falls under Device or other IDs, already declared for Crashlytics.
 
 No account, so Apple's account-deletion requirement (5.1.1(v)) does not apply. No analytics SDK.
 

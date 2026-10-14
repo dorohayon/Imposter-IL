@@ -47,7 +47,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteGame => 'Delete game';
 
   @override
-  String get legalDate => 'September 26, 2026';
+  String get legalDate => 'October 14, 2026';
 
   @override
   String get saving => 'Saving...';
@@ -103,7 +103,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terms6 =>
-      'The service is provided as is and subject to availability. The operator may fix bugs, change rules and content, restrict old versions or discontinue parts of the service. When a material change to the terms requires renewed consent, the app will show the new version before play continues.';
+      'The service is provided as is and subject to availability. The operator may fix bugs, change rules and content, restrict old versions or discontinue parts of the service. A material change to the terms gets a new version and date (section 10).';
 
   @override
   String get terms7Title => '7. Intellectual property';
@@ -131,7 +131,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terms10 =>
-      'A material change will get a new documents version. The app stores the accepted terms version on the device and may require renewed acceptance of a new version.';
+      'A material change gets a new documents version and effective date. The current version is always in Settings and on the website, and continuing to play after it takes effect means you accept it.';
 
   @override
   String get terms11Title => '11. Governing law and jurisdiction';
@@ -164,7 +164,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacy2 =>
-      'The app stores on the device the temporary session and player IDs, your nickname and avatar, wins and losses, vibration and reaction settings, the accepted documents version and the list of player IDs you reported so their content stays hidden. Deleting the app or its data may delete this information. After a purchase, the categories and Premium you own and the subscription\'s expiry date are also stored so they stay unlocked offline, along with the ad settings received from the server and the time of the last full-screen ad.';
+      'The app stores on the device the temporary session and player IDs, your nickname and avatar, wins and losses, vibration and reaction settings and the list of player IDs you reported so their content stays hidden. Deleting the app or its data may delete this information. After a purchase, the categories and Premium you own and the subscription\'s expiry date are also stored so they stay unlocked offline, along with the ad settings received from the server and the time of the last full-screen ad.';
 
   @override
   String get privacy3Title => '3. Data sent to the server';
@@ -234,7 +234,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacy12 =>
-      'A material change to the policy will get a new version. When renewed consent is required, the app will show the new version before play continues.';
+      'A material change to the policy gets a new version and effective date. The current version is always in Settings and on the website.';
 
   @override
   String get privacy13Title => '13. Contact';

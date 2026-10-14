@@ -7,7 +7,7 @@ import '../widgets/game_ui.dart';
 
 /// The documents' version, shown with them and in Settings. Players agree
 /// to the current Terms when they choose a nickname (OnboardingScreen).
-const legalVersion = '1.3';
+const legalVersion = '1.4';
 String get legalDate => l10n.legalDate;
 
 /// Public copies for App Store Connect, Google Play and anyone who wants to
