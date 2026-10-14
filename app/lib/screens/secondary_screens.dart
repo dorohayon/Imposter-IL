@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/l10n.dart';
@@ -107,12 +106,6 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-/// Support address shown in settings and required by the stores alongside
-/// reporting (App Store review guideline 1.2). Empty hides the row.
-///
-/// MUST be filled in before submission — see docs/production-architecture-review.md.
-const supportEmail = 'imposteril36@gmail.com';
-
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -192,24 +185,6 @@ class SettingsScreen extends StatelessWidget {
             context.l10n.appVersion,
             style: TextStyle(color: AppColors.muted, fontSize: 12),
           ),
-          if (supportEmail.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            ListTile(
-              onTap: withClick(() => _emailSupport(context)),
-              // The same end as the rows above (see _LinkRow).
-              contentPadding:
-                  const EdgeInsetsDirectional.only(start: 16, end: 12),
-              tileColor: AppColors.cream.withValues(alpha: .06),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              leading: const Icon(Icons.mail_outline_rounded,
-                  color: AppColors.yellow),
-              title: Text(context.l10n.contact),
-              subtitle: Text(supportEmail),
-              trailing: const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.muted),
-            ),
-          ],
           if (session.muted.isNotEmpty)
             ListTile(
               leading: const Icon(Icons.flag_outlined),
@@ -240,22 +215,6 @@ Future<void> openSubscriptions(String productId) => openExternal(
               'package': 'com.imposteril.app',
             }),
     );
-
-/// Opens the mail app on a message to support. A phone without one gets the
-/// address copied instead, so the tap is never a dead end.
-Future<void> _emailSupport(BuildContext context) async {
-  final messenger = ScaffoldMessenger.of(context);
-  final copied = context.l10n.emailCopied;
-  var opened = false;
-  try {
-    opened = await openExternal(Uri(scheme: 'mailto', path: supportEmail));
-  } on Object {
-    opened = false;
-  }
-  if (opened) return;
-  await Clipboard.setData(const ClipboardData(text: supportEmail));
-  messenger.showSnackBar(SnackBar(content: Text(copied)));
-}
 
 /// Restore outside the purchase popup: a player on a new phone whose
 /// Premium hides every lock has no locked category to tap.

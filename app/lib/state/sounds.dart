@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import '../crash_reporting.dart';
 /// A moment the game marks with a sound (docs/decisions.md, "צלילים").
 /// The files are in assets/sounds/, with their source and license.
 enum Sound {
@@ -188,7 +189,7 @@ class Sounds {
     try {
       await action();
     } on Object catch (e) {
-      debugPrint('[sounds] $e');
+      logWarning('sounds', 'not played', e);
     }
   }
 }

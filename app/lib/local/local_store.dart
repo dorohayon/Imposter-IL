@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../crash_reporting.dart';
 import 'local_game.dart';
 
 /// Where a one-device match in progress lives between app launches.
@@ -26,7 +27,9 @@ class LocalStore {
       );
       if (game == null) await prefs.remove(_key);
       return game;
-    } on Object {
+    } on Object catch (e, stack) {
+      // The type only: the saved game holds the players' names.
+      logError('local', 'saved game unreadable', e.runtimeType, stack);
       await prefs.remove(_key);
       return null;
     }

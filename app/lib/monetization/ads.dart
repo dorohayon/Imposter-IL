@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import '../crash_reporting.dart';
 import 'monetization_config.dart';
 
 /// The ad network. Tests use a fake; the app uses [AdMobAds].
@@ -39,13 +39,10 @@ abstract interface class AdsGateway {
   Future<bool> showRewarded();
 }
 
-/// Ad diagnostics, in debug builds and TEST_ADS tester builds only. Unit ids,
-/// platform and SDK codes and messages; never anything about the player.
-void adsLog(String message) {
-  if (kDebugMode || const bool.fromEnvironment('TEST_ADS')) {
-    debugPrint('[ads] $message');
-  }
-}
+/// Ad diagnostics: unit ids, platform and SDK codes and messages; never
+/// anything about the player. Printed in debug and TEST_ADS tester builds,
+/// kept with the next crash or error report in release builds.
+void adsLog(String message) => logInfo('ads', message);
 
 /// Google's test units: debug builds must never request live ads.
 AdUnits testAdUnits(String platform) => platform == 'ios'

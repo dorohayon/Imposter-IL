@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../crash_reporting.dart';
 import 'words.g.dart';
 
 /// Where a one-device match is, screen by screen. The device is the only
@@ -95,6 +96,9 @@ class LocalGame {
     secretWord = chosen.$2;
     impostor = _rng.nextInt(players.length);
     _shuffleTurnOrder();
+    logInfo('local', 'new game: ${players.length} players, '
+        '${categoryIds.length} categories, '
+        '${hintSeconds == null ? 'no timer' : '${hintSeconds}s'}');
   }
 
   /// Rebuilds a match from a snapshot, without dealing a new word or role.
@@ -129,7 +133,14 @@ class LocalGame {
   /// Index into [players].
   late int impostor;
 
-  LocalPhase phase = LocalPhase.roleReveal;
+  /// Every change is logged: one place traces the whole local match.
+  LocalPhase get phase => _phase;
+  LocalPhase _phase = LocalPhase.roleReveal;
+  set phase(LocalPhase next) {
+    if (next != _phase) logInfo('local', 'round $round ${next.name}');
+    _phase = next;
+  }
+
   int round = 1;
 
   /// Whose turn it is to be handed the device, or to speak.
@@ -452,6 +463,7 @@ class LocalGame {
   }
 
   void _end(LocalOutcome result, LocalEndReason reason) {
+    logInfo('local', 'ended: ${result.name}, ${reason.name}');
     outcome = result;
     endReason = reason;
     phase = LocalPhase.ended;
@@ -593,7 +605,9 @@ LocalGame? localGameFromJson(Map<String, dynamic> json, {Random? rng}) {
     // Never restored: a role or a ballot must be asked for again.
     game.revealed = false;
     return game;
-  } on Object {
+  } on Object catch (e, stack) {
+    // The type only: the snapshot holds the players' names.
+    logError('local', 'saved game unreadable', e.runtimeType, stack);
     return null;
   }
 }

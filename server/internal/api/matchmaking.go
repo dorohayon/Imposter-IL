@@ -3,6 +3,7 @@ package api
 import (
 	crand "crypto/rand"
 	"errors"
+	"log/slog"
 	"slices"
 	"time"
 
@@ -128,6 +129,8 @@ func (s *Server) joinSearch(sess *session, previous *roomEntry, categories []str
 	s.roomsByID[entry.id] = entry
 	sess.roomID, sess.searchCategories, sess.searchStarted = entry.id, categories, now
 	sess.searchGoneAt = time.Time{}
+	slog.Info("search started", "playerId", sess.playerID, "roomId", entry.id, "categories", len(categories),
+		"language", language, "searchers", len(entry.room.View().Members), "bot", sess.bot)
 	sess.leaveGame()
 	if !sess.bot {
 		s.rebalanceStagingBots(entry, categories, now)
@@ -169,6 +172,7 @@ func (s *Server) tickSearch(entry *roomEntry, now time.Time) {
 	for _, m := range entry.room.View().Members {
 		if sess := s.players[m.ID]; sess != nil && !sess.searchGoneAt.IsZero() && !now.Before(sess.searchGoneAt.Add(searchGrace)) {
 			sess.searchGoneAt = time.Time{}
+			slog.Info("search ended: away too long", "playerId", sess.playerID, "roomId", entry.id)
 			s.leaveSearch(sess, entry, now) // away too long: the search ends for them
 		}
 	}
@@ -185,6 +189,7 @@ func (s *Server) tickSearch(entry *roomEntry, now time.Time) {
 			if now.Before(sess.searchStarted.Add(matchmaking.NoMatch)) {
 				continue
 			}
+			slog.Info("no match", "playerId", sess.playerID, "roomId", entry.id, "searchers", len(members))
 			s.leaveSearch(sess, entry, now)
 			s.queue(sess.conn, message("matchmaking.noMatch", now, map[string]any{"categoryIds": sess.searchCategories}))
 			s.sendSessionState(sess)
@@ -320,6 +325,8 @@ func (s *Server) beginGame(entry *roomEntry) {
 	entry.reported = nil
 	g := entry.room.Game()
 	entry.profiles = map[string]playerProfile{}
+	slog.Info("game started", "gameId", entry.gameID, "roomId", entry.id, "public", entry.public,
+		"playerIds", g.PlayerIDs(), "language", entry.language)
 	now := s.now()
 	for _, id := range g.PlayerIDs() {
 		if player := s.players[id]; player != nil {

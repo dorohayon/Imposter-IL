@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'crash_reporting.dart';
 import 'data/invite.dart';
@@ -9,7 +8,6 @@ import 'monetization/ads.dart';
 import 'monetization/monetization.dart';
 import 'monetization/store.dart';
 import 'screens/home_screen.dart';
-import 'screens/legal_screens.dart';
 import 'screens/private_flow.dart';
 import 'screens/secondary_screens.dart';
 import 'state/game_session.dart';
@@ -18,6 +16,7 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await startCrashReporting();
+  logInfo('app', 'start: build $clientBuild, ${defaultServerUrl().host}');
   final api = ApiClient(defaultServerUrl());
   final session = GameSession(api);
   final monetization =
@@ -73,6 +72,7 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
   /// expired something meanwhile.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    logDebug('app', state.name);
     if (state == AppLifecycleState.paused) widget.session.setBackground(true);
     if (state == AppLifecycleState.resumed) {
       widget.session.setBackground(false);
@@ -84,36 +84,18 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
   Future<bool> didPushRouteInformation(RouteInformation info) async =>
       _openInvite(info.uri.toString());
 
-  /// An invitation that arrived while new Terms were still to be accepted.
-  String? _pendingInvite;
-
   void _joinRoom(String code) => _navigator.currentState?.push(
         MaterialPageRoute<void>(builder: (_) => JoinRoomScreen(code: code)),
       );
 
-  void _openPendingInvite() {
-    final code = _pendingInvite;
-    _pendingInvite = null;
-    if (code != null) _joinRoom(code);
-  }
-
   bool _openInvite(String? route) {
     final code = roomCodeFromLink(route);
-    // Nothing is pushed over onboarding or the legal gate: a player id only
-    // exists once both are behind us, so this cannot smuggle anyone past
-    // consent. Without one the invitation page still shows the code to type.
+    if (code != null) logInfo('app', 'invite link');
+    // Nothing is pushed over onboarding: a player id only exists once it is
+    // behind us, and with it the Terms agreed there. Without one the
+    // invitation page still shows the code to type.
     if (code == null || widget.session.playerId == null) return false;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // A returning player has an id but may still owe the re-acceptance of
-      // new Terms; the gate is below this route, so check it here too, and
-      // keep the invitation for when they accept.
-      final prefs = await SharedPreferences.getInstance();
-      if (prefs.getString(legalAcceptedVersionKey) != legalVersion) {
-        _pendingInvite = code;
-        return;
-      }
-      _joinRoom(code);
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _joinRoom(code));
     // A warm link arrives with no frame pending; without one the push waits
     // for whatever next repaints the screen.
     WidgetsBinding.instance.scheduleFrame();
@@ -130,6 +112,7 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
           valueListenable: widget.session.languageChoice,
           builder: (context, languageChoice, _) => MaterialApp(
             navigatorKey: _navigator,
+            navigatorObservers: [_ScreenLog()],
             // In Hebrew the trailing "?" is a neutral character, so in the LTR
             // task switcher it would sit on the wrong side; app_he.arb pins it
             // with \u200f (RLM).
@@ -159,11 +142,7 @@ class _ImposterAppState extends State<ImposterApp> with WidgetsBindingObserver {
                   ? const UpdateRequiredScreen()
                   : child!;
             },
-            // Legal acknowledgement is outside onboarding: no guest session and no
-            // user-written nickname reaches the server before the current Terms are
-            // accepted. Bumping legalVersion gates returning installs as well.
-            home: LegalGate(
-                onAccepted: _openPendingInvite, child: const _Start()),
+            home: const _Start(),
           ),
         ),
       ),
@@ -182,4 +161,35 @@ class _Start extends StatelessWidget {
     SessionScope.of(context);
     return const HomeScreen();
   }
+}
+
+/// Logs every screen opened and closed, so a report shows where the player
+/// was. Routes carry no names, so a page is named after its screen widget.
+class _ScreenLog extends NavigatorObserver {
+  // ponytail: builds the page's widget a second time to read its type; every
+  // builder only constructs a widget. Give routes RouteSettings names if one
+  // ever does more.
+  String _name(Route<dynamic>? route) => switch (route) {
+        null => 'none',
+        Route(settings: RouteSettings(name: final name?)) => name,
+        final MaterialPageRoute<dynamic> page =>
+          '${page.builder(navigator!.context).runtimeType}',
+        _ => '${route.runtimeType}',
+      };
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      logInfo('nav', 'open ${_name(route)}');
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      logInfo('nav', 'close ${_name(route)} -> ${_name(previousRoute)}');
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      logInfo('nav', 'remove ${_name(route)}');
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) =>
+      logInfo('nav', 'replace ${_name(oldRoute)} -> ${_name(newRoute)}');
 }

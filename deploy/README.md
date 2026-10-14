@@ -215,6 +215,39 @@ Worth alerting on, in rough order of how much they hurt:
 
 Logs are JSON on stdout: `sudo docker compose -f /var/imposter/docker-compose.yml logs -f server`.
 
+### Following a player
+
+Server and app log the same ids: `playerId` (`p_…`), `roomId` (`r_…`) and
+`gameId` (`g_…`). Nicknames, hints, guesses and the secret word are never
+logged; the one exception is the `player reported` line (docs/moderation.md).
+
+**Server — Cloud Logging.** Every step of an online player: `session
+created`, `connected` / `disconnected`, `room created` / `joined` / `left`,
+`search started`, `no match`, `game started`, `game phase` (each phase and
+round), `command` (every client command with its result code), `game ended`
+(winner, reason, outcomes) and `game aborted`. Logs Explorer, or:
+
+```sh
+gcloud logging read 'resource.labels.service_name="imposter" AND jsonPayload.playerId="p_…"' \
+  --project=imposter-il-game --freshness=1d --order=asc \
+  --format='table(timestamp, severity, jsonPayload.msg, jsonPayload.type, jsonPayload.code, jsonPayload.phase)'
+```
+
+`jsonPayload.gameId="g_…"` instead shows a whole game. `severity>=WARNING`
+shows only problems. Reactions are logged at debug; to see them, set
+`LOG_LEVEL=debug` for a while (`gcloud run services update imposter
+--region us-central1 --update-env-vars LOG_LEVEL=debug`).
+
+**App — Firebase Crashlytics** (console.firebase.google.com → imposter-il-game
+→ Crashlytics). Every crash, and every error the app logs, arrives with the
+steps before it under **Logs**: screens opened (`nav`), requests (`net`),
+the connection (`ws`), the session and game (`session`, `game`, `search`,
+`room`), one-device games (`local`), purchases and ads (`store`, `ads`).
+Errors are **non-fatal** issues; filter by them in the issue list. The
+**user id** is the `playerId`: search it in Cloud Logging for the server's
+side of the same session. A session that goes well uploads nothing; debug
+lines appear only in the console of a debug build (`flutter run`).
+
 ## Monetization settings
 
 The pricing model is server configuration, so it changes without an app
@@ -261,5 +294,4 @@ email arrives, check the cap (Billing → Budgets) first. It is safe to re-run.
 - [ ] `DOMAIN` resolves to the VM, so Caddy can issue a certificate
 - [ ] `curl https://$DOMAIN/healthz` returns `{"status":"ok"}`
 - [ ] The app is built with `--dart-define=IMPOSTER_SERVER=https://$DOMAIN`
-- [ ] `supportEmail` is set in `app/lib/screens/secondary_screens.dart`
 - [ ] `blocked_words.txt` has been reviewed by the product owner

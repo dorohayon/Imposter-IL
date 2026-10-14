@@ -1,19 +1,14 @@
-import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../crash_reporting.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
 
-/// Bump this value whenever a material Terms/Privacy change requires renewed
-/// acknowledgement. The acknowledgement is deliberately device-local: the
-/// product has no account system and no legal-consent profile on the server.
+/// The documents' version, shown with them and in Settings. Players agree
+/// to the current Terms when they choose a nickname (OnboardingScreen).
 const legalVersion = '1.3';
 String get legalDate => l10n.legalDate;
-const legalAcceptedVersionKey = 'legal.acceptedVersion';
 
 /// Public copies for App Store Connect, Google Play and anyone who wants to
 /// read the documents without installing the app. They are built from site/
@@ -24,161 +19,6 @@ const privacyPath = '/privacy/';
 const termsPath = '/terms/';
 
 Uri publicLegalUrl(String path) => Uri.parse(publicSite).resolve(path);
-
-class LegalGate extends StatefulWidget {
-  const LegalGate({required this.child, this.onAccepted, super.key});
-
-  final Widget child;
-
-  /// Called once the current version has just been accepted.
-  final VoidCallback? onAccepted;
-
-  @override
-  State<LegalGate> createState() => _LegalGateState();
-}
-
-class _LegalGateState extends State<LegalGate> {
-  bool? _accepted;
-
-  @override
-  void initState() {
-    super.initState();
-    _restore();
-  }
-
-  Future<void> _restore() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _accepted = prefs.getString(legalAcceptedVersionKey) == legalVersion;
-    });
-  }
-
-  Future<void> _accept() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(legalAcceptedVersionKey, legalVersion);
-    unawaited(enableCrashReporting());
-    if (!mounted) return;
-    setState(() => _accepted = true);
-    widget.onAccepted?.call();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Straight after the native splash: the same picture, and three dots.
-    if (_accepted == null) return const Scaffold(body: SplashLoading());
-    if (_accepted!) return widget.child;
-    return LegalConsentScreen(onAccepted: _accept);
-  }
-}
-
-class LegalConsentScreen extends StatefulWidget {
-  const LegalConsentScreen({required this.onAccepted, super.key});
-
-  final Future<void> Function() onAccepted;
-
-  @override
-  State<LegalConsentScreen> createState() => _LegalConsentScreenState();
-}
-
-class _LegalConsentScreenState extends State<LegalConsentScreen> {
-  bool _checked = false;
-  bool _busy = false;
-
-  Future<void> _submit() async {
-    if (!_checked || _busy) return;
-    setState(() => _busy = true);
-    try {
-      await widget.onAccepted();
-    } finally {
-      // The gate is the way into the app. If saving failed, the button has to
-      // come back rather than leave the player stuck on "שומרים...".
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GameScaffold(
-      title: context.l10n.legalGateTitle,
-      showBack: false,
-      bottom: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Pinned with the button it enables: in the scrolling body it fell
-          // below the fold on a small phone, leaving a disabled button with
-          // nothing on screen to explain it.
-          Material(
-            color: AppColors.cream.withValues(alpha: .07),
-            borderRadius: BorderRadius.circular(16),
-            child: CheckboxListTile(
-              value: _checked,
-              onChanged: _busy
-                  ? null
-                  : (value) => setState(() => _checked = value ?? false),
-              controlAffinity: ListTileControlAffinity.leading,
-              activeColor: AppColors.turquoise,
-              checkColor: AppColors.night,
-              title: Text(
-                context.l10n.legalConsent,
-                style: TextStyle(fontWeight: FontWeight.w700, height: 1.35),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          PrimaryButton(
-            label: _busy ? context.l10n.saving : context.l10n.acceptAndContinue,
-            onPressed: _checked && !_busy ? _submit : null,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Icon(
-            Icons.verified_user_outlined,
-            size: 72,
-            color: AppColors.turquoise,
-          ),
-          const SizedBox(height: 18),
-          Text(
-            context.l10n.legalGateHeadline,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            context.l10n.legalGateBody,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, height: 1.5),
-          ),
-          const SizedBox(height: 22),
-          _LegalLink(
-            title: context.l10n.termsTitle,
-            subtitle: context.l10n.termsSubtitle,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const TermsScreen()),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _LegalLink(
-            title: context.l10n.privacyTitle,
-            subtitle: context.l10n.privacySubtitle,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const PrivacyScreen()),
-            ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            context.l10n.legalDocsVersion(legalVersion, legalDate),
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class TermsScreen extends StatelessWidget {
   const TermsScreen({super.key});
@@ -306,32 +146,6 @@ class PrivacyScreen extends StatelessWidget {
         ),
       ],
       publicPath: privacyPath,
-    );
-  }
-}
-
-class _LegalLink extends StatelessWidget {
-  const _LegalLink({
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.cream.withValues(alpha: .07),
-      borderRadius: BorderRadius.circular(16),
-      child: ListTile(
-        onTap: onTap,
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right_rounded),
-      ),
     );
   }
 }

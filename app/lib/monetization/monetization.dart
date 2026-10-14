@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../crash_reporting.dart';
 import '../data/server.dart';
 import '../local/words.g.dart';
 import '../state/game_session.dart';
@@ -299,7 +300,8 @@ class Monetization extends ChangeNotifier {
       _collecting = null;
       _replaceWith(found);
       return true;
-    } on Object {
+    } on Object catch (e) {
+      logWarning('store', 'restore failed', e);
       _collecting = null;
       return false;
     }
@@ -315,6 +317,7 @@ class Monetization extends ChangeNotifier {
       final ended = p.productId.isEmpty &&
           (p.status == StoreStatus.canceled || p.status == StoreStatus.error);
       if (p.productId.isEmpty && !ended) continue;
+      logInfo('store', '${p.productId} ${p.status.name}');
       final inFlow = (p.productId == _flowProduct || ended) &&
           (step == PurchaseStep.processing || step == PurchaseStep.pending);
       switch (p.status) {
@@ -546,7 +549,8 @@ class Monetization extends ChangeNotifier {
       if (!await store.isAvailable()) throw StateError('store unavailable');
       products = {...products, ...await store.products(ids)};
       productsFailed = productsMissing = !ids.any(products.containsKey);
-    } on Object {
+    } on Object catch (e) {
+      logWarning('store', 'products not loaded', e);
       productsFailed = true;
     } finally {
       productsLoading = false;
@@ -556,6 +560,7 @@ class Monetization extends ChangeNotifier {
 
   Future<void> buy(String productId) async {
     if (busy || !config.purchasesEnabled) return;
+    logInfo('store', 'buy $productId');
     _flowProduct = productId;
     monthlyBeforePurchase = monthlyActive;
     step = PurchaseStep.processing;

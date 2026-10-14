@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"log/slog"
 	"math/rand/v2"
 	"slices"
 	"time"
@@ -201,12 +202,34 @@ func (s *Server) publishGame(entry *roomEntry, now time.Time) {
 	if g == nil {
 		return
 	}
+	logPhase(entry, g)
 	entry.stateVersion++ // above the room.state sent just before
 	for _, id := range g.PlayerIDs() {
 		if player := s.players[id]; player != nil && player.game == g {
 			s.sendGameState(player, entry.stateVersion, now)
 		}
 	}
+}
+
+// logPhase records each phase a game enters, and how it ended. Every change
+// of a game is published, so this sees them all.
+func logPhase(entry *roomEntry, g *game.Game) {
+	ids := g.PlayerIDs()
+	if len(ids) == 0 {
+		return
+	}
+	// Phase, round and result are the same in every player's view.
+	v, err := g.View(ids[0])
+	if err != nil || entry.logged.game == g && entry.logged.phase == v.Phase && entry.logged.round == v.Round {
+		return
+	}
+	entry.logged.game, entry.logged.phase, entry.logged.round = g, v.Phase, v.Round
+	if r := v.Result; r != nil {
+		slog.Info("game ended", "gameId", entry.gameID, "roomId", entry.id, "rounds", v.Round,
+			"winner", r.Winner, "reason", r.Reason, "impostorId", r.ImpostorID, "outcomes", r.Outcomes)
+		return
+	}
+	slog.Info("game phase", "gameId", entry.gameID, "round", v.Round, "phase", v.Phase)
 }
 
 // sendGameState sends the player the game they are showing, which may be an

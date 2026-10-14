@@ -58,8 +58,8 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-9035143252838544~9971528166"/>
         <!-- Firebase starts with the app, before any Dart: Crashlytics stays
-             off until crash_reporting.dart turns it on (release builds, after
-             the documents are accepted). -->
+             off until crash_reporting.dart turns it on, in release builds
+             only, so debug builds never report. -->
         <meta-data android:name="firebase_crashlytics_collection_enabled" android:value="false"/>
         <!-- Hands the link above to Flutter as a route. -->
         <meta-data android:name="flutter_deeplinking_enabled" android:value="true"/>
