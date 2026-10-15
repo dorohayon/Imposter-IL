@@ -224,7 +224,10 @@ type View struct {
 	// EliminatedPlayerID is set during elimination_reveal after a citizen was
 	// voted out.
 	EliminatedPlayerID string
-	Result             *Result
+	// VotesCast of Voters have voted, during voting and runoff_voting. Who
+	// voted for whom stays hidden until the result.
+	VotesCast, Voters int
+	Result            *Result
 }
 
 type player struct {
@@ -536,6 +539,7 @@ func (g *Game) Vote(voterID, targetID string, now time.Time) error {
 	}
 	g.votes[voterID] = targetID
 	g.voteCast = true
+	g.maybeAdvanceTransition(now)
 	g.version++
 	return nil
 }
@@ -579,7 +583,8 @@ func (g *Game) Disconnect(playerID string, now time.Time) error {
 	switch {
 	case g.phase == PhaseHints && g.order[g.turn] == playerID:
 		g.awaitReconnect(now)
-	case g.phase == PhaseRoleReveal || g.phase == PhaseEliminationReveal:
+	case g.phase == PhaseRoleReveal || g.phase == PhaseEliminationReveal ||
+		g.phase == PhaseVoting || g.phase == PhaseRunoffVoting:
 		g.maybeAdvanceTransition(now)
 	}
 	g.version++
@@ -654,6 +659,14 @@ func (g *Game) View(playerID string) (View, error) {
 				v.PreviousVotes[id] = g.tiedVotes
 			}
 		}
+	}
+	if g.phase == PhaseVoting || g.phase == PhaseRunoffVoting {
+		for id, p := range g.players {
+			if p.status == StatusActive && g.canVote(id) {
+				v.Voters++
+			}
+		}
+		v.VotesCast = len(g.votes)
 	}
 	if g.phase == PhaseRunoffVoting && len(g.voteRounds) > 0 {
 		// Only the players in the runoff. Counting every target would tell
@@ -755,9 +768,14 @@ func (g *Game) resetAcks() {
 }
 
 // maybeAdvanceTransition leaves a synchronized screen once every required
-// connected player has acknowledged, or expire() will leave on the timer.
+// connected player has acknowledged, and a vote once every connected player
+// has voted; otherwise expire() leaves on the timer.
 func (g *Game) maybeAdvanceTransition(at time.Time) {
 	switch g.phase {
+	case PhaseVoting, PhaseRunoffVoting:
+		if g.allConnectedVoted() {
+			g.tally(at)
+		}
 	case PhaseRoleReveal:
 		if !g.allConnectedAcked(activePlayersOnly) {
 			return
@@ -793,6 +811,30 @@ func (g *Game) allConnectedAcked(watchers bool) bool {
 		}
 	}
 	return true
+}
+
+// allConnectedVoted reports whether every connected active player with
+// someone to vote for has voted. A runoff candidate left alone in the list
+// has nobody, and is not waited for. At least one such player must be
+// connected: a table that dropped all at once waits for the timer rather
+// than counting nobody's votes.
+func (g *Game) allConnectedVoted() bool {
+	anyone := false
+	for id, p := range g.players {
+		if p.status != StatusActive || !p.connected || !g.canVote(id) {
+			continue
+		}
+		if _, voted := g.votes[id]; !voted {
+			return false
+		}
+		anyone = true
+	}
+	return anyone
+}
+
+// canVote reports whether id has a candidate other than themself.
+func (g *Game) canVote(id string) bool {
+	return slices.ContainsFunc(g.candidates, func(c string) bool { return c != id })
 }
 
 // startTurn gives the turn to the next active player at or after index i, or
@@ -1002,7 +1044,8 @@ func (g *Game) removeAll(ids []string, status PlayerStatus, at time.Time) {
 		g.end(TeamImpostor, ReasonImpostorParity)
 	case len(g.activeIDs()) < MinPlayersToContinue:
 		g.end(TeamNone, ReasonNotEnoughPlayers)
-	case g.phase == PhaseRoleReveal || g.phase == PhaseEliminationReveal:
+	case g.phase == PhaseRoleReveal || g.phase == PhaseEliminationReveal ||
+		g.phase == PhaseVoting || g.phase == PhaseRunoffVoting:
 		g.maybeAdvanceTransition(at)
 	case removedCurrentTurn:
 		g.startTurn(g.turn+1, at)

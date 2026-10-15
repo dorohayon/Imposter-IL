@@ -680,8 +680,12 @@ class AppLocalizationsHe extends AppLocalizations {
   String get confirmVote => 'אישור הצבעה';
 
   @override
-  String get choosePlayer =>
-      'בחרו שחקן אחד. אפשר לשנות את הבחירה עד שהזמן נגמר.';
+  String get chooseSuspect => 'בחרו במי אתם חושדים';
+
+  @override
+  String votesCast(int cast, int total) {
+    return '$cast מתוך $total הצביעו';
+  }
 
   @override
   String get tieRevoteExplain =>

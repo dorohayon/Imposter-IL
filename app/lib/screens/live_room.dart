@@ -2573,6 +2573,48 @@ class _ReactionChip extends StatelessWidget {
   }
 }
 
+/// "2 of 4 have voted", in the round badge's pill.
+class _VoteCount extends StatelessWidget {
+  const _VoteCount({required this.cast, required this.total});
+
+  final int cast;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Semantics(
+        liveRegion: true,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: AppColors.turquoise.withValues(alpha: .14),
+            borderRadius: BorderRadius.circular(999),
+            border:
+                Border.all(color: AppColors.turquoise.withValues(alpha: .55)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.how_to_vote_rounded,
+                  size: 18, color: AppColors.turquoise),
+              const SizedBox(width: 6),
+              Text(
+                context.l10n.votesCast(cast, total),
+                style: const TextStyle(
+                  color: AppColors.cream,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Voting extends StatefulWidget {
   const _Voting({required this.game, required this.onLeave});
 
@@ -2653,11 +2695,15 @@ class _VotingState extends State<_Voting> {
           ],
           if (!runoff && !watching)
             Padding(
-              padding: EdgeInsets.only(bottom: 14),
+              padding: const EdgeInsets.only(bottom: 10),
               child: Text(
-                context.l10n.choosePlayer,
+                context.l10n.chooseSuspect,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.muted),
+                style: const TextStyle(
+                  color: AppColors.cream,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           if (runoff)
@@ -2677,6 +2723,13 @@ class _VotingState extends State<_Voting> {
                   style: TextStyle(color: Color(0xFFFFD9D9), height: 1.4),
                 ),
               ),
+            ),
+          // The vote ends once every connected player has voted, so the
+          // count says how close that is.
+          if (game.voteProgress case final progress?)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: _VoteCount(cast: progress.cast, total: progress.total),
             ),
           for (final id in game.voteCandidates)
             if (game.player(id) case final p?)

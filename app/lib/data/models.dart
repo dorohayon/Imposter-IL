@@ -206,6 +206,7 @@ class GameView {
     required this.previousVotes,
     required this.eliminatedPlayerId,
     required this.myVote,
+    required this.voteProgress,
     required this.result,
   });
 
@@ -231,6 +232,13 @@ class GameView {
       },
       eliminatedPlayerId: json['eliminatedPlayerId'] as String?,
       myVote: json['myVote'] as String?,
+      voteProgress: switch (json['voteProgress']) {
+        {'cast': final int cast, 'total': final int total} => (
+            cast: cast,
+            total: total
+          ),
+        _ => null,
+      },
       result: result == null ? null : GameResult.fromJson(result),
     );
   }
@@ -254,6 +262,10 @@ class GameView {
   final Map<String, int> previousVotes;
   final String? eliminatedPlayerId;
   final String? myVote;
+
+  /// During a vote: how many have voted, of how many can. Never who voted
+  /// for whom.
+  final ({int cast, int total})? voteProgress;
   final GameResult? result;
 
   bool get isImpostor => myRole == 'impostor';
