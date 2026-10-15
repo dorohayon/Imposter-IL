@@ -96,9 +96,11 @@ class LocalGame {
     secretWord = chosen.$2;
     impostor = _rng.nextInt(players.length);
     _shuffleTurnOrder();
-    logInfo('local', 'new game: ${players.length} players, '
-        '${categoryIds.length} categories, '
-        '${hintSeconds == null ? 'no timer' : '${hintSeconds}s'}');
+    logInfo(
+        'local',
+        'new game: ${players.length} players, '
+            '${categoryIds.length} categories, '
+            '${hintSeconds == null ? 'no timer' : '${hintSeconds}s'}');
   }
 
   /// Rebuilds a match from a snapshot, without dealing a new word or role.

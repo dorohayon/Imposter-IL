@@ -89,8 +89,10 @@ class ApiClient {
         logWarning('net', '$route ${response.statusCode} $code');
         throw ApiException(code, response.statusCode, error ?? const {});
       }
-      logDebug('net', '$route ${response.statusCode} '
-          '${DateTime.now().difference(started).inMilliseconds}ms');
+      logDebug(
+          'net',
+          '$route ${response.statusCode} '
+              '${DateTime.now().difference(started).inMilliseconds}ms');
       return json;
     } on ApiException {
       rethrow;
@@ -98,8 +100,12 @@ class ApiClient {
       // The cause network_error stands for: offline, a timeout, DNS, TLS.
       // Only the type, or the OS's reason: a FormatException would quote
       // the body, which can hold nicknames.
-      logWarning('net', '$route network_error',
-          e is SocketException ? e.osError?.message ?? e.message : e.runtimeType);
+      logWarning(
+          'net',
+          '$route network_error',
+          e is SocketException
+              ? e.osError?.message ?? e.message
+              : e.runtimeType);
       throw const ApiException('network_error');
     }
   }

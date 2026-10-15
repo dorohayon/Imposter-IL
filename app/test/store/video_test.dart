@@ -150,7 +150,7 @@ void main() {
       };
       final me = lang.players.first;
       SharedPreferences.setMockInitialValues({
-            'session.token': 'token-1',
+        'session.token': 'token-1',
         'session.playerId': 'p_me',
         'session.nickname': me.$2,
         'session.avatarId': me.$3,

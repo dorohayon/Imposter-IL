@@ -26,8 +26,7 @@ Future<void> _openLink(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('an invite link opens the join screen',
-      (tester) async {
+  testWidgets('an invite link opens the join screen', (tester) async {
     await startApp(tester, FakeApi(), saved: _savedSession);
     await _openLink(tester);
     expect(find.byType(JoinRoomScreen), findsOneWidget);

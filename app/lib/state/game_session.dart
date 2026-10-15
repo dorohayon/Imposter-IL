@@ -451,8 +451,10 @@ class GameSession extends ChangeNotifier {
         final newRoom = payload['roomId'] as String?;
         if (newRoom != roomId) _lastVersion = 0; // versions count per room
         if (payload['activity'] != activity || newRoom != roomId) {
-          logInfo('session', '${payload['activity']} room=$newRoom '
-              'game=${payload['gameId']}');
+          logInfo(
+              'session',
+              '${payload['activity']} room=$newRoom '
+                  'game=${payload['gameId']}');
         }
         activity = payload['activity'] as String;
         roomId = newRoom;
@@ -468,8 +470,10 @@ class GameSession extends ChangeNotifier {
         final before = game;
         game = GameView.fromJson(payload['game'] as Map<String, dynamic>);
         if (before?.id != game!.id) {
-          logInfo('game', '${game!.id} ${game!.players.length} players, '
-              '${game!.myRole}');
+          logInfo(
+              'game',
+              '${game!.id} ${game!.players.length} players, '
+                  '${game!.myRole}');
         }
         if (before?.id != game!.id ||
             before?.phase != game!.phase ||
@@ -572,8 +576,10 @@ class GameSession extends ChangeNotifier {
     required int hintSeconds,
     required List<String> categoryIds,
   }) async {
-    logInfo('room', 'create: $maxPlayers players, ${hintSeconds}s, '
-        '${categoryIds.length} categories');
+    logInfo(
+        'room',
+        'create: $maxPlayers players, ${hintSeconds}s, '
+            '${categoryIds.length} categories');
     final body = {
       'maxPlayers': maxPlayers,
       'hintSeconds': hintSeconds,

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../crash_reporting.dart';
+
 /// What happened to a purchase, as the store reports it.
 enum StoreStatus { purchased, restored, pending, canceled, error }
 
