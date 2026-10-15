@@ -572,8 +572,9 @@ LocalGame? localGameFromJson(Map<String, dynamic> json, {Random? rng}) {
       impostor: json['impostor'] as int,
       rng: rng ?? Random(),
     );
-    game.phase = LocalPhase.values.byName(json['phase'] as String);
+    // Round first: setting the phase logs it with the round.
     game.round = json['round'] as int;
+    game.phase = LocalPhase.values.byName(json['phase'] as String);
     game.seat = json['seat'] as int;
     game.turnOrder = (json['turnOrder'] as List).cast<int>();
     game.secondsRemaining = json['secondsRemaining'] as int?;

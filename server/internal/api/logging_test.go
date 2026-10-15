@@ -2,6 +2,7 @@ package api
 
 import (
 	"log/slog"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -68,6 +69,21 @@ func TestAGameCanBeFollowedInTheLogWithoutItsWords(t *testing.T) {
 	}
 	if confirms != 4 {
 		t.Fatalf("logged %d role confirmations, want 4", confirms)
+	}
+
+	// The query in deploy/README.md: playerId, or playerIds for the game's
+	// own lines, finds a player's whole game.
+	mine := map[any]bool{}
+	for _, msg := range []string{"session created", "connected", "command", "game started", "game phase", "game ended"} {
+		for _, l := range logs.lines(msg) {
+			ids, _ := l["playerIds"].([]any)
+			if l["playerId"] == host.id || slices.Contains(ids, any(host.id)) {
+				mine[msg] = true
+			}
+		}
+	}
+	if len(mine) != 6 {
+		t.Fatalf("a search by playerId finds only %v", mine)
 	}
 
 	// The secret word, the hint and the nicknames (שחקן1…) stay out.

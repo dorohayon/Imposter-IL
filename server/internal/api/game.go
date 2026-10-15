@@ -212,7 +212,8 @@ func (s *Server) publishGame(entry *roomEntry, now time.Time) {
 }
 
 // logPhase records each phase a game enters, and how it ended. Every change
-// of a game is published, so this sees them all.
+// of a game is published, so this sees them all. playerIds names everyone
+// dealt in, so a search by one player's id finds the game's lines too.
 func logPhase(entry *roomEntry, g *game.Game) {
 	ids := g.PlayerIDs()
 	if len(ids) == 0 {
@@ -225,11 +226,11 @@ func logPhase(entry *roomEntry, g *game.Game) {
 	}
 	entry.logged.game, entry.logged.phase, entry.logged.round = g, v.Phase, v.Round
 	if r := v.Result; r != nil {
-		slog.Info("game ended", "gameId", entry.gameID, "roomId", entry.id, "rounds", v.Round,
+		slog.Info("game ended", "gameId", entry.gameID, "roomId", entry.id, "playerIds", ids, "rounds", v.Round,
 			"winner", r.Winner, "reason", r.Reason, "impostorId", r.ImpostorID, "outcomes", r.Outcomes)
 		return
 	}
-	slog.Info("game phase", "gameId", entry.gameID, "round", v.Round, "phase", v.Phase)
+	slog.Info("game phase", "gameId", entry.gameID, "playerIds", ids, "round", v.Round, "phase", v.Phase)
 }
 
 // sendGameState sends the player the game they are showing, which may be an

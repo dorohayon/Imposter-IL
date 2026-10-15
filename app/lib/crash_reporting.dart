@@ -33,16 +33,18 @@ Future<void> startCrashReporting() async {
   }
   final crashlytics = FirebaseCrashlytics.instance;
   FlutterError.onError = crashlytics.recordFlutterFatalError;
+  // Every Crashlytics call below drops its own failure (ignore): one that
+  // escaped would land back here, fail again and loop.
   PlatformDispatcher.instance.onError = (error, stack) {
-    crashlytics.recordError(error, stack, fatal: true);
+    crashlytics.recordError(error, stack, fatal: true).ignore();
     return true;
   };
   _started = true;
-  unawaited(crashlytics.setCustomKey('build', clientBuild));
+  crashlytics.setCustomKey('build', clientBuild).ignore();
   // Builds up to 9 kept collection off until a consent screen was accepted,
   // and the native setting persists: installs that never accepted would
   // otherwise stay silent.
-  unawaited(crashlytics.setCrashlyticsCollectionEnabled(true));
+  crashlytics.setCrashlyticsCollectionEnabled(true).ignore();
 }
 
 enum LogLevel { debug, info, warning, error }
@@ -71,13 +73,15 @@ void appLog(
   if (logToConsole) debugPrint(line);
   if (!_started || level == LogLevel.debug) return;
   final crashlytics = FirebaseCrashlytics.instance;
-  unawaited(crashlytics.log(line));
+  crashlytics.log(line).ignore();
   if (level == LogLevel.error) {
-    unawaited(crashlytics.recordError(
-      error ?? message,
-      stack ?? StackTrace.current,
-      reason: '$tag: $message',
-    ));
+    crashlytics
+        .recordError(
+          error ?? message,
+          stack ?? StackTrace.current,
+          reason: '$tag: $message',
+        )
+        .ignore();
   }
 }
 
@@ -94,6 +98,6 @@ void logError(String tag, String message, Object error, [StackTrace? stack]) =>
 /// The id is a random guest id that ends with the guest session.
 void logPlayer(String playerId) {
   if (_started) {
-    unawaited(FirebaseCrashlytics.instance.setUserIdentifier(playerId));
+    FirebaseCrashlytics.instance.setUserIdentifier(playerId).ignore();
   }
 }

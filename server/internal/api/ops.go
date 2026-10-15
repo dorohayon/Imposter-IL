@@ -92,7 +92,11 @@ func (s *Server) AbortGames() {
 // It walks sessions instead of the room's member list on purpose — the room's
 // own state is what just panicked, so it is not to be trusted here.
 func (s *Server) abortRoom(entry *roomEntry) {
-	slog.Warn("game aborted", "gameId", entry.gameID, "roomId", entry.id)
+	var ids []string
+	if g := entry.room.Game(); g != nil {
+		ids = g.PlayerIDs()
+	}
+	slog.Warn("game aborted", "gameId", entry.gameID, "roomId", entry.id, "playerIds", ids)
 	now := s.now()
 	msg := message("game.aborted", now, map[string]any{
 		"gameId": entry.gameID, "reason": "server_error", "lossRecorded": false,

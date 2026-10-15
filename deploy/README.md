@@ -218,7 +218,8 @@ Logs are JSON on stdout: `sudo docker compose -f /var/imposter/docker-compose.ym
 ### Following a player
 
 Server and app log the same ids: `playerId` (`p_…`), `roomId` (`r_…`) and
-`gameId` (`g_…`). Nicknames, hints, guesses and the secret word are never
+`gameId` (`g_…`). A game's own lines (started, phase, ended, aborted) name
+everyone in it as `playerIds`, so the query matches either field. Nicknames, hints, guesses and the secret word are never
 logged; the one exception is the `player reported` line (docs/moderation.md).
 
 **Server — Cloud Logging.** Every step of an online player: `session
@@ -228,7 +229,7 @@ round), `command` (every client command with its result code), `game ended`
 (winner, reason, outcomes) and `game aborted`. Logs Explorer, or:
 
 ```sh
-gcloud logging read 'resource.labels.service_name="imposter" AND jsonPayload.playerId="p_…"' \
+gcloud logging read 'resource.labels.service_name="imposter" AND (jsonPayload.playerId="p_…" OR jsonPayload.playerIds="p_…")' \
   --project=imposter-il-game --freshness=1d --order=asc \
   --format='table(timestamp, severity, jsonPayload.msg, jsonPayload.type, jsonPayload.code, jsonPayload.phase)'
 ```
