@@ -128,7 +128,10 @@ abstract final class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.cream,
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          // A textStyle here replaces the Rubik one the button would take
+          // from the theme, so it names the family again.
+          textStyle:
+              const TextStyle(fontFamily: 'Rubik', fontWeight: FontWeight.w700),
           minimumSize: const Size(48, 48),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

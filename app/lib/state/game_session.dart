@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../crash_reporting.dart';
 import '../data/models.dart';
 import '../data/server.dart';
 import '../l10n/l10n.dart';
@@ -189,6 +190,8 @@ class GameSession extends ChangeNotifier {
     language = languageOverride ?? resolveLocale(phoneLocales).languageCode;
     showReactions = prefs.getBool(_reactionsKey) ?? true;
     muted = (prefs.getStringList(_mutedKey) ?? const []).toSet();
+    logInfo('session', signedIn ? 'restored $playerId' : 'no guest session');
+    if (playerId != null) logPlayer(playerId!);
     if (signedIn) unawaited(_start());
   }
 
@@ -219,6 +222,8 @@ class GameSession extends ChangeNotifier {
     this.playerId = playerId;
     this.nickname = nickname;
     this.avatarId = avatarId;
+    logInfo('session', 'signed in as $playerId');
+    logPlayer(playerId);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
     await prefs.setString(_playerKey, playerId);
@@ -265,9 +270,11 @@ class GameSession extends ChangeNotifier {
           .toList();
       contentLoaded = true;
     } on ApiException catch (e) {
+      logWarning('content', 'load failed: ${e.code}');
       contentError = e.code;
       rethrow;
-    } on Object {
+    } on Object catch (e, stack) {
+      logError('content', 'unreadable content', e, stack);
       contentError = 'internal_error';
       rethrow;
     } finally {
@@ -282,6 +289,10 @@ class GameSession extends ChangeNotifier {
   /// [silently] is for a token another device now holds: nothing failed, so
   /// the server-error screen would be wrong.
   Future<void> _replaceLostSession({bool silently = false}) async {
+    logWarning(
+      'session',
+      silently ? 'token taken by another device' : 'server lost the session',
+    );
     if (!silently && activity != 'none') sessionLost = true;
     // A restarted server cannot confirm an old leave and must never turn that
     // infrastructure failure into a local loss.
@@ -314,12 +325,14 @@ class GameSession extends ChangeNotifier {
         failures = 0;
         connected = true;
         reconnectDeadline = null;
+        logInfo('ws', 'connected');
         _notify();
         await for (final message in channel.messages) {
           _onMessage(message);
           // A game that ends, or a leave confirmed, while in the background.
           if (_parked) _park();
         }
+        logInfo('ws', 'closed ${channel.closeReason ?? ''}');
         if (channel.closeReason == replacedByNewConnection) {
           // The same token connected from another phone (a backup restored
           // onto a new one). There is no login, so this device simply becomes
@@ -337,7 +350,8 @@ class GameSession extends ChangeNotifier {
           _notify();
           continue;
         }
-      } on Object {
+      } on Object catch (e) {
+        logWarning('ws', 'connect failed', e.runtimeType);
         // Could not connect: check whether the session itself is gone.
         try {
           await api.request('GET', '/v1/categories', token: token);
@@ -370,9 +384,9 @@ class GameSession extends ChangeNotifier {
           ? reconnectDelay
           : reconnectDelay * (1 << (failures < 2 ? failures : 2));
       failures++;
-      await Future<void>.delayed(
-        backoff + reconnectDelay * _random.nextDouble(),
-      );
+      final wait = backoff + reconnectDelay * _random.nextDouble();
+      logInfo('ws', 'retry $failures in ${wait.inMilliseconds}ms');
+      await Future<void>.delayed(wait);
     }
     _loopRunning = false;
   }
@@ -400,6 +414,7 @@ class GameSession extends ChangeNotifier {
       serverOffset = DateTime.parse(serverTime).difference(DateTime.now());
     }
     final payload = message['payload'] as Map<String, dynamic>? ?? const {};
+    if (message['type'] != 'reply') logDebug('ws', '<- ${message['type']}');
     switch (message['type']) {
       case 'reply':
         final error = message['error'] as Map<String, dynamic>?;
@@ -435,6 +450,12 @@ class GameSession extends ChangeNotifier {
         }
         final newRoom = payload['roomId'] as String?;
         if (newRoom != roomId) _lastVersion = 0; // versions count per room
+        if (payload['activity'] != activity || newRoom != roomId) {
+          logInfo(
+              'session',
+              '${payload['activity']} room=$newRoom '
+                  'game=${payload['gameId']}');
+        }
         activity = payload['activity'] as String;
         roomId = newRoom;
         gameId = payload['gameId'] as String?;
@@ -446,7 +467,19 @@ class GameSession extends ChangeNotifier {
         room = RoomView.fromJson(payload['room'] as Map<String, dynamic>);
       case 'game.state':
         if (!_isNewer(payload)) return;
+        final before = game;
         game = GameView.fromJson(payload['game'] as Map<String, dynamic>);
+        if (before?.id != game!.id) {
+          logInfo(
+              'game',
+              '${game!.id} ${game!.players.length} players, '
+                  '${game!.myRole}');
+        }
+        if (before?.id != game!.id ||
+            before?.phase != game!.phase ||
+            before?.round != game!.round) {
+          logInfo('game', 'round ${game!.round} ${game!.phase}');
+        }
         final me = game!.player(playerId);
         final outcome =
             me?.status == 'removed' ? 'loss' : game!.result?.outcomes[playerId];
@@ -466,13 +499,16 @@ class GameSession extends ChangeNotifier {
       case 'matchmaking.noMatch':
         noMatchCategories =
             (payload['categoryIds'] as List? ?? const []).cast<String>();
+        logInfo('search', 'no match');
       case 'room.kicked':
+        logInfo('room', 'removed by the host');
         kicked = true;
       case 'game.aborted':
         // The server ended the game on its side (a recovered crash, or a
         // shutdown that outlasted draining): screen 29, no loss recorded.
         // The session.state that follows sends the player home, and without
         // this they got there silently, with no word of what happened.
+        logWarning('game', 'aborted by the server: ${payload['reason']}');
         sessionLost = true;
       case 'game.reaction':
         // The only message that names who reacted; game.state carries counts
@@ -497,7 +533,20 @@ class GameSession extends ChangeNotifier {
   }
 
   /// Sends a command and returns its error code, or null on success.
-  Future<String?> send(String type, Map<String, dynamic> payload) {
+  Future<String?> send(String type, Map<String, dynamic> payload) async {
+    final code = await _send(type, payload);
+    switch (code) {
+      case null:
+        logDebug('ws', '-> $type ok');
+      case 'network_error':
+        logWarning('ws', '-> $type network_error');
+      default:
+        logInfo('ws', '-> $type refused: $code');
+    }
+    return code;
+  }
+
+  Future<String?> _send(String type, Map<String, dynamic> payload) {
     final channel = _channel;
     if (channel == null) return Future.value('network_error');
     final id =
@@ -527,6 +576,10 @@ class GameSession extends ChangeNotifier {
     required int hintSeconds,
     required List<String> categoryIds,
   }) async {
+    logInfo(
+        'room',
+        'create: $maxPlayers players, ${hintSeconds}s, '
+            '${categoryIds.length} categories');
     final body = {
       'maxPlayers': maxPlayers,
       'hintSeconds': hintSeconds,
@@ -546,6 +599,7 @@ class GameSession extends ChangeNotifier {
 
   /// Joins a room by code. Throws [ApiException].
   Future<void> joinRoom(String code) async {
+    logInfo('room', 'join');
     final json = await api.request(
       'POST',
       '/v1/rooms/join',
@@ -563,6 +617,7 @@ class GameSession extends ChangeNotifier {
     // nobody else in the room nothing ever corrected it.
     if (entered.id == roomId && room?.id == entered.id) return;
     if (entered.id != roomId) _lastVersion = 0;
+    logInfo('room', 'entered ${entered.id}');
     activity = 'room';
     roomId = entered.id;
     room = entered;
@@ -604,6 +659,7 @@ class GameSession extends ChangeNotifier {
   }
 
   Future<String?> _leave(String type, String key, String? id) async {
+    logInfo('session', '$type $id${connected ? '' : ' (offline)'}');
     if (type == 'game.leave' && id != null && !connected) {
       // Leaving while offline is immediate locally, then retried after every
       // reconnect until the server confirms it. The authoritative outcome is
@@ -637,6 +693,7 @@ class GameSession extends ChangeNotifier {
 
   /// Starts an online search. Returns an error code, or null on success.
   Future<String?> startSearch(List<String> categoryIds) async {
+    logInfo('search', 'start: ${categoryIds.length} categories, $language');
     final retryOf = noMatchCategories;
     noMatchCategories = null;
     activity = 'matchmaking'; // until session.state confirms it
@@ -660,6 +717,7 @@ class GameSession extends ChangeNotifier {
   /// connection it is cancelled here at once and again on the server after
   /// reconnecting, since the server holds a dropped searcher's place.
   Future<String?> cancelSearch() async {
+    logInfo('search', 'cancel');
     final code = await send('matchmaking.cancel', {});
     if (code != null && connected) return code;
     if (code != null) _pendingSearchCancel = true;
@@ -680,6 +738,7 @@ class GameSession extends ChangeNotifier {
     // not even the fact that it happened, in case it resumes as a real one.
     if (outcome == 'none') return;
     if (_countedGames.contains(gameId)) return;
+    logInfo('game', '$gameId: $outcome');
     _countedGames = [..._countedGames, gameId];
     if (_countedGames.length > 50) _countedGames.removeAt(0);
     outcome == 'win' ? wins++ : losses++;
@@ -695,6 +754,7 @@ class GameSession extends ChangeNotifier {
   /// Reports a player for what they wrote and hides their text on this
   /// device. Returns an error code, or null on success.
   Future<String?> reportPlayer(String playerId, {int? hintIndex}) async {
+    logInfo('game', 'report $playerId');
     final code = await send('game.report', {
       'gameId': gameId ?? game?.id,
       'playerId': playerId,

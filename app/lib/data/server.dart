@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import '../crash_reporting.dart';
+
 /// This build's number: the part after `+` in pubspec.yaml's `version`.
 /// CI checks the two agree (.github/workflows/app.yml).
 ///
@@ -60,6 +62,9 @@ class ApiClient {
     String? token,
     Object? body,
   }) async {
+    // The path without its query: ids and codes only reach the log.
+    final route = '$method ${path.split('?').first}';
+    final started = DateTime.now();
     try {
       final request = await _http.openUrl(method, baseUrl.resolve(path));
       request.headers.set('X-Client-Build', '$clientBuild');
@@ -81,12 +86,26 @@ class ApiClient {
         final error = json['error'] as Map<String, dynamic>?;
         final code = error?['code'] as String? ?? 'internal_error';
         if (code == 'client_too_old') onClientTooOld?.call();
+        logWarning('net', '$route ${response.statusCode} $code');
         throw ApiException(code, response.statusCode, error ?? const {});
       }
+      logDebug(
+          'net',
+          '$route ${response.statusCode} '
+              '${DateTime.now().difference(started).inMilliseconds}ms');
       return json;
     } on ApiException {
       rethrow;
-    } on Object {
+    } on Object catch (e) {
+      // The cause network_error stands for: offline, a timeout, DNS, TLS.
+      // Only the type, or the OS's reason: a FormatException would quote
+      // the body, which can hold nicknames.
+      logWarning(
+          'net',
+          '$route network_error',
+          e is SocketException
+              ? e.osError?.message ?? e.message
+              : e.runtimeType);
       throw const ApiException('network_error');
     }
   }

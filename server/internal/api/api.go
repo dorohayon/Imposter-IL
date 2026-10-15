@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"math/rand/v2"
 	"net/http"
 	"slices"
@@ -143,6 +144,12 @@ type roomEntry struct {
 	// game.state each take the next value, so it rises on any published change,
 	// including profile edits and a new game, and never repeats across types.
 	stateVersion uint64
+	// logged is the game, phase and round last written to the log.
+	logged struct {
+		game  *game.Game
+		phase game.Phase
+		round int
+	}
 	// published is what the last snapshot reflected; sync publishes when the
 	// room or its game has moved on since, for example through a deadline
 	// applied by a command that then failed.
@@ -453,6 +460,7 @@ func (s *Server) createSession(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	s.sessions[token], s.players[sess.playerID] = sess, sess
 	s.mu.Unlock()
+	slog.Info("session created", "playerId", sess.playerID, "build", r.Header.Get("X-Client-Build"))
 	writeJSON(w, http.StatusCreated, map[string]string{"playerId": sess.playerID, "sessionToken": token})
 }
 
@@ -561,6 +569,8 @@ func (s *Server) createRoom(w http.ResponseWriter, body []byte, sess *session) {
 	s.leave(previous, sess, now)
 	entry := &roomEntry{id: "r_" + crand.Text(), code: code, room: rm, categoriesBy: sess.playerID, language: lang.Code}
 	s.roomsByID[entry.id], s.roomsCode[code] = entry, entry
+	slog.Info("room created", "playerId", sess.playerID, "roomId", entry.id,
+		"maxPlayers", req.MaxPlayers, "hintSeconds", req.HintSeconds, "categories", len(req.CategoryIDs), "language", lang.Code)
 	sess.roomID = entry.id
 	sess.leaveGame()
 	s.markSocketless(entry, sess, now)
@@ -625,6 +635,7 @@ func (s *Server) joinRoom(w http.ResponseWriter, body []byte, sess *session) {
 		return
 	}
 	s.leave(previous, sess, now)
+	slog.Info("room joined", "playerId", sess.playerID, "roomId", entry.id)
 	sess.roomID = entry.id
 	sess.leaveGame()
 	s.markSocketless(entry, sess, now)
@@ -665,6 +676,7 @@ func (s *Server) leave(entry *roomEntry, sess *session, now time.Time) {
 		return
 	}
 	// roomToLeave checked membership and the lobby status under the same lock.
+	slog.Info("room left", "playerId", sess.playerID, "roomId", entry.id, "public", entry.public)
 	if entry.public {
 		s.leaveSearch(sess, entry, now)
 	} else {

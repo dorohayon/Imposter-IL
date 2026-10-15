@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../data/server.dart';
 import '../l10n/l10n.dart';
 import '../models/player.dart';
+import 'legal_screens.dart';
 import '../state/game_session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_ui.dart';
@@ -20,6 +21,10 @@ class OnboardingScreen extends StatelessWidget {
           subtitle: context.l10n.onboardingSubtitle,
           submitLabel: context.l10n.continueLabel,
           busyLabel: context.l10n.connecting,
+          // Agreeing here, where the first nickname is sent, is what App
+          // Review asks of apps whose players write for each other
+          // (guideline 1.2); a screen of its own before the game is not.
+          footer: const _Agreement(),
           onSubmit: (nickname, avatarId) async {
             await SessionScope.read(context).signIn(nickname, avatarId);
             if (!context.mounted) return;
@@ -100,6 +105,7 @@ class ProfileForm extends StatefulWidget {
     this.initialNickname = '',
     this.initialAvatarId,
     this.scrollable = true,
+    this.footer,
     super.key,
   });
 
@@ -110,6 +116,9 @@ class ProfileForm extends StatefulWidget {
   final String submitLabel;
   final String busyLabel;
   final bool scrollable;
+
+  /// Under the submit button.
+  final Widget? footer;
   final Future<void> Function(String nickname, String avatarId) onSubmit;
 
   @override
@@ -247,11 +256,54 @@ class _ProfileFormState extends State<ProfileForm> {
         label: _busy ? widget.busyLabel : widget.submitLabel,
         onPressed: _busy ? null : _submit,
       ),
+      if (widget.footer != null) ...[
+        const SizedBox(height: 14),
+        widget.footer!,
+      ],
     ];
     if (!widget.scrollable) return Column(children: children);
     return ListView(
       padding: const EdgeInsets.fromLTRB(26, 22, 26, 28),
       children: children,
+    );
+  }
+}
+
+/// "By tapping Continue you agree…", with both documents a tap away.
+class _Agreement extends StatelessWidget {
+  const _Agreement();
+
+  @override
+  Widget build(BuildContext context) {
+    void open(Widget screen) => Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => screen));
+    return Column(
+      children: [
+        Text(
+          context.l10n.agreeByContinuing,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.muted, fontSize: 13),
+        ),
+        Wrap(
+          alignment: WrapAlignment.center,
+          children: [
+            for (final (title, screen) in [
+              (context.l10n.termsTitle, const TermsScreen()),
+              (context.l10n.privacyTitle, const PrivacyScreen()),
+            ])
+              TextButton(
+                onPressed: () => open(screen),
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    decoration: TextDecoration.underline,
+                    decorationColor: AppColors.cream,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

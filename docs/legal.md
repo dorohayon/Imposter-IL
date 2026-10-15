@@ -2,22 +2,20 @@
 
 The legal surface has two copies, and they must stay aligned:
 
-1. `app/lib/screens/legal_screens.dart` — the text players read in the app, including the consent gate, which has to work offline.
+1. `app/lib/screens/legal_screens.dart` — the text players read in the app, offline too.
 2. `site/` — the public pages for App Store Connect, Google Play and people without the app, published to **https://imposteril.github.io** by `.github/workflows/site.yml` on every push to `main` that touches `site/`. `app/test/legal_test.dart` reads the section headings out of these files and fails if the app is missing one, so the alignment is checked rather than promised.
 
-Plus `legalVersion` / `legal.acceptedVersion`, the device-local acknowledgement version.
+Plus `legalVersion`, the version shown with the documents and in Settings.
 
 `imposteril/imposteril.github.io` is output only. Never edit it by hand: the next publish overwrites it. The workflow pushes with a write deploy key on that repository, whose private half is the `SITE_DEPLOY_KEY` secret here.
 
-Current document version: **1.3**, effective **26 September 2026**. 1.1 added purchases, subscriptions and ads (Terms §5, Privacy §2–4, §6–9); 1.3 adds Firebase Crashlytics (Privacy §7). Both are material changes, so every install is asked to accept again.
+Current document version: **1.4**, effective **14 October 2026**. 1.1 added purchases, subscriptions and ads (Terms §5, Privacy §2–4, §6–9); 1.3 added Firebase Crashlytics (Privacy §7); 1.4 adds the app's recent steps and the guest player id to crash reports (Privacy §7), sends contact to the support page in the app, moves agreement to the nickname screen and says how changes take effect without a consent screen (Terms §6 and §10, Privacy §2 and §12).
 
 ## Player flow
 
-A fresh install sees the legal gate before profile onboarding and therefore before it can create a guest session or submit a nickname. The continue button stays disabled until the checkbox is selected. The accepted version is stored in `SharedPreferences` as `legal.acceptedVersion`.
+There is no consent screen at launch: neither store requires one, and a fresh install opens on Home, where one-device play needs nothing from the server. Players agree where they first send something others will read: the nickname screen (`OnboardingScreen`) says "By tapping Continue you agree to the Terms of Use and the Privacy Policy", with both documents a tap away. That is what App Review asks of apps whose players write for each other (guideline 1.2: users agree to terms with no tolerance for objectionable content). No guest session and no nickname reaches the server before it.
 
-A device whose stored version differs from `legalVersion` sees the gate again. Bump `legalVersion` only for a material change for which renewed acknowledgement is intended. Editorial fixes to the public HTML that do not change the substance do not require a bump.
-
-Terms and Privacy remain readable from Settings after acceptance.
+Terms and Privacy are readable from Settings at any time. A material change gets a new `legalVersion`; nobody is asked to accept again in the app (builds up to 9 did, through a launch gate that stored `legal.acceptedVersion`).
 
 ## Public URLs
 
@@ -49,7 +47,7 @@ The v1 documents are intentionally product-specific. They reflect the current im
 - server operational logs and report metadata;
 - purchases through the App Store and Google Play only; the server verifies the store's proof (StoreKit 2 signed transaction or Play purchase token) and keeps the result in memory with the session; no payment details reach us;
 - Google AdMob for players without Premium, with Google UMP consent where the law requires it (EEA, UK) and Apple's tracking permission before the advertising identifier is used;
-- Firebase Crashlytics in release builds, only after the documents are accepted (collection is off natively until then): crash and uncaught-error reports with the stack, device model, OS, app version and a random Crashlytics installation id; no nickname, hints or advertising id; kept 90 days;
+- Firebase Crashlytics in release builds (collection is off natively until Dart turns it on, so debug builds never report): crash and error reports with the stack, the app's recent steps (screens, actions, error codes: the log in `app/lib/crash_reporting.dart`), device model, OS, app version, the random guest player id and a random Crashlytics installation id; no nickname, hints, secret word or advertising id; kept 90 days;
 - no sale of personal data and no third-party analytics SDK;
 - UGC filtering, reporting and device-local hiding.
 
@@ -61,7 +59,7 @@ If any of those facts changes, review both documents and the App Store Privacy /
 
 The documents name the service, not a person. Play's User Data policy asks the policy to name the entity it pertains to, and this matches the Play developer display name. **It does not keep the owner's legal name private:** on an individual developer account both stores publish the verified legal name as the seller on the store listing, and Play's EU trader disclosure shows name, address and email there. Registering a business is the only thing that changes that, and if one is registered later its legal name replaces `ImposterStudio` in both documents.
 
-The same address is the support, privacy and abuse-report contact. It appears in the public pages (including `/support/`), in the matching in-app sections, and as `supportEmail` in `app/lib/screens/secondary_screens.dart`, which shows the contact row in Settings. Google Play requires the policy to name the entity it pertains to; Apple requires developer contact details reachable from the app.
+The same address is the support, privacy and abuse-report contact. It appears on the public pages only (including `/support/`); by the owner's choice the app shows no email, and its documents point to `imposteril.github.io/support` where the public ones give the address (Terms §1 and §12, Privacy §1, §10 and §13). That is the one intended difference between the two copies. Google Play requires the policy to name the entity it pertains to and give a contact, which the public policy does; Apple's "published contact information" for UGC apps is the support URL in App Store Connect and the support page the app links to.
 
 ## Store submission notes
 
@@ -87,7 +85,8 @@ Revisit only if moderation and verifiable parental consent are actually built.
 - Google Mobile Ads SDK, per Google's disclosure guides ([iOS](https://developers.google.com/admob/ios/privacy/data-disclosure), [Android](https://developers.google.com/admob/android/privacy/play-data-disclosure)): IP address / approximate location, device and advertising identifiers, product interaction, advertising data, diagnostics and performance. On iOS the device ID is marked "used for tracking"; that is only true after the player grants tracking permission, but the label is per app, not per player.
 - In App Store Connect, follow the privacy manifest of the Google Mobile Ads SDK the app ships (`PrivacyInfo.xcprivacy` in the framework), not this list. In the version built in October 2026 only **Device ID** is "used for tracking"; Coarse Location, Product Interaction and Advertising Data are linked to the user but not tracking; Performance, Crash and Other Diagnostic Data are not linked. In Play, "Data is shared" for the advertising ID and device identifiers.
 
-- Firebase Crashlytics: crash logs and diagnostics, plus the installation id as a device identifier, collected for app functionality (analytics of crashes), not linked to an identity, not used for tracking, not shared. In App Store Connect: Crash Data and Other Diagnostic Data, "Not Linked to You".
+- Firebase Crashlytics: crash logs and diagnostics, plus the installation id and the random guest player id as identifiers, collected for app functionality (analytics of crashes), not linked to an identity, not used for tracking, not shared. In App Store Connect: Crash Data and Other Diagnostic Data, "Not Linked to You".
+- App Store Connect, from 1.4: add **User ID** (the guest player id Crashlytics receives) for App Functionality, not linked to you, not used for tracking. In Play it falls under Device or other IDs, already declared for Crashlytics.
 
 No account, so Apple's account-deletion requirement (5.1.1(v)) does not apply. No analytics SDK.
 
@@ -102,8 +101,7 @@ No account, so Apple's account-deletion requirement (5.1.1(v)) does not apply. N
 - Review the actual product behavior against both documents.
 - Run Flutter tests, including `app/test/legal_test.dart`.
 - Verify Settings opens both documents.
-- Verify a clean install cannot continue without checking consent.
-- Verify an old `legal.acceptedVersion` is gated again after a version bump.
+- Verify the nickname screen shows the agreement line and opens both documents.
 - After the site workflow runs, verify `https://imposteril.github.io/privacy/`, `/terms/`, `/support/` and `/app-ads.txt` answer, signed out, and that the server's old `/privacy/` redirects there.
 - Confirm the App Store Connect EULA field is empty.
 - Verify the public pages on mobile and desktop without authentication.

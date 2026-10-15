@@ -173,20 +173,8 @@ abstract class AppLocalizations {
   /// No description provided for @legalDate.
   ///
   /// In he, this message translates to:
-  /// **'26 בספטמבר 2026'**
+  /// **'14 באוקטובר 2026'**
   String get legalDate;
-
-  /// No description provided for @legalGateTitle.
-  ///
-  /// In he, this message translates to:
-  /// **'לפני שמתחילים'**
-  String get legalGateTitle;
-
-  /// No description provided for @legalConsent.
-  ///
-  /// In he, this message translates to:
-  /// **'קראתי ואני מסכים/ה לתנאי השימוש ומאשר/ת שקראתי את מדיניות הפרטיות.'**
-  String get legalConsent;
 
   /// No description provided for @saving.
   ///
@@ -194,53 +182,17 @@ abstract class AppLocalizations {
   /// **'שומרים...'**
   String get saving;
 
-  /// No description provided for @acceptAndContinue.
-  ///
-  /// In he, this message translates to:
-  /// **'אישור והמשך'**
-  String get acceptAndContinue;
-
-  /// No description provided for @legalGateHeadline.
-  ///
-  /// In he, this message translates to:
-  /// **'משחק הוגן מתחיל בכללים ברורים'**
-  String get legalGateHeadline;
-
-  /// No description provided for @legalGateBody.
-  ///
-  /// In he, this message translates to:
-  /// **'במשחק כותבים כינויים ורמזים ששחקנים אחרים יכולים לראות. אנחנו מסננים תוכן לא מתאים ומאפשרים לדווח ולהסתיר שחקנים.'**
-  String get legalGateBody;
-
   /// No description provided for @termsTitle.
   ///
   /// In he, this message translates to:
   /// **'תנאי שימוש'**
   String get termsTitle;
 
-  /// No description provided for @termsSubtitle.
-  ///
-  /// In he, this message translates to:
-  /// **'כללי המשחק, תוכן אסור ודיווחים'**
-  String get termsSubtitle;
-
   /// No description provided for @privacyTitle.
   ///
   /// In he, this message translates to:
   /// **'מדיניות פרטיות'**
   String get privacyTitle;
-
-  /// No description provided for @privacySubtitle.
-  ///
-  /// In he, this message translates to:
-  /// **'איזה מידע נשמר, איפה ולכמה זמן'**
-  String get privacySubtitle;
-
-  /// No description provided for @legalDocsVersion.
-  ///
-  /// In he, this message translates to:
-  /// **'גרסת מסמכים {legalVersion} · {legalDate}'**
-  String legalDocsVersion(Object legalVersion, Object legalDate);
 
   /// No description provided for @termsIntro.
   ///
@@ -257,7 +209,7 @@ abstract class AppLocalizations {
   /// No description provided for @terms1.
   ///
   /// In he, this message translates to:
-  /// **'״מי המתחזה?״ הוא משחק חברתי מקוון המופעל על ידי ImposterStudio (imposteril36@gmail.com). אין צורך בחשבון. אתם בוחרים כינוי ואווטאר ומקבלים מזהה אורח זמני לצורך המשחק.'**
+  /// **'״מי המתחזה?״ הוא משחק חברתי מקוון המופעל על ידי ImposterStudio. אין צורך בחשבון. אתם בוחרים כינוי ואווטאר ומקבלים מזהה אורח זמני לצורך המשחק.'**
   String get terms1;
 
   /// No description provided for @terms2Title.
@@ -317,7 +269,7 @@ abstract class AppLocalizations {
   /// No description provided for @terms6.
   ///
   /// In he, this message translates to:
-  /// **'השירות ניתן כפי שהוא ובהתאם לזמינות. מפעיל השירות רשאי לתקן באגים, לשנות כללים ותוכן, להגביל גרסאות ישנות או להפסיק חלקים מהשירות. כששינוי מהותי בתנאים דורש הסכמה מחודשת, האפליקציה תציג את הגרסה החדשה לפני המשך המשחק.'**
+  /// **'השירות ניתן כפי שהוא ובהתאם לזמינות. מפעיל השירות רשאי לתקן באגים, לשנות כללים ותוכן, להגביל גרסאות ישנות או להפסיק חלקים מהשירות. שינוי מהותי בתנאים יקבל גרסה ותאריך חדשים (סעיף 10).'**
   String get terms6;
 
   /// No description provided for @terms7Title.
@@ -365,7 +317,7 @@ abstract class AppLocalizations {
   /// No description provided for @terms10.
   ///
   /// In he, this message translates to:
-  /// **'שינוי מהותי יקבל גרסת מסמכים חדשה. האפליקציה שומרת במכשיר את גרסת התנאים שאושרה ויכולה לדרוש אישור מחדש לגרסה חדשה.'**
+  /// **'שינוי מהותי יקבל גרסת מסמכים ותאריך תוקף חדשים. הגרסה הנוכחית מופיעה תמיד בהגדרות ובאתר, והמשך המשחק לאחר כניסתה לתוקף מהווה הסכמה לה.'**
   String get terms10;
 
   /// No description provided for @terms11Title.
@@ -389,7 +341,7 @@ abstract class AppLocalizations {
   /// No description provided for @terms12.
   ///
   /// In he, this message translates to:
-  /// **'ImposterStudio · imposteril36@gmail.com\nלתמיכה, לדיווח על תוכן פוגעני ולכל שאלה על התנאים האלה.'**
+  /// **'ImposterStudio · imposteril.github.io/support\nלתמיכה, לדיווח על תוכן פוגעני ולכל שאלה על התנאים האלה.'**
   String get terms12;
 
   /// No description provided for @privacyIntro.
@@ -407,7 +359,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacy1.
   ///
   /// In he, this message translates to:
-  /// **'המשחק ״מי המתחזה?״ מופעל על ידי ImposterStudio, והמדיניות הזאת חלה על האפליקציה ועל השרת שמפעיל אותה. לפניות בנושא פרטיות: imposteril36@gmail.com.'**
+  /// **'המשחק ״מי המתחזה?״ מופעל על ידי ImposterStudio, והמדיניות הזאת חלה על האפליקציה ועל השרת שמפעיל אותה. לפניות בנושא פרטיות: imposteril.github.io/support.'**
   String get privacy1;
 
   /// No description provided for @privacy2Title.
@@ -419,7 +371,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacy2.
   ///
   /// In he, this message translates to:
-  /// **'האפליקציה שומרת במכשיר את מזהה ה־session וה־player הזמניים, הכינוי והאווטאר, ניצחונות והפסדים, הגדרות רטט ותגובות, גרסת המסמכים שאושרה ורשימת מזהי שחקנים שדיווחתם עליהם כדי להסתיר את התוכן שלהם. מחיקת האפליקציה או נתוניה עשויה למחוק מידע זה. לאחר רכישה נשמרים גם הקטגוריות והפרימיום שבבעלותכם ומועד התוקף של המנוי, כדי שיישארו פתוחים גם בלי חיבור, וכן הגדרות הפרסומות שהתקבלו מהשרת ומועד המודעה האחרונה במסך מלא.'**
+  /// **'האפליקציה שומרת במכשיר את מזהה ה־session וה־player הזמניים, הכינוי והאווטאר, ניצחונות והפסדים, הגדרות רטט ותגובות ורשימת מזהי שחקנים שדיווחתם עליהם כדי להסתיר את התוכן שלהם. מחיקת האפליקציה או נתוניה עשויה למחוק מידע זה. לאחר רכישה נשמרים גם הקטגוריות והפרימיום שבבעלותכם ומועד התוקף של המנוי, כדי שיישארו פתוחים גם בלי חיבור, וכן הגדרות הפרסומות שהתקבלו מהשרת ומועד המודעה האחרונה במסך מלא.'**
   String get privacy2;
 
   /// No description provided for @privacy3Title.
@@ -479,7 +431,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacy7.
   ///
   /// In he, this message translates to:
-  /// **'השרת מתארח ב־Google Cloud Platform (Cloud Run, אזור us-central1), וגוגל מעבדת מידע טכני הנדרש להעברת התעבורה ולשמירת הלוגים התפעוליים, כמעבדת מידע מטעמנו ובכפוף להתחייבויות אבטחה ופרטיות ברמה זהה או טובה יותר מזו שמתוארת כאן. התשלומים מתבצעים ב־App Store של Apple וב־Google Play, לפי מדיניות הפרטיות שלהם. למי שאין לו פרימיום מוצגות פרסומות של Google AdMob. AdMob עשויה לאסוף מזהי מכשיר ומזהה פרסום, כתובת IP, מידע על אינטראקציה עם מודעות, מידע אבחון וביצועים, לצורך הצגת מודעות, מדידתן ומניעת הונאה, לפי מדיניות הפרסום של Google (policies.google.com/technologies/ads). במקומות שבהם הדין מחייב, ובהם האיחוד האירופי ובריטניה, מתבקשת הסכמתכם לפני פרסום מותאם אישית; ב־iPhone לא נעשה שימוש במזהה הפרסום ללא הרשאתכם. כדי לאתר ולתקן תקלות, כשהאפליקציה קורסת או נתקלת בשגיאה היא שולחת דוח ל־Firebase Crashlytics של Google: פרטי השגיאה ומיקומה בקוד, דגם המכשיר, מערכת ההפעלה, גרסת האפליקציה ומזהה התקנה אקראי של Crashlytics. הדוח אינו כולל כינוי, רמזים או מזהה פרסום, והוא נשמר עד 90 יום. אין מכירת מידע אישי, ואין SDK צד שלישי ל־analytics.'**
+  /// **'השרת מתארח ב־Google Cloud Platform (Cloud Run, אזור us-central1), וגוגל מעבדת מידע טכני הנדרש להעברת התעבורה ולשמירת הלוגים התפעוליים, כמעבדת מידע מטעמנו ובכפוף להתחייבויות אבטחה ופרטיות ברמה זהה או טובה יותר מזו שמתוארת כאן. התשלומים מתבצעים ב־App Store של Apple וב־Google Play, לפי מדיניות הפרטיות שלהם. למי שאין לו פרימיום מוצגות פרסומות של Google AdMob. AdMob עשויה לאסוף מזהי מכשיר ומזהה פרסום, כתובת IP, מידע על אינטראקציה עם מודעות, מידע אבחון וביצועים, לצורך הצגת מודעות, מדידתן ומניעת הונאה, לפי מדיניות הפרסום של Google (policies.google.com/technologies/ads). במקומות שבהם הדין מחייב, ובהם האיחוד האירופי ובריטניה, מתבקשת הסכמתכם לפני פרסום מותאם אישית; ב־iPhone לא נעשה שימוש במזהה הפרסום ללא הרשאתכם. כדי לאתר ולתקן תקלות, כשהאפליקציה קורסת או נתקלת בשגיאה היא שולחת דוח ל־Firebase Crashlytics של Google: פרטי השגיאה ומיקומה בקוד, הצעדים האחרונים באפליקציה שקדמו לה (מסכים ופעולות), דגם המכשיר, מערכת ההפעלה, גרסת האפליקציה, מזהה השחקן האקראי ומזהה התקנה אקראי של Crashlytics. הדוח אינו כולל כינוי, רמזים, המילה הסודית או מזהה פרסום, והוא נשמר עד 90 יום. אין מכירת מידע אישי, ואין SDK צד שלישי ל־analytics.'**
   String get privacy7;
 
   /// No description provided for @privacy8Title.
@@ -515,7 +467,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacy10.
   ///
   /// In he, this message translates to:
-  /// **'לפי חוק הגנת הפרטיות התשמ״א־1981 ותיקון 13 לו, ובמקומות שבהם חל ה־GDPR, יש לכם זכות לעיין במידע שנשמר עליכם, לבקש את תיקונו, למחוק אותו, להגביל או להתנגד לעיבודו ולקבלו בפורמט נגיש. מאחר שאין חשבון, נדרש מזהה השחקן או ה־session שמופיע במסך ההגדרות כדי לאתר מידע שקשור אליכם. לבקשה כתבו ל־imposteril36@gmail.com; נענה בתוך 30 יום. מרבית המידע נמחק ממילא מאליו — מצב המשחק בסיום המשחק, session לאחר 24 שעות והלוגים לאחר 30 יום.'**
+  /// **'לפי חוק הגנת הפרטיות התשמ״א־1981 ותיקון 13 לו, ובמקומות שבהם חל ה־GDPR, יש לכם זכות לעיין במידע שנשמר עליכם, לבקש את תיקונו, למחוק אותו, להגביל או להתנגד לעיבודו ולקבלו בפורמט נגיש. מאחר שאין חשבון, נדרש מזהה השחקן או ה־session שמופיע במסך ההגדרות כדי לאתר מידע שקשור אליכם. לבקשה פנו אלינו דרך imposteril.github.io/support; נענה בתוך 30 יום. מרבית המידע נמחק ממילא מאליו — מצב המשחק בסיום המשחק, session לאחר 24 שעות והלוגים לאחר 30 יום.'**
   String get privacy10;
 
   /// No description provided for @privacy11Title.
@@ -539,7 +491,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacy12.
   ///
   /// In he, this message translates to:
-  /// **'שינוי מהותי במדיניות יקבל גרסה חדשה. כאשר נדרשת הסכמה מחודשת, האפליקציה תציג את הגרסה החדשה לפני המשך המשחק.'**
+  /// **'שינוי מהותי במדיניות יקבל גרסה ותאריך תוקף חדשים. הגרסה הנוכחית מופיעה תמיד בהגדרות ובאתר.'**
   String get privacy12;
 
   /// No description provided for @privacy13Title.
@@ -551,7 +503,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacy13.
   ///
   /// In he, this message translates to:
-  /// **'ImposterStudio · imposteril36@gmail.com\nלפניות בנושא פרטיות, בקשות למימוש זכויות ודיווח על תוכן פוגעני. נשתדל להשיב בתוך 30 יום.'**
+  /// **'ImposterStudio · imposteril.github.io/support\nלפניות בנושא פרטיות, בקשות למימוש זכויות ודיווח על תוכן פוגעני. נשתדל להשיב בתוך 30 יום.'**
   String get privacy13;
 
   /// No description provided for @legalPublicCopy.
@@ -1556,6 +1508,12 @@ abstract class AppLocalizations {
   /// **'ממשיכים'**
   String get continueLabel;
 
+  /// No description provided for @agreeByContinuing.
+  ///
+  /// In he, this message translates to:
+  /// **'בלחיצה על ״ממשיכים״ את/ה מסכים/ה לתנאי השימוש ולמדיניות הפרטיות.'**
+  String get agreeByContinuing;
+
   /// No description provided for @connecting.
   ///
   /// In he, this message translates to:
@@ -1897,18 +1855,6 @@ abstract class AppLocalizations {
   /// In he, this message translates to:
   /// **'מי המתחזה? · גרסה 1.0'**
   String get appVersion;
-
-  /// No description provided for @contact.
-  ///
-  /// In he, this message translates to:
-  /// **'יצירת קשר'**
-  String get contact;
-
-  /// No description provided for @emailCopied.
-  ///
-  /// In he, this message translates to:
-  /// **'כתובת המייל הועתקה'**
-  String get emailCopied;
 
   /// No description provided for @reportedPlayers.
   ///

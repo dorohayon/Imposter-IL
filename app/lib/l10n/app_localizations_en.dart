@@ -47,44 +47,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteGame => 'Delete game';
 
   @override
-  String get legalDate => 'September 26, 2026';
-
-  @override
-  String get legalGateTitle => 'Before we start';
-
-  @override
-  String get legalConsent =>
-      'I have read and agree to the Terms of Use and confirm that I have read the Privacy Policy.';
+  String get legalDate => 'October 14, 2026';
 
   @override
   String get saving => 'Saving...';
 
   @override
-  String get acceptAndContinue => 'Accept and continue';
-
-  @override
-  String get legalGateHeadline => 'Fair play starts with clear rules';
-
-  @override
-  String get legalGateBody =>
-      'In this game you write nicknames and hints that other players can see. We filter inappropriate content and let you report and hide players.';
-
-  @override
   String get termsTitle => 'Terms of Use';
 
   @override
-  String get termsSubtitle => 'Game rules, forbidden content and reports';
-
-  @override
   String get privacyTitle => 'Privacy Policy';
-
-  @override
-  String get privacySubtitle => 'What data is kept, where and for how long';
-
-  @override
-  String legalDocsVersion(Object legalVersion, Object legalDate) {
-    return 'Documents version $legalVersion · $legalDate';
-  }
 
   @override
   String termsIntro(Object legalVersion, Object legalDate) {
@@ -96,7 +68,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terms1 =>
-      '“Imposter: Word Bluff” is an online social game operated by ImposterStudio (imposteril36@gmail.com). No account is needed. You choose a nickname and an avatar and receive a temporary guest ID for playing.';
+      '“Imposter: Word Bluff” is an online social game operated by ImposterStudio. No account is needed. You choose a nickname and an avatar and receive a temporary guest ID for playing.';
 
   @override
   String get terms2Title => '2. Conduct and content';
@@ -131,7 +103,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terms6 =>
-      'The service is provided as is and subject to availability. The operator may fix bugs, change rules and content, restrict old versions or discontinue parts of the service. When a material change to the terms requires renewed consent, the app will show the new version before play continues.';
+      'The service is provided as is and subject to availability. The operator may fix bugs, change rules and content, restrict old versions or discontinue parts of the service. A material change to the terms gets a new version and date (section 10).';
 
   @override
   String get terms7Title => '7. Intellectual property';
@@ -159,7 +131,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terms10 =>
-      'A material change will get a new documents version. The app stores the accepted terms version on the device and may require renewed acceptance of a new version.';
+      'A material change gets a new documents version and effective date. The current version is always in Settings and on the website, and continuing to play after it takes effect means you accept it.';
 
   @override
   String get terms11Title => '11. Governing law and jurisdiction';
@@ -173,7 +145,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terms12 =>
-      'ImposterStudio · imposteril36@gmail.com\nFor support, reporting offensive content and any question about these terms.';
+      'ImposterStudio · imposteril.github.io/support\nFor support, reporting offensive content and any question about these terms.';
 
   @override
   String privacyIntro(Object legalVersion, Object legalDate) {
@@ -185,14 +157,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacy1 =>
-      'The game “Imposter: Word Bluff” is operated by ImposterStudio, and this policy applies to the app and to the server that runs it. For privacy inquiries: imposteril36@gmail.com.';
+      'The game “Imposter: Word Bluff” is operated by ImposterStudio, and this policy applies to the app and to the server that runs it. For privacy inquiries: imposteril.github.io/support.';
 
   @override
   String get privacy2Title => '2. Data stored on the device';
 
   @override
   String get privacy2 =>
-      'The app stores on the device the temporary session and player IDs, your nickname and avatar, wins and losses, vibration and reaction settings, the accepted documents version and the list of player IDs you reported so their content stays hidden. Deleting the app or its data may delete this information. After a purchase, the categories and Premium you own and the subscription\'s expiry date are also stored so they stay unlocked offline, along with the ad settings received from the server and the time of the last full-screen ad.';
+      'The app stores on the device the temporary session and player IDs, your nickname and avatar, wins and losses, vibration and reaction settings and the list of player IDs you reported so their content stays hidden. Deleting the app or its data may delete this information. After a purchase, the categories and Premium you own and the subscription\'s expiry date are also stored so they stay unlocked offline, along with the ad settings received from the server and the time of the last full-screen ad.';
 
   @override
   String get privacy3Title => '3. Data sent to the server';
@@ -227,7 +199,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacy7 =>
-      'The server is hosted on Google Cloud Platform (Cloud Run, us-central1 region), and Google processes the technical data needed to route traffic and keep operational logs, as a processor on our behalf and subject to security and privacy commitments equal to or better than those described here. Payments are made through Apple\'s App Store and Google Play, under their privacy policies. Players without Premium see ads from Google AdMob. AdMob may collect device identifiers and the advertising ID, IP address, ad interaction data, and diagnostic and performance data, to show and measure ads and prevent fraud, under Google\'s advertising policy (policies.google.com/technologies/ads). Where the law requires it, including the European Union and the United Kingdom, your consent is requested before personalized advertising; on iPhone the advertising ID is not used without your permission. To find and fix problems, when the app crashes or hits an error it sends a report to Google\'s Firebase Crashlytics: the error details and where it happened in the code, the device model, operating system, app version and a random Crashlytics installation ID. The report does not include nicknames, hints or the advertising ID, and it is kept for up to 90 days. We do not sell personal data, and there is no third-party analytics SDK.';
+      'The server is hosted on Google Cloud Platform (Cloud Run, us-central1 region), and Google processes the technical data needed to route traffic and keep operational logs, as a processor on our behalf and subject to security and privacy commitments equal to or better than those described here. Payments are made through Apple\'s App Store and Google Play, under their privacy policies. Players without Premium see ads from Google AdMob. AdMob may collect device identifiers and the advertising ID, IP address, ad interaction data, and diagnostic and performance data, to show and measure ads and prevent fraud, under Google\'s advertising policy (policies.google.com/technologies/ads). Where the law requires it, including the European Union and the United Kingdom, your consent is requested before personalized advertising; on iPhone the advertising ID is not used without your permission. To find and fix problems, when the app crashes or hits an error it sends a report to Google\'s Firebase Crashlytics: the error details and where it happened in the code, the app\'s recent steps before it (screens and actions), the device model, operating system, app version, the random player ID and a random Crashlytics installation ID. The report does not include nicknames, hints, the secret word or the advertising ID, and it is kept for up to 90 days. We do not sell personal data, and there is no third-party analytics SDK.';
 
   @override
   String get privacy8Title => '8. Children and personal details';
@@ -248,7 +220,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacy10 =>
-      'Under Israel\'s Protection of Privacy Law, 5741-1981, and its Amendment 13, and where the GDPR applies, you have the right to access the data kept about you, ask to correct it, delete it, restrict or object to its processing, and receive it in an accessible format. Since there is no account, the player or session ID shown in the Settings screen is needed to find data related to you. To make a request, write to imposteril36@gmail.com; we will reply within 30 days. Most data is deleted automatically anyway — game state when the game ends, sessions after 24 hours and logs after 30 days.';
+      'Under Israel\'s Protection of Privacy Law, 5741-1981, and its Amendment 13, and where the GDPR applies, you have the right to access the data kept about you, ask to correct it, delete it, restrict or object to its processing, and receive it in an accessible format. Since there is no account, the player or session ID shown in the Settings screen is needed to find data related to you. To make a request, contact us through imposteril.github.io/support; we will reply within 30 days. Most data is deleted automatically anyway — game state when the game ends, sessions after 24 hours and logs after 30 days.';
 
   @override
   String get privacy11Title => '11. Security';
@@ -262,14 +234,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacy12 =>
-      'A material change to the policy will get a new version. When renewed consent is required, the app will show the new version before play continues.';
+      'A material change to the policy gets a new version and effective date. The current version is always in Settings and on the website.';
 
   @override
   String get privacy13Title => '13. Contact';
 
   @override
   String get privacy13 =>
-      'ImposterStudio · imposteril36@gmail.com\nFor privacy inquiries, requests to exercise your rights and reporting offensive content. We aim to reply within 30 days.';
+      'ImposterStudio · imposteril.github.io/support\nFor privacy inquiries, requests to exercise your rights and reporting offensive content. We aim to reply within 30 days.';
 
   @override
   String legalPublicCopy(Object value) {
@@ -867,6 +839,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueLabel => 'Continue';
 
   @override
+  String get agreeByContinuing =>
+      'By tapping Continue you agree to the Terms of Use and the Privacy Policy.';
+
+  @override
   String get connecting => 'Connecting...';
 
   @override
@@ -1053,12 +1029,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appVersion => 'Imposter: Word Bluff · Version 1.0';
-
-  @override
-  String get contact => 'Contact';
-
-  @override
-  String get emailCopied => 'Email address copied';
 
   @override
   String get reportedPlayers => 'Players you reported';

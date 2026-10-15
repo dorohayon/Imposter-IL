@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/main.dart';
 import 'package:imposter_il/screens/home_screen.dart';
-import 'package:imposter_il/screens/legal_screens.dart';
 import 'package:imposter_il/screens/live_room.dart';
 import 'package:imposter_il/widgets/game_ui.dart';
 import 'package:imposter_il/state/game_session.dart';
@@ -17,9 +16,7 @@ import 'fake_monetization.dart';
 import 'fake_server.dart';
 
 /// Starts the real app against [api] on the narrowest supported phone
-/// (320px), so layout overflows fail the tests too. Existing tests are about
-/// post-consent product flows, so they start with the current legal version
-/// accepted; legal-gate tests can override the key explicitly.
+/// (320px), so layout overflows fail the tests too.
 ///
 /// Unless a test is about monetization, the player owns lifetime Premium:
 /// every category open and no ads, as the flows under test always assumed.
@@ -33,10 +30,7 @@ Future<GameSession> startApp(
   tester.view.physicalSize = const Size(320, 640);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  SharedPreferences.setMockInitialValues({
-    legalAcceptedVersionKey: legalVersion,
-    ...saved,
-  });
+  SharedPreferences.setMockInitialValues({...saved});
 
   final session =
       GameSession(api, reconnectDelay: const Duration(milliseconds: 50));

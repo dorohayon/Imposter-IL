@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/main.dart';
-import 'package:imposter_il/screens/legal_screens.dart';
 import 'package:imposter_il/state/game_session.dart';
 import 'package:imposter_il/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -151,7 +150,6 @@ void main() {
       };
       final me = lang.players.first;
       SharedPreferences.setMockInitialValues({
-        legalAcceptedVersionKey: legalVersion,
         'session.token': 'token-1',
         'session.playerId': 'p_me',
         'session.nickname': me.$2,

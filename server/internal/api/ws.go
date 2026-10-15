@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -71,6 +72,7 @@ func (s *Server) serveWS(w http.ResponseWriter, r *http.Request) {
 		defer s.mu.Unlock()
 		defer s.recoverRoom(s.roomsByID[sess.roomID], "detach")
 		s.metrics.wsConns--
+		slog.Info("disconnected", "playerId", sess.playerID, "roomId", sess.roomID, "gameId", sess.gameID, "replaced", sess.conn != c)
 		s.detach(sess, c)
 	}()
 
@@ -88,6 +90,7 @@ func (s *Server) serveWS(w http.ResponseWriter, r *http.Request) {
 			return false
 		}
 		sess.lastSeen, sess.connected = s.now(), true
+		slog.Info("connected", "playerId", sess.playerID, "roomId", sess.roomID, "gameId", sess.gameID)
 		s.attach(sess, c)
 		interval = s.pingInterval
 		return true
@@ -187,17 +190,37 @@ func (s *Server) handleFrame(sess *session, c *conn, env envelope) {
 	case !s.commandLimit.allow(sess.playerID, now):
 		s.metrics.rateLimited++
 		s.countCommand("rate_limited")
+		logCommand(sess, env.Type, "rate_limited")
 		// Not cached: the command never ran, so a retry with the same id
 		// must be able to run it once the bucket refills.
 		msg = reply(env.ID, "rate_limited", now)
 	default:
 		code := s.dispatchSafe(sess, env, now)
 		s.countCommand(code)
+		logCommand(sess, env.Type, code)
 		msg = reply(env.ID, code, now)
 		sess.replies.put(env.ID, msg, now)
 	}
 	s.queue(c, msg)
 	s.syncSession(sess)
+}
+
+// logCommand records one client command: the type and its error code, never
+// the payload, which carries hints and guesses. Reactions are unlimited and
+// say nothing about where the player is, so they stay at debug.
+func logCommand(sess *session, typ, code string) {
+	level := slog.LevelInfo
+	switch {
+	case code == "rate_limited" || code == "internal_error":
+		level = slog.LevelWarn
+	case typ == "game.react" && code == "":
+		level = slog.LevelDebug
+	}
+	if code == "" {
+		code = "ok"
+	}
+	slog.Log(context.Background(), level, "command", "playerId", sess.playerID, "type", typ, "code", code,
+		"roomId", sess.roomID, "gameId", sess.gameID)
 }
 
 // attach makes c the session's connection, replacing an older one without

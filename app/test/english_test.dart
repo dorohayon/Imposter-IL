@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:imposter_il/data/server.dart';
 import 'package:imposter_il/local/words.g.dart';
@@ -81,38 +80,6 @@ void main() {
     }
     final restore = tester.getSize(find.text('Restore purchases'));
     expect(restore.height, lessThan(30), reason: 'one line');
-  });
-
-  testWidgets('Contact opens an email, or copies the address', (tester) async {
-    final opened = <Uri>[];
-    var mailApp = true;
-    final original = openExternal;
-    openExternal = (uri) async {
-      opened.add(uri);
-      return mailApp;
-    };
-    addTearDown(() => openExternal = original);
-    String? clipboard;
-    tester.binding.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
-      if (call.method == 'Clipboard.setData') {
-        clipboard = (call.arguments as Map)['text'] as String;
-      }
-      return null;
-    });
-    addTearDown(() => tester.binding.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, null));
-
-    await startApp(tester, FakeApi(), saved: _signedIn);
-    await tapTooltip(tester, 'Settings');
-    await tapText(tester, 'Contact');
-    expect(opened.single, Uri(scheme: 'mailto', path: supportEmail));
-    expect(find.text('Email address copied'), findsNothing);
-
-    mailApp = false;
-    await tapText(tester, 'Contact');
-    expect(clipboard, supportEmail);
-    expect(find.text('Email address copied'), findsOneWidget);
   });
 
   testWidgets('a phone language the app lacks falls back to English',

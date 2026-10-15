@@ -610,6 +610,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
               foregroundColor: AppColors.turquoise,
               minimumSize: const Size(44, 44),
               textStyle: const TextStyle(
+                fontFamily: 'Rubik',
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 decoration: TextDecoration.underline,
@@ -950,7 +951,7 @@ class _Link extends StatelessWidget {
       style: TextButton.styleFrom(
         foregroundColor: AppColors.cream.withValues(alpha: .7),
         minimumSize: const Size(44, 44),
-        textStyle: const TextStyle(fontSize: 12),
+        textStyle: const TextStyle(fontFamily: 'Rubik', fontSize: 12),
       ),
       child: Text(label),
     );
