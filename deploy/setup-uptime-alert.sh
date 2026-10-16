@@ -6,7 +6,7 @@
 #
 # In October 2026 Cloud Run's spend cap switched the server off and nobody
 # noticed for six days. An uptime check asks /readyz every five minutes from
-# Google's regions; two failed rounds email EMAIL. The checks are requests
+# Google's regions; under half of them passing for ten minutes emails EMAIL. The checks are requests
 # like any other, a few milliseconds of CPU each, well inside the free tier.
 set -euo pipefail
 export CLOUDSDK_CORE_DISABLE_PROMPTS=1
@@ -65,15 +65,19 @@ json.dump({
         "conditionThreshold": {
             "filter": 'metric.type="monitoring.googleapis.com/uptime_check/check_passed" '
                       f'AND resource.type="uptime_url" AND metric.label.check_id="{check_id}"',
+            # Under half the regions passing, every 5-minute window for 10
+            # minutes. "More than one failed check" fired on every scale-to-zero:
+            # max-instances is 1, so while the idle instance stops and the next
+            # starts a check or two from some regions finds nothing to answer.
             "aggregations": [{
-                "alignmentPeriod": "600s",
-                "perSeriesAligner": "ALIGN_NEXT_OLDER",
-                "crossSeriesReducer": "REDUCE_COUNT_FALSE",
-                "groupByFields": ["resource.label.*"],
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_FRACTION_TRUE",
+                "crossSeriesReducer": "REDUCE_MEAN",
+                "groupByFields": ["metric.label.check_id"],
             }],
-            "comparison": "COMPARISON_GT",
-            "thresholdValue": 1,
-            "duration": "0s",
+            "comparison": "COMPARISON_LT",
+            "thresholdValue": 0.5,
+            "duration": "600s",
             "trigger": {"count": 1},
         },
     }],
