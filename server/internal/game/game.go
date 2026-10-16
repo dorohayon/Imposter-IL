@@ -605,6 +605,11 @@ func (g *Game) Reconnect(playerID string, now time.Time) error {
 		g.reconnecting = false
 		g.deadline = g.turnDeadline
 	}
+	// A table that dropped all at once was left to the timer; the first one
+	// back who already voted may be all of "everyone connected".
+	if g.phase == PhaseVoting || g.phase == PhaseRunoffVoting {
+		g.maybeAdvanceTransition(now)
+	}
 	g.version++
 	return nil
 }

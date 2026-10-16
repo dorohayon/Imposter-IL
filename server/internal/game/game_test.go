@@ -410,7 +410,7 @@ func TestLastVoteBeforeDeadlineCounts(t *testing.T) {
 
 // "Everyone" is everyone connected: a dropped player is not waited for, and
 // their vote still counts if they cast one. A table that dropped all at once
-// waits for the timer.
+// waits, for the timer or for someone back who already voted.
 func TestVotingEndsOnceEveryConnectedPlayerVoted(t *testing.T) {
 	g := newGame(t, 4)
 	now := toVoting(t, g)
@@ -424,10 +424,18 @@ func TestVotingEndsOnceEveryConnectedPlayerVoted(t *testing.T) {
 
 	g = newGame(t, 4)
 	now = toVoting(t, g)
+	c = citizens(g)
+	must(t, g.Vote(c[0], g.impostor, now))
 	for _, id := range g.activeIDs() {
 		must(t, g.Disconnect(id, now))
 	}
 	wantPhase(t, g, PhaseVoting)
+	// Back again: one who has not voted is waited for, one who has ends it.
+	must(t, g.Reconnect(c[1], now.Add(time.Second)))
+	wantPhase(t, g, PhaseVoting)
+	must(t, g.Disconnect(c[1], now.Add(2*time.Second)))
+	must(t, g.Reconnect(c[0], now.Add(3*time.Second)))
+	wantPhase(t, g, PhaseImpostorGuess)
 }
 
 // citizensWin catches the impostor and lets them fail the guess: the ordinary
