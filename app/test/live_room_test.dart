@@ -631,6 +631,42 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
+  testWidgets('the vote says whom to pick and counts who has voted',
+      (tester) async {
+    final api = FakeApi();
+    await startAtHome(tester, api);
+    await openCreatedRoom(tester, api);
+    api.channel.event('session.state', {
+      'playerId': 'p_me',
+      'activity': 'game',
+      'roomId': 'r_1',
+      'gameId': 'g_1',
+    });
+    api.channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(
+          phase: 'voting',
+          candidates: ['p_me', 'p_2', 'p_3', 'p_4'],
+          voteProgress: (cast: 0, total: 4),
+        ));
+    await settle(tester);
+    expect(find.text('בחרו במי אתם חושדים'), findsOneWidget);
+    expect(find.text('0 מתוך 4 הצביעו'), findsOneWidget);
+
+    // Every vote anyone casts arrives as a new snapshot.
+    api.channel.snapshot(
+        'game.state',
+        'game',
+        gameJson(
+          phase: 'voting',
+          candidates: ['p_me', 'p_2', 'p_3', 'p_4'],
+          voteProgress: (cast: 3, total: 4),
+        ));
+    await settle(tester);
+    expect(find.text('3 מתוך 4 הצביעו'), findsOneWidget);
+  });
+
   testWidgets('a runoff starts without the earlier vote selection',
       (tester) async {
     final api = FakeApi();

@@ -118,7 +118,7 @@ void main() {
             'game.vote', {'gameId': p.game!.id, 'targetPlayerId': target}));
       }
 
-      // Voting runs its full 20 seconds on the server.
+      // Everyone voted, so the server ends the vote at once.
       await until(impostor, () => impostor.game!.phase == 'impostor_guess',
           timeout: const Duration(seconds: 30));
       final word = players.firstWhere((p) => p != impostor).game!.secretWord!;

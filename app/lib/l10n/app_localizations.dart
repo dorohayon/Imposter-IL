@@ -1256,11 +1256,17 @@ abstract class AppLocalizations {
   /// **'אישור הצבעה'**
   String get confirmVote;
 
-  /// No description provided for @choosePlayer.
+  /// No description provided for @chooseSuspect.
   ///
   /// In he, this message translates to:
-  /// **'בחרו שחקן אחד. אפשר לשנות את הבחירה עד שהזמן נגמר.'**
-  String get choosePlayer;
+  /// **'בחרו במי אתם חושדים'**
+  String get chooseSuspect;
+
+  /// No description provided for @votesCast.
+  ///
+  /// In he, this message translates to:
+  /// **'{cast} מתוך {total} הצביעו'**
+  String votesCast(int cast, int total);
 
   /// No description provided for @tieRevoteExplain.
   ///

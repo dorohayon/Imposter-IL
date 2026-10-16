@@ -382,18 +382,59 @@ func TestVoting(t *testing.T) {
 	if v, _ := g.View(b); v.MyVote != "" || v.Result != nil {
 		t.Fatal("votes must stay hidden until the end")
 	}
-	// voting does not end early even when everyone voted
-	voteAllFor(t, g, g.impostor, now)
+	// How many voted is shown to everyone; whom they voted for is not.
+	if v, _ := g.View(b); v.VotesCast != 1 || v.Voters != 4 {
+		t.Fatalf("progress = %d of %d, want 1 of 4", v.VotesCast, v.Voters)
+	}
+	must(t, g.Vote(a, g.order[2], now)) // changed while others still choose
 	wantPhase(t, g, PhaseVoting)
+	// The vote ends the moment the last connected player votes.
+	voteAllFor(t, g, g.impostor, now.Add(3*time.Second))
+	wantPhase(t, g, PhaseImpostorGuess)
 }
 
+// Somebody who never votes holds the vote to its timer, and a vote changed
+// before then is the one counted.
 func TestLastVoteBeforeDeadlineCounts(t *testing.T) {
 	g := newGame(t, 4)
 	now := toVoting(t, g)
 	c := citizens(g)
-	voteAllFor(t, g, c[0], now)
-	voteAllFor(t, g, g.impostor, now.Add(19*time.Second))
-	wantErr(t, g.Vote(c[1], c[0], now.Add(20*time.Second)), ErrWrongPhase)
+	must(t, g.Vote(c[1], c[0], now))
+	must(t, g.Vote(g.impostor, c[0], now))
+	must(t, g.Vote(c[0], g.impostor, now))
+	must(t, g.Vote(c[1], g.impostor, now.Add(19*time.Second)))
+	wantPhase(t, g, PhaseVoting) // c[2] has not voted
+	wantErr(t, g.Vote(c[2], c[0], now.Add(20*time.Second)), ErrWrongPhase)
+	wantPhase(t, g, PhaseImpostorGuess)
+}
+
+// "Everyone" is everyone connected: a dropped player is not waited for, and
+// their vote still counts if they cast one. A table that dropped all at once
+// waits, for the timer or for someone back who already voted.
+func TestVotingEndsOnceEveryConnectedPlayerVoted(t *testing.T) {
+	g := newGame(t, 4)
+	now := toVoting(t, g)
+	c := citizens(g)
+	must(t, g.Vote(c[0], g.impostor, now))
+	must(t, g.Vote(c[1], g.impostor, now))
+	must(t, g.Vote(g.impostor, c[0], now))
+	wantPhase(t, g, PhaseVoting)
+	must(t, g.Disconnect(c[2], now.Add(time.Second)))
+	wantPhase(t, g, PhaseImpostorGuess)
+
+	g = newGame(t, 4)
+	now = toVoting(t, g)
+	c = citizens(g)
+	must(t, g.Vote(c[0], g.impostor, now))
+	for _, id := range g.activeIDs() {
+		must(t, g.Disconnect(id, now))
+	}
+	wantPhase(t, g, PhaseVoting)
+	// Back again: one who has not voted is waited for, one who has ends it.
+	must(t, g.Reconnect(c[1], now.Add(time.Second)))
+	wantPhase(t, g, PhaseVoting)
+	must(t, g.Disconnect(c[1], now.Add(2*time.Second)))
+	must(t, g.Reconnect(c[0], now.Add(3*time.Second)))
 	wantPhase(t, g, PhaseImpostorGuess)
 }
 
@@ -454,6 +495,29 @@ func TestEliminationRevealCanContinueEarly(t *testing.T) {
 	}
 }
 
+// A voted-out citizen watches the next vote but is not one of its voters:
+// "1 of 4 have voted" counts the players still in the match.
+func TestVoteCountLeavesSpectatorsOut(t *testing.T) {
+	g := newGame(t, 5)
+	now := toVoting(t, g)
+	out := citizens(g)[0]
+	voteAllFor(t, g, out, now)
+	must(t, g.Vote(out, g.impostor, now)) // the last vote: out, four to one
+	for i := 0; g.phase != PhaseVoting && i < 200; i++ {
+		now = now.Add(5 * time.Second)
+		g.Tick(now)
+	}
+	wantPhase(t, g, PhaseVoting)
+	if g.round != 2 {
+		t.Fatalf("round = %d, want 2", g.round)
+	}
+	wantErr(t, g.Vote(out, g.impostor, now), ErrPlayerNotActive)
+	must(t, g.Vote(citizens(g)[0], g.impostor, now))
+	if v, _ := g.View(out); v.VotesCast != 1 || v.Voters != 4 {
+		t.Fatalf("progress = %d of %d, want 1 of 4", v.VotesCast, v.Voters)
+	}
+}
+
 func TestVotingOutACitizenStartsAnotherRound(t *testing.T) {
 	g := newGame(t, 5) // four citizens and an impostor
 	now := toVoting(t, g)
@@ -511,9 +575,7 @@ func TestImpostorGuess(t *testing.T) {
 	caught := func(t *testing.T) (*Game, time.Time) {
 		g := newGame(t, 6)
 		now := toVoting(t, g)
-		voteAllFor(t, g, g.impostor, now)
-		now = now.Add(20 * time.Second)
-		g.Tick(now)
+		voteAllFor(t, g, g.impostor, now) // everyone voted: no timer to wait for
 		wantPhase(t, g, PhaseImpostorGuess)
 		if want := now.Add(60 * time.Second); !g.Deadline().Equal(want) {
 			t.Fatalf("guess deadline = %v, want %v", g.Deadline(), want)
@@ -554,9 +616,11 @@ func TestAllRemainingCitizensWinEvenWithWrongVotes(t *testing.T) {
 	g := newGame(t, 5)
 	now := toVoting(t, g)
 	c := citizens(g)
-	voteAllFor(t, g, g.impostor, now)
 	must(t, g.Vote(c[0], c[1], now)) // wrong vote, still a majority on the impostor
-	g.Tick(now.Add(20 * time.Second))
+	for _, id := range c[1:] {
+		must(t, g.Vote(id, g.impostor, now))
+	}
+	must(t, g.Vote(g.impostor, c[0], now)) // the last vote ends the voting
 	must(t, g.SubmitGuess(g.impostor, "wrong", now.Add(21*time.Second)))
 	wantResult(t, g, TeamCitizens, ReasonImpostorGuessWrong)
 	if g.result.Outcomes[c[0]] != OutcomeWin || g.result.Outcomes[g.impostor] != OutcomeLoss {

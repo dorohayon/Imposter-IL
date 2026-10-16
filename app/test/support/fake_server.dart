@@ -251,6 +251,7 @@ Map<String, dynamic> gameJson({
   Map<String, int> previousVotes = const {},
   String? eliminatedPlayerId,
   String? myVote,
+  ({int cast, int total})? voteProgress,
   Map<String, dynamic>? result,
   List<Map<String, dynamic>>? players,
 }) =>
@@ -276,5 +277,10 @@ Map<String, dynamic> gameJson({
       'previousVotes': previousVotes,
       if (eliminatedPlayerId != null) 'eliminatedPlayerId': eliminatedPlayerId,
       'myVote': myVote,
+      if (voteProgress != null)
+        'voteProgress': {
+          'cast': voteProgress.cast,
+          'total': voteProgress.total,
+        },
       'result': result,
     };

@@ -288,7 +288,13 @@ type gameJSON struct {
 	PreviousVotes       map[string]int   `json:"previousVotes,omitempty"`
 	EliminatedPlayerID  *string          `json:"eliminatedPlayerId,omitempty"`
 	MyVote              *string          `json:"myVote"`
+	VoteProgress        *voteProgress    `json:"voteProgress,omitempty"` // voting and runoff_voting only
 	Result              *resultJSON      `json:"result"`
+}
+
+type voteProgress struct {
+	Cast  int `json:"cast"`
+	Total int `json:"total"`
 }
 
 func optional[T comparable](v T) *T {
@@ -317,6 +323,9 @@ func (s *Server) gameJSON(viewerID, gameID string, v game.View, entry *roomEntry
 		PreviousVotes:       v.PreviousVotes,
 		EliminatedPlayerID:  optional(v.EliminatedPlayerID),
 		MyVote:              optional(v.MyVote),
+	}
+	if v.Phase == game.PhaseVoting || v.Phase == game.PhaseRunoffVoting {
+		out.VoteProgress = &voteProgress{Cast: v.VotesCast, Total: v.Voters}
 	}
 	if !v.Deadline.IsZero() {
 		deadline := v.Deadline.UTC()

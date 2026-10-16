@@ -692,8 +692,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmVote => 'Confirm vote';
 
   @override
-  String get choosePlayer =>
-      'Choose one player. You can change your choice until time runs out.';
+  String get chooseSuspect => 'Pick who you suspect';
+
+  @override
+  String votesCast(int cast, int total) {
+    return '$cast of $total have voted';
+  }
 
   @override
   String get tieRevoteExplain =>

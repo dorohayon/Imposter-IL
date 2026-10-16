@@ -416,7 +416,8 @@
   "revote": "הצבעה חוזרת",
   "voteReceived": "ההצבעה נקלטה",
   "confirmVote": "אישור הצבעה",
-  "choosePlayer": "בחרו שחקן אחד. אפשר לשנות את הבחירה עד שהזמן נגמר.",
+  "chooseSuspect": "בחרו במי אתם חושדים",
+  "votesCast": "{cast} מתוך {total} הצביעו",
   "tieRevoteExplain": "היה תיקו. מצביעים שוב רק בין השחקנים שקיבלו את מספר הקולות הגבוה. תיקו נוסף — איש לא מודח והמשחק ממשיך לסבב נוסף.",
   "cantVoteSelf": "אי אפשר להצביע לעצמכם",
   "oneVotePrevious": "קול אחד בסבב הקודם",
@@ -1065,5 +1066,15 @@
     }
   },
   "guessTheWord": "ניחוש המילה",
-  "whoIsImpostor": "מי המתחזה?"
+  "whoIsImpostor": "מי המתחזה?",
+  "@votesCast": {
+    "placeholders": {
+      "cast": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }
